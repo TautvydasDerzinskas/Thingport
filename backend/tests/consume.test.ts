@@ -111,6 +111,98 @@ describe("consume folder", () => {
     expect(fs.readdirSync(dir)).toEqual([]);
   });
 
+  it("keeps every sliced file of a folder, the first as its prepared print", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Sliced/Frog/frog.stl", STL);
+    put("Sliced/Frog/a1.gcode", "; printer_model = Bambu Lab A1\nG28\n");
+    put("Sliced/Frog/p1s.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 1, files: 3, failed: [] });
+    const [frog] = await printsNamed("Frog");
+    expect(Object.fromEntries(frog.files.map((file) => [file.filename, file.role]))).toEqual({
+      "a1.gcode": "PREPARED",
+      "p1s.gcode": "SUPPORTING",
+    });
+    expect(frog.preparedFileId).toBe(frog.files.find((file) => file.filename === "a1.gcode")!.id);
+  });
+
+  it("keeps a sliced 3MF whose name ends in a space as the folder's prepared print, not a plate", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Sliced/Newt/newt.stl", STL);
+    put(
+      "Sliced/Newt/newt.gcode.3mf ",
+      await new JSZip().file("Metadata/plate_1.gcode", "G28\n").generateAsync({ type: "nodebuffer" }),
+    );
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 1, failed: [] });
+    const [newt] = await printsNamed("Newt");
+    expect(newt.plates.map((plate) => plate.filename)).toEqual(["newt.stl"]);
+    expect(newt.files.map((file) => [file.filename, file.role])).toEqual([["newt.gcode.3mf", "PREPARED"]]);
+  });
+
+  it("keeps a subfolder with the nearest model folder above it, where one model's folder holds another's", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Nest/Hen/hen.stl", STL);
+    put("Nest/Hen/Chick/chick.stl", STL);
+    put("Nest/Hen/Chick/docs/feeding.pdf", "%PDF-1.4 feeding");
+    put("Nest/Hen/docs/laying.pdf", "%PDF-1.4 laying");
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 2, failed: [] });
+    const [hen] = await printsNamed("Hen");
+    const [chick] = await printsNamed("Chick");
+    expect(hen.files.map((file) => [file.filename, file.folder])).toEqual([["laying.pdf", "docs"]]);
+    expect(chick.files.map((file) => [file.filename, file.folder])).toEqual([["feeding.pdf", "docs"]]);
+  });
+
+  it("takes a folder for a model's by a model file whose name ends in a space, as the name it's kept by", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Coop/Rooster/rooster.stl", STL);
+    put("Coop/Rooster/Pullet/pullet.stl ", STL);
+    put("Coop/Rooster/Pullet/docs/feeding.pdf", "%PDF-1.4 feeding");
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 2, failed: [] });
+    const [pullet] = await printsNamed("Pullet");
+    expect(pullet.plates.map((plate) => plate.filename)).toEqual(["pullet.stl"]);
+    expect(pullet.files.map((file) => [file.filename, file.folder])).toEqual([["feeding.pdf", "docs"]]);
+    const [rooster] = await printsNamed("Rooster");
+    expect(rooster.files).toEqual([]);
+  });
+
+  it("keeps a model folder's subfolders with it: documents in their folder, pictures as photos", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Kits/Toad/toad.stl", STL);
+    put("Kits/Toad/docs/assembly.pdf", "%PDF-1.4 assembly");
+    put("Kits/Toad/docs/extra/notes.txt", "glue the base first");
+    put(
+      "Kits/Toad/photos/side.jpg",
+      await sharp({ create: { width: 40, height: 30, channels: 3, background: "#00aa00" } })
+        .jpeg()
+        .toBuffer(),
+    );
+    // Beside the model folder rather than in it: not the toad's, so set aside as before.
+    put("Kits/manual.pdf", "%PDF-1.4 kit manual");
+
+    const summary = await consumeFolder(dir);
+    expect(summary?.models).toBe(1);
+    const [toad] = await printsNamed("Toad");
+    expect(toad.plates.map((plate) => plate.filename)).toEqual(["toad.stl"]);
+    expect(toad.previewImages).toHaveLength(1);
+    expect(toad.files.map((file) => [file.filename, file.folder]).toSorted()).toEqual([
+      ["assembly.pdf", "docs"],
+      ["notes.txt", "docs/extra"],
+    ]);
+    expect(summary?.failed).toEqual(["Kits/manual.pdf"]);
+  });
+
   it("unpacks a zip as a folder named after it", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
     await setConsumeSettings({ mode: "folder" });

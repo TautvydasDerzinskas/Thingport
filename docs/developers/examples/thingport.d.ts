@@ -199,7 +199,7 @@ export interface SdkNewModel {
   tags?: string[];
   /** A collection to save it into. */
   collectionId?: string;
-  /** Its files, each a plate. At least one. */
+  /** Its files, at least one, sorted as `create` describes. */
   files: SdkFileInput[];
 }
 
@@ -559,7 +559,11 @@ export interface SdkModels {
    */
   relatedText(id: string, fileId: string): Promise<string>;
   /**
-   * Makes a model of the files given, each one a plate, in a collection when one is given.
+   * Makes a model of the files given, in a collection when one is given. Its 3D files become its plates. With no 3D
+   * file, every sliced 3MF is a plate, or else the files that can be a model on their own, such as a picture; only when
+   * none can is every file a plate. Of what's left, the first sliced print (`.gcode`, `.gco`, `.bgcode`, `.gcode.3mf`)
+   * becomes its prepared print, and anything else (instructions, notes, sources, any more sliced prints) is kept beside
+   * the plates as a related file.
    *
    * @param input Its name, description, tags, collection and files.
    * @returns The new model.
@@ -572,13 +576,38 @@ export interface SdkModels {
    */
   create(input: SdkNewModel): Promise<SdkModel>;
   /**
-   * Adds files to a model, each a plate.
+   * Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is
+   * kept beside them as a related file (see `relatedFiles`). The first sliced print among them, by its name (`.gcode`,
+   * `.gco`, `.bgcode`, `.gcode.3mf`), becomes its prepared print in place of the one it had, unless `keepPrepared`;
+   * any more are kept as related files. A plain `.3mf` is one of its plates, sliced or not.
+   *
+   * A `.gltf` is packed with the `.bin` and textures it points at among `files` into one `.glb` plate, each found by
+   * its name, as `files` have no folders: two different files of one name it could mean are refused before anything
+   * is added. It's refused too when a buffer it keeps in a file of its own isn't among them; one written into it (a
+   * data URI) needs none.
+   *
+   * The plates go in first, in one request, then the other files one at a time. When one of those requests fails, the
+   * call rejects with its error, which carries `added` (the names of the files in before it, none if it was the first),
+   * `addedIndexes` (their places in `files`, which tell two of one name apart), `keepPrepared` (what to pass when
+   * sending the rest: true when the call was given it, or an answer said a sliced print of the call went in) and, once
+   * a request of the call was answered, `model` (the model as the last answer had it). An error the call gives before
+   * sending anything, as for two files a `.gltf` could mean, carries none of these. The rest are the files not in
+   * `addedIndexes`, the one that failed first. One whose answer was lost may be in all the same, and a plate request
+   * that failed may have kept files it couldn't take back: look for those among the model's `files` and `relatedFiles`
+   * before sending them. When the error's `keepPrepared` is false and the one that failed is a sliced print, it may hold
+   * the prepared slot, which neither lists. Sent again with `keepPrepared` false, it takes the slot from whatever holds
+   * it by then, a prepared print someone added since included, so send it so only where nothing else can have changed
+   * the model; else send it with `keepPrepared: true`, which keeps it as a related file and the prepared print as it
+   * is. The rest go with `keepPrepared: true` either way. When the error's `keepPrepared` is true, a sliced print that
+   * failed was sent as a related file: look for it among `relatedFiles`, and keep the flag true for what's still to send.
    *
    * @param id The model's id.
    * @param files The files to add.
+   * @param options `keepPrepared`: the model's prepared print stays, and every sliced print among `files` is kept as
+   *   a related file, as for the rest of a call that set it.
    * @returns The model as it is now.
    */
-  addFiles(id: string, files: SdkFileInput[]): Promise<SdkModel>;
+  addFiles(id: string, files: SdkFileInput[], options?: { keepPrepared?: boolean }): Promise<SdkModel>;
   /**
    * Adds pictures (PNG, JPEG, WebP) to a model's gallery. The first becomes its cover in place of the render.
    *

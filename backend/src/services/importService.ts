@@ -65,7 +65,7 @@ import {
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
-import { replaceModelPlates } from "./modelFilesReplace";
+import { galleryFileThere, replaceModelPlates } from "./modelFilesReplace";
 import { modelFilesMissing } from "./missingFilesService";
 import { createLogger } from "../logger";
 
@@ -101,13 +101,14 @@ import {
   createPrint,
   isGeneratorScript,
   keepGeneratorScripts,
-  refreshAutoPreparedMetadata,
+  refreshIfFirstPlate,
   resolvePlateFilePath,
   type NewPlateInput,
   type PrintMetaInput,
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
 import { addPreviewImage, preferImageOverRenders, removePreviewImage } from "./previewImageService";
+import { withStorageLock } from "../utils/storageLock";
 import { getPhotosPerModel } from "./settingsService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
@@ -331,7 +332,7 @@ async function renameProfilePlates(printId: string, renames: { plate: Plate; fil
     const next = await availablePlateFilename(printId, filename, plate.id, plate.folder);
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: next } });
     await relocatePrint(print, [{ ...plate, filename: next }]);
-    if (plate.position === 0) await refreshAutoPreparedMetadata(printId);
+    await refreshIfFirstPlate(printId, plate.id);
   }
 }
 
@@ -640,13 +641,15 @@ export async function fetchImageBytes(url: string): Promise<Buffer | null> {
  * the import ran (the model is browsable from creation) gives way to them. Never throws.
  *
  * Answers with how many of them are stored, a picture whose fetch came back with nothing being skipped as it
- * always was: a gallery being replaced goes only once this is more than none (replaceModelFiles). */
+ * always was: a gallery being replaced goes only once this is more than none (replaceModelFiles). `onStored` is told
+ * of each as it's in. */
 export async function attachImportedPreviewImages(
   printId: string | undefined,
   plateId: string | undefined,
   coverImageUrl: string | null | undefined,
   galleryImages: { url: string; filename: string }[],
   paceMs?: number,
+  onStored?: (image: PreviewImage) => void,
 ): Promise<number> {
   if (!printId) return 0;
   const seen = new Set<string>();
@@ -674,6 +677,7 @@ export async function attachImportedPreviewImages(
     const added = await addPreviewImage(printId, buf);
     if (!added) continue;
     stored++;
+    onStored?.(added);
     if (!firstAdded) {
       firstAdded = true;
       await preferImageOverRenders(printId, plateId, buf);
@@ -1611,6 +1615,46 @@ const log = createLogger("import-files");
  *  minutes, in which a Grab import of the same model, or an upload, can put the files back. */
 const withPrintLock = createKeyedLock();
 
+/** A repaired model's gallery once the source's pictures, `fetched`, are in beside `gallery`, the one found missing
+ *  some: looked at again, as the owner may have removed the one that was gone, or one of the fetched, while they were
+ *  fetched. Where one of `gallery` still has no file, the rest of it goes, but only while one of the fetched is there,
+ *  file and all, to take its place; where what's left of it is whole, the fetched go instead, as for a gallery found
+ *  whole. Looked at and done in one turn at the storage lock, which a move of the pictures and the owner's removal of
+ *  one hold; a look that fails leaves both. */
+async function settleRepairedGallery(printId: string, gallery: string[], fetched: string[]): Promise<void> {
+  await withStorageLock(async () => {
+    const now = await prisma.print.findUniqueOrThrow({
+      where: { id: printId },
+      select: {
+        assetsPath: true,
+        previewImages: { where: { id: { in: [...gallery, ...fetched] } }, select: { id: true } },
+      },
+    });
+    const there = new Set(now.previewImages.map((image) => image.id));
+    // A look that fails throws, before anything goes, rather than read as a picture gone: both sets then stay.
+    const hasFile = (id: string) => galleryFileThere(now.assetsPath, id);
+    const every = async (ids: string[]) => {
+      for (const id of ids) if (!(await hasFile(id))) return false;
+      return true;
+    };
+    const some = async (ids: string[]) => {
+      for (const id of ids) if (await hasFile(id)) return true;
+      return false;
+    };
+    const left = gallery.filter((id) => there.has(id));
+    const replacing = fetched.filter((id) => there.has(id));
+    const whole = left.length > 0 && (await every(left));
+    // With none of the fetched left, the gallery the repair found is all the model has: it stays, gaps and all.
+    const removing = whole ? replacing : (await some(replacing)) ? left : [];
+    for (const id of removing) await removePreviewImage(printId, id).catch(() => undefined);
+  }).catch((error: unknown) =>
+    log.warn("couldn't look at a repaired model's gallery again, so both sets of pictures stay", {
+      print: printId,
+      error,
+    }),
+  );
+}
+
 /** Puts downloaded files on a model whose own are gone, in place of them, and brings its pictures back when they
  *  went too: the repair of a model that is already in the library (services/modelRepairService.ts). Everything
  *  else about the model stays as the owner left it. Removes the temp files either way.
@@ -1625,32 +1669,35 @@ export async function replaceModelFiles(
   const { inputs, coverImageUrl, galleryImages, profiles } = files;
   try {
     return await withPrintLock(printId, async () => {
-      const recorded = await prisma.plate.findMany({
-        where: { printId, print: { userId } },
-        select: { storagePath: true, sourcePath: true },
+      // Asked with the model's plates held, so one an upload adds after the look can't go with the old ones, and with
+      // the storage lock, so a plate a move is taking elsewhere isn't read as gone.
+      const replaced = await replaceModelPlates(userId, printId, inputs, async () => {
+        const recorded = await prisma.plate.findMany({
+          where: { printId, print: { userId } },
+          select: { storagePath: true, sourcePath: true },
+        });
+        // A model with no plates at all has nothing to take away, so it is always worth the files.
+        return recorded.length === 0 || (await modelFilesMissing(recorded));
       });
-      // A model with no plates at all has nothing to take away, so it is always worth the files.
-      if (recorded.length > 0 && !(await modelFilesMissing(recorded))) return null;
-
-      const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
+      if (!replaced) return null;
+      const { plates, galleryWhole, gallery } = replaced;
       // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
-      // of its pictures is taken from the source afresh instead of left half there -- but what the model has goes
+      // of its pictures is taken from the source afresh instead of left half there -- but what the model had goes
       // only once a picture is in to replace it: some of them may be the owner's own photographs, and a source
       // whose pictures can't be fetched would otherwise leave the gallery empty with nothing to bring it back.
       // The new ones land beside the old, which is why they take their places only here, renumbered as they go.
+      // Only the pictures the look was about go: one the owner added while the repair ran is theirs, and stays.
       if (!galleryWhole) {
-        const had = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
         // The files are in place by now, so a picture that won't come is no reason to call the repair a failure and
-        // leave the model out of the next one -- the look only ever reads the plates.
-        const stored = await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages).catch(
-          (error: unknown) => {
-            log.warn("couldn't bring a repaired model's gallery back", { print: printId, error });
-            return 0;
-          },
+        // leave the model out of the next one -- the look only ever reads the plates. Settled by the pictures it
+        // stored, as they're stored: a step after one that fails, as making it the cover can, leaves it in all the same.
+        const fetched: string[] = [];
+        await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages, undefined, (image) =>
+          fetched.push(image.id),
+        ).catch((error: unknown) =>
+          log.warn("couldn't bring a repaired model's gallery back", { print: printId, error }),
         );
-        if (stored > 0) {
-          for (const image of had) await removePreviewImage(printId, image.id).catch(() => undefined);
-        }
+        if (fetched.length > 0) await settleRepairedGallery(printId, gallery, fetched);
       }
       await applyProfileCovers(printId, profiles.covers);
       const [print, previewImages] = await Promise.all([

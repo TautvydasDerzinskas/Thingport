@@ -3,7 +3,7 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
-import { withStorageLock } from "../utils/storageLock";
+import { storageLockTurn, withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -12,21 +12,23 @@ import {
   availableModelName,
   availablePlateFilename,
   ensureAssetHome,
-  ensurePlateThumbnail,
   managedPlatePath,
+  read3mfThumbnails,
+  printFilePathFree,
   pruneEmptyStorageDirs,
+  relocatePlate,
   relocatePrint,
   removeAssetHome,
   assetOwnerIds,
   removePlatePictures,
   renderPlateStoragePath,
-  saveThumbFromFile,
+  saveThumbFromPictures,
 } from "./printService";
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
-import { printAssetHome } from "./modelAssets";
+import { printAssetHome, type AssetHome } from "./modelAssets";
 import { deleteAdapted3mfs } from "./adapted3mfCache";
-import { storePlateFormat } from "./threeMfFormat";
+import { keepPlateFormat, readPlateFormat, type PlateFormatReading } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
 import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
@@ -34,8 +36,9 @@ import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
-import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
+import { deleteAllPrintFiles, removePrintFileIfGone, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
+import { createKeyedLock, sleep } from "../utils/concurrency";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
 
@@ -91,13 +94,15 @@ export type PrintMetaInput = {
 
 /** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
  *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
- *  after a file saved at a path its row just freed); removing the temp file is not. */
+ *  after a file saved at a path its row just freed); removing the temp file is not. Its folder is made in the same
+ *  turn: one made before could be taken away, emptied, by a removal pruning it in between. */
 async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<string | null> {
-  await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
+  const folder = () => fs.mkdir(path.dirname(destAbsPath), { recursive: true });
   try {
     if (input.tempFilePath) {
       const tempFilePath = input.tempFilePath;
       await withStorageLock(async () => {
+        await folder();
         try {
           await fs.link(tempFilePath, destAbsPath);
         } catch (err: any) {
@@ -111,7 +116,10 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
     }
     if (input.copyFromPath) {
       const copyFromPath = input.copyFromPath;
-      await withStorageLock(() => fs.copyFile(copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL));
+      await withStorageLock(async () => {
+        await folder();
+        await fs.copyFile(copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+      });
       return destAbsPath;
     }
   } catch (err: any) {
@@ -147,21 +155,43 @@ async function resolveSize(input: NewPlateInput, effectivePath: string | null): 
   }
 }
 
-async function thumbnailAndSniff(plateId: string, filename: string, mime: string, effectivePath: string | null) {
-  if (!effectivePath || !fsSync.existsSync(effectivePath)) return;
+/** What a new plate's file is read for, nothing of it kept yet: the pictures its thumbnail is made of, and a 3MF's
+ *  format (`format` is set, if null, for a 3MF only). */
+type PlateReading = { pictures: Buffer[]; format?: PlateFormatReading | null };
+
+async function readPlateFile(filename: string, mime: string, filePath: string | null): Promise<PlateReading | null> {
+  if (!filePath || !fsSync.existsSync(filePath)) return null;
   const ext = path.extname(filename).toLowerCase();
   if (mime.toLowerCase().startsWith("image/") && IMAGE_EXTS.has(ext)) {
-    await saveThumbFromFile(plateId, effectivePath);
-  } else if (ext === ".3mf") {
-    await storePlateFormat(plateId, filename, effectivePath);
-    await ensurePlateThumbnail(plateId, effectivePath);
-    // "on-demand" builds the preview on first view, "disabled" never. Not awaited: it can be slow.
-    if ((await getPreviewMode()) === "automatic") void generateModelPreviewGlb(plateId, effectivePath);
+    const picture = await fs.readFile(filePath).catch(() => null);
+    return { pictures: picture ? [picture] : [] };
   }
+  if (ext === ".3mf") {
+    const format = await readPlateFormat(filename, filePath);
+    return { pictures: await read3mfThumbnails(filePath), format };
+  }
+  return null;
+}
+
+/** What `readPlateFile` found, kept as the plate's: its thumbnail, and a 3MF's format, or none where it had none. */
+async function keepPlateReading(plateId: string, reading: PlateReading | null): Promise<void> {
+  if (!reading) return;
+  // Only what the file says, kept to save reading it again: one not kept is read on the model's next open.
+  if (reading.format !== undefined) {
+    await keepPlateFormat(plateId, reading.format).catch((err: unknown) =>
+      console.warn(`Keeping the 3MF format of plate ${plateId} failed:`, err),
+    );
+  }
+  if (reading.pictures.length) await saveThumbFromPictures(plateId, reading.pictures);
+}
+
+/** The previews made of a plate's file in the background, from `filePath` once that's known to hold it. */
+async function startPreviews(plateId: string, filename: string, filePath: string): Promise<void> {
+  // "on-demand" builds the preview on first view, "disabled" never. Not awaited: it can be slow.
+  if ((await getPreviewMode()) !== "automatic") return;
+  if (path.extname(filename).toLowerCase() === ".3mf") void generateModelPreviewGlb(plateId, filePath);
   // Queued behind the GLB, which the model page needs first.
-  if (canRenderModelImage(filename) && (await getPreviewMode()) === "automatic") {
-    void generateCardRender(plateId, effectivePath, filename);
-  }
+  if (canRenderModelImage(filename)) void generateCardRender(plateId, filePath, filename);
 }
 
 export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourcePath">): string | null {
@@ -171,35 +201,75 @@ export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourceP
   return null;
 }
 
-export async function refreshAutoPreparedMetadata(printId: string): Promise<void> {
-  const plate0 = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
-  let metadata: Prisma.InputJsonValue | null = null;
-  if (plate0) {
-    const filePath = resolvePlateFilePath(plate0);
-    if (filePath) {
-      const sniffed = await inspectPreparedPrint(filePath, plate0.filename);
-      if (sniffed) metadata = sniffed as unknown as Prisma.InputJsonValue;
-    }
-  }
-  await prisma.print.update({
-    where: { id: printId },
-    data: { preparedMetadata: metadata === null ? Prisma.JsonNull : metadata },
+/** What a model's first plate reads as when it's a sliced print, which stands for a prepared print where the model has
+ *  none of its own; null when it isn't one. `first`, the plate that is or will be first; the first plate by default.
+ *  Its file is found under the storage lock, as a move renames a file before it saves where it went, and the reading
+ *  kept only when nothing else had the lock while it was read (storageLockTurn): a move then, even away and back, could
+ *  have put another file where it was read. Otherwise it's read again with the lock held throughout. */
+async function firstPlateReading(
+  printId: string,
+  first?: Plate | null,
+): Promise<Prisma.InputJsonValue | Prisma.NullTypes.JsonNull> {
+  const plate0 =
+    first === undefined ? await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } }) : first;
+  if (!plate0) return Prisma.JsonNull;
+  const look = async () => {
+    const plate = await prisma.plate.findUnique({ where: { id: plate0.id } });
+    return { plate, filePath: plate && resolvePlateFilePath(plate) };
+  };
+  const read = async ({ plate, filePath }: Awaited<ReturnType<typeof look>>) => {
+    if (!plate || !filePath) return Prisma.JsonNull;
+    const sniffed = await inspectPreparedPrint(filePath, plate.filename);
+    return sniffed ? (sniffed as unknown as Prisma.InputJsonValue) : Prisma.JsonNull;
+  };
+  const found = await withStorageLock(async () => ({ ...(await look()), turn: storageLockTurn() }));
+  const reading = await read(found);
+  if (await withStorageLock(async () => storageLockTurn() === found.turn + 1)) return reading;
+  return withStorageLock(async () => read(await look()));
+}
+
+/** Reads the model's first plate again for its prepared metadata, with the plate order held: a reorder between the
+ *  reading and its saving would leave the reading of a plate that's no longer first. */
+export function refreshAutoPreparedMetadata(printId: string): Promise<void> {
+  return withPlateOrder(printId, () => refreshPreparedReading(printId));
+}
+
+/** The same, for a caller holding the plate order already. */
+export async function refreshPreparedReading(printId: string): Promise<void> {
+  await prisma.print.update({ where: { id: printId }, data: { preparedMetadata: await firstPlateReading(printId) } });
+}
+
+/** Reads the model's first plate again when it's `plateId`, as after that plate was renamed: whether it's sliced goes
+ *  by its name too. Asked with the plate order held, as a reorder may have made it first, or not, since it was read. */
+export function refreshIfFirstPlate(printId: string, plateId: string): Promise<void> {
+  return withPlateOrder(printId, async () => {
+    const first = await prisma.plate.findFirst({
+      where: { printId },
+      orderBy: { position: "asc" },
+      select: { id: true },
+    });
+    if (first?.id === plateId) await refreshPreparedReading(printId);
   });
 }
 
 type CreatedPlate = { record: Plate; effectivePath: string | null };
 
+/** `made`, when given, has the plate from the moment its row is in until it's taken back: a step after that fails, and
+ *  whose taking back fails too, leaves it there for the caller to take back with the rest (withPlateBatch). */
 async function createPlateAtPosition(
   print: Pick<Print, "id" | "name" | "creator" | "tags" | "categoryId" | "userId" | "authorId" | "sourceProvider">,
   input: NewPlateInput,
   position: number,
+  made?: Plate[],
 ): Promise<CreatedPlate> {
   const sanitized = sanitizeFilename(input.filename);
   const folder = normalizeFolder(input.folder);
   const desiredFilename = await availablePlateFilename(print.id, sanitized, undefined, folder);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position, folder);
   const destAbsPath = path.join(STORAGE, storagePath);
-  const { effectivePath, contentSha256, marker } = await placePlateFile(input, destAbsPath);
+  const placed = await placePlateFile(input, destAbsPath);
+  const { contentSha256, marker } = placed;
+  let effectivePath = placed.effectivePath;
   const size = await resolveSize(input, effectivePath);
   const mime = input.mime || guessMimeFromPath(desiredFilename) || "application/octet-stream";
 
@@ -226,8 +296,73 @@ async function createPlateAtPosition(
     if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
     throw err;
   }
+  made?.push(record);
+  // To where the model's files are now: a rename of it while this was stored moved the plates it found, which this one
+  // wasn't among yet. Its file stays where it was put if it can't move, as one saved before a rename would.
+  await relocatePlate(record.id).catch((err: unknown) => {
+    console.warn(`Couldn't move ${desiredFilename}, just stored, to where model ${print.id}'s files are:`, err);
+  });
+  // Its file read where it is now, whoever moved it: the row read under the storage lock, which a move holds from
+  // renaming the file to saving where it went. The reading is trusted only when nothing else had the lock while it was
+  // made (storageLockTurn), as firstPlateReading's is: a move then could have taken the file away, or put another where
+  // it was read, even one gone again by now. Otherwise the file is read again with the lock held throughout. Nothing of
+  // a reading is kept before then: a thumbnail served once stays in a browser for good.
+  const findIt = async () => {
+    const now = await prisma.plate.findUnique({ where: { id: record.id } });
+    if (now) {
+      record = now;
+      // Only where its row says: a file at the place it was put first could be another's by now.
+      effectivePath = resolvePlateFilePath(now);
+    }
+  };
+  const readIt = () =>
+    readPlateFile(desiredFilename, mime, effectivePath).then(
+      (reading) => ({ reading }),
+      (err: unknown) => ({ err }),
+    );
 
-  await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+  try {
+    const turn = await withStorageLock(async () => {
+      await findIt();
+      return storageLockTurn();
+    });
+    let read = await readIt();
+    if (!(await withStorageLock(async () => storageLockTurn() === turn + 1))) {
+      read = await withStorageLock(async () => {
+        await findIt();
+        return readIt();
+      });
+    }
+    if ("err" in read) throw read.err;
+    await keepPlateReading(record.id, read.reading);
+    const at = effectivePath;
+    if (at && fsSync.existsSync(at)) await startPreviews(record.id, desiredFilename, at);
+  } catch (err) {
+    // Nothing of it left: the caller never learns this plate's id, so a retry would bring it in twice. Its row is read
+    // again under the storage lock, as a reorganisation may have moved its file meanwhile, and the file only goes once
+    // the row has: a plate listed without its file is worse than a file nothing lists.
+    let gone = false;
+    const removed = await withStorageLock(async () => {
+      const now = await prisma.plate.findUnique({ where: { id: record.id } });
+      if (now) {
+        await prisma.plate.delete({ where: { id: record.id } });
+        if (!input.sourcePath) await fs.rm(managedPlatePath(now), { force: true }).catch(() => undefined);
+      }
+      gone = true;
+      // Its pictures' folder read here too: a move of the model's pictures holds the lock, and once the row is gone,
+      // none takes this plate's along.
+      return { home: await printAssetHome(print.id) };
+    }).catch((failure: unknown) => {
+      console.error(`Couldn't take back the plate ${record.id} after its file couldn't be read:`, failure);
+      return null;
+    });
+    if (gone) {
+      const at = made?.findIndex((plate) => plate.id === record.id) ?? -1;
+      if (at >= 0) made?.splice(at, 1);
+    }
+    if (removed) await removePlatePictures(record.id, removed.home).catch(() => undefined);
+    throw err;
+  }
   // A print profile's facts are read once its import has settled. Loaded when used: the service reaches this file.
   if (record.sourceInstanceId) {
     void import("./printProfileService").then(({ scheduleProfileFill }) => scheduleProfileFill(print.id));
@@ -244,15 +379,47 @@ async function createPlateAtPosition(
  */
 export async function keepGeneratorScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
   if (!inputs.length) return;
+  // One model's at a time, from the look for a copy to the save: two imports of its profiles at once would each find
+  // none and both keep one.
+  return withScriptsKept(printId, () => keepScripts(userId, printId, inputs));
+}
+
+const withScriptsKept = createKeyedLock();
+
+/** `read`, tried again after a moment when it fails, as a database away for a moment makes it; null once it still
+ *  fails, for a caller that goes on without it. */
+async function readRetried<T>(read: () => Promise<T>, what: string): Promise<{ value: T } | null> {
+  let failure: unknown;
+  for (let tries = 0; tries < 3; tries++) {
+    if (tries) await sleep(250 * tries);
+    try {
+      return { value: await read() };
+    } catch (err) {
+      failure = err;
+    }
+  }
+  console.warn(`Couldn't ${what}:`, failure);
+  return null;
+}
+
+async function keepScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
   const keyOf = (filename: string, folder: string | null | undefined) =>
     `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
-  const stored = new Set(
-    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
-      keyOf(file.filename, file.folder),
-    ),
+  const stored = new Map<string, string[]>();
+  const keptNow = new Set<string>();
+  // Its looks never stop the caller, as a script that won't store doesn't: a repair has its plates in by now, and
+  // its licence and pictures still to bring back. One that can't look is left out rather than kept twice.
+  const listed = await readRetried(
+    () => prisma.printFile.findMany({ where: { printId }, select: { id: true, filename: true, folder: true } }),
+    `read model ${printId}'s files, so its generator scripts are left out`,
   );
+  if (!listed) return;
+  for (const file of listed.value) {
+    const key = keyOf(file.filename, file.folder);
+    stored.set(key, [...(stored.get(key) ?? []), file.id]);
+  }
   for (const input of inputs) {
     if (!input.tempFilePath) {
       // Nothing reaches here today -- every caller that passes a script passes a temp file, and the ones that
@@ -260,15 +427,37 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
       console.warn(`Couldn't keep the generator script ${input.filename}: it came with no temporary file.`);
       continue;
     }
-    // Compared as it will be stored, since that is the name a second copy would collide with.
-    const key = keyOf(sanitizeFilename(input.filename), input.folder);
-    if (stored.has(key)) continue;
+    // Compared as it will be stored, since that is the name a second copy would collide with. One whose file is gone
+    // for sure, a row a failed sweep of a repair left, makes way for this one rather than keep it out, as does one
+    // whose row another sweep has taken since the list was read.
+    const safeName = sanitizeFilename(input.filename);
+    const key = keyOf(safeName, input.folder);
+    if (keptNow.has(key)) continue;
+    let held = false;
+    for (const id of stored.get(key) ?? []) {
+      const gone = await removePrintFileIfGone(id).catch((err: unknown) => {
+        console.warn(`Couldn't tell whether model ${printId}'s copy of ${safeName} is gone, so it stays:`, err);
+        return false;
+      });
+      if (!gone) held = true;
+    }
+    if (held) continue;
+    // Asked again just before saving, as a copy saved since the list was read is one too.
+    const now = await readRetried(
+      () =>
+        prisma.printFile.findMany({
+          where: { printId, filename: { equals: safeName, mode: "insensitive" } },
+          select: { filename: true, folder: true },
+        }),
+      `look for a copy of ${safeName} on model ${printId}, so it's left out`,
+    );
+    if (!now || now.value.some((file) => keyOf(file.filename, file.folder) === key)) continue;
     try {
       // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
       await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain", {
         folder: input.folder,
       });
-      stored.add(key);
+      keptNow.add(key);
     } catch (err) {
       console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
     }
@@ -413,46 +602,308 @@ export async function discardPrintOrThrow(printId: string): Promise<void> {
   await removeAssetHome(home, assetOwners);
 }
 
-export async function addPlatesToPrint(
-  userId: string,
-  printId: string,
-  plateInputs: NewPlateInput[],
-): Promise<Plate[]> {
-  const print = await prisma.print.findFirst({ where: { id: printId, userId } });
-  if (!print) throw new Error("Print not found");
-  const maxPosition = await prisma.plate.aggregate({ where: { printId }, _max: { position: true } });
-  let nextPosition = (maxPosition._max.position ?? -1) + 1;
+/** One model's plate order at a time: where the next plate goes is read and taken, and the plates renumbered, by one
+ *  request at a time, so two can't take one place, nor one read the place another is passing through. */
+export const withPlateOrder = createKeyedLock();
 
+/** The model's plates in `ids`' order, through negative places first so no two meet on one; one transaction, so no
+ *  other request sees the places in between. `before` runs in it first. */
+export async function renumberPlates(ids: string[], before: Prisma.PrismaPromise<unknown>[] = []): Promise<void> {
+  await prisma.$transaction([
+    ...before,
+    ...ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: -(idx + 1) } })),
+    ...ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: idx } })),
+  ]);
+}
+
+/** Plates made from `inputs` after the model's others, each put in `made` as it's made, so a caller whose batch fails
+ *  part-way knows every one there is to take back. With the plate order held. */
+async function addPlatesAfter(print: Print, inputs: NewPlateInput[], made: Plate[] = []): Promise<Plate[]> {
+  const maxPosition = await prisma.plate.aggregate({ where: { printId: print.id }, _max: { position: true } });
+  let nextPosition = (maxPosition._max.position ?? -1) + 1;
   const created: Plate[] = [];
-  for (const input of plateInputs) {
-    const { record } = await createPlateAtPosition(print, input, nextPosition);
+  for (const input of inputs) {
+    const { record } = await createPlateAtPosition(print, input, nextPosition, made);
     created.push(record);
     nextPosition += 1;
   }
   return created;
 }
 
-/** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
-export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
-  const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-  const target = plates.find((p) => p.id === plateId);
-  if (!target) throw new HttpError(404, "Plate not found");
-  if (plates.length <= 1) {
-    throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
-  }
+export async function addPlatesToPrint(
+  userId: string,
+  printId: string,
+  plateInputs: NewPlateInput[],
+): Promise<Plate[]> {
+  return withPlateOrder(printId, async () => {
+    // Read once it's this one's turn: where the plates go is the model's place as it is then.
+    const print = await prisma.print.findFirst({ where: { id: printId, userId } });
+    if (!print) throw new Error("Print not found");
+    return addPlatesAfter(print, plateInputs);
+  });
+}
 
-  const remaining = plates.filter((p) => p.id !== target.id);
-  // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
-  await prisma.plate.delete({ where: { id: target.id } });
-  await prisma.$transaction(
-    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
+/**
+ * Runs `run` with the model's plate order held until it's done, for a request that adds plates and must take them back
+ * when a later step fails: no other change to the model's plates made through the plate order (adding, removing,
+ * reordering, merging, a repair of a model whose files are gone) comes in between, so the others are all still there
+ * and these can't become the model's only ones. `add` adds plates after the others, and `added` is every plate it has
+ * made so far, one that failed part-way included; when `run` fails, the ones it added are taken back as far as they can
+ * be, never the last of a model that had plates before them: one that can't be is logged and stays, and `run`'s own
+ * error is what the caller gets. A model that had none is left with none again, as it was.
+ */
+export async function withPlateBatch<T>(
+  userId: string,
+  printId: string,
+  run: (add: (inputs: NewPlateInput[]) => Promise<Plate[]>, added: readonly Plate[]) => Promise<T>,
+): Promise<T> {
+  return withPlateOrder(printId, async () => {
+    // Read once it's this one's turn: where the plates go is the model's place as it is then.
+    const print = await prisma.print.findFirst({ where: { id: printId, userId } });
+    if (!print) throw new HttpError(404, "Print not found");
+    const hadPlates = (await prisma.plate.count({ where: { printId } })) > 0;
+    const added: Plate[] = [];
+    try {
+      // The model read again for each: a step in between (a supporting file saved) can outlast a rename of it.
+      return await run(async (inputs) => {
+        const now = await prisma.print.findFirst({ where: { id: printId, userId } });
+        if (!now) throw new HttpError(404, "Print not found");
+        return addPlatesAfter(now, inputs, added);
+      }, added);
+    } catch (err) {
+      await takeBackPlates(printId, added, hadPlates).catch((failure: unknown) =>
+        console.error(`Couldn't take back the plates a failed request added to model ${printId}:`, failure),
+      );
+      throw err;
+    }
+  });
+}
+
+/** The plates a request added, taken back. Never the last of a model that had plates before them (`hadPlates`): one
+ *  left with none is a model the scan passes over, so those stay, and the caller says what went wrong. With the plate
+ *  order held. */
+async function takeBackPlates(printId: string, added: Plate[], hadPlates: boolean): Promise<void> {
+  if (!added.length) return;
+  const plates = await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
+  const ids = new Set(added.map((plate) => plate.id));
+  const gone = plates.filter((plate) => ids.has(plate.id));
+  if (!gone.length) return;
+  if (hadPlates && gone.length === plates.length) {
+    throw new Error("Taking them back would leave the model with no plate");
+  }
+  await afterPlatesRemoved(await removePlateRows(printId, gone, plates, true));
+}
+
+/** `picturesLeft` when the pictures' folder couldn't be read: the plates are gone all the same, and their pictures stay
+ *  where they are (a null `home` is a model from before, whose pictures are in the old shared folders). */
+type RemovedPlates = { plates: Plate[]; home: AssetHome; picturesLeft?: boolean };
+
+/**
+ * Takes `gone` out of the model's plates, `plates` in their order: their rows go and the others are renumbered in one
+ * transaction, with a new first plate's reading for the prepared metadata, as a reorder saves it (reorderPlates); then
+ * their files go. Under the storage lock, the rows read there, as a move holds it while it renames a file and saves
+ * where it went: a path read before it could be one the file has just left. The pictures' folder is read there too.
+ * With the plate order held. `takingBack`, plates a failed request added: they go even when the pictures' folder
+ * can't be read, as restorePlates' do.
+ */
+async function removePlateRows(
+  printId: string,
+  gone: Plate[],
+  plates: Plate[],
+  takingBack = false,
+): Promise<RemovedPlates> {
+  const ids = [...new Set(gone.map((plate) => plate.id))];
+  const rest = plates.filter((plate) => !ids.includes(plate.id));
+  // Read before the lock, which nothing else may use while a file is read through.
+  const reading =
+    plates[0] && ids.includes(plates[0].id)
+      ? [
+          prisma.print.update({
+            where: { id: printId },
+            data: { preparedMetadata: await firstPlateReading(printId, rest[0] ?? null) },
+          }),
+        ]
+      : [];
+  return withStorageLock(async () => {
+    // Before anything goes: a read that fails then leaves the plates there to remove again. Taking plates back, it
+    // costs only their pictures instead.
+    const found = await printAssetHome(printId).then(
+      (home) => ({ home }),
+      (err: unknown) => {
+        if (!takingBack) throw err;
+        console.warn(`Couldn't find model ${printId}'s pictures to take back the plates a failed request added:`, err);
+        return null;
+      },
+    );
+    const now = await prisma.plate.findMany({ where: { id: { in: ids } } });
+    await renumberPlates(
+      rest.map((plate) => plate.id),
+      [prisma.plate.deleteMany({ where: { id: { in: ids } } }), ...reading],
+    );
+    for (const plate of now) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
+    return { plates: now, home: found?.home ?? null, picturesLeft: !found };
+  });
+}
+
+/** What's left of plates whose rows and files have gone: their adapted copies, emptied folders and pictures. The
+ *  folders in a turn at the storage lock, as a file is put in one in a turn that makes it first (placeFile). */
+async function afterPlatesRemoved({ plates, home, picturesLeft }: RemovedPlates): Promise<void> {
+  for (const plate of plates) {
+    await deleteAdapted3mfs(plate.id).catch(() => undefined);
+    await withStorageLock(() => pruneEmptyStorageDirs(path.dirname(managedPlatePath(plate)))).catch(() => undefined);
+    if (!picturesLeft) await removePlatePictures(plate.id, home).catch(() => undefined);
+  }
+}
+
+/**
+ * The model's plates put back as `previous` were, after a replacement of them that stopped part-way
+ * (modelFilesReplace): the plates it made go, files, pictures and all, and `previous` take their place in the same
+ * transaction, so the model is never left with neither, and `reading`, the model's prepared reading with them, in it
+ * too. Under the storage lock, the rows read there, as removePlateRows does. With the plate order held since the old
+ * rows went, which whatever adds plates to a model takes, a merge included: the model's plates are then only those
+ * the replacement made (`made`, as the failed batch recorded them), or `previous` once a try whose answer was lost
+ * put them back.
+ */
+export async function restorePlates(
+  printId: string,
+  previous: Plate[],
+  reading?: { preparedMetadata: Prisma.JsonValue | null },
+  made: readonly Plate[] = [],
+): Promise<void> {
+  const removed = await withStorageLock(async () => {
+    const now = await prisma.plate.findMany({ where: { printId } });
+    const previousIds = new Set(previous.map((plate) => plate.id));
+    const nowIds = new Set(now.map((plate) => plate.id));
+    // Back already, by a try whose commit went in though its answer didn't (one transaction does it all): the plates
+    // now are the model's own, whose files and pictures stay, and of the replacement's only the pictures are left.
+    if (
+      previous.length &&
+      previous.every((plate) => nowIds.has(plate.id)) &&
+      now.every((plate) => previousIds.has(plate.id))
+    ) {
+      return { ...(await pictureHomeOf(printId)), plates: made.filter((plate) => !nowIds.has(plate.id)) };
+    }
+    const replacing = now.filter((plate) => !previousIds.has(plate.id));
+    // Their files first, where their rows say they are now: a plate put back can name the same place, as the
+    // replacement took the old names, and would point at the replacement's bytes were one to stay after the swap. One
+    // that won't go stops this before the swap, with the made rows still naming it, for a try after to take it then
+    // (force: one an earlier try took is no error).
+    for (const plate of replacing) await fs.rm(managedPlatePath(plate), { force: true });
+    // A place one of the model's other files, or another model's plate, took while the plates were out -- neither
+    // waits for this model's plate order -- stays theirs: the plate goes back where nothing is, its own file being gone
+    // anyway, rather than take their bytes for its own. This model's rows there are the replacement's, which go. A
+    // plate of another model takes its row outside the lock: one that comes after this look fails the swap on the
+    // path's uniqueness, rolled back whole, and the try after (putPlatesBack) finds it.
+    const takenElsewhere = async (at: string) => {
+      const plate = await prisma.plate.findUnique({ where: { storagePath: at }, select: { printId: true } });
+      if (plate) return plate.printId !== printId;
+      return Boolean(await prisma.printFile.findUnique({ where: { storagePath: at }, select: { id: true } }));
+    };
+    const reserved = new Set(previous.map((plate) => plate.storagePath));
+    const back: Plate[] = [];
+    for (const plate of previous) {
+      if (!(await takenElsewhere(plate.storagePath))) {
+        back.push(plate);
+        continue;
+      }
+      const storagePath = await freePlacePlateBeside(plate, reserved);
+      reserved.add(storagePath);
+      back.push({ ...plate, storagePath });
+    }
+    await prisma.$transaction([
+      prisma.plate.deleteMany({ where: { printId } }),
+      prisma.plate.createMany({
+        // The printability check, the profile and the format are nullable Json, which Prisma writes with a null of its
+        // own (providers/connections).
+        data: back.map((plate) => ({
+          ...plate,
+          qualityCheck: plate.qualityCheck === null ? Prisma.DbNull : (plate.qualityCheck as Prisma.InputJsonValue),
+          profile: plate.profile === null ? Prisma.DbNull : (plate.profile as Prisma.InputJsonValue),
+          format: plate.format === null ? Prisma.DbNull : (plate.format as Prisma.InputJsonValue),
+        })),
+      }),
+      // With the rows, so the model never has its old plates beside the replacement's reading, nor that reading without
+      // them.
+      ...(reading
+        ? [
+            prisma.print.update({
+              where: { id: printId },
+              data: {
+                preparedMetadata:
+                  reading.preparedMetadata === null
+                    ? Prisma.JsonNull
+                    : (reading.preparedMetadata as Prisma.InputJsonValue),
+              },
+            }),
+          ]
+        : []),
+    ]);
+    // Read once the rows are back: a read that fails then costs only the made plates' pictures, never the model its
+    // own plates, nor the caller the error it's putting them back for.
+    return { ...(await pictureHomeOf(printId)), plates: replacing };
+  });
+  await afterPlatesRemoved(removed);
+}
+
+/** Where a model's pictures are, for taking a failed repair's away; `picturesLeft` when that can't be read. */
+async function pictureHomeOf(printId: string): Promise<{ home: AssetHome; picturesLeft: boolean }> {
+  return printAssetHome(printId).then(
+    (home) => ({ home, picturesLeft: false }),
+    (err: unknown) => {
+      console.warn(`Couldn't find model ${printId}'s pictures to take back a failed repair's:`, err);
+      return { home: null, picturesLeft: true };
+    },
   );
-  await prisma.$transaction(
-    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
-  );
-  await deletePlateFiles(target);
-  await removePlatePictures(target.id, print.assetsPath);
-  if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
+}
+
+/** The first place numbered beside `plate`'s that nothing has, on disk or in a row, nor is `reserved` for a plate. */
+async function freePlacePlateBeside(plate: Plate, reserved: ReadonlySet<string>): Promise<string> {
+  const ext = path.extname(plate.storagePath);
+  const stem = plate.storagePath.slice(0, plate.storagePath.length - ext.length);
+  for (let suffix = 2; suffix <= 1000; suffix++) {
+    const candidate = `${stem} (${suffix})${ext}`;
+    if (!reserved.has(candidate) && (await printFilePathFree(candidate, ""))) return candidate;
+  }
+  throw new HttpError(409, `No free place to put plate ${plate.id} back`);
+}
+
+/** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
+export async function removePlate(print: Pick<Print, "id">, plateId: string): Promise<void> {
+  const removed = await withPlateOrder(print.id, async () => {
+    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    const found = plates.find((p) => p.id === plateId);
+    if (!found) throw new HttpError(404, "Plate not found");
+    if (plates.length <= 1) {
+      throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
+    }
+    return removePlateRows(print.id, [found], plates);
+  });
+  await afterPlatesRemoved(removed);
+}
+
+/**
+ * Puts the model's plates in `ids`' order, which must name each of them once. A new first plate's reading for the
+ * prepared metadata is saved in the same transaction as the order: neither is saved without the other, so asking again
+ * after a failure finds the old first plate and reads the new one again.
+ */
+export function reorderPlates(printId: string, ids: string[]): Promise<void> {
+  return withPlateOrder(printId, async () => {
+    const plates = await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    const byId = new Map(plates.map((plate) => [plate.id, plate]));
+    if (ids.length !== plates.length || new Set(ids).size !== ids.length || ids.some((id) => !byId.has(id))) {
+      throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids");
+    }
+    const reading =
+      ids[0] === plates[0]?.id
+        ? []
+        : [
+            prisma.print.update({
+              where: { id: printId },
+              data: { preparedMetadata: await firstPlateReading(printId, byId.get(ids[0])) },
+            }),
+          ];
+    await renumberPlates(ids, reading);
+  });
 }
 
 /** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
@@ -463,7 +914,7 @@ export async function renamePlate(print: Print, plateId: string, filename: strin
   if (nextFilename !== plate.filename) {
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
-    if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
+    await refreshIfFirstPlate(print.id, plate.id);
   }
   return nextFilename;
 }

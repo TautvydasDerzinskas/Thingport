@@ -766,7 +766,7 @@ describe("merging models", () => {
     expect(fs.existsSync(assetTarget(after.assetsPath!, galleryImageFile(image!.id)))).toBe(true);
   });
 
-  it("leaves a file where it is rather than overwrite one another move just put at its destination", async () => {
+  it("puts a file beside its place when another move filled the place while it waited, rather than over it", async () => {
     const category = await makeCategory("category");
     // Names that differ only in characters a path can't hold render the same place, and neither has moved yet.
     const models = [
@@ -778,26 +778,39 @@ describe("merging models", () => {
     const holding = withStorageLock(() => released);
     const since = stage.lockCalls;
     const move = (model: Model) => relocatePrint({ ...model, categoryId: category.id }, model.plates);
-    const moves = models.map(move);
+    const moves = Promise.allSettled(models.map(move));
 
-    // Each has picked its place, and found it free, by the time it asks for the lock.
-    await queuedAtLock(since, 2).finally(release);
-    await holding;
-    const settled = await Promise.allSettled(moves);
-
-    const refused = models.filter((_, index) => settled[index].status === "rejected");
-    expect(refused).toHaveLength(1);
-    const refusal = settled.find((result) => result.status === "rejected") as PromiseRejectedResult;
-    expect(refusal.reason).toMatchObject({
-      status: 409,
-      message: expect.stringContaining("Storage path already exists"),
-    });
-    // Asked again, it sees the place is taken, and goes beside it.
-    await move(refused[0]);
-    for (const model of models) {
-      const { storagePath } = await prisma.plate.findUniqueOrThrow({ where: { id: model.plates[0].id } });
-      expect(fs.readFileSync(stored(storagePath), "utf8")).toBe(`solid ${model.name} part.stl`);
+    // Both read their models before either moved anything, and wait their turn at the lock. Both are done before the
+    // test is, whether they got there or not.
+    try {
+      await queuedAtLock(since, 2);
+    } finally {
+      release();
+      await holding;
+      await moves;
     }
+    // Each picks its place at its turn, so the second finds the first's file there and goes beside it.
+    expect((await moves).map((result) => result.status)).toEqual(["fulfilled", "fulfilled"]);
+    const places = await Promise.all(
+      models.map((model) => prisma.plate.findUniqueOrThrow({ where: { id: model.plates[0].id } })),
+    );
+    models.forEach((model, index) => {
+      expect(fs.readFileSync(stored(places[index].storagePath), "utf8")).toBe(`solid ${model.name} part.stl`);
+    });
+    // Both moved into the category, whichever went first: one at the place they share, the other beside it, in a folder
+    // named after its model.
+    for (const place of places) expect(place.storagePath).toContain(category.name);
+    const aside = places.filter((place, index) => place.storagePath.includes(`/${models[index].id}/`));
+    expect(aside).toHaveLength(1);
+    const shared = places.find((place) => !aside.includes(place))!;
+    expect(aside[0].storagePath).toBe(
+      path.join(path.dirname(shared.storagePath), models[places.indexOf(aside[0])].id, "part.stl"),
+    );
+    // Their pictures' folders too, into the category: the second is picked beside the first's rather than being the
+    // same one.
+    const homes = await prisma.print.findMany({ where: { id: { in: models.map((model) => model.id) } } });
+    for (const home of homes) expect(home.assetsPath).toContain(category.name);
+    expect(new Set(homes.map((home) => home.assetsPath)).size).toBe(2);
   });
 
   it("refuses a file added to the kept model after it read them", async () => {

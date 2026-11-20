@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Router, type Request, type Response } from "express";
+import { create as contentDisposition } from "content-disposition";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
@@ -29,7 +30,7 @@ import { fillSourceGaps } from "../services/fillGapsService";
 import { linkPrintToSource } from "../services/modelLinkService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { adapt3mfStatus, adapted3mfFor, isAdaptable3mf } from "../services/adapted3mfCache";
-import { ensurePlateFormat, fillPlateFormats } from "../services/threeMfFormat";
+import { ensurePlateFormat, fillPlateFormats, PLATE_MOVED } from "../services/threeMfFormat";
 import { planAdaptation, slicerProfile, type AdaptPlan, type PrinterRecipe } from "../adapter";
 import { printerTarget } from "../printers/targets";
 import {
@@ -89,6 +90,52 @@ async function createdWithTool(
   return tool ? { kind: "tool", ref: tool.slug } : null;
 }
 
+/** A folder as an upload named it, for matching a .gltf's references only: its separators made one kind and its
+ *  empty and "." levels dropped, so "/parts" and "parts/" are "parts", but its spaces kept as sent ("A  B"). */
+function lookupFolder(raw: string): string | null {
+  const levels = raw.split(/[\\/]+/).filter((level) => level !== "" && level !== ".");
+  return levels.length ? levels.join("/") : null;
+}
+
+/** A JSON list of one folder, or null, for each file; undefined where it was left out. */
+function folderList(field: string, raw: string | undefined, count: number): (string | null)[] | undefined {
+  if (raw === undefined) return undefined;
+  let list: unknown;
+  try {
+    list = JSON.parse(raw);
+  } catch {
+    throw new HttpError(400, `${field} must be a JSON list`);
+  }
+  if (!Array.isArray(list) || list.length !== count || list.some((each) => each !== null && typeof each !== "string")) {
+    throw new HttpError(400, `${field} must list one folder, or null, for each file`);
+  }
+  return list as (string | null)[];
+}
+
+/** `folders`: a JSON list beside the files, each one's folder within the upload or null; left out, every file is at
+ *  the top. `source_folders`, as long, is where each was in what the user picked, for a .gltf's references only
+ *  (UploadedFile.sourceFolder), as a scene can name a file outside the folder its model keeps: `folders` where it's
+ *  left out. */
+function uploadFolders(
+  raw: string | undefined,
+  rawSources: string | undefined,
+  files: Express.Multer.File[],
+): Map<Express.Multer.File, { folder: string | null; source: string | null }> {
+  const out = new Map<Express.Multer.File, { folder: string | null; source: string | null }>();
+  const folders = folderList("folders", raw, files.length);
+  const sources = folderList("source_folders", rawSources, files.length) ?? folders;
+  if (!folders && !sources) return out;
+  files.forEach((file, index) => {
+    const folder = folders?.[index] ?? null;
+    const source = sources?.[index] ?? null;
+    out.set(file, {
+      folder: folder === null ? null : normalizeFolder(folder),
+      source: source === null ? null : lookupFolder(source),
+    });
+  });
+  return out;
+}
+
 router.post(
   "/upload",
   modelUpload.array("files"),
@@ -123,10 +170,16 @@ router.post(
       };
 
       const printsOut = [];
-      // One model per file, or one holding them all.
+      // One model per file, or one holding them all, each of its files in the folder it came from ("docs"), a lone file
+      // too: a zip's "parts/body.stl" goes up alone when its photo goes to the gallery. A model per file has no folders.
+      const folders = uploadFolders(body.folders, body.source_folders, files);
       const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
       for (const group of groups) {
-        const print = await createUploadedModel(req.userId!, meta, group);
+        const withFolders = group.map((f) => {
+          const placed = groups.length === 1 ? folders.get(f) : undefined;
+          return { ...f, folder: placed?.folder ?? null, sourceFolder: placed?.source ?? null };
+        });
+        const print = await createUploadedModel(req.userId!, meta, withFolders);
         for (const f of group) pending.delete(f);
         created.push({ id: print.id, name: print.title || print.name });
         printsOut.push(await printOutById(req.userId!, print.id));
@@ -236,11 +289,14 @@ router.get(
   "/print/:id",
   asyncHandler(async (req, res) => {
     // Counts owner views too: lastViewedAt drives Browsing History. Another user's views of a shared model are theirs,
-    // and nothing of the owner's.
-    await prisma.print.updateMany({
-      where: { id: req.params.id, userId: req.userId },
-      data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
-    });
+    // and nothing of the owner's. record=false reads it without counting a view, as an app checking what a change it
+    // made left behind does.
+    if (req.query.record !== "false") {
+      await prisma.print.updateMany({
+        where: { id: req.params.id, userId: req.userId },
+        data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
+      });
+    }
     // An older 3MF's kind, read once, so the page knows which slicers get an adapted copy of it.
     await fillPlateFormats(
       { printId: req.params.id, print: await readablePrintWhere(req.userId!) },
@@ -517,18 +573,44 @@ type PrinterAsked = { id: string; nozzle: string } | null;
 type Adaptation = { plan: AdaptPlan; printer: PrinterRecipe | null };
 
 /** The copy of the plate to open in `slicer` (src/adapter/plan.ts), or null to open the plate itself. With a printer
- *  the slicer has a preset for, the copy is made for that printer. */
+ *  the slicer has a preset for, the copy is made for that printer. PLATE_MOVED when the plate's file was moved away
+ *  from `filePath` while its format was read. */
 async function adaptPlanFor(
   plate: ReadablePlate,
   filePath: string,
   slicer: unknown,
   printer: PrinterAsked = null,
-): Promise<Adaptation | null> {
+): Promise<Adaptation | null | typeof PLATE_MOVED> {
   if (!adaptable(plate) || typeof slicer !== "string") return null;
   const target = printer ? printerTarget(slicer, printer.id, printer.nozzle) : null;
-  const plan = planAdaptation(await ensurePlateFormat(plate, filePath), slicerProfile(slicer), target?.choice);
+  const format = await ensurePlateFormat(plate, filePath);
+  if (format === PLATE_MOVED) return PLATE_MOVED;
+  const plan = planAdaptation(format, slicerProfile(slicer), target?.choice);
   if (!plan) return null;
   return { plan, printer: plan.output === "bambu" && plan.printer && target ? target.recipe : null };
+}
+
+// Reads of a plate a move keeps taking from under a request, before it's served from where it was last read.
+const PLATE_LOOKS = 3;
+
+/** The readable plate, where its file is, and the copy of it to open in `slicer` (adaptPlanFor). Read again when it
+ *  moved while that was worked out, or by the time it was: what's handed on is then the plate's file where it is now,
+ *  rather than a place it has left. */
+async function adaptedPlate(
+  req: Request,
+  slicer: unknown,
+  printer: PrinterAsked = null,
+): Promise<{ plate: ReadablePlate; filePath: string; adapt: Adaptation | null }> {
+  for (let look = 1; ; look++) {
+    const { plate, filePath } = await readablePlate(req);
+    const adapt = await adaptPlanFor(plate, filePath, slicer, printer);
+    const now =
+      adapt === PLATE_MOVED
+        ? null
+        : await prisma.plate.findUnique({ where: { id: plate.id }, select: { storagePath: true, sourcePath: true } });
+    const stayed = now?.storagePath === plate.storagePath && now.sourcePath === plate.sourcePath;
+    if (stayed || look >= PLATE_LOOKS) return { plate, filePath, adapt: adapt === PLATE_MOVED ? null : adapt };
+  }
 }
 
 const printerAskedSchema = z
@@ -541,7 +623,8 @@ const NORMALIZED_FOR = "prusaslicer";
 
 function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
   res.setHeader("Content-Type", plate.mime || "application/octet-stream");
-  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(plate.filename)}"`);
+  // The name as it is (a name beyond ASCII also as filename*): percent-escaped, it was saved as "Body%20v2.stl".
+  res.setHeader("Content-Disposition", contentDisposition(plate.filename));
   res.setHeader("Cache-Control", "private, max-age=86400");
   res.sendFile(path.resolve(filePath));
 }
@@ -549,16 +632,17 @@ function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
 router.get(
   "/print/:id/plate/:plateId/file/:filename",
   asyncHandler(async (req, res) => {
-    const { plate, filePath } = await readablePlate(req);
-    const adapt = req.query.normalize === "1" ? await adaptPlanFor(plate, filePath, NORMALIZED_FOR) : null;
+    const { plate, filePath, adapt } =
+      req.query.normalize === "1"
+        ? await adaptedPlate(req, NORMALIZED_FOR)
+        : { ...(await readablePlate(req)), adapt: null };
     const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan) : null;
     sendPlateFile(res, plate, adapted ?? filePath);
   }),
 );
 
 async function sendAdapted(req: Request, res: Response, printer: PrinterAsked) {
-  const { plate, filePath } = await readablePlate(req);
-  const adapt = await adaptPlanFor(plate, filePath, req.params.slicer, printer);
+  const { plate, filePath, adapt } = await adaptedPlate(req, req.params.slicer, printer);
   const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan, adapt.printer) : null;
   sendPlateFile(res, plate, adapted ?? filePath);
 }
@@ -587,9 +671,8 @@ const adaptBodySchema = z.object({ slicer: z.unknown(), printer: printerAskedSch
 router.post(
   "/print/:id/plate/:plateId/adapt",
   asyncHandler(async (req, res) => {
-    const { plate, filePath } = await readablePlate(req);
     const body = parseBody(adaptBodySchema, req.body ?? {});
-    const adapt = await adaptPlanFor(plate, filePath, body.slicer, body.printer ?? null);
+    const { plate, filePath, adapt } = await adaptedPlate(req, body.slicer, body.printer ?? null);
     res.json({ status: adapt ? await adapt3mfStatus(plate.id, filePath, adapt.plan, adapt.printer) : "original" });
   }),
 );
@@ -598,9 +681,10 @@ router.post(
 router.post(
   "/print/:id/plate/:plateId/normalize",
   asyncHandler(async (req, res) => {
-    const { plate, filePath } = await readablePlate(req);
-    if (!adaptable(plate)) throw new HttpError(400, "Only a plain 3MF project can be normalized.");
-    const adapt = await adaptPlanFor(plate, filePath, NORMALIZED_FOR);
+    if (!adaptable((await readablePlate(req)).plate)) {
+      throw new HttpError(400, "Only a plain 3MF project can be normalized.");
+    }
+    const { plate, filePath, adapt } = await adaptedPlate(req, NORMALIZED_FOR);
     // Ready to open: the file itself, when it isn't a project a copy is made of.
     res.json({ status: adapt ? await adapt3mfStatus(plate.id, filePath, adapt.plan) : "ready" });
   }),

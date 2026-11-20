@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import IconButton from "@mui/material/IconButton";
@@ -11,6 +11,7 @@ import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DownloadIcon from "@mui/icons-material/Download";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,7 +29,7 @@ import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutl
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, PrintApiError, printsApi } from "../../api/prints";
+import { type Print, type PrintFile, PrintApiError, printsApi } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { aiDescriptionsApi } from "../../api/aiDescriptions";
 import { useToast } from "../../components/ToastProvider";
@@ -45,13 +46,14 @@ import StudioFileMenu from "./StudioFileMenu";
 import SlicerFileMenu, { type MenuAnchor } from "./SlicerFileMenu";
 import AdaptedInfoIcon from "./AdaptedInfoIcon";
 import { useAdaptedOpen } from "./useAdaptedOpen";
-import DownloadPickerDialog from "./DownloadPickerDialog";
+import DownloadPickerDialog, { type SupportingFilesState } from "./DownloadPickerDialog";
 import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
 import FillGapsDialog from "./FillGapsDialog";
 import { useAiOutcomeWatch } from "./useAiOutcomeWatch";
 import { useCustomize } from "./useCustomize";
 import { useCopyToLibrary } from "./useCopyToLibrary";
+import { useSupportingFiles } from "../../components/supportingFiles/useSupportingFiles";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
@@ -59,6 +61,8 @@ type Props = {
   onUnauthorized?: () => void;
   onDeleted: () => void;
   onUpdated?: (print: Print) => void;
+  /** A download's count, for the owner of the model's state to put in (useDownloadPrint). */
+  onCounted?: (printId: string, printCount: number) => void;
   /** Only for a real collection; shows "Remove from collection". */
   collectionId?: string;
   onRemovedFromCollection?: () => void;
@@ -72,6 +76,8 @@ type Props = {
   onContextMenuClose?: () => void;
   /** Offers linking a model with no source to its page on a provider. */
   offerLink?: boolean;
+  /** "Add supporting files" through the page's own, so its uploads show there; a card's menu adds them itself. */
+  onAddSupportingFiles?: () => void;
 };
 
 /** The "..." menu for a model, shared by the detail header and grid cards. */
@@ -80,6 +86,7 @@ export default function ModelActionsMenu({
   onUnauthorized,
   onDeleted,
   onUpdated,
+  onCounted,
   collectionId,
   onRemovedFromCollection,
   onCollectionCountChange,
@@ -89,8 +96,33 @@ export default function ModelActionsMenu({
   contextMenuAt,
   onContextMenuClose,
   offerLink = false,
+  onAddSupportingFiles,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  // What this menu last gave the list, beside the model as drawn then. A card's list takes whole models, so a download
+  // count with no onCounted to put it in goes into the one given where the list hasn't drawn it yet (a file just
+  // added), rather than into the model as drawn, which would take that file back out of the card.
+  const shown = useRef(print);
+  useEffect(() => {
+    shown.current = print;
+  });
+  const given = useRef<{ print: Print; over: Print } | null>(null);
+  const giveToList = (next: Print) => {
+    // A download count only grows: a model read before the last count came in doesn't take it back down.
+    let count = next.print_count;
+    for (const each of [shown.current, given.current?.print]) {
+      if (each?.id === next.id) count = Math.max(count, each.print_count);
+    }
+    const held = count === next.print_count ? next : { ...next, print_count: count };
+    given.current = { print: held, over: shown.current };
+    onUpdated?.(held);
+  };
+  const countInList = (printId: string, printCount: number) => {
+    const now = given.current?.over === shown.current ? given.current.print : shown.current;
+    if (now.id === printId) giveToList({ ...now, print_count: Math.max(now.print_count, printCount) });
+  };
+  const toList = onUpdated ? giveToList : undefined;
+  const counted = onCounted ?? (onUpdated ? countInList : undefined);
   const toolOwned = Boolean(print.tool_id);
   // Another user's model, from one of their public collections: everything that uses it, nothing that changes it.
   const owner = print.owner ?? null;
@@ -145,7 +177,7 @@ export default function ModelActionsMenu({
     downloadAllZip,
     sortedPlates,
     recordUse,
-  } = useDownloadPrint(print, onUnauthorized, onUpdated);
+  } = useDownloadPrint(print, onUnauthorized, toList, counted);
 
   // A point rather than anchorPosition, so the slicer pickers this menu hands over to open in the same place.
   const menuAnchor: MenuAnchor =
@@ -159,9 +191,63 @@ export default function ModelActionsMenu({
     onContextMenuClose?.();
   };
 
+  // A card's model has only how many supporting files it holds: the picker reads them when it opens. They're kept with
+  // the model they're of, as the page header keeps this menu across models, and shown only while it has some. Null
+  // files: the read failed, which the picker says, with a retry.
+  const [readSupporting, setReadSupporting] = useState<{ printId: string; files: PrintFile[] | null } | null>(null);
+  // Only the newest read lands, a retry's too: one for a model the menu has since left would put that model's answer
+  // in place of this one's.
+  const latestSupportingRead = useRef(0);
+  // Taken when an answer lands, so a new function from the page doesn't read the files again.
+  const unauthorized = useRef(onUnauthorized);
+  useEffect(() => {
+    unauthorized.current = onUnauthorized;
+  });
+  const readSupportingFiles = useCallback((printId: string) => {
+    const read = ++latestSupportingRead.current;
+    printsApi.listFiles(printId).then(
+      (files) => {
+        if (read === latestSupportingRead.current) setReadSupporting({ printId, files });
+      },
+      (err: unknown) => {
+        if (read !== latestSupportingRead.current) return;
+        // A session that ended goes where the app renews it or signs in again; still said as failed, with a retry, in
+        // case the server couldn't be reached to renew it.
+        if (err instanceof UnauthorizedError) unauthorized.current?.();
+        setReadSupporting({ printId, files: null });
+      },
+    );
+  }, []);
+  useEffect(() => {
+    if (!pickerOpen || print.supporting_files || !print.supporting_file_count) return;
+    readSupportingFiles(print.id);
+    return () => {
+      latestSupportingRead.current += 1;
+      // Each opening reads them afresh, and shows them loading till then: the list the last one read may be gone.
+      setReadSupporting(null);
+    };
+  }, [pickerOpen, print.id, print.supporting_files, print.supporting_file_count, readSupportingFiles]);
+  const supportingRead =
+    !print.supporting_files && print.supporting_file_count && readSupporting?.printId === print.id
+      ? readSupporting
+      : null;
+  const supportingFiles = print.supporting_files ?? supportingRead?.files ?? undefined;
+  const supportingState: SupportingFilesState | undefined =
+    print.supporting_files || !print.supporting_file_count
+      ? undefined
+      : !supportingRead
+        ? "loading"
+        : supportingRead.files === null
+          ? "failed"
+          : undefined;
+  const retrySupporting = () => {
+    setReadSupporting(null);
+    readSupportingFiles(print.id);
+  };
+
   const customize = useCustomize(print, closeMenu, onUnauthorized);
   const studio = useOpenInStudio(print, onUnauthorized);
-  const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
+  const library = useCopyToLibrary(print, onUnauthorized, toList);
   const libraryCopyId = print.library_copy_id ?? null;
 
   const openEdit = () => {
@@ -229,7 +315,7 @@ export default function ModelActionsMenu({
 
   // A model in a folder has no category yet as far as AI is concerned; categorizing it moves it out.
   const uncategorized = !print.category_id || print.category_kind === "folder";
-  const queueWatched = useAiOutcomeWatch(print.id, onUpdated);
+  const queueWatched = useAiOutcomeWatch(print.id, toList);
   const recategorize = async (force = false) => {
     closeMenu();
     setRecategorizing(true);
@@ -256,7 +342,7 @@ export default function ModelActionsMenu({
   };
 
   // A description streams for as long as the model keeps writing; on a CPU that's minutes.
-  const queueDescription = useAiOutcomeWatch(print.id, onUpdated, 60 * 60_000);
+  const queueDescription = useAiOutcomeWatch(print.id, toList, 60 * 60_000);
   const improveDescription = async () => {
     closeMenu();
     setImproving(true);
@@ -279,6 +365,30 @@ export default function ModelActionsMenu({
   const { slicerOption, targets: slicerTargets, adaptedTargets } = useOpenInSlicer(print);
   const openInSlicerHref = slicerTargets.length === 1 ? slicerTargets[0].href : undefined;
   const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized);
+  // Only where the page has none of its own to hand the picking to.
+  const {
+    pick: pickOwnSupporting,
+    bindInput: bindOwnSupportingInput,
+    onPicked: onOwnSupportingPicked,
+    download: downloadSupportingFile,
+  } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, toList, onUnauthorized);
+  const addSupportingFiles = onAddSupportingFiles ?? pickOwnSupporting;
+  // Busy like the picker's other downloads, so a second click doesn't start another: by the model it's of, as theirs
+  // (useDownloadPrint), so one still on its way after the header's menu has moved on doesn't hold the next model's.
+  const [supportingBusy, setSupportingBusy] = useState<readonly string[]>([]);
+  const downloadingSupporting = supportingBusy.includes(print.id);
+  const downloadSupporting = async (file: PrintFile) => {
+    const id = print.id;
+    setSupportingBusy((ids) => [...ids, id]);
+    try {
+      await downloadSupportingFile(file);
+    } finally {
+      setSupportingBusy((ids) => {
+        const at = ids.indexOf(id);
+        return at < 0 ? ids : ids.toSpliced(at, 1);
+      });
+    }
+  };
   const adaptedMenuLabel = (slicer: string) => {
     const state = adaptedTargets.length === 1 ? adapted.stateOf(adaptedTargets[0]) : "idle";
     if (state === "preparing") return t("models:detail.adaptPreparing");
@@ -288,6 +398,15 @@ export default function ModelActionsMenu({
 
   return (
     <>
+      {!onAddSupportingFiles && (
+        <input
+          ref={bindOwnSupportingInput}
+          type="file"
+          multiple
+          hidden
+          onChange={(event) => onOwnSupportingPicked(event.currentTarget)}
+        />
+      )}
       <Tooltip title={t("common:moreActions")}>
         <span>
           <IconButton
@@ -381,6 +500,18 @@ export default function ModelActionsMenu({
                 <EditIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>{t("common:edit")}</ListItemText>
+            </MenuItem>,
+            <MenuItem
+              key="supporting"
+              onClick={() => {
+                closeMenu();
+                addSupportingFiles();
+              }}
+            >
+              <ListItemIcon>
+                <AttachFileIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("models:supporting.addMenu")}</ListItemText>
             </MenuItem>,
             <MenuItem key="delete" onClick={handleDelete}>
               <ListItemIcon>
@@ -569,8 +700,13 @@ export default function ModelActionsMenu({
       <DownloadPickerDialog
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        downloading={downloading}
+        downloading={downloading || downloadingSupporting}
         sortedPlates={sortedPlates}
+        supportingCount={print.supporting_file_count}
+        supportingFiles={supportingFiles}
+        supportingState={supportingState}
+        onRetrySupporting={retrySupporting}
+        downloadSupporting={(file) => void downloadSupporting(file)}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}
@@ -593,7 +729,7 @@ export default function ModelActionsMenu({
           print={print}
           onClose={closeEdit}
           onUnauthorized={onUnauthorized}
-          onUpdated={(updated) => onUpdated?.(updated)}
+          onUpdated={giveToList}
           viewer={viewer}
         />
       )}
@@ -604,7 +740,7 @@ export default function ModelActionsMenu({
           print={print}
           gaps={sourceGaps}
           onClose={() => setFillGapsOpen(false)}
-          onUpdated={(updated) => onUpdated?.(updated)}
+          onUpdated={giveToList}
           onUnauthorized={onUnauthorized}
         />
       )}
@@ -613,7 +749,7 @@ export default function ModelActionsMenu({
         <LinkSourceDialog
           print={print}
           onClose={() => setLinkOpen(false)}
-          onLinked={(updated) => onUpdated?.(updated)}
+          onLinked={giveToList}
           onUnauthorized={onUnauthorized}
         />
       )}

@@ -203,6 +203,9 @@ export type PrintOut = {
   /** Any plate carries colours of its own; see PlateOut.own_colors. */
   own_colors: boolean;
   supporting_file_count: number;
+  /** From the detail fetch: the files kept beside the model that aren't plates (instructions, notes, sources), by name.
+   *  Absent from list endpoints, which have only the count. */
+  supporting_files?: PrintFileOut[];
   /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
    *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
    *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */

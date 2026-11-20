@@ -26,8 +26,13 @@ Select several files in the picker. Thingport asks how to import them:
 
 - **Import as separate prints** makes each file its own model, named after the file.
 - **Import as one model with several files** puts them all in a single new model, for when the files belong together,
-  like the parts of one print. STL, 3MF, STEP, OBJ and glTF files are added in the order you picked them, and
-  anything else, such as a photo or a PDF, is attached to the model.
+  like the parts of one print. STL, 3MF, STEP, OBJ and glTF files are added in the order you picked them, photos
+  become the model's photos (with no model file among them, the pictures are the model's files instead), and anything
+  else, such as a PDF, is attached to the model. A photo is a PNG, JPG, WebP or BMP of up to 8 MiB: a larger picture,
+  or a GIF, is attached like a PDF.
+
+A document picked on its own, like a PDF or notes, can't be a model by itself: Thingport says so rather than uploading
+it. Pick it together with the model's files and choose one model.
 
 Close the dialog to cancel without uploading anything.
 
@@ -53,23 +58,27 @@ Pick a `.zip` in **Upload files**, on its own or alongside other files. For each
   keep, for example a designer's release you might download again.
 - **Import and unzip** opens the archive and lists everything in it, all ticked.
 
-![Choosing which files to import from a zip](images/zip-choose-files.png)
+![Choosing which files to import from a zip, and how they become models](images/zip-choose-files.png)
 
 Untick what you don't want, or use **Clear** and tick just the files you need, then click **Import selected**.
 
-When you unzip:
+Under the list, **Import as** says how the files become models:
 
-- Each model file becomes its own model, and each image its own model too. Untick images if you don't want them as
-  models.
-- Folders inside the ZIP become folders in Thingport, however deeply nested. `Desk Organizer/Drawers/drawer.stl`
-  becomes a "drawer" model in a **Drawers** folder inside a **Desk Organizer** folder.
-- Files Thingport can't use on their own, like text files and PDFs, are skipped.
-- Junk that macOS adds to archives (`__MACOSX`, `.DS_Store`) is left out of the list.
+- **One model** (the default) puts every file you ticked into one model named after the ZIP: its model files are the
+  model's files, its pictures its photos (or its files, when no model file is ticked), and anything else, like a PDF
+  manual, is attached. As when you pick files, only a PNG, JPG, WebP or BMP of up to 8 MiB is a photo; a larger
+  picture, or a GIF, is attached. Folders inside the ZIP stay as folders within the model, below the folder every ticked file
+  shares: `Kit/body.stl` and `Kit/docs/guide.pdf` give `body.stl` at the top and `guide.pdf` in `docs`. Use this for a
+  model downloaded from a site.
+- **A model per folder** works like [Each folder is one model](upload-folders.md#each-folder-is-one-model) for a
+  folder: each folder with model files becomes a model, with its documents and pictures. Use this for a library kept
+  as one model per folder. It's offered when the ZIP has such folders.
+- **A model per file** makes each model file its own model, and each image its own model too. Folders inside the ZIP
+  become folders in Thingport. Files that can't be a model on their own, like PDFs, aren't uploaded, and Thingport says
+  which ones.
 
-If you pick several ZIPs, Thingport asks about each in turn. Files you picked alongside them upload first.
-
-When a ZIP holds a library organized as one model per folder, extract it and use [Upload a folder](upload-folders.md)
-with **Each folder is one model** instead. Unzipping in the browser always makes one model per file.
+Junk that macOS adds to archives (`__MACOSX`, `.DS_Store`) is left out of the list. If you pick several ZIPs,
+Thingport asks about each in turn. Files you picked alongside them upload first.
 
 ## When something goes wrong
 

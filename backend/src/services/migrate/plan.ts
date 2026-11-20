@@ -105,7 +105,8 @@ export async function readPlan(
   ] = await Promise.all([
     source.print.count({ where: { toolId: null } }),
     source.plate.count({ where: ownModel }),
-    source.printFile.count({ where: ownModel }),
+    // As the merge brings them: not a save the other instance hadn't finished.
+    source.printFile.count({ where: { ...ownModel, ready: true } }),
     source.collection.count({ where: { toolId: null } }),
     source.studioDesign.count(),
     source.customWidget.count(),
@@ -162,6 +163,16 @@ export async function readPlan(
   };
 }
 
+/** The model files the copy lists, as a merge brings them: models' plates, and their files whose saves were done. */
+export async function countModelFiles(source: PrismaClient): Promise<number> {
+  const ownModel = { print: { toolId: null } };
+  const [plates, printFiles] = await Promise.all([
+    source.plate.count({ where: ownModel }),
+    source.printFile.count({ where: { ...ownModel, ready: true } }),
+  ]);
+  return plates + printFiles;
+}
+
 /** How many of the model files the copy lists the folder doesn't have: all of them when it's the wrong folder. */
 export async function countMissingFiles(
   source: PrismaClient,
@@ -186,7 +197,10 @@ export async function countMissingFiles(
         take: 1000,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       };
-      const rows = table === "plate" ? await source.plate.findMany(args) : await source.printFile.findMany(args);
+      const rows =
+        table === "plate"
+          ? await source.plate.findMany(args)
+          : await source.printFile.findMany({ ...args, where: { ...args.where, ready: true } });
       if (!rows.length) break;
       cursor = rows.at(-1)!.id;
       await step(rows.map((row) => row.storagePath));

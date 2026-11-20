@@ -7,8 +7,9 @@ import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { thumbnailUpload } from "../uploadMiddleware";
 import { removePreviewImage, reorderPreviewImages } from "../services/previewImageService";
-import { addUploadedPreviewImages } from "../services/uploadService";
+import { addUploadedPreviewImagesEach } from "../services/uploadService";
 import { printOutById } from "../services/printLoader";
+import { withStorageLock } from "../utils/storageLock";
 
 const router = Router();
 router.use(requireAuth);
@@ -22,11 +23,13 @@ router.post(
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
     // As with an import's gallery, the first image becomes the cover and card thumbnail in place of our render.
-    await addUploadedPreviewImages(
+    const added = await addUploadedPreviewImagesEach(
       print.id,
       files.map((f) => f.buffer),
     );
-    res.json({ print: await printOutById(req.userId!, print.id) });
+    // Which images are these files', in their order, null for one that wasn't a picture: the model can gain others
+    // meanwhile, from another tab.
+    res.json({ print: await printOutById(req.userId!, print.id), image_ids: added });
   }),
 );
 
@@ -35,7 +38,10 @@ router.delete(
   asyncHandler(async (req, res) => {
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    await removePreviewImage(print.id, req.params.imageId);
+    // In a turn at the storage lock, as a repair's look at the gallery and the removals it makes on that are
+    // (settleRepairedGallery): between the two, it would remove on a look that's no longer true, and two removals at
+    // once renumber the gallery each from a list the other has changed.
+    await withStorageLock(() => removePreviewImage(print.id, req.params.imageId));
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

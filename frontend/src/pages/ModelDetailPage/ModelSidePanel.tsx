@@ -120,6 +120,8 @@ type Props = {
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
   onUpdated?: (print: Print) => void;
+  /** A download's count, for the owner of the model's state to put in (useDownloadPrint). */
+  onCounted?: (printId: string, printCount: number) => void;
   /** Shown as the author of a direct upload, which has none. */
   viewer?: AuthUser | null;
   /** The model's print profiles, the designer's first; empty for a model without (or from an older backend). */
@@ -145,6 +147,7 @@ export default function ModelSidePanel({
   onSelectCategory,
   onUnauthorized,
   onUpdated,
+  onCounted,
   viewer,
   profileEntries,
   profilesView,
@@ -190,6 +193,7 @@ export default function ModelSidePanel({
     print,
     onUnauthorized,
     onUpdated,
+    onCounted,
   );
 
   const { slicerOption, slicerOptions, files, canOpen, adaptedTargetFor } = useOpenInSlicer(print);
@@ -624,7 +628,7 @@ export default function ModelSidePanel({
               downloading={downloading}
               onDownload={() => void downloadFile(selectedFile)}
               // The zip holds the plates and supporting files, not the prepared print.
-              zipCount={files.filter((file) => file.plate).length}
+              zipCount={files.filter((file) => file.plate).length + (print.supporting_file_count ?? 0)}
               onDownloadZip={() => void downloadAllZip()}
               onCustomize={customize.available ? customize.start : undefined}
               onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}

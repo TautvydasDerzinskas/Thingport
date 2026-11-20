@@ -46,6 +46,8 @@ import Skeleton from "@mui/material/Skeleton";
 import { useQualityCheck } from "./QualityCheck/useQualityCheck";
 import QualityScanOverlay from "./QualityCheck/QualityScanOverlay";
 import QualityBadge from "./QualityCheck/QualityBadge";
+import SupportingFiles, { SupportingFilesInput } from "../../components/supportingFiles/SupportingFiles";
+import { useSupportingFiles } from "../../components/supportingFiles/useSupportingFiles";
 import { usePrintProfilesView } from "../../hooks/usePrintProfilesView";
 import { usePrintProfiles } from "./PrintProfiles/usePrintProfiles";
 import { profileEntries } from "./PrintProfiles/entries";
@@ -110,10 +112,27 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const { quality, outcome } = useQualityCheck(printId ?? "", onUnauthorized);
   // The header's menu stays across models, so an answer for the one before (a copy finishing, say) can arrive here
   // after another has opened: it's dropped rather than shown as this one.
+  // Its download count only grows, so an answer read before a download was counted doesn't take the count back.
   const updatePrint = useCallback(
-    (updated: Print) => setPrint((prev) => (prev && prev.id !== updated.id ? prev : updated)),
+    (updated: Print) =>
+      setPrint((prev) => {
+        if (prev && prev.id !== updated.id) return prev;
+        return prev && prev.print_count > updated.print_count ? { ...updated, print_count: prev.print_count } : updated;
+      }),
     [],
   );
+  // A download's count, put into the model as it is when it lands: a file added just before is in it, though the
+  // answer the count came in was read without it. Two downloads' answers can land in either order.
+  const countPrint = useCallback(
+    (id: string, printCount: number) =>
+      setPrint((prev) =>
+        prev && prev.id === id ? { ...prev, print_count: Math.max(prev.print_count, printCount) } : prev,
+      ),
+    [],
+  );
+  // Here rather than in the attachments, so the header's "Add supporting files" shows its uploads among them. For the
+  // model shown: the page's address names the next one while the last one is still on it.
+  const supporting = useSupportingFiles(print?.id, updatePrint, onUnauthorized);
 
   // An older import's licence is read the first time its owner opens it, and lands here once it's there.
   const licenseFill = useLicenseFill(
@@ -133,22 +152,34 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   // Returns wherever the user came from; useSmartBack skips same-route history entries.
   const goBack = useSmartBack();
 
+  // A model that couldn't be opened leaves the last one in `print`: the header doesn't offer that one as this page's.
+  const shown = notFound ? null : print;
   usePageHeader({
-    title: print ? print.title || print.name : undefined,
-    subtitle: print ? t("models:detail.subtitle") : undefined,
+    title: shown ? shown.title || shown.name : undefined,
+    subtitle: shown ? t("models:detail.subtitle") : undefined,
     actions: print ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
+        {/* The supporting files' picker, which the attachments open too: here, it stays while another model loads and the
+            page below is a skeleton, with the menu that opens it still the last model's, and after, for a picker that
+            menu opened. */}
+        <SupportingFilesInput actions={supporting} />
         {/* Another user's model is theirs to favourite; the viewer copies it instead (the side panel). */}
-        {!print.owner && <FavoriteButton print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />}
-        <ModelActionsMenu
-          print={print}
-          onUnauthorized={onUnauthorized}
-          onDeleted={goBack}
-          onUpdated={updatePrint}
-          onCollectionCountChange={setCollectionCount}
-          viewer={viewer}
-          offerLink
-        />
+        {shown && !shown.owner && (
+          <FavoriteButton print={shown} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />
+        )}
+        {shown && (
+          <ModelActionsMenu
+            print={shown}
+            onUnauthorized={onUnauthorized}
+            onDeleted={goBack}
+            onUpdated={updatePrint}
+            onCounted={countPrint}
+            onCollectionCountChange={setCollectionCount}
+            viewer={viewer}
+            offerLink
+            onAddSupportingFiles={supporting.pick}
+          />
+        )}
       </Stack>
     ) : undefined,
   });
@@ -162,7 +193,13 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
       try {
         const data = await printsApi.get(printId);
         if (cancelled) return;
-        setPrint(data);
+        // Back on the model still shown (left before the next one loaded): a download counted from its header while
+        // this was read stays counted, as the count only grows.
+        setPrint((prev) =>
+          prev && prev.id === data.id && prev.print_count > data.print_count
+            ? { ...data, print_count: prev.print_count }
+            : data,
+        );
         setActiveImageIndex(0);
         setSelectedFileKey(null);
         // The side panel says which plate is picked once it shows this model; until then, none of the last one's.
@@ -507,6 +544,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               </Stack>
             )}
 
+            <SupportingFiles print={print} actions={supporting} canEdit={!print.owner && !print.tool_id} />
+
             {needsGeneratedPreview && firstPlate && (
               <Box
                 sx={{
@@ -663,6 +702,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               onSelectCategory={onSelectCategory}
               onUnauthorized={onUnauthorized}
               onUpdated={updatePrint}
+              onCounted={countPrint}
               viewer={viewer}
               profileEntries={entries}
               profilesView={profilesView}

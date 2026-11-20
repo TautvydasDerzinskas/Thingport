@@ -21,6 +21,7 @@ import {
   stagingClient,
   stagingName,
 } from "../src/services/migrate/postgres";
+import type { MigratePlan } from "../src/services/migrate/plan";
 import { MERGE_RULES } from "../src/services/migrate/rules";
 import {
   changeFolder,
@@ -544,6 +545,172 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
     expect(second.report.models).toMatchObject({ brought: 0, earlier: 3, alreadyHere: 1 });
     expect(await prisma.print.count({ where: { userId: bobId } })).toBe(3);
     expect(await prisma.collectionItem.count({ where: { collectionId: mechanical.id } })).toBe(2);
+  }, 240_000);
+
+  it("brings a working copy made before this instance was upgraded level before it's read again", async () => {
+    const prepared = await request(app)
+      .post("/api/admin/migrate/thingport")
+      .set(auth())
+      .send({ dump_path: dumpFile, folder });
+    expect(prepared.status).toBe(202);
+    runs.push(prepared.body.id);
+    // From here on, whatever fails, the run and its working copy go.
+    try {
+      expect((await until(prepared.body.id, (status) => status !== "preparing")).status).toBe("ready");
+      // As the release before this one left it: without the database change that came with PrintFile.ready, and that
+      // change failed on an earlier upgrade of the copy, with Prisma's log of why. In it, a save the old instance never
+      // finished, which the plan saved then counted among the files, short of a change it knew nothing of.
+      const name = stagingName(prepared.body.id);
+      const change = "20261221120000_print_file_ready";
+      const copy = stagingClient(name);
+      try {
+        await copy.$executeRawUnsafe(`ALTER TABLE "PrintFile" DROP COLUMN "ready"`);
+        await copy.$executeRawUnsafe(`DELETE FROM "_prisma_migrations" WHERE migration_name = '${change}'`);
+        await copy.$executeRawUnsafe(
+          `INSERT INTO "_prisma_migrations" (id, checksum, migration_name, logs, started_at, applied_steps_count)
+           VALUES ('${crypto.randomUUID()}', 'failed', '${change}', 'Database error: the disk was full', now(), 0)`,
+        );
+        await copy.$executeRawUnsafe(
+          `INSERT INTO "PrintFile" (id, "printId", role, filename, mime, size, "storagePath")
+           SELECT 'half-saved', id, 'SUPPORTING', 'half.txt', 'text/plain', 0, 'pending:half-saved'
+           FROM "Print" WHERE "toolId" IS NULL LIMIT 1`,
+        );
+      } finally {
+        await copy.$disconnect();
+      }
+      const run = await prisma.migrationRun.findUniqueOrThrow({ where: { id: prepared.body.id } });
+      const plan = run.plan as MigratePlan;
+      await prisma.migrationRun.update({
+        where: { id: prepared.body.id },
+        data: {
+          plan: {
+            ...plan,
+            counts: { ...plan.counts!, files: plan.counts!.files + 1 },
+            changes: { ...plan.changes!, added: plan.changes!.added - 1 },
+          },
+        },
+      });
+      const changed = await changeFolder(prepared.body.id, folder);
+      expect(changed.status).toBe("ready");
+      expect(changed.plan.missingFiles).toBe(1);
+      // Counted again once it's level: the save that never finished isn't a file to bring, and the changes are all
+      // the ones it took.
+      expect(changed.plan.counts?.files).toBe(plan.counts!.files);
+      expect(changed.plan.changes?.added).toBe(plan.changes!.added);
+      const after = stagingClient(name);
+      try {
+        const ready = await after.$queryRaw<{ column_name: string }[]>`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'PrintFile' AND column_name = 'ready'`;
+        expect(ready).toHaveLength(1);
+        const rows = await after.$queryRaw<{ finished: boolean }[]>`
+          SELECT finished_at IS NOT NULL AS finished FROM "_prisma_migrations"
+          WHERE migration_name = ${change} AND rolled_back_at IS NULL`;
+        expect(rows).toEqual([{ finished: true }]);
+      } finally {
+        await after.$disconnect();
+      }
+    } finally {
+      await removeRun(prepared.body.id);
+    }
+  }, 240_000);
+
+  it("leaves a working copy whose upgrade stopped without saying why as it is, and says to prepare it again", async () => {
+    const prepared = await request(app)
+      .post("/api/admin/migrate/thingport")
+      .set(auth())
+      .send({ dump_path: dumpFile, folder });
+    expect(prepared.status).toBe(202);
+    runs.push(prepared.body.id);
+    try {
+      expect((await until(prepared.body.id, (status) => status !== "preparing")).status).toBe("ready");
+      // An upgrade stopped between the change's own commit and Prisma's note that it finished: the column is there,
+      // and its record says only that it started.
+      const name = stagingName(prepared.body.id);
+      const change = "20261221120000_print_file_ready";
+      const copy = stagingClient(name);
+      try {
+        await copy.$executeRawUnsafe(
+          `UPDATE "_prisma_migrations" SET finished_at = NULL, applied_steps_count = 0 WHERE migration_name = '${change}'`,
+        );
+      } finally {
+        await copy.$disconnect();
+      }
+      await expect(changeFolder(prepared.body.id, folder)).rejects.toMatchObject({
+        status: 400,
+        code: "upgrade_interrupted",
+      });
+      const after = stagingClient(name);
+      try {
+        const ready = await after.$queryRaw<{ column_name: string }[]>`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'PrintFile' AND column_name = 'ready'`;
+        expect(ready).toHaveLength(1);
+        const rows = await after.$queryRaw<{ finished: boolean; rolledBack: boolean }[]>`
+          SELECT finished_at IS NOT NULL AS finished, rolled_back_at IS NOT NULL AS "rolledBack"
+          FROM "_prisma_migrations" WHERE migration_name = ${change}`;
+        expect(rows).toEqual([{ finished: false, rolledBack: false }]);
+      } finally {
+        await after.$disconnect();
+      }
+      // Started, it stops on the same copy, and isn't offered again: every try would.
+      const ready = await request(app).get(`/api/admin/migrate/${prepared.body.id}`).set(auth());
+      const options = {
+        people: ready.body.plan.people.map((person: { id: string }) => person.id),
+        collections: true,
+        studio: true,
+        widgets: true,
+        tools: true,
+        syncs: true,
+        signIns: true,
+        settings: false,
+        secrets: false,
+      };
+      const start = () => request(app).post(`/api/admin/migrate/${prepared.body.id}/start`).set(auth()).send(options);
+      expect((await start()).status).toBe(202);
+      const failed = await until(prepared.body.id, (status) => status === "done" || status === "failed");
+      expect(failed.status).toBe("failed");
+      expect(failed.error.code).toBe("upgrade_interrupted");
+      expect(failed.can_resume).toBe(false);
+      const again = await start();
+      expect(again.status).toBe(409);
+      expect(again.body.code).toBe("not_ready");
+    } finally {
+      // A run Start set going is let finish first, as removeRun turns a running one away; a clean-up that still can't
+      // be done is said apart, so it doesn't stand in for what failed above.
+      await until(prepared.body.id, (status) => status !== "running").catch(() => undefined);
+      await removeRun(prepared.body.id).catch((err: unknown) =>
+        console.error(`Couldn't remove migration ${prepared.body.id} after its test:`, err),
+      );
+    }
+  }, 240_000);
+
+  it("counts a working copy's files again each time its folder changes, though it's already level", async () => {
+    const prepared = await request(app)
+      .post("/api/admin/migrate/thingport")
+      .set(auth())
+      .send({ dump_path: dumpFile, folder });
+    expect(prepared.status).toBe(202);
+    runs.push(prepared.body.id);
+    try {
+      expect((await until(prepared.body.id, (status) => status !== "preparing")).status).toBe("ready");
+      // As an earlier try left it that brought the copy level, then stopped before it saved the count.
+      const run = await prisma.migrationRun.findUniqueOrThrow({ where: { id: prepared.body.id } });
+      const plan = run.plan as MigratePlan;
+      await prisma.migrationRun.update({
+        where: { id: prepared.body.id },
+        data: {
+          plan: {
+            ...plan,
+            counts: { ...plan.counts!, files: plan.counts!.files + 5 },
+            changes: { ...plan.changes!, added: 0 },
+          },
+        },
+      });
+      const changed = await changeFolder(prepared.body.id, folder);
+      expect(changed.plan.counts?.files).toBe(plan.counts!.files);
+      expect(changed.plan.changes?.added).toBe(plan.changes!.added);
+    } finally {
+      await removeRun(prepared.body.id);
+    }
   }, 240_000);
 
   it("starts a run once however often Start is pressed, and is free again as soon as it says it's done", async () => {

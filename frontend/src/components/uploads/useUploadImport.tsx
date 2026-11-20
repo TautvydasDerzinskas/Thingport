@@ -9,16 +9,18 @@ import {
   entriesFromFileList,
   hasModelFolders,
   isSystemFile,
+  uploadEntriesAsOneModel,
   uploadEntriesToCategory,
   uploadFoldersAsModels,
+  type UploadEntry,
 } from "../../utils/uploadTree";
 import { buildUploadEntriesFromZip, isZipFile, readZipEntries } from "../../utils/zipUtils";
-import { useZipImportPrompt } from "./ZipImportModal";
+import { useZipImportPrompt, type ZipUploadMode } from "./ZipImportModal";
 import { useCollectionImportPrompt } from "./CollectionImportModal";
 import { useImportModePrompt, type ImportMode } from "./ImportModeModal";
 import { useImportQueue } from "../importQueue/ImportQueueContext";
 import { createImportSubmit, createPromptChain } from "./importSubmit";
-import { UPLOAD_EXTS } from "../../constants/fileTypes";
+import { SUPPORTING_PICK_EXTS, UPLOAD_EXTS } from "../../constants/fileTypes";
 import { useToast } from "../ToastProvider";
 
 // A folder pick always prefixes relativePath with the folder name.
@@ -62,26 +64,13 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
     navigate(`/models/${print.id}`);
   };
 
-  const uploadFlatAsMultiplate = async (files: File[]) => {
-    try {
-      const result = await printsApi.upload(files, { category_id: categoryId || undefined, mode: "multiplate" });
-      return { uploaded: result.prints.length, failed: [] as string[], prints: result.prints };
-    } catch (err) {
-      if (err instanceof UnauthorizedError) {
-        onUnauthorized?.();
-        return { uploaded: 0, failed: [] as string[], prints: [] as Print[] };
-      }
-      const message = err instanceof Error ? err.message.trim() : "";
-      return {
-        uploaded: 0,
-        failed: [
-          message
-            ? t("uploadBar.multiplateImportFailedWithMessage", { message })
-            : t("uploadBar.multiplateImportFailed"),
-        ],
-        prints: [] as Print[],
-      };
-    }
+  // Its pictures are the model's photos, as a folder's are, when there's a model file among them.
+  const uploadFlatAsMultiplate = async (entries: UploadEntry[]) => {
+    const result = await uploadEntriesAsOneModel(entries, null, categoryId || null, onUnauthorized);
+    return {
+      ...result,
+      failed: result.failed.map((message) => t("uploadBar.multiplateImportFailedWithMessage", { message })),
+    };
   };
 
   const uploadEntries = async (entries: ReturnType<typeof entriesFromFileList>) => {
@@ -91,14 +80,22 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
     const zipEntries = entries.filter((entry) => isZipFile(entry.file.name));
     let uploaded = 0;
     const failed: string[] = [];
+    const skipped: string[] = [];
     const prints: Print[] = [];
     // Batches upload without a notification per request; they get one summary at the end.
     const batchPrintIds: string[] = [];
     const batchFailed: string[] = [];
     let batched = false;
-    const applyResult = (result: { uploaded: number; failed: string[]; prints?: Print[]; batched?: boolean }) => {
+    const applyResult = (result: {
+      uploaded: number;
+      failed: string[];
+      prints?: Print[];
+      batched?: boolean;
+      skipped?: string[];
+    }) => {
       uploaded += result.uploaded;
       failed.push(...result.failed);
+      skipped.push(...(result.skipped ?? []));
       if (result.prints) prints.push(...result.prints);
       if (result.batched) {
         batched = true;
@@ -114,7 +111,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
             count: normalEntries.length,
             onChoose: async (mode: ImportMode) => {
               if (mode === "multiplate") {
-                applyResult(await uploadFlatAsMultiplate(normalEntries.map((entry) => entry.file)));
+                applyResult(await uploadFlatAsMultiplate(normalEntries));
               } else {
                 applyResult(await uploadEntriesToCategory(normalEntries, categoryId || null, onUnauthorized));
               }
@@ -142,6 +139,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
     }
     for (const entry of zipEntries) {
       let zipData: Record<string, Uint8Array> | null = null;
+      let zipNumbered: Record<string, string> = {};
       const baseParts = entry.relativePath.split("/").filter(Boolean);
       baseParts.pop();
       const basePath = baseParts.join("/");
@@ -155,15 +153,33 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
           loadEntries: async () => {
             const result = await readZipEntries(entry.file);
             zipData = result.data;
+            zipNumbered = result.numbered;
             return result.entries;
           },
-          onImportSelected: async (selectedPaths: string[]) => {
+          // An uploaded zip offers the choice an import doesn't: one model, a model per folder, or one per file.
+          chooseMode: true,
+          onImportSelected: async (selectedPaths: string[], mode?: ZipUploadMode | null) => {
             if (!zipData) {
               const result = await readZipEntries(entry.file);
               zipData = result.data;
+              zipNumbered = result.numbered;
             }
-            const unzipEntries = buildUploadEntriesFromZip(zipData || {}, selectedPaths, basePath);
-            const result = await uploadEntriesToCategory(unzipEntries, categoryId || null, onUnauthorized);
+            // In the order the dialog lists them, whatever order they were ticked in.
+            const listed = selectedPaths.toSorted((a, b) => a.localeCompare(b));
+            const unzipEntries = buildUploadEntriesFromZip(zipData || {}, listed, basePath, zipNumbered);
+            const target = categoryId || null;
+            const result =
+              mode === "folders"
+                ? await uploadFoldersAsModels(unzipEntries, target, onUnauthorized)
+                : mode === "separate"
+                  ? await uploadEntriesToCategory(unzipEntries, target, onUnauthorized)
+                  : await uploadEntriesAsOneModel(
+                      unzipEntries,
+                      entry.file.name.replace(/\.zip$/i, ""),
+                      target,
+                      onUnauthorized,
+                      basePath,
+                    );
             applyResult(result);
           },
         }),
@@ -176,14 +192,23 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
       });
     }
     void refreshNotifications();
+    // A document can't be a model of its own: said, rather than left out in silence. On the toast that says what was
+    // uploaded, since a second toast would close that one straight away.
+    const note = skipped.length ? t("uploadBar.needsModel", { count: skipped.length, files: skipped.join(", ") }) : "";
+    const toast = (done: string) =>
+      note
+        ? { message: t("uploadBar.doneWithNote", { done, note }), severity: "warning" as const, autoHideMs: 8000 }
+        : { message: done };
     if (uploaded) {
       onUploaded();
       if (uploaded === 1 && prints.length === 1) {
-        showToast({ message: t("uploadBar.uploaded", { name: prints[0].title || prints[0].name }) });
+        showToast(toast(t("uploadBar.uploaded", { name: prints[0].title || prints[0].name })));
         openForEditing(prints[0]);
       } else {
-        showToast({ message: t("uploadBar.uploadedMultiple", { count: uploaded }) });
+        showToast(toast(t("uploadBar.uploadedMultiple", { count: uploaded })));
       }
+    } else if (note) {
+      showToast({ message: note, severity: "warning", autoHideMs: 8000 });
     }
     if (failed.length) {
       alert(t("uploadBar.uploadFailed", { files: failed.join(", ") }));
@@ -212,7 +237,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
       type="file"
       onChange={onFilePick}
       multiple
-      accept={UPLOAD_EXTS.map((ext) => `.${ext}`).join(",")}
+      accept={[...UPLOAD_EXTS, ...SUPPORTING_PICK_EXTS].map((ext) => `.${ext}`).join(",")}
       hidden
     />
   );

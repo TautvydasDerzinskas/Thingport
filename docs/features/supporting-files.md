@@ -11,9 +11,27 @@ A model is more than its STL. Thingport keeps everything you need to print it in
 - **The script it was generated from:** where a model was published with its OpenSCAD source, that comes in too,
   so the model can be generated again rather than only printed as its creator set it up.
 
-Add supporting files or a prepared print from the model page. When you
-[upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and its manuals
-and notes are attached automatically.
+## Supporting files
+
+A model's supporting files sit under its pictures, like attachments on an email: each shows its type, name and size,
+with a download button beside it, and a file in a folder is named with its folder in front, such as `docs/guide.pdf`.
+Click one to open it in the viewer, where a PDF opens in your browser's own PDF viewer, Markdown shows formatted, with
+its headings, lists and links, plain text as it is, a CSV as a table (its first 200 rows and 50 columns) and a picture
+as itself. Anything else, such as a Fusion 360 source, offers a download instead, as does a Markdown, text or CSV file
+over 2 MiB.
+The viewer's header has buttons to open the file in a new tab and to download it, and its **⋮** copies a link to it.
+Right-click a file in the list to open it in a new tab, download it or copy a link to it.
+
+To add the first, use **Add supporting files** in the model's **⋮** menu or open **Edit**. Once a model has some, you
+can also drop more onto them. Edit model lists them under the model files, where you can add, rename and remove them.
+A document added among the model files goes to the supporting files, and a 3D file added among the supporting files
+goes to the model files. A sliced file added this way becomes the prepared print, in place of the one before. Add
+several at once and the first does, while the others stay with the supporting files.
+
+Supporting files come with the model's downloads: **Download** lists them under the model files, to take one at a time,
+and the zip holds them in a `supporting` folder. They come with copies others make of the model too. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its manuals and notes are attached
+automatically, and its images become photos where each is a PNG, JPG, WebP or BMP of up to 8 MiB; a larger picture is
+attached too.
 
 ## Models you can generate again
 

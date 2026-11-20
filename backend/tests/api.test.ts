@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import fs from "node:fs";
 import path from "node:path";
@@ -6,6 +6,9 @@ import os from "node:os";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
+import { addUploadedFiles } from "../src/services/uploadService";
+import { saveFileFromTemp } from "../src/services/printFileService";
+import { STORAGE } from "../src/config";
 
 const app = createApp();
 
@@ -13,7 +16,7 @@ let token: string;
 const createdPrintIds: string[] = [];
 const createdCategoryIds: string[] = [];
 
-function tmpFile(name: string, contents: string): string {
+function tmpFile(name: string, contents: string | Buffer): string {
   // supertest uses the basename as the upload filename, so each file gets its own directory.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-test-"));
   const p = path.join(dir, name);
@@ -272,6 +275,268 @@ describe("plate add/remove/reorder/rename", () => {
     expect(res.status).toBe(409);
   });
 
+  it("says which plates an upload made, in the order of its files", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    // The Edit dialog names and orders the plates it sent by these, so another tab's are never taken for them.
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
+      .attach("files", tmpFile("lid.stl", "solid l endsolid"))
+      .attach("files", tmpFile("arm.stl", "solid a endsolid"));
+    expect(res.status).toBe(200);
+    const byId = new Map(res.body.print.plates.map((plate: { id: string; filename: string }) => [plate.id, plate]));
+    expect(res.body.plate_ids.map((id: string) => (byId.get(id) as { filename: string }).filename)).toEqual([
+      "lid.stl",
+      "arm.stl",
+    ]);
+  });
+
+  it("adds none of a batch's files when one can't be stored, so a retry doesn't bring any in twice", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const create = prisma.plate.create.bind(prisma.plate);
+    let calls = 0;
+    const spy = vi.spyOn(prisma.plate, "create").mockImplementation(((
+      args: Parameters<typeof prisma.plate.create>[0],
+    ) => {
+      calls += 1;
+      return calls === 2 ? Promise.reject(new Error("the disk is full")) : create(args);
+    }) as never);
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
+        .attach("files", tmpFile("lid.stl", "solid l endsolid"))
+        .attach("files", tmpFile("arm.stl", "solid a endsolid"));
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(calls).toBe(2);
+    const plates = await prisma.plate.findMany({ where: { printId: modelId } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
+  });
+
+  // Its thumbnail step reads the preview setting once the row and file are in: `then` runs there, before it fails.
+  const failingThumbnailStep = (then: () => Promise<void> = async () => undefined) => {
+    const findSetting = prisma.setting.findUnique.bind(prisma.setting);
+    return vi.spyOn(prisma.setting, "findUnique").mockImplementation((async (
+      args: Parameters<typeof prisma.setting.findUnique>[0],
+    ) => {
+      if (args.where.key !== "preview_mode") return findSetting(args);
+      await then();
+      throw new Error("the settings went away");
+    }) as never);
+  };
+
+  it("leaves nothing of a file whose plate fails after it's stored, from wherever it was moved meanwhile", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    // A reorganisation moves the new plate's file while its thumbnail is read.
+    let movedTo = "";
+    const spy = failingThumbnailStep(async () => {
+      const lid = await prisma.plate.findFirstOrThrow({ where: { printId: modelId, filename: "lid.stl" } });
+      expect(fs.existsSync(path.join(STORAGE, lid.storagePath))).toBe(true);
+      movedTo = path.join(path.dirname(lid.storagePath), "moved", "lid.stl");
+      fs.mkdirSync(path.join(STORAGE, path.dirname(movedTo)), { recursive: true });
+      fs.renameSync(path.join(STORAGE, lid.storagePath), path.join(STORAGE, movedTo));
+      await prisma.plate.update({ where: { id: lid.id }, data: { storagePath: movedTo } });
+    });
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        tmpFile("lid.stl", "solid l endsolid"),
+      );
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+    }
+    const plates = await prisma.plate.findMany({ where: { printId: modelId } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
+    expect(movedTo).not.toBe("");
+    expect(fs.existsSync(path.join(STORAGE, movedTo))).toBe(false);
+  });
+
+  it("keeps a failed plate's file while its row couldn't be taken back, so the model never lists it without one", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const spy = failingThumbnailStep();
+    // Neither its own clean-up nor the batch's taking back of it, after, can remove its row.
+    const remove = vi.spyOn(prisma.plate, "delete").mockRejectedValue(new Error("the database went away"));
+    const removeMany = vi.spyOn(prisma.plate, "deleteMany").mockRejectedValue(new Error("the database went away"));
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        tmpFile("lid.stl", "solid l endsolid"),
+      );
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+      remove.mockRestore();
+      removeMany.mockRestore();
+    }
+    const lid = await prisma.plate.findFirstOrThrow({ where: { printId: modelId, filename: "lid.stl" } });
+    expect(fs.existsSync(path.join(STORAGE, lid.storagePath))).toBe(true);
+  });
+
+  it("takes a batch back when the model can't be read for the answer, so a retry doesn't bring it in twice", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const findPrint = prisma.print.findFirst.bind(prisma.print);
+    // The read for the answer is the one with the author and category in it.
+    const spy = vi
+      .spyOn(prisma.print, "findFirst")
+      .mockImplementation(((args: Parameters<typeof prisma.print.findFirst>[0]) =>
+        args?.include && "author" in args.include
+          ? Promise.reject(new Error("the database went away"))
+          : findPrint(args)) as never);
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        tmpFile("lid.stl", "solid l endsolid"),
+      );
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+    }
+    const plates = await prisma.plate.findMany({ where: { printId: modelId } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
+  });
+
+  it("refuses an order that names a plate twice", async () => {
+    const made = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", tmpFile("a.stl", "solid a endsolid"))
+      .attach("files", tmpFile("b.stl", "solid b endsolid"))
+      .attach("files", tmpFile("c.stl", "solid c endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a, b, c] = made.body.prints[0].plates.map((plate: { id: string }) => plate.id);
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates/reorder`)).send({ plate_ids: [c, c, b] });
+    expect(res.status).toBe(400);
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.id)).toEqual([a, b, c]);
+  });
+
+  it("refuses folders that aren't one string or null for each file", async () => {
+    for (const folders of ["[42]", "", "{}"]) {
+      const res = await auth(request(app).post("/api/upload"))
+        .field("folders", folders)
+        .attach("files", tmpFile("one.stl", "solid o endsolid"));
+      expect(res.status).toBe(400);
+    }
+  });
+
+  it("packs a .gltf sent with its .bin into one .glb plate, and refuses one sent without it", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const positions = Buffer.from(new Float32Array([0, 0, 0, 0.01, 0, 0, 0, 0.01, 0]).buffer);
+    const gltf = JSON.stringify({
+      asset: { version: "2.0" },
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+      nodes: [{ mesh: 0 }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      buffers: [{ uri: "tri.bin", byteLength: positions.length }],
+      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [0.01, 0.01, 0] }],
+    });
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
+      .attach("files", tmpFile("tri.gltf", gltf))
+      .attach("files", tmpFile("tri.bin", positions))
+      .attach("files", tmpFile("lid.stl", "solid l endsolid"));
+    expect(res.status).toBe(200);
+    expect(res.body.plate_ids).toHaveLength(2);
+    const byId = new Map(res.body.print.plates.map((plate: { id: string; filename: string }) => [plate.id, plate]));
+    expect((byId.get(res.body.plate_ids[0]) as { filename: string }).filename).toBe("tri.glb");
+    // One answer for each file sent: the .bin went into the .glb, made of the .gltf.
+    expect(res.body.uploaded).toEqual([
+      { plate_id: res.body.plate_ids[0], packed: false },
+      { plate_id: null, packed: true },
+      { plate_id: res.body.plate_ids[1], packed: false },
+    ]);
+    expect(res.body.print.plates).toHaveLength(3);
+
+    const lone = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+      "files",
+      tmpFile("tri.gltf", gltf),
+    );
+    expect(lone.status).toBe(400);
+    expect(JSON.stringify(lone.body)).toContain("tri.bin");
+    expect(await prisma.plate.count({ where: { printId: modelId } })).toBe(3);
+  });
+
+  it("finds a .gltf's files by the folders the upload named, not as they're kept", async () => {
+    const positions = Buffer.from(new Float32Array([0, 0, 0, 0.01, 0, 0, 0, 0.01, 0]).buffer);
+    const gltf = JSON.stringify({
+      asset: { version: "2.0" },
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+      nodes: [{ mesh: 0 }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      buffers: [{ uri: "A%20%20B/mesh.bin", byteLength: positions.length }],
+      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [0.01, 0.01, 0] }],
+    });
+    // Two folders kept alike, "A B", each with a mesh.bin.
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify([null, "A B", "A  B"]))
+      .attach("files", tmpFile("scene.gltf", gltf))
+      .attach("files", tmpFile("mesh.bin", Buffer.alloc(8)))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(res.status).toBe(200);
+    await trackPrint(res.body.prints[0].id);
+    expect(res.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+
+    // A folder named with a slash in front is the same one: the scene in "parts" finds its "/parts" buffer.
+    const sibling = JSON.stringify({
+      ...JSON.parse(gltf),
+      buffers: [{ uri: "mesh.bin", byteLength: positions.length }],
+    });
+    const slashed = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["parts", "/parts"]))
+      .attach("files", tmpFile("scene.gltf", sibling))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(slashed.status).toBe(200);
+    await trackPrint(slashed.body.prints[0].id);
+    expect(slashed.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+
+    // A scene naming a file outside its model's folder finds it by where each was in the pick, kept or not.
+    const outside = JSON.stringify({
+      ...JSON.parse(gltf),
+      buffers: [{ uri: "../shared/mesh.bin", byteLength: positions.length }],
+    });
+    const picked = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("source_folders", JSON.stringify(["Pack/Model", "Pack/shared"]))
+      .attach("files", tmpFile("scene.gltf", outside))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(picked.status).toBe(200);
+    await trackPrint(picked.body.prints[0].id);
+    expect(picked.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+    expect(picked.body.prints[0].plates[0].folder ?? null).toBeNull();
+
+    // One at the top of the pick, though kept in a folder, looks from the top: null there isn't "where it's kept".
+    const top = JSON.stringify({
+      ...JSON.parse(gltf),
+      buffers: [{ uri: "shared/mesh.bin", byteLength: positions.length }],
+    });
+    const atTop = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["models", "docs"]))
+      .field("source_folders", JSON.stringify([null, "shared"]))
+      .attach("files", tmpFile("scene.gltf", top))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(atTop.status).toBe(200);
+    await trackPrint(atTop.body.prints[0].id);
+    expect(atTop.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+  });
+
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.
   it("replaces the only plate with a same-named file: upload, delete the old one, rename back", async () => {
     let res = await auth(request(app).get(`/api/print/${printId}`));
@@ -378,10 +643,211 @@ describe("prepared-print attach/detect/remove", () => {
     fs.rmSync(gcode, { force: true });
   });
 
+  it("keeps the first sliced file of an upload as its prepared print and the rest as supporting files", async () => {
+    const stl = tmpFile("frog.stl", "solid frog endsolid");
+    const first = tmpFile("first.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+    const second = tmpFile("second.gcode", "; printer_model = Bambu Lab A1\nG28\n");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", stl)
+      .attach("files", first)
+      .attach("files", second);
+    expect(res.status).toBe(200);
+    const uploaded = res.body.prints[0];
+    await trackPrint(uploaded.id);
+    expect(uploaded.slicer_filename).toBe("first.gcode");
+    const files = await auth(request(app).get(`/api/print/${uploaded.id}/files`));
+    expect(files.body.map((file: { filename: string }) => file.filename)).toEqual(["second.gcode"]);
+    for (const file of [stl, first, second]) fs.rmSync(file, { force: true });
+  });
+
   it("removes the prepared file and falls back to null (bare .stl isn't sniffable)", async () => {
     const res = await auth(request(app).delete(`/api/print/${printId}/prepared-print`));
     expect(res.status).toBe(200);
     expect(res.body.print.prepared_print).toBeNull();
+  });
+});
+
+describe("uploads of one model's several files", () => {
+  it("keeps each file in its folder, and a sliced 3MF beside the model files as its prepared print", async () => {
+    const stl = tmpFile("body.stl", "solid body endsolid");
+    const guide = tmpFile("guide.pdf", "%PDF-1.4 guide");
+    const sliced = tmpFile("sliced.gcode.3mf", "not really a 3mf");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["parts", "docs", null]))
+      .attach("files", stl)
+      .attach("files", guide)
+      .attach("files", sliced);
+    expect(res.status).toBe(200);
+    const uploaded = res.body.prints[0];
+    await trackPrint(uploaded.id);
+    expect(
+      uploaded.plates.map((plate: { filename: string; folder: string | null }) => [plate.filename, plate.folder]),
+    ).toEqual([["body.stl", "parts"]]);
+    const files = await prisma.printFile.findMany({ where: { printId: uploaded.id }, orderBy: { filename: "asc" } });
+    expect(files.map((file) => [file.filename, file.role, file.folder])).toEqual([
+      ["guide.pdf", "SUPPORTING", "docs"],
+      ["sliced.gcode.3mf", "PREPARED", null],
+    ]);
+    for (const file of [stl, guide, sliced]) fs.rmSync(file, { force: true });
+  });
+
+  it("makes a sliced 3MF the plate when there's no other model file, the rest beside it as with a model file", async () => {
+    const sliced = tmpFile("frog.gcode.3mf", "not really a 3mf");
+    const guide = tmpFile("frog guide.pdf", "%PDF-1.4 guide");
+    const picture = tmpFile("frog.png", "not really a png");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", sliced)
+      .attach("files", guide)
+      .attach("files", picture);
+    expect(res.status).toBe(200);
+    const uploaded = res.body.prints[0];
+    await trackPrint(uploaded.id);
+    expect(uploaded.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["frog.gcode.3mf"]);
+    const files = await prisma.printFile.findMany({ where: { printId: uploaded.id }, orderBy: { filename: "asc" } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([
+      ["frog guide.pdf", "SUPPORTING"],
+      ["frog.png", "SUPPORTING"],
+    ]);
+    for (const file of [sliced, guide, picture]) fs.rmSync(file, { force: true });
+  });
+
+  it("makes a picture the plate when there's no model file, and keeps a document beside it", async () => {
+    const picture = tmpFile("sign.png", "not really a png");
+    const notes = tmpFile("sign notes.txt", "cut at 80% power");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", picture)
+      .attach("files", notes);
+    expect(res.status).toBe(200);
+    const uploaded = res.body.prints[0];
+    await trackPrint(uploaded.id);
+    expect(uploaded.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["sign.png"]);
+    const files = await prisma.printFile.findMany({ where: { printId: uploaded.id } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([["sign notes.txt", "SUPPORTING"]]);
+    for (const file of [picture, notes]) fs.rmSync(file, { force: true });
+  });
+
+  it("keeps a lone file in its folder, as it would one of several, and one sent without a folder at the top", async () => {
+    // A zip's "parts/body.stl" beside its photo: the photo goes to the gallery, leaving the model file to go up alone.
+    const stl = tmpFile("body.stl", "solid body endsolid");
+    const inFolder = await auth(request(app).post("/api/upload"))
+      .field("folders", JSON.stringify(["parts"]))
+      .attach("files", stl);
+    expect(inFolder.status).toBe(200);
+    await trackPrint(inFolder.body.prints[0].id);
+    expect(inFolder.body.prints[0].plates.map((plate: { folder: string | null }) => plate.folder)).toEqual(["parts"]);
+
+    const plain = await auth(request(app).post("/api/upload")).attach("files", stl);
+    expect(plain.status).toBe(200);
+    await trackPrint(plain.body.prints[0].id);
+    expect(plain.body.prints[0].plates.map((plate: { folder: string | null }) => plate.folder)).toEqual([null]);
+
+    // Each a model of its own, separate files have no model to be in a folder of.
+    const other = tmpFile("lid.stl", "solid lid endsolid");
+    const separate = await auth(request(app).post("/api/upload"))
+      .field("mode", "separate")
+      .field("folders", JSON.stringify(["parts", "parts"]))
+      .attach("files", stl)
+      .attach("files", other);
+    expect(separate.status).toBe(200);
+    for (const print of separate.body.prints) await trackPrint(print.id);
+    expect(
+      separate.body.prints.flatMap((print: { plates: { folder: string | null }[] }) =>
+        print.plates.map((p) => p.folder),
+      ),
+    ).toEqual([null, null]);
+    for (const file of [stl, other]) fs.rmSync(file, { force: true });
+  });
+
+  it("refuses folders that don't line up with the files", async () => {
+    const a = tmpFile("a.stl", "solid a endsolid");
+    const b = tmpFile("b.stl", "solid b endsolid");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["only one"]))
+      .attach("files", a)
+      .attach("files", b);
+    expect(res.status).toBe(400);
+    for (const file of [a, b]) fs.rmSync(file, { force: true });
+  });
+
+  it("keeps a model's prepared print when files added with a sliced one fail", async () => {
+    const stl = tmpFile("held.stl", "solid held endsolid");
+    const made = await auth(request(app).post("/api/upload")).attach("files", stl);
+    const printId = made.body.prints[0].id;
+    await trackPrint(printId);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: TEST_EMAIL } });
+    const old = tmpFile("old.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+    await addUploadedFiles(user.id, printId, [{ path: old, originalname: "old.gcode" }]);
+    const { preparedFile: kept } = await prisma.print.findUniqueOrThrow({
+      where: { id: printId },
+      include: { preparedFile: true },
+    });
+    expect(kept?.filename).toBe("old.gcode");
+
+    // The sliced file first, then one that can't be stored: its temp file is gone.
+    const replacement = tmpFile("new.gcode", "; printer_model = Bambu Lab A1\nG28\n");
+    const gone = path.join(path.dirname(replacement), "gone.txt");
+    await expect(
+      addUploadedFiles(user.id, printId, [
+        { path: replacement, originalname: "new.gcode" },
+        { path: gone, originalname: "gone.txt" },
+      ]),
+    ).rejects.toThrow(/ENOENT/);
+    const after = await prisma.print.findUniqueOrThrow({ where: { id: printId }, include: { preparedFile: true } });
+    expect(after.preparedFile?.id).toBe(kept?.id);
+    expect(after.preparedFile && fs.existsSync(path.join(STORAGE, after.preparedFile.storagePath))).toBe(true);
+    expect(await prisma.printFile.count({ where: { printId } })).toBe(1);
+    for (const file of [stl, replacement]) fs.rmSync(file, { force: true });
+  });
+
+  it("takes back only its own files when one fails, never one another tab added meanwhile", async () => {
+    const stl = tmpFile("own.stl", "solid own endsolid");
+    const made = await auth(request(app).post("/api/upload")).attach("files", stl);
+    const printId = made.body.prints[0].id;
+    await trackPrint(printId);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: TEST_EMAIL } });
+    const notes = tmpFile("notes.txt", "mine");
+    const gone = path.join(path.dirname(notes), "gone.txt");
+    // Another tab's file lands just as this request reaches the one that fails.
+    const create = prisma.printFile.create.bind(prisma.printFile);
+    const spy = vi.spyOn(prisma.printFile, "create").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.create>[0],
+    ) => {
+      if (args.data.filename === "gone.txt") {
+        await saveFileFromTemp(user.id, printId, tmpFile("other.txt", "theirs"), "other.txt", null);
+      }
+      return create(args);
+    }) as never);
+    try {
+      await expect(
+        addUploadedFiles(user.id, printId, [
+          { path: notes, originalname: "notes.txt" },
+          { path: gone, originalname: "gone.txt" },
+        ]),
+      ).rejects.toThrow(/ENOENT/);
+    } finally {
+      spy.mockRestore();
+    }
+    const files = await prisma.printFile.findMany({ where: { printId } });
+    expect(files.map((file) => file.filename)).toEqual(["other.txt"]);
+    fs.rmSync(stl, { force: true });
+  });
+
+  it("keeps a sliced file asked for as a supporting one as that, rather than the prepared print", async () => {
+    const stl = tmpFile("own.stl", "solid own endsolid");
+    const made = await auth(request(app).post("/api/upload")).attach("files", stl);
+    const printId = made.body.prints[0].id;
+    await trackPrint(printId);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: TEST_EMAIL } });
+    const gcode = tmpFile("kept.gcode", "; sliced\nG28\n");
+    await addUploadedFiles(user.id, printId, [{ path: gcode, originalname: "kept.gcode", kind: "supporting" }]);
+    const files = await prisma.printFile.findMany({ where: { printId } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([["kept.gcode", "SUPPORTING"]]);
+    fs.rmSync(stl, { force: true });
   });
 });
 

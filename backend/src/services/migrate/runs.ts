@@ -11,9 +11,9 @@ import { discardPrintOrThrow } from "../printCreation";
 import { currentStorageMove } from "../storageMoveService";
 import { holdMigrationBusy } from "./busy";
 import { MigrateError, MigrateHttpError, storedError } from "./errors";
-import { readSourceHistory } from "./history";
+import { readSourceHistory, settleFailedUpgrade, stoppedUpgrade, type SourceHistory } from "./history";
 import { fileRunModels, Merge, MIGRATE_FOLDER, type MergePhase, type MigrateOptions } from "./merge";
-import { countMissingFiles, readPlan, type MigratePlan } from "./plan";
+import { countMissingFiles, countModelFiles, readPlan, type MigratePlan } from "./plan";
 import {
   createStaging,
   dropStaging,
@@ -88,6 +88,9 @@ export type RunOut = {
  *  migration with a new token goes on instead (what came is skipped). */
 const tokenRefused = (run: MigrationRun) =>
   run.source === "thingport-online" && (run.error as { code?: unknown } | null)?.code === "online_token";
+/** A working copy whose upgrade stopped part-way: every try would refuse it again, so it's discarded and prepared anew. */
+const upgradeInterrupted = (run: MigrationRun) =>
+  (run.error as { code?: unknown } | null)?.code === "upgrade_interrupted";
 
 function out(run: MigrationRun): RunOut {
   return {
@@ -103,7 +106,8 @@ function out(run: MigrationRun): RunOut {
       run.status === "failed" &&
       Boolean(run.startedAt) &&
       (Boolean(run.stagingDb) || run.source === "manyfold") &&
-      !tokenRefused(run),
+      !tokenRefused(run) &&
+      !upgradeInterrupted(run),
     created_at: run.createdAt.toISOString(),
     started_at: run.startedAt?.toISOString() ?? null,
     finished_at: run.finishedAt?.toISOString() ?? null,
@@ -410,7 +414,7 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
     if (!run) throw new HttpError(404, "No such migration");
     const notReady = new HttpError(409, "This migration can't be started.", "not_ready");
     if (!run.stagingDb || !(run.status === "ready" || (run.status === "failed" && run.startedAt))) throw notReady;
-    if (tokenRefused(run)) throw notReady;
+    if (tokenRefused(run) || upgradeInterrupted(run)) throw notReady;
     stagingDb = run.stagingDb;
     started = run;
     const plan = run.plan as MigratePlan;
@@ -437,10 +441,40 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
   return getRun(id);
 }
 
+/** Brings a saved working copy level with this instance's database changes before it's read again: one prepared before
+ *  this instance was upgraded lacks the upgrade's own, which this release's reads of it need. How many of them it has
+ *  once it's level. */
+async function levelStaging(name: string, state: Active): Promise<number> {
+  const copy = stagingClient(name);
+  let history: SourceHistory;
+  try {
+    // An upgrade of it an earlier try saw fail would keep this one from running; one stopped part-way can't be told
+    // from one that got as far as its own commit, so the copy is left as it is and the admin is told to prepare again.
+    await settleFailedUpgrade(copy);
+    const stopped = await stoppedUpgrade(copy);
+    if (stopped) {
+      throw new MigrateError(
+        "upgrade_interrupted",
+        `An upgrade of the working copy stopped part-way (${stopped}), so what it changed can't be told. Discard this migration and prepare it again.`,
+        { name: stopped },
+      );
+    }
+    history = await readSourceHistory(copy);
+  } finally {
+    await copy.$disconnect().catch(() => undefined);
+  }
+  if (history.missing) {
+    state.progress = { step: "upgrading", done: 0, total: history.missing };
+    await upgradeStaging(name, state.abort.signal);
+  }
+  return history.applied + history.missing;
+}
+
 async function execute(state: Active, name: string, run: MigrationRun, options: MigrateOptions, adminId: string) {
   const source = stagingClient(name);
   let merge: Merge | null = null;
   try {
+    await levelStaging(name, state);
     merge = new Merge(source, await filesOf(run), state.id, options, (progress) => {
       state.progress = { step: progress.phase, done: progress.done, total: progress.total };
     });
@@ -511,16 +545,26 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
       throw asHttp(err);
     }
     const plan = run.plan as MigratePlan;
+    let changes: number;
+    try {
+      changes = await levelStaging(run.stagingDb, state);
+    } catch (err) {
+      // Said as the folder's check says why: by its code, for the app to put in the admin's language.
+      throw asHttp(err);
+    }
     source = stagingClient(run.stagingDb);
-    const missingFiles = await countMissingFiles(
-      source,
-      await folderSource(folder),
-      plan.counts?.files ?? 0,
-      (done, total) => {
-        state.progress = { step: "files", done, total };
-      },
-    );
-    await prisma.migrationRun.update({ where: { id }, data: { plan: { ...plan, folder, missingFiles } } });
+    // Counted again each time, as the check below counts them: a copy an earlier try brought level, then stopped before
+    // saving the count, has one by the newer rule too.
+    const files = await countModelFiles(source);
+    const missingFiles = await countMissingFiles(source, await folderSource(folder), files, (done, total) => {
+      state.progress = { step: "files", done, total };
+    });
+    const levelled = {
+      ...(plan.counts ? { counts: { ...plan.counts, files } } : {}),
+      // The changes it took to bring the old instance's level, however many tries that took.
+      ...(plan.changes ? { changes: { ...plan.changes, added: changes - plan.changes.applied } } : {}),
+    };
+    await prisma.migrationRun.update({ where: { id }, data: { plan: { ...plan, ...levelled, folder, missingFiles } } });
   } finally {
     await source?.$disconnect().catch(() => undefined);
     release(state);

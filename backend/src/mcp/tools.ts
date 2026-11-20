@@ -229,7 +229,11 @@ const getModel: McpToolDefinition = {
     "Everything about one model: its description, files, tags, category, author, collections, where it was " +
     "imported from, and how often it was viewed and printed. A file that is one of the print profiles the model was " +
     "imported with carries `print_profile`: its name, whether the designer or the community made it, the printer, " +
-    "settings, print time in minutes, filament in grams, and its build plates. `license` is its licence as its source " +
+    "settings, print time in minutes, filament in grams, and its build plates. `supporting_files` are the files kept " +
+    "beside its model files that aren't printed, such as assembly instructions, notes and CAD sources (read one with " +
+    "get_model_file, its id from list_model_files, where both tools are allowed; a large one comes without its " +
+    "contents, to fetch from its download_url, or from its api_path on the server's own address where download_url is " +
+    "null, with the Model files permission). `license` is its licence as its source " +
     "lists it or its owner picked: its id (SPDX where there is one), name, link, what it allows of share (pass the " +
     "files on unchanged), remix and commercial, whether it asks for credit or for remixes under the same licence, and " +
     "any terms the site or creator added; null when nothing says. Change it with edit_model.",
@@ -263,6 +267,11 @@ const getModel: McpToolDefinition = {
         ...(plate.profile ? { print_profile: profileForAi(plate.profile) } : {}),
       })),
       supporting_file_count: print.supporting_file_count,
+      supporting_files: (print.supporting_files ?? []).map((file) => ({
+        name: file.filename,
+        ...(file.folder ? { folder: file.folder } : {}),
+        size_bytes: file.size,
+      })),
       license: print.license
         ? {
             id: print.license.id,
@@ -847,7 +856,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     include: {
       plates: { orderBy: { position: "asc" } },
       // The LICENSE.txt Thingport writes says what get_model's `license` does.
-      files: { where: { role: { not: "LICENSE" } }, orderBy: { createdAt: "asc" } },
+      files: { where: { role: { not: "LICENSE" }, ready: true }, orderBy: { createdAt: "asc" } },
     },
   });
   if (!print) throw new HttpError(404, "Print not found");
@@ -996,7 +1005,8 @@ const removeModelFile: McpToolDefinition = {
       const print = await prisma.print.findFirstOrThrow({ where: { id: modelId, userId } });
       await removePlate(print, file.id);
     } else if (file.kind === "prepared") {
-      await deletePreparedFile(userId, modelId);
+      // Only while it's still the one listed: another upload may have replaced it since.
+      await deletePreparedFile(userId, modelId, file.id);
     } else {
       await deleteSupportingFile(userId, modelId, file.id);
     }

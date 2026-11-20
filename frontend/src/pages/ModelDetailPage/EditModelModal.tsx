@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -18,8 +18,9 @@ import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Chip from "@mui/material/Chip";
+import Skeleton from "@mui/material/Skeleton";
 import Tooltip from "@mui/material/Tooltip";
-import { keyframes } from "@mui/material/styles";
+import { alpha, keyframes } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import ImageIcon from "@mui/icons-material/Image";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
@@ -33,7 +34,8 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { type LicenseFamily, type LicenseOption, type Print, printsApi } from "../../api/prints";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { type LicenseFamily, type LicenseOption, type Print, type PrintFile, printsApi } from "../../api/prints";
 import { printProviderInfo } from "../../constants/importProviders";
 import LicenseMarks from "../../components/license/LicenseMarks";
 import { categoriesApi, type Category } from "../../api/categories";
@@ -48,13 +50,43 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
+import {
+  batchesByName,
+  gltfFilesFromOthers,
+  isPreparedName,
+  sortAddedFiles,
+  stagedFiles,
+  storedModelFileName,
+  withGltfFiles,
+} from "../../utils/addedFiles";
+import { formatFileSize } from "../../utils/fileSize";
+import { inFolder, withExtensionOf } from "../../utils/fileExtensions";
+import RenameDialog from "../../components/RenameDialog";
+import TypeTile from "../../components/supportingFiles/TypeTile";
+import SupportingFileMenu, { type FileMenuAnchor } from "../../components/supportingFiles/SupportingFileMenu";
 
 type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
 
 type PlateItem =
-  | { kind: "existing"; id: string; filename: string; folder: string | null }
-  | { kind: "new"; localId: string; file: File };
+  // `wanted`: the name a file added in place of one of the same name was picked with, to be named back to.
+  | { kind: "existing"; id: string; filename: string; folder: string | null; wanted?: string }
+  // `packedWith`: the .bin and textures a .gltf points at, which go up with it and are packed into its .glb. `missing`:
+  // those its pick didn't have, looked for among the other picks on saving.
+  | { kind: "new"; localId: string; file: File; packedWith: File[]; missing: string[] };
+
+type SupportingItem =
+  | { kind: "existing"; file: PrintFile; renamedTo: string | null }
+  // `picked`: the name it was picked by, which says whether it may take the prepared slot (see the upload below).
+  | { kind: "new"; localId: string; file: File; picked: string };
+
+const supportingKey = (item: SupportingItem) => (item.kind === "existing" ? item.file.id : item.localId);
+const supportingName = (item: SupportingItem) =>
+  item.kind === "existing" ? (item.renamedTo ?? item.file.filename) : item.file.name;
+const existingItem = (file: PrintFile): SupportingItem => ({ kind: "existing", file, renamedTo: null });
+
+// A file that just landed in the list, from either Add files, is lit up for a moment so it's seen where it went.
+const landed = keyframes`from { background-color: var(--landed); } to { background-color: transparent; }`;
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -115,6 +147,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   // Removals are tracked explicitly rather than diffed: a new upload's thumbnail may still be
   // generating, and a diff would delete it as soon as it appeared.
   const [removedImageIds, setRemovedImageIds] = useState<Set<string>>(new Set());
+  // The model's plates removed here, until each is deleted: tracked rather than diffed against the model, which can
+  // gain a plate from another tab while the dialog is open, and that one isn't this dialog's to delete.
+  const [removedPlateIds, setRemovedPlateIds] = useState<Set<string>>(new Set());
+  // Whether the plates were moved here: only then is their order this dialog's to send. Added ones go last, as the
+  // server puts them, and an order sent from what the dialog read would undo one another tab chose meanwhile.
+  const [platesMoved, setPlatesMoved] = useState(false);
   const [plateItems, setPlateItems] = useState<PlateItem[]>(() =>
     print.plates.map((p): PlateItem => ({
       kind: "existing",
@@ -133,9 +171,25 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // A model opened from a card has only their count, so its supporting files are read here.
+  const [supportingItems, setSupportingItems] = useState<SupportingItem[]>(() =>
+    (print.supporting_files ?? []).map(existingItem),
+  );
+  const [supportingLoading, setSupportingLoading] = useState(
+    !print.supporting_files && print.supporting_file_count > 0,
+  );
+  const [supportingLoadFailed, setSupportingLoadFailed] = useState(false);
+  const [removedSupportingIds, setRemovedSupportingIds] = useState<Set<string>>(new Set());
+  const [supportingMenu, setSupportingMenu] = useState<{ key: string; anchor: FileMenuAnchor } | null>(null);
+  const [renamingKey, setRenamingKey] = useState<string | null>(null);
+
   const createdUrlsRef = useRef<string[]>([]);
   const addImageInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
+  const addSupportingInputRef = useRef<HTMLInputElement>(null);
+  // A sliced print this dialog added became the model's prepared print: the ones after it, in this save or a retry of
+  // it, are kept as supporting files rather than each replacing the one before.
+  const preparedAdded = useRef(false);
 
   useEffect(() => {
     categoriesApi
@@ -148,7 +202,64 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       .catch(() => setLicenses([]));
   }, []);
 
+  // Numbers each read of the files, so only the latest one's answer lands, and none once the dialog has gone.
+  const supportingRead = useRef(0);
+  // Taken when an answer lands, so a new function from the page doesn't read the files again.
+  const unauthorized = useRef(onUnauthorized);
+  useEffect(() => {
+    unauthorized.current = onUnauthorized;
+  });
+  const readSupportingFiles = useCallback(() => {
+    const read = ++supportingRead.current;
+    setSupportingLoadFailed(false);
+    setSupportingLoading(true);
+    printsApi
+      .listFiles(print.id)
+      .then((files) => {
+        // Before any added while they were read.
+        if (read === supportingRead.current) setSupportingItems((current) => [...files.map(existingItem), ...current]);
+      })
+      .catch((err: unknown) => {
+        if (read !== supportingRead.current) return;
+        // A session that ended goes where the app renews it or signs in again; still said as failed, with a retry, in
+        // case the server couldn't be reached to renew it.
+        if (err instanceof UnauthorizedError) unauthorized.current?.();
+        // Said, with a retry: the empty list would claim the model has none, and leave them out of reach here.
+        setSupportingLoadFailed(true);
+      })
+      .finally(() => {
+        if (read === supportingRead.current) setSupportingLoading(false);
+      });
+  }, [print.id]);
+
+  useEffect(() => {
+    if (print.supporting_files) return;
+    // None now (taken away while they were read): nothing to wait for or retry. The read before was given up already.
+    if (!print.supporting_file_count) {
+      setSupportingLoading(false);
+      setSupportingLoadFailed(false);
+      return;
+    }
+    readSupportingFiles();
+    return () => {
+      supportingRead.current += 1;
+    };
+  }, [print.supporting_files, print.supporting_file_count, readSupportingFiles]);
+  // A model read in full since the dialog opened, passed in from a card, lists its files: taken from it while the read
+  // of them is still under way, or failed, so the list and Update aren't left waiting for a read that won't land.
+  useEffect(() => {
+    if (!print.supporting_files || !(supportingLoading || supportingLoadFailed)) return;
+    supportingRead.current += 1;
+    const files = print.supporting_files;
+    setSupportingItems((current) => [...files.map(existingItem), ...current]);
+    setSupportingLoadFailed(false);
+    setSupportingLoading(false);
+  }, [print.supporting_files, supportingLoading, supportingLoadFailed]);
+
   const markDirty = () => setDirty(true);
+  // Picks not in the lists yet, their .gltf or an earlier pick's still being read for the files it points at: Update
+  // waits for them.
+  const [adding, setAdding] = useState(0);
 
   // Each kind is ordered on its own, as in its box on the models page; categories come first.
   const [flatCategories, flatFolders] = useMemo(
@@ -208,21 +319,87 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
 
-  const onAddFiles = (fileList: FileList | null) => {
-    if (!fileList?.length) return;
-    const newItems: PlateItem[] = Array.from(fileList).map((file) => ({
-      kind: "new",
-      localId: newLocalId(),
-      file,
-    }));
-    setPlateItems((prev) => [...prev, ...newItems]);
+  // Each pick goes into the lists after the one before, though that one's .gltf may take longer to read: the first
+  // plate and the first sliced print, which becomes the prepared print, are those picked first.
+  const picks = useRef<Promise<unknown>>(Promise.resolve());
+  const onAddFiles = (fileList: FileList | null, addedTo: "model" | "supporting") => {
+    if (!fileList?.length) return Promise.resolve();
+    const sorted = sortAddedFiles(Array.from(fileList), addedTo);
+    markDirty();
+    setAdding((count) => count + 1);
+    // Read at once, beside the picks before it; caught here too, so one that fails while it waits its turn isn't
+    // reported as unhandled.
+    const reading = withGltfFiles(sorted, (file) => file);
+    reading.catch(() => undefined);
+    const inLists = picks.current
+      .then(() => reading)
+      .then(({ model, supporting, packedWith, ambiguous, missing }) => {
+        // Nothing of a pick whose .gltf names a file two picked files could be: the server couldn't tell which either.
+        if (ambiguous.length) {
+          setError(t("models:supporting.gltfAmbiguous", { names: ambiguous.join(", ") }));
+          return;
+        }
+        const packed = new Set([...packedWith.values()].flat());
+        if (model.length) {
+          setPlateItems((prev) => [
+            ...prev,
+            ...model
+              .filter((file) => !packed.has(file))
+              .map((file): PlateItem => ({
+                kind: "new",
+                localId: newLocalId(),
+                file,
+                packedWith: packedWith.get(file) ?? [],
+                missing: missing.get(file) ?? [],
+              })),
+          ]);
+        }
+        if (supporting.length) {
+          setSupportingItems((prev) => [
+            ...prev,
+            ...supporting.map((file): SupportingItem => ({
+              kind: "new",
+              localId: newLocalId(),
+              file,
+              picked: file.name,
+            })),
+          ]);
+        }
+      })
+      .finally(() => setAdding((count) => count - 1));
+    picks.current = inLists.catch(() => undefined);
+    return inLists;
+  };
+  const removeSupportingItem = (key: string) => {
+    const target = supportingItems.find((item) => supportingKey(item) === key);
+    if (target?.kind === "existing") setRemovedSupportingIds((ids) => new Set(ids).add(target.file.id));
+    setSupportingItems((prev) => prev.filter((item) => supportingKey(item) !== key));
+    markDirty();
+  };
+  const renameSupportingItem = (key: string, name: string) => {
+    setSupportingItems((prev) =>
+      prev.map((item) => {
+        if (supportingKey(item) !== key) return item;
+        if (item.kind === "existing") return { ...item, renamedTo: name === item.file.filename ? null : name };
+        // A file still to upload is uploaded under its new name, keeping its extension where the name gives none, as
+        // a stored file's rename does.
+        return {
+          ...item,
+          file: new File([item.file], withExtensionOf(name, item.file.name), { type: item.file.type }),
+        };
+      }),
+    );
     markDirty();
   };
   const removePlateItem = (key: string) => {
-    setPlateItems((prev) => (prev.length <= 1 ? prev : prev.filter((p) => plateKey(p) !== key)));
+    if (plateItems.length <= 1) return;
+    const target = plateItems.find((p) => plateKey(p) === key);
+    if (target?.kind === "existing") setRemovedPlateIds((ids) => new Set(ids).add(target.id));
+    setPlateItems((prev) => prev.filter((p) => plateKey(p) !== key));
     markDirty();
   };
   const movePlateItemBy = (key: string, dir: -1 | 1) => {
+    setPlatesMoved(true);
     setPlateItems((prev) =>
       moveItem(
         prev,
@@ -247,9 +424,64 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
+    // A scene picked apart from files it points at takes them from the other picks now, as the server packs a .gltf only
+    // with what's sent with it. Two picked files one could be are said before anything is saved.
+    type Staged = Extract<PlateItem, { kind: "new" }> | Extract<SupportingItem, { kind: "new" }>;
+    const staged = stagedFiles<Staged>(
+      [
+        ...plateItems.flatMap((p) => (p.kind === "new" ? [p] : [])),
+        ...supportingItems.flatMap((item) => (item.kind === "new" ? [item] : [])),
+      ],
+      (item) => item.file,
+      plateItems.flatMap((p) => (p.kind === "new" ? p.packedWith : [])),
+    );
+    const across = gltfFilesFromOthers(
+      plateItems.flatMap((p) =>
+        p.kind === "new" && p.missing.length ? [{ scene: p, file: p.file, missing: p.missing }] : [],
+      ),
+      staged,
+      (each) => each.file,
+    );
+    if (across.ambiguous.length) {
+      setError(t("models:supporting.gltfAmbiguous", { names: across.ambiguous.join(", ") }));
+      return;
+    }
+    const taken = new Set<Staged>([...across.took.values()].flat().flatMap((each) => (each.item ? [each.item] : [])));
+    const takenIn = (list: PlateItem[]) =>
+      list.flatMap((p): PlateItem[] => {
+        if (p.kind !== "new") return [p];
+        if (taken.has(p)) return [];
+        const took = across.took.get(p);
+        return took
+          ? [
+              {
+                ...p,
+                packedWith: [
+                  ...p.packedWith,
+                  ...took.map((each) => each.file).filter((file) => !p.packedWith.includes(file)),
+                ],
+                missing: across.missing.get(p) ?? [],
+              },
+            ]
+          : [p];
+      });
+    const takenOut = (list: SupportingItem[]) => list.filter((item) => item.kind !== "new" || !taken.has(item));
+    const plateList = across.took.size ? takenIn(plateItems) : plateItems;
+    const supportingList = across.took.size ? takenOut(supportingItems) : supportingItems;
+    if (across.took.size) {
+      setPlateItems(takenIn);
+      setSupportingItems(takenOut);
+    }
     setSaving(true);
     setError(null);
+    // A file's menu left open would change what this save has already read.
+    setSupportingMenu(null);
     let latest: Print = print;
+    // Renames of files another tab took away meanwhile: nothing to rename, said once the rest is saved, or with what
+    // stopped it.
+    const renamesGone: string[] = [];
+    const goneSaid = () =>
+      renamesGone.length ? t("models:edit.renamesGone", { names: renamesGone.join(", ") }) : null;
     try {
       const metaRes = await printsApi.updateMeta(print.id, {
         title,
@@ -272,25 +504,50 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       for (const id of removedImageIds) {
         const res = await printsApi.deletePreviewImage(print.id, id);
         latest = res.print ?? latest;
+        // Gone now: a retry after a later step fails doesn't ask again, which the server would answer with a 404.
+        setRemovedImageIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
       }
-      const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
-      let newImageIdsInOrder: string[] = [];
-      if (newImageFiles.length) {
-        const beforeIds = new Set(latest.preview_images.map((img) => img.id));
-        const uploadRes = await printsApi.addPreviewImages(print.id, newImageFiles);
+      const newImages = images.flatMap((img) => (img.kind === "new" ? [img] : []));
+      // Up now: each new picture is the stored one it became, so a retry doesn't upload it again. By the ids the upload
+      // gave back: a picture another tab added meanwhile is new to this dialog too, and isn't one of these. One a
+      // request, each settled as it's up: a request the server failed part-way through would have kept some of its
+      // pictures without saying which, and a retry would add them again.
+      const storedImages = new Map<string, { id: string; url: string }>();
+      const unsavedPhotos: string[] = [];
+      for (const img of newImages) {
+        const uploadRes = await printsApi.addPreviewImages(print.id, [img.file]);
         latest = uploadRes.print;
-        newImageIdsInOrder = latest.preview_images
-          .filter((img) => !beforeIds.has(img.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((img) => img.id);
+        const id = uploadRes.image_ids?.[0];
+        const url = id ? latest.preview_images.find((each) => each.id === id)?.url : undefined;
+        if (!id || !url) {
+          // One the server couldn't keep stays in the list, to be said below and tried again or taken out.
+          unsavedPhotos.push(img.file.name);
+          continue;
+        }
+        storedImages.set(img.localId, { id, url });
+        // Our own render gives way to the first picture stored: out of the list now, not after the last, so a later
+        // photo failing doesn't leave it there to be removed, a removal the next try would fail on.
+        const present = new Set(latest.preview_images.map((each) => each.id));
+        setImages((current) =>
+          current.flatMap((each): ImageItem[] => {
+            if (each.kind === "new") return [each.localId === img.localId ? { kind: "existing", id, url } : each];
+            return present.has(each.id) ? [each] : [];
+          }),
+        );
       }
       if (images.length) {
-        let nextNew = 0;
-        // Our own render gives way to the first picture uploaded, so it may be gone by now.
+        // Our own render gives way to the first picture uploaded, so it may be gone by now: left out of the order, and
+        // of the dialog's list, so a retry doesn't send it either.
         const present = new Set(latest.preview_images.map((img) => img.id));
-        const known = images
-          .map((img) => (img.kind === "existing" ? img.id : newImageIdsInOrder[nextNew++]))
-          .filter((id) => present.has(id));
+        setImages((current) => current.filter((img) => img.kind !== "existing" || present.has(img.id)));
+        const known = images.flatMap((img) => {
+          const id = img.kind === "existing" ? img.id : storedImages.get(img.localId)?.id;
+          return id && present.has(id) ? [id] : [];
+        });
         // Reorder needs an exhaustive id list; images this modal never saw go after, in their order.
         const knownIds = new Set(known);
         const unknown = latest.preview_images
@@ -298,47 +555,177 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           .toSorted((a, b) => a.position - b.position)
           .map((img) => img.id);
         const finalOrder = [...known, ...unknown];
+        // None when every picture added was one the server couldn't read, and the model had none.
         if (finalOrder.length) {
           const reorderRes = await printsApi.reorderPreviewImages(print.id, finalOrder);
           latest = reorderRes.print ?? latest;
         }
       }
 
-      // Upload before delete so a model's only file can be swapped in one save.
-      const newPlateFiles = plateItems.filter((p) => p.kind === "new").map((p) => p.file);
-      let newPlateIdsInOrder: string[] = [];
-      if (newPlateFiles.length) {
-        const beforeIds = new Set(latest.plates.map((p) => p.id));
-        const uploadRes = await printsApi.addPlates(print.id, newPlateFiles);
+      // Upload before delete so a model's only file can be swapped in one save. `plates` follows each step as it's
+      // done, for the steps after it, and so does the dialog's list, for a retry after a later step fails.
+      let plates = plateList;
+      // One plate each: a .gltf's files are packed into it, and one two scenes share is sent once. Two files of one
+      // name go in requests apart (picked with two scenes, "scene.bin" each), as the server matches a scene's by name.
+      const filesOf = (p: PlateItem) => (p.kind === "new" ? [p.file, ...p.packedWith] : []);
+      for (const batch of batchesByName(
+        plates.filter((p) => p.kind === "new"),
+        filesOf,
+      )) {
+        const sent = [...new Set(batch.flatMap(filesOf))];
+        const uploadRes = await printsApi.addPlates(print.id, sent);
         latest = uploadRes.print;
-        newPlateIdsInOrder = latest.plates
-          .filter((p) => !beforeIds.has(p.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((p) => p.id);
+        // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By what the upload
+        // said of its own file: a plate another tab added meanwhile is new to this dialog too, and isn't one of these,
+        // and a file a .gltf sent with it took in became no plate, so it's gone from the list rather than given one.
+        const became = new Map<string, PlateItem>();
+        const packedInto = new Set<string>();
+        // Up, by the answer, but not on the model it answered with: taken away by another tab, as it may be. Said,
+        // with the dialog left open, rather than saved as if it were there.
+        const unsettled: string[] = [];
+        for (const p of batch) {
+          if (p.kind !== "new") continue;
+          const result = uploadRes.uploaded?.[sent.indexOf(p.file)];
+          if (result?.packed) {
+            packedInto.add(p.localId);
+            continue;
+          }
+          const stored = latest.plates.find((each) => each.id === result?.plate_id);
+          if (!stored) {
+            unsettled.push(p.file.name);
+            continue;
+          }
+          became.set(p.localId, {
+            kind: "existing",
+            id: stored.id,
+            filename: stored.filename,
+            folder: stored.folder ?? null,
+            wanted: storedModelFileName(p.file.name),
+          });
+        }
+        const settle = (list: PlateItem[]) =>
+          list.flatMap((p) =>
+            p.kind === "new" && packedInto.has(p.localId) ? [] : [(p.kind === "new" && became.get(p.localId)) || p],
+          );
+        plates = settle(plates);
+        setPlateItems(settle);
+        if (unsettled.length) throw new Error(t("models:edit.platesUnsettled", { names: unsettled.join(", ") }));
       }
-      const keptPlateIds = new Set(plateItems.filter((p) => p.kind === "existing").map((p) => p.id));
-      for (const original of print.plates) {
-        if (keptPlateIds.has(original.id)) continue;
-        const res = await printsApi.deletePlate(print.id, original.id);
+      for (const id of removedPlateIds) {
+        // One another tab took away already is as good as done: the model is read to be sure it's gone, as no view of it.
+        const res = await printsApi.deletePlate(print.id, id).catch(async (err: unknown) => {
+          const now = await printsApi.get(print.id, { record: false }).catch(() => null);
+          if (!now || now.plates.some((each) => each.id === id)) throw err;
+          return { print: now };
+        });
         latest = res.print ?? latest;
+        setRemovedPlateIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
       }
-      // The replaced file got its " (2)" suffix from the old one; rename back now it's gone.
-      for (const [index, plateId] of newPlateIdsInOrder.entries()) {
-        const wanted = newPlateFiles[index].name;
-        const current = latest.plates.find((p) => p.id === plateId);
-        if (!current || current.filename === wanted) continue;
-        const res = await printsApi.renamePlate(print.id, plateId, wanted);
-        latest = res.print ?? latest;
+      // A file added in place of one of the same name got a " (2)" from it: named back now that one's gone.
+      for (const p of plates) {
+        if (p.kind !== "existing" || p.wanted === undefined) continue;
+        const current = latest.plates.find((each) => each.id === p.id);
+        if (current && current.filename !== p.wanted) {
+          const res = await printsApi.renamePlate(print.id, p.id, p.wanted);
+          latest = res.print ?? latest;
+        }
+        const filename = latest.plates.find((each) => each.id === p.id)?.filename ?? p.filename;
+        const named = (list: PlateItem[]) =>
+          list.map((each) =>
+            each.kind === "existing" && each.id === p.id ? { ...each, filename, wanted: undefined } : each,
+          );
+        plates = named(plates);
+        setPlateItems(named);
       }
       {
-        let nextNew = 0;
-        const finalOrder = plateItems.map((p) => (p.kind === "existing" ? p.id : newPlateIdsInOrder[nextNew++]));
-        const reorderRes = await printsApi.reorderPlates(print.id, finalOrder);
-        latest = reorderRes.print ?? latest;
+        // Only plates still on the model: one another tab took away meanwhile leaves the list, as the order would be
+        // refused with it in. Reorder needs an exhaustive id list; plates this dialog never saw go after, in order.
+        const present = new Set(latest.plates.map((each) => each.id));
+        const stillThere = (list: PlateItem[]) => list.filter((p) => p.kind !== "existing" || present.has(p.id));
+        plates = stillThere(plates);
+        setPlateItems(stillThere);
+        const known = plates.flatMap((p) => (p.kind === "existing" ? [p.id] : []));
+        const knownIds = new Set(known);
+        const unknown = latest.plates
+          .filter((p) => !knownIds.has(p.id))
+          .toSorted((a, b) => a.position - b.position)
+          .map((p) => p.id);
+        if (platesMoved) {
+          const reorderRes = await printsApi.reorderPlates(print.id, [...known, ...unknown]);
+          latest = reorderRes.print ?? latest;
+          // Sent, so a retry after a later step fails doesn't send it again over one another tab chose since.
+          setPlatesMoved(false);
+        }
+      }
+
+      // Each change that's done leaves what's staged, so a retry after a later step fails sends only what's left.
+      for (const id of removedSupportingIds) {
+        // One another tab took away already, or whose answer was lost, is as good as done: the model is read to be sure
+        // it's gone, as no view of it, and the dialog goes on from what it read, which no longer lists the file.
+        const res = await printsApi.deleteFile(print.id, id).catch(async (err: unknown) => {
+          const now = await printsApi.get(print.id, { record: false }).catch(() => null);
+          if (!now || (now.supporting_files ?? []).some((file) => file.id === id)) throw err;
+          return { print: now };
+        });
+        latest = res.print ?? latest;
+        setRemovedSupportingIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
+      }
+      for (const item of supportingList) {
+        if (item.kind !== "existing" || !item.renamedTo) continue;
+        // One that's gone is read to be sure, as no view of it, and leaves the list; the rest of the save goes on.
+        const res = await printsApi.renameFile(print.id, item.file.id, item.renamedTo).catch(async (err: unknown) => {
+          const now = await printsApi.get(print.id, { record: false }).catch(() => null);
+          if (!now || (now.supporting_files ?? []).some((file) => file.id === item.file.id)) throw err;
+          return { print: now, gone: true };
+        });
+        latest = res.print ?? latest;
+        if ("gone" in res) {
+          renamesGone.push(item.file.filename);
+          setSupportingItems((current) => current.filter((entry) => entry !== item));
+          continue;
+        }
+        // Named as the server named it now, so a later rename is measured from that, not from the name it had.
+        const renamed = latest.supporting_files?.find((file) => file.id === item.file.id) ?? {
+          ...item.file,
+          filename: item.renamedTo,
+        };
+        setSupportingItems((current) => current.map((entry) => (entry === item ? existingItem(renamed) : entry)));
+      }
+      for (const item of supportingList) {
+        if (item.kind !== "new") continue;
+        // Only one picked as a sliced print may take the prepared slot: renamed to one here, it's still an attachment.
+        const res = await printsApi.uploadFile(print.id, item.file, {
+          keepPrepared: preparedAdded.current || !isPreparedName(item.picked),
+        });
+        if (res.prepared) preparedAdded.current = true;
+        latest = res.print ?? latest;
+        // By the id the server gave it: a file another tab added meanwhile is new to this list too, and isn't this one.
+        const stored = latest.supporting_files?.find((file) => file.id === res.file_id);
+        // Up now: listed as the model's own file, and not sent again.
+        setSupportingItems((current) =>
+          stored
+            ? current.map((entry) => (entry === item ? existingItem(stored) : entry))
+            : current.filter((entry) => entry !== item),
+        );
       }
 
       onUpdated(latest);
-      showToast({ message: t("models:edit.updateSuccess") });
+      const gone = goneSaid();
+      if (unsavedPhotos.length) {
+        setError(
+          [t("models:edit.photosNotSaved", { names: unsavedPhotos.join(", ") }), gone].filter(Boolean).join(" "),
+        );
+        return;
+      }
+      showToast(gone ? { message: gone, severity: "warning" } : { message: t("models:edit.updateSuccess") });
       onClose();
     } catch (err) {
       onUpdated(latest);
@@ -347,7 +734,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         return;
       }
       console.error(err);
-      setError(err instanceof Error ? err.message : t("models:edit.updateFailed"));
+      // An error with nothing to say (an answer that couldn't be read) still says something.
+      setError(
+        [err instanceof Error && err.message ? err.message : t("models:edit.updateFailed"), goneSaid()]
+          .filter(Boolean)
+          .join(" "),
+      );
     } finally {
       setSaving(false);
     }
@@ -678,8 +1070,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             <Stack spacing={1}>
               {plateItems.map((p, idx) => {
                 const key = plateKey(p);
-                const filename = p.kind === "existing" ? p.filename : p.file.name;
+                const filename = p.kind === "existing" ? (p.wanted ?? p.filename) : p.file.name;
                 const folder = p.kind === "existing" ? p.folder : null;
+                const packedWith = p.kind === "new" ? p.packedWith.map((file) => file.name).join(", ") : "";
                 return (
                   <Stack
                     key={key}
@@ -693,6 +1086,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                       <Typography variant="body2" noWrap title={filename}>
                         {filename}
                       </Typography>
+                      {packedWith && (
+                        <Typography variant="caption" color="text.secondary" noWrap component="div" title={packedWith}>
+                          + {packedWith}
+                        </Typography>
+                      )}
                       {/* Its order is the model's, across folders, so the folder is said on each file. */}
                       {folder && (
                         <Typography
@@ -746,11 +1144,138 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                 multiple
                 hidden
                 onChange={(e) => {
-                  onAddFiles(e.target.files);
+                  void onAddFiles(e.target.files, "model");
                   e.target.value = "";
                 }}
               />
             </Stack>
+          </Box>
+
+          <Box>
+            <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
+              <Typography variant="subtitle2">{t("models:supporting.title")}</Typography>
+              <HelpTip text={t("models:supporting.editHelp")} />
+            </Stack>
+            <Stack spacing={1}>
+              {supportingLoading && <Skeleton variant="rounded" height={38} />}
+              {supportingLoadFailed && (
+                <Alert
+                  severity="error"
+                  action={
+                    <Button color="inherit" size="small" onClick={readSupportingFiles}>
+                      {t("common:retry")}
+                    </Button>
+                  }
+                >
+                  {t("models:supporting.loadFailed")}
+                </Alert>
+              )}
+              {!supportingLoading && !supportingLoadFailed && !supportingItems.length && (
+                <Typography variant="body2" color="text.secondary">
+                  {t("models:supporting.editEmpty")}
+                </Typography>
+              )}
+              {supportingItems.map((item) => {
+                const key = supportingKey(item);
+                const name = supportingName(item);
+                const folder = item.kind === "existing" ? item.file.folder : null;
+                const openMenu = (anchor: FileMenuAnchor) => setSupportingMenu({ key, anchor });
+                return (
+                  <Stack
+                    key={key}
+                    direction="row"
+                    alignItems="center"
+                    spacing={1.25}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      if (!saving) openMenu({ top: event.clientY, left: event.clientX });
+                    }}
+                    sx={(theme) => ({
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      pl: 0.75,
+                      pr: 0.5,
+                      py: 0.5,
+                      "--landed": alpha(theme.palette.primary.main, 0.16),
+                      ...(item.kind === "new" && {
+                        animation: `${landed} 1.2s ease-out`,
+                        "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                      }),
+                    })}
+                  >
+                    <TypeTile filename={name} size={28} />
+                    <Typography variant="body2" noWrap title={inFolder(name, folder)} sx={{ flex: 1, minWidth: 0 }}>
+                      {inFolder(name, folder)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+                      {formatFileSize(item.file.size)}
+                    </Typography>
+                    {item.kind === "new" && <Chip label={t("models:edit.newBadge")} size="small" />}
+                    <IconButton
+                      size="small"
+                      disabled={saving}
+                      aria-label={t("models:supporting.moreActionsNamed", { name: inFolder(name, folder) })}
+                      aria-haspopup="menu"
+                      onClick={(event) => openMenu({ element: event.currentTarget })}
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                );
+              })}
+              <Button
+                size="small"
+                disabled={saving}
+                startIcon={<UploadFileIcon fontSize="small" />}
+                onClick={() => addSupportingInputRef.current?.click()}
+                sx={{ alignSelf: "flex-start" }}
+              >
+                {t("models:edit.addFiles")}
+              </Button>
+              <input
+                ref={addSupportingInputRef}
+                type="file"
+                multiple
+                hidden
+                onChange={(e) => {
+                  void onAddFiles(e.target.files, "supporting");
+                  e.target.value = "";
+                }}
+              />
+            </Stack>
+            {(() => {
+              const target = supportingMenu
+                ? supportingItems.find((item) => supportingKey(item) === supportingMenu.key)
+                : undefined;
+              return (
+                <SupportingFileMenu
+                  anchor={target ? (supportingMenu?.anchor ?? null) : null}
+                  onClose={() => setSupportingMenu(null)}
+                  // A file still to upload has no address yet.
+                  onOpenInTab={
+                    target?.kind === "existing"
+                      ? () =>
+                          window.open(printsApi.supportingFileUrl(target.file, true), "_blank", "noopener,noreferrer")
+                      : undefined
+                  }
+                  onRename={target ? () => setRenamingKey(supportingKey(target)) : undefined}
+                  onRemove={target ? () => removeSupportingItem(supportingKey(target)) : undefined}
+                />
+              );
+            })()}
+            <RenameDialog
+              value={(() => {
+                const target = supportingItems.find((item) => supportingKey(item) === renamingKey);
+                return target ? supportingName(target) : null;
+              })()}
+              title={t("models:supporting.renameTitle")}
+              maxLength={255}
+              onClose={() => setRenamingKey(null)}
+              onSave={(name) => {
+                if (renamingKey) renameSupportingItem(renamingKey, name);
+              }}
+            />
           </Box>
         </Stack>
       </DialogContent>
@@ -761,7 +1286,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving}
+          // Not until the model's supporting files are in the list, nor after a read of them failed until a retry
+          // brings them, nor while files just picked are being sorted: a save before would leave them out of it.
+          disabled={saving || adding > 0 || supportingLoading || supportingLoadFailed}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

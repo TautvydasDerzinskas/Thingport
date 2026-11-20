@@ -159,6 +159,9 @@ export type Print = {
   render_url?: string | null; // the first plate's render_url that isn't null
   own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
+  /** From the detail fetch: the files kept beside it that aren't plates (instructions, notes, sources), by name.
+   *  Absent from list endpoints, which give only the count. */
+  supporting_files?: PrintFile[];
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
   generator_scripts?: { id: string; filename: string; folder?: string | null }[];
   /** The source had a script for it but its creator chose not to share it: there is none to open, and that is
@@ -401,8 +404,9 @@ export const printsApi = {
     return res.json();
   },
 
-  get: async (id: string): Promise<Print> => {
-    const res = await fetch(`${apiBase()}/print/${id}`, { headers: authHeaders() });
+  /** `record: false` reads the model without counting it as viewed (Browsing History), as after a change made to it. */
+  get: async (id: string, { record = true }: { record?: boolean } = {}): Promise<Print> => {
+    const res = await fetch(`${apiBase()}/print/${id}${record ? "" : "?record=false"}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to load model");
     return res.json();
@@ -499,6 +503,11 @@ export const printsApi = {
       origin?: "generated" | "created";
       /** The tool that built it (origin "created"), by slug: kept on the model as what made it. */
       createdWithTool?: string;
+      /** For one model: each file's folder within the upload ("docs"), or null, in `files` order. */
+      folders?: (string | null)[];
+      /** Where each file was in what was picked, for a .gltf's references only, which can reach outside the folder its
+       *  model keeps ("../shared/mesh.bin"): `folders` where it's left out. */
+      sourceFolders?: (string | null)[];
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -513,6 +522,9 @@ export const printsApi = {
     if (opts.notify === false) fd.set("notify", "false");
     if (opts.origin) fd.set("origin", opts.origin);
     if (opts.createdWithTool) fd.set("created_with_tool", opts.createdWithTool);
+    if (opts.folders?.some(Boolean)) fd.set("folders", JSON.stringify(opts.folders));
+    // Even all at the top: that isn't the same as left out, which means where `folders` puts each.
+    if (opts.sourceFolders) fd.set("source_folders", JSON.stringify(opts.sourceFolders));
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,
@@ -530,7 +542,17 @@ export const printsApi = {
     return res.json();
   },
 
-  addPlates: async (printId: string, files: File[]): Promise<{ print: Print }> => {
+  /** `plate_ids`: the plates `files` became, in their order. */
+  /** `plate_ids`: one per plate made, in order. `uploaded`: one per file sent, in order: the plate it became, or
+   *  `packed` where a .gltf sent with it took it in. */
+  addPlates: async (
+    printId: string,
+    files: File[],
+  ): Promise<{
+    print: Print;
+    plate_ids?: string[];
+    uploaded?: { plate_id: string | null; packed: boolean }[];
+  }> => {
     const fd = new FormData();
     for (const file of files) {
       fd.append("files", file);
@@ -641,8 +663,22 @@ export const printsApi = {
     return res.text();
   },
 
-  uploadFile: async (id: string, file: File): Promise<Print> => {
+  /** A supporting file's address for the browser. `inline` shows a PDF, text or picture in it rather than downloading;
+   *  any other type still downloads. */
+  supportingFileUrl: (file: Pick<PrintFile, "url">, inline = false): string =>
+    printsApi.fileUrl(inline ? `${file.url}?inline=1` : file.url),
+
+  /** Keeps a file beside the model, as a supporting file (a sliced print becomes its prepared print). */
+  /** `file_id`: the stored file's, which is the prepared print's when the file was a sliced one. */
+  /** `keepPrepared` for each file after one that became the prepared print (`prepared`), among several added at once:
+   *  each would otherwise replace the one before it. */
+  uploadFile: async (
+    id: string,
+    file: File,
+    { keepPrepared = false }: { keepPrepared?: boolean } = {},
+  ): Promise<{ print: Print; file_id?: string; prepared?: boolean }> => {
     const body = new FormData();
+    if (keepPrepared) body.set("keep_prepared", "1");
     body.set("file", file, file.name);
     const res = await fetch(`${apiBase()}/print/${id}/files`, {
       method: "POST",
@@ -651,12 +687,25 @@ export const printsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to add file"));
+      // With its status: a caller sending several needs to know whether the server may have kept it (holdsBackSliced).
+      throw new PrintApiError(await readErrorMessage(res, "Failed to add file"), res.status, null);
     }
     return res.json();
   },
 
-  deleteFile: async (printId: string, fileId: string): Promise<Print> => {
+  renameFile: async (printId: string, fileId: string, filename: string): Promise<{ print: Print }> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/files/${fileId}`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ filename }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    // No fallback of its own: the caller has a translated one for an answer it can't read.
+    if (!res.ok) throw new Error(await readErrorMessage(res, ""));
+    return res.json();
+  },
+
+  deleteFile: async (printId: string, fileId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/files/${fileId}`, {
       method: "DELETE",
       headers: authHeaders(),
@@ -665,7 +714,7 @@ export const printsApi = {
     return res.json();
   },
 
-  deletePreparedPrint: async (printId: string): Promise<Print> => {
+  deletePreparedPrint: async (printId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/prepared-print`, {
       method: "DELETE",
       headers: authHeaders(),
@@ -873,7 +922,8 @@ export const printsApi = {
     return res.json();
   },
 
-  addPreviewImages: async (id: string, files: File[]): Promise<{ print: Print }> => {
+  /** `image_ids`: the images `files` became, in their order, null for one that wasn't a picture. */
+  addPreviewImages: async (id: string, files: File[]): Promise<{ print: Print; image_ids?: (string | null)[] }> => {
     const fd = new FormData();
     for (const file of files) fd.append("files", file);
     const res = await fetch(`${apiBase()}/print/${id}/preview-images`, {

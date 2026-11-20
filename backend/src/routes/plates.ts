@@ -9,16 +9,17 @@ import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload, thumbnailUpload } from "../uploadMiddleware";
 import {
-  addPlatesToPrint,
-  refreshAutoPreparedMetadata,
   removePlate,
   renamePlate,
+  reorderPlates,
   resolvePlateFilePath,
+  withPlateBatch,
   type NewPlateInput,
 } from "../services/printCreation";
 import { plateThumbPath, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
 import { addGeneratedPreviewImageIfNone, generateCardRender } from "../services/previewImageService";
 import { printOutById } from "../services/printLoader";
+import { withGltfPacked } from "../services/uploadService";
 import {
   generateModelPreviewGlb,
   modelPreviewGlbPath,
@@ -41,20 +42,38 @@ router.post(
   modelUpload.array("files"),
   asyncHandler(async (req, res) => {
     const files = (req.files as Express.Multer.File[]) || [];
+    let glbs: string[] = [];
     try {
       if (!files.length) throw new HttpError(400, "No files uploaded");
       const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
       if (!print) throw new HttpError(404, "Print not found");
 
-      const plateInputs: NewPlateInput[] = files.map((f) => {
+      // A .gltf is one plate, a .glb packed with the files it points at that came with it, as an upload makes it.
+      const packed = await withGltfPacked(files);
+      glbs = packed.glbs;
+      const plateInputs: NewPlateInput[] = packed.files.map((f) => {
         const safeName = sanitizeFilename(f.originalname);
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
-      await addPlatesToPrint(req.userId!, print.id, plateInputs);
-      res.json({ print: await printOutById(req.userId!, print.id) });
+      // Taken back together when any step fails, the model read back for the answer included: a retry sends every file
+      // again, so those already in would come back twice. The plate order is held until the answer is read, so nothing
+      // removes or reorders the model's plates in between: the answer lists every plate made. Taking them back is as
+      // far as it goes: one that can't be is logged, and stays.
+      const { added, out } = await withPlateBatch(req.userId!, print.id, async (add) => {
+        const made = await add(plateInputs);
+        return { added: made, out: await printOutById(req.userId!, print.id) };
+      });
+      // Which plates are these files', in their order: the model can gain others meanwhile, from another tab.
+      // `plate_ids` has one per plate made; `uploaded`, one per file sent: the plate it became, or `packed` where a
+      // .gltf sent with it took it in.
+      let made = 0;
+      const uploaded = files.map((f) =>
+        packed.packedInto.has(f) ? { plate_id: null, packed: true } : { plate_id: added[made++].id, packed: false },
+      );
+      res.json({ print: out, plate_ids: added.map((plate) => plate.id), uploaded });
     } finally {
-      for (const f of files) {
-        if (fs.existsSync(f.path)) fs.rmSync(f.path, { force: true });
+      for (const tempPath of [...files.map((f) => f.path), ...glbs]) {
+        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { force: true });
       }
     }
   }),
@@ -77,23 +96,7 @@ router.post(
     const body = parseBody(reorderSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
-    const byId = new Map(plates.map((p) => [p.id, p]));
-    if (body.plate_ids.length !== plates.length || body.plate_ids.some((id) => !byId.has(id))) {
-      throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids");
-    }
-    const previousFirst = plates.toSorted((a, b) => a.position - b.position)[0]?.id;
-
-    await prisma.$transaction(
-      body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: -(idx + 1) } })),
-    );
-    await prisma.$transaction(
-      body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: idx } })),
-    );
-
-    if (previousFirst !== body.plate_ids[0]) {
-      await refreshAutoPreparedMetadata(print.id);
-    }
+    await reorderPlates(print.id, body.plate_ids);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

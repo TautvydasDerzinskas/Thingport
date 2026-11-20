@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
@@ -226,11 +227,45 @@ describe("finding what a .gltf points at among files", () => {
     expect(json.images[0].uri).toBeUndefined();
   });
 
+  it("reads a backslash in a path a .gltf gives as a folder, at its path and by its name", async () => {
+    const { gltf, bin } = cubeGltf({ imageUri: "textures%5Cwood.png" });
+    const inFolders = [
+      write("Desk/scene.gltf", gltf),
+      write("Desk/scene.bin", bin),
+      write("Desk/textures/wood.png", await png()),
+    ];
+    expect((await packGltfFiles(inFolders, tempPath, made)).files.map((f) => f.name)).toEqual(["Desk/scene.glb"]);
+    const flat = [write("scene.gltf", gltf), write("scene.bin", bin), write("wood.png", await png())];
+    expect((await packGltfFiles(flat, tempPath, made)).files.map((f) => f.name)).toEqual(["scene.glb"]);
+  });
+
   it("matches by file name alone when the files came without folders, as an upload's do", async () => {
     const { gltf, bin } = cubeGltf();
     const files = [write("scene.gltf", gltf), write("scene.bin", bin), write("base.png", await png())];
     const { files: left } = await packGltfFiles(files, tempPath, made);
     expect(left.map((f) => f.name)).toEqual(["scene.glb"]);
+  });
+
+  it("removes a .glb that a failed write left part-way", async () => {
+    const { gltf, bin } = cubeGltf();
+    const files = [write("scene.gltf", gltf), write("scene.bin", bin), write("base.png", await png())];
+    const glbPath = tempPath();
+    // The disk fills up half-way through the .glb.
+    const writeFile = fsPromises.writeFile.bind(fsPromises);
+    const spy = vi.spyOn(fsPromises, "writeFile").mockImplementation((async (
+      file: Parameters<typeof fsPromises.writeFile>[0],
+      ...rest: [never]
+    ) => {
+      if (String(file) !== glbPath) return writeFile(file, ...rest);
+      await writeFile(file, Buffer.from("half a glb"));
+      throw Object.assign(new Error("ENOSPC: no space left on device, write"), { code: "ENOSPC" });
+    }) as never);
+    try {
+      await expect(packGltfFiles(files, () => glbPath, made)).rejects.toThrow(/ENOSPC/);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(fs.existsSync(glbPath)).toBe(false);
   });
 
   it("leaves a texture out when two files share its name and neither is on its path", async () => {
@@ -391,6 +426,101 @@ describe("uploading and consuming a .gltf", () => {
     expect(file.status).toBe(200);
     const { json } = readGlb(file.body as Buffer);
     expect(json.images).toEqual([{ bufferView: 3, mimeType: "image/png" }]);
+  });
+
+  it("packs a .gltf named with a space after it as one without, by the name it's kept by", async () => {
+    const { gltf, bin } = cubeGltf();
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", gltf, { filename: "scene.gltf " })
+      .attach("files", bin, { filename: "scene.bin" });
+    expect(res.status).toBe(200);
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: res.body.prints[0].id },
+      include: { plates: true, files: true },
+    });
+    expect(print.plates.map((p) => p.filename)).toEqual(["scene.glb"]);
+    expect(print.files).toHaveLength(0);
+  });
+
+  it("finds the file a scene names with an encoded space at its end, uploaded under that name", async () => {
+    const { gltf, bin } = cubeGltf({ binUri: "mesh.bin%20" });
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", gltf, { filename: "scene.gltf" })
+      .attach("files", bin, { filename: "mesh.bin " });
+    expect(res.status).toBe(200);
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: res.body.prints[0].id },
+      include: { plates: true },
+    });
+    expect(print.plates.map((p) => p.filename)).toEqual(["scene.glb"]);
+  });
+
+  it("takes the file a scene names as written, beside one that's only that name once it's trimmed", async () => {
+    const small = cubeGltf({ edge: 0.02, binUri: "mesh.bin" });
+    const large = cubeGltf({ edge: 0.05, binUri: "mesh.bin" });
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", small.gltf, { filename: "scene.gltf" })
+      .attach("files", large.bin, { filename: "mesh.bin " })
+      .attach("files", small.bin, { filename: "mesh.bin" });
+    expect(res.status).toBe(200);
+    const file = await auth(request(app).get(`/api${res.body.prints[0].plates[0].url}`))
+      .buffer(true)
+      .parse((stream, done) => {
+        const chunks: Buffer[] = [];
+        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+        stream.on("end", () => done(null, Buffer.concat(chunks)));
+      });
+    expect(file.status).toBe(200);
+    const { bin } = readGlb(file.body as Buffer);
+    expect(bin.subarray(0, small.bin.length).equals(small.bin)).toBe(true);
+  });
+
+  it("makes a model file named with a space after it a plate, as the app sends it", async () => {
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid lid\nendsolid lid\n"), { filename: "lid.stl " })
+      .attach("files", Buffer.from("Print it upright."), { filename: "notes.txt" });
+    expect(res.status).toBe(200);
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: res.body.prints[0].id },
+      include: { plates: true, files: true },
+    });
+    expect(print.plates.map((p) => p.filename)).toEqual(["lid.stl"]);
+    expect(print.files.map((f) => [f.filename, f.role])).toEqual([["notes.txt", "SUPPORTING"]]);
+  });
+
+  it("packs each scene of one model with the .bin in its own folder, though another folder's has its name", async () => {
+    const small = cubeGltf({ edge: 0.02 });
+    const large = cubeGltf({ edge: 0.05 });
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["Small", "Small", "Large", "Large"]))
+      .attach("files", upload("scene.gltf", small.gltf))
+      .attach("files", upload("scene.bin", small.bin))
+      .attach("files", upload("scene.gltf", large.gltf))
+      .attach("files", upload("scene.bin", large.bin));
+    expect(res.status).toBe(200);
+    const plates = res.body.prints[0].plates as { filename: string; folder: string | null; url: string }[];
+    expect(plates.map((plate) => [plate.filename, plate.folder])).toEqual([
+      ["scene.glb", "Small"],
+      ["scene.glb", "Large"],
+    ]);
+    for (const [plate, bin] of [
+      [plates[0], small.bin],
+      [plates[1], large.bin],
+    ] as const) {
+      const file = await auth(request(app).get(`/api${plate.url}`))
+        .buffer(true)
+        .parse((stream, done) => {
+          const chunks: Buffer[] = [];
+          stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+          stream.on("end", () => done(null, Buffer.concat(chunks)));
+        });
+      expect(readGlb(file.body as Buffer).bin.equals(bin)).toBe(true);
+    }
   });
 
   it("fails the upload, saying what's missing, when the .bin was left behind", async () => {

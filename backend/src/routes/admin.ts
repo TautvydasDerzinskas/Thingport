@@ -113,6 +113,7 @@ router.get(
     const { breakdown, freeable } = usage;
     res.json({
       model_bytes: usage.modelBytes,
+      supporting_bytes: usage.supportingBytes,
       model_count: usage.modelCount,
       total_bytes: usage.totalBytes,
       picture_bytes: usage.pictureBytes,

@@ -5,7 +5,8 @@ import path from "node:path";
 import os from "node:os";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { TAG_MOSAICS } from "../src/config";
+import { STORAGE, TAG_MOSAICS } from "../src/config";
+import { ensureAssetHome } from "../src/services/printService";
 
 const app = createApp();
 let adminToken: string;
@@ -265,5 +266,81 @@ describe("admin storage usage", () => {
     expect(after.status).toBe(200);
     expect(after.body.model_count).toBe(before.body.model_count + 1);
     expect(after.body.model_bytes).toBe(before.body.model_bytes + Buffer.byteLength(content));
+  });
+
+  it("counts supporting files apart, within the models' bytes, and names a prepared print in the browser", async () => {
+    const before = await request(app).get("/api/admin/storage").set(auth(adminToken));
+    const mesh = "solid supporting-usage endsolid";
+    // Not the sliced file's length, so the two can't stand in for each other.
+    const guide = "%PDF-1.4 the supporting usage guide";
+    const sliced = "; sliced for storage usage\nG28\n";
+    const upload = await request(app)
+      .post("/api/upload")
+      .set(auth(memberToken))
+      .field("mode", "multiplate")
+      .attach("files", tmpFile("usage-split.stl", mesh))
+      .attach("files", tmpFile("usage-guide.pdf", guide))
+      .attach("files", tmpFile("usage-sliced.gcode", sliced));
+    expect(upload.status).toBe(200);
+
+    const after = await request(app).get("/api/admin/storage").set(auth(adminToken));
+    // The prepared print stays with the model files; only the guide is a supporting file.
+    expect(after.body.supporting_bytes).toBe(before.body.supporting_bytes + Buffer.byteLength(guide));
+    expect(after.body.model_bytes).toBe(
+      before.body.model_bytes + Buffer.byteLength(mesh) + Buffer.byteLength(guide) + Buffer.byteLength(sliced),
+    );
+
+    const files = await prisma.printFile.findMany({ where: { printId: upload.body.prints[0].id } });
+    const folder = path.dirname(files[0].storagePath).split(path.sep).join("/");
+    const browse = await request(app).get("/api/admin/storage/browse").query({ path: folder }).set(auth(adminToken));
+    const kinds = Object.fromEntries(
+      (browse.body.files as { name: string; kind: string }[]).map((file) => [file.name, file.kind]),
+    );
+    expect(kinds).toMatchObject({
+      "usage-split.stl": "plate",
+      "usage-guide.pdf": "file",
+      "usage-sliced.gcode": "prepared",
+    });
+  });
+
+  it("lists no file in a pictures folder whose save is still under way, as a picture or as a file", async () => {
+    const upload = await request(app)
+      .post("/api/upload")
+      .set(auth(memberToken))
+      .attach("files", tmpFile("half-saved-pictures.stl", "solid half endsolid"));
+    expect(upload.status).toBe(200);
+    const printId = upload.body.prints[0].id;
+    const home = await ensureAssetHome(printId);
+    // A file of the model's on its way in where its pictures are, as a category can put the model's files there.
+    const storagePath = path.join(home, "half-saved.pdf");
+    fs.mkdirSync(path.join(STORAGE, home), { recursive: true });
+    fs.writeFileSync(path.join(STORAGE, storagePath), "%PDF-1.4 half");
+    // And a picture of the model's beside it, which is listed.
+    const picture = path.join(STORAGE, home, "side.png");
+    fs.writeFileSync(picture, "not really a picture");
+    const row = await prisma.printFile.create({
+      data: {
+        printId,
+        filename: "half-saved.pdf",
+        mime: "application/pdf",
+        role: "SUPPORTING",
+        storagePath,
+        ready: false,
+      },
+    });
+    try {
+      const browse = await request(app)
+        .get("/api/admin/storage/browse")
+        .query({ path: home.split(path.sep).join("/") })
+        .set(auth(adminToken));
+      expect(browse.status).toBe(200);
+      const names = (browse.body.files as { name: string }[]).map((file) => file.name);
+      expect(names).toContain("side.png");
+      expect(names).not.toContain("half-saved.pdf");
+    } finally {
+      await prisma.printFile.deleteMany({ where: { id: row.id } });
+      fs.rmSync(path.join(STORAGE, storagePath), { force: true });
+      fs.rmSync(picture, { force: true });
+    }
   });
 });

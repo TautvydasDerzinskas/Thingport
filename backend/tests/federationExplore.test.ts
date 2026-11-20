@@ -160,8 +160,14 @@ beforeAll(async () => {
         images: [],
         sharedAt: new Date(Date.now() - 60_000),
         files: [
-          { name: "bin.3mf", size: 1800, mediaType: "model/3mf", url: `${PARTNER}/api/ap/files/plate/p1/bin.3mf` },
-          { name: "notes.pdf", size: 20, mediaType: "application/pdf" },
+          {
+            name: "bin.3mf",
+            size: 1800,
+            mediaType: "model/3mf",
+            url: `${PARTNER}/api/ap/files/plate/p1/bin.3mf`,
+            kind: "plate",
+          },
+          { name: "notes.pdf", size: 20, mediaType: "application/pdf", kind: "file", role: "SUPPORTING" },
           { name: "elsewhere.stl", size: 30, url: "http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl" },
         ],
       },
@@ -454,6 +460,38 @@ describe("Explore with partners", () => {
     }
   });
 
+  it("hands out a file from a partner too old to say its kind, on the partner's own origin", async () => {
+    const legacyId = (
+      await prisma.remoteModel.create({
+        data: {
+          peerId,
+          personId,
+          apId: `${PARTNER}/api/ap/models/legacy-${Date.now()}`,
+          title: "Legacy files",
+          images: [],
+          sharedAt: new Date(Date.now() - 60_000),
+          files: [{ name: "legacy.stl", size: 40, url: `${PARTNER}/api/ap/files/plate/p3/legacy.stl` }],
+        },
+      })
+    ).id;
+    try {
+      const res = await request(app).get(`/api/explore/elsewhere/model/${legacyId}`).set(auth(viewer));
+      expect(res.body.files).toEqual([
+        {
+          name: "legacy.stl",
+          folder: null,
+          size: 40,
+          media_type: null,
+          url: `/explore/elsewhere/model/${legacyId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p3/legacy.stl`)}/legacy.stl`,
+          kind: null,
+          role: null,
+        },
+      ]);
+    } finally {
+      await prisma.remoteModel.deleteMany({ where: { id: legacyId } });
+    }
+  });
+
   it("hands out a partner's files through this instance, and only those the partner gave", async () => {
     const remoteFiles = await request(app).get(`/api/explore/elsewhere/model/${filesModelId}`).set(auth(viewer));
     expect(remoteFiles.body.files).toEqual([
@@ -464,10 +502,21 @@ describe("Explore with partners", () => {
         media_type: "model/3mf",
         // By a key from its address at the partner, so a reordered list never serves another file.
         url: `/explore/elsewhere/model/${filesModelId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p1/bin.3mf`)}/bin.3mf`,
+        kind: "plate",
+        role: null,
       },
-      { name: "notes.pdf", folder: null, size: 20, media_type: "application/pdf", url: null },
-      // Somewhere other than the partner's own origin: never fetched.
-      { name: "elsewhere.stl", folder: null, size: 30, media_type: null, url: null },
+      // A supporting file says so, for the page to show it apart.
+      {
+        name: "notes.pdf",
+        folder: null,
+        size: 20,
+        media_type: "application/pdf",
+        url: null,
+        kind: "file",
+        role: "SUPPORTING",
+      },
+      // Somewhere other than the partner's own origin: never fetched. A partner too old to say gives no kind.
+      { name: "elsewhere.stl", folder: null, size: 30, media_type: null, url: null, kind: null, role: null },
     ]);
     // A key for no file it shares, or for one that isn't on its origin, is never fetched.
     for (const key of ["0", "x", fileKey("http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl")]) {

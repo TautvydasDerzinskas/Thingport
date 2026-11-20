@@ -1,6 +1,6 @@
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { toPrintOut, type PrintOut } from "../dto";
+import { toPrintFileOut, toPrintOut, type PrintOut } from "../dto";
 import { remoteOriginOut } from "../federation/remoteExplore";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
 import { aiDescriptionOut } from "./aiDescriptionService";
@@ -29,11 +29,13 @@ export async function loadFullPrint(
   if (!print) throw new HttpError(404, "Print not found");
   const [plates, files, previewImages] = await Promise.all([
     prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } }),
-    prisma.printFile.findMany({ where: { printId } }),
+    // Only files whose saves are done (PrintFile.ready): one on its way in would answer 404, and stay if its save failed.
+    prisma.printFile.findMany({ where: { printId, ready: true } }),
     prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } }),
   ]);
+  // Ready too, as the files above: one replaced after the model was read is on its way out.
   const preparedFile = print.preparedFileId
-    ? await prisma.printFile.findUnique({ where: { id: print.preparedFileId } })
+    ? await prisma.printFile.findFirst({ where: { id: print.preparedFileId, ready: true } })
     : null;
   return { print, plates, files, preparedFile, previewImages };
 }
@@ -72,6 +74,10 @@ export async function printOutById(
   return {
     ...out,
     ...withProfiles,
+    supporting_files: full.files
+      .filter((file) => file.role === "SUPPORTING")
+      .toSorted((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true, sensitivity: "base" }))
+      .map(toPrintFileOut),
     license_pending: licensePending(full.print),
     license_filling: licenseFillRunning(full.print.id),
     license_failed: !licenseFillRunning(full.print.id) && licenseReadFailed(full.print.id),
@@ -103,7 +109,7 @@ export async function printOutsByIds(
       include: { author: true, category: true },
     }),
     prisma.plate.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),
-    prisma.printFile.findMany({ where: { printId: { in: printIds } } }),
+    prisma.printFile.findMany({ where: { printId: { in: printIds }, ready: true } }),
     prisma.previewImage.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),
     aiCategoryPaths(userId),
     aiSuggestionsShown(),

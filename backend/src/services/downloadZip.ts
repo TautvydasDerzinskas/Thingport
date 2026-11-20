@@ -59,10 +59,40 @@ export async function estimateDownloadSize(prints: PrintWithPlatesAndCategory[])
   const printIds = prints.map((p) => p.id);
   if (!printIds.length) return plateBytes;
   const supporting = await prisma.printFile.aggregate({
-    where: { printId: { in: printIds }, role: "SUPPORTING" },
+    where: { printId: { in: printIds }, role: "SUPPORTING", ready: true },
     _sum: { size: true },
   });
   return plateBytes + (supporting._sum.size ?? 0);
+}
+
+/** The folder each model's files go in: its name, or, where another model has that folder (a "Base" in each of two
+ *  categories, with the categories left out), its name with a number no other model's folder has. A category's or a
+ *  model's name is one folder however it's written: a slash in it ("A/B", or "A\B", which the zip stores alike)
+ *  doesn't make it two, and one named "." or ".." is "_" or "__", as unzipped those name the folder it's in or the one
+ *  above, and Thingport's own import drops a file under one. */
+function modelFolders(prints: PrintWithPlatesAndCategory[], flatten: boolean): Map<PrintWithPlatesAndCategory, string> {
+  const segment = (name: string) => {
+    const one = name.replace(/[\\/]/g, "_");
+    return /^\s*\.{1,2}\s*$/.test(one) ? one.replace(/\./g, "_") : one;
+  };
+  const own = (print: PrintWithPlatesAndCategory) =>
+    flatten ? segment(print.name) : `${segment(print.category?.name || "unassigned")}/${segment(print.name)}`;
+  const folders = new Map<PrintWithPlatesAndCategory, string>();
+  const taken = new Set<string>();
+  for (const print of prints) {
+    const folder = own(print);
+    if (taken.has(folder.toLowerCase())) continue;
+    taken.add(folder.toLowerCase());
+    folders.set(print, folder);
+  }
+  for (const print of prints) {
+    if (folders.has(print)) continue;
+    let folder = own(print);
+    for (let n = 2; taken.has(folder.toLowerCase()); n++) folder = `${own(print)} (${n})`;
+    taken.add(folder.toLowerCase());
+    folders.set(print, folder);
+  }
+  return folders;
 }
 
 type ZipOptions = {
@@ -83,8 +113,9 @@ export async function buildZipEntries(
   const printIds = prints.map((p) => p.id);
   const supportingByPrint = new Map<string, { filename: string; folder: string | null; storagePath: string }[]>();
   if (printIds.length) {
+    // Only files whose saves are done: one on its way in isn't whole yet.
     const supporting = await prisma.printFile.findMany({
-      where: { printId: { in: printIds }, role: "SUPPORTING" },
+      where: { printId: { in: printIds }, role: "SUPPORTING", ready: true },
     });
     for (const file of supporting) {
       if (!isInFolder(file.folder, opts.folder)) continue;
@@ -107,33 +138,136 @@ export async function buildZipEntries(
       : [],
   );
 
+  const folders = modelFolders(prints, Boolean(opts.flatten));
   const entries: ZipEntryDescriptor[] = [];
   for (const print of prints) {
-    const prefix = opts.flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
-    const sortedPlates = print.plates
-      .filter((plate) => isInFolder(plate.folder, opts.folder))
-      .toSorted((a, b) => a.position - b.position);
-    for (const plate of sortedPlates) {
-      const filePath = resolvePlateFilePath(plate);
-      if (filePath) entries.push({ arcname: `${prefix}/${folderPath(plate.folder, plate.filename)}`, filePath });
-    }
+    const prefix = folders.get(print)!;
+    // Every name the model takes in the zip: a supporting file steps around these.
+    const taken = new ZipNames();
     // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
+    // Its place is held first, as it's the model's own: a plate of that name (a model of text files is all plates) is
+    // the one numbered.
     const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
+    const licensePath = `${prefix}/${LICENSE_FILENAME}`;
+    if (license) taken.take(licensePath);
+    const plates = print.plates
+      .filter((plate) => isInFolder(plate.folder, opts.folder))
+      .toSorted((a, b) => a.position - b.position)
+      .flatMap((plate) => {
+        const filePath = resolvePlateFilePath(plate);
+        return filePath ? [{ plate, filePath, arcname: `${prefix}/${folderPath(plate.folder, plate.filename)}` }] : [];
+      });
+    // A model file in a folder named "supporting" can hold a supporting file's name, or be called as a supporting
+    // file's folder is, and two supporting files may share one (a merge brings each model's along).
+    const supporting = (supportingByPrint.get(print.id) ?? []).flatMap((file) => {
+      const filePath = managedPrintFilePath(file);
+      return fs.existsSync(filePath)
+        ? [{ file, filePath, folder: file.folder ? `supporting/${file.folder}` : "supporting" }]
+        : [];
+    });
+    // Every folder a file has is held before any is numbered, so none numbered is one another file still comes to.
+    for (const each of plates) taken.reserve(each.arcname);
+    for (const each of supporting) taken.reserve(`${prefix}/${each.folder}/${each.file.filename}`);
+    // Each plate keeps its own path where it's the first to have it ("Parts/lid.stl" beside "parts/lid.stl"), and the
+    // rest are numbered once every one is held, so none is numbered onto another's own ("lid (2).stl").
+    const clashing = new Set<(typeof plates)[number]>();
+    for (const each of plates) {
+      if (taken.free(each.arcname)) taken.take(each.arcname);
+      else clashing.add(each);
+    }
+    for (const each of plates) {
+      const arcname = clashing.has(each)
+        ? freeArcname(prefix, each.plate.folder, each.plate.filename, taken)
+        : each.arcname;
+      taken.take(arcname);
+      entries.push({ arcname, filePath: each.filePath });
+    }
     if (license) {
       entries.push({
-        arcname: `${prefix}/${LICENSE_FILENAME}`,
+        arcname: licensePath,
         content: Buffer.from(license, "utf8"),
         mtime: print.licenseReadAt ?? undefined,
       });
     }
-    for (const file of supportingByPrint.get(print.id) ?? []) {
-      const filePath = managedPrintFilePath(file);
-      if (fs.existsSync(filePath)) {
-        entries.push({ arcname: `${prefix}/supporting/${folderPath(file.folder, file.filename)}`, filePath });
-      }
+    for (const { file, filePath, folder } of supporting) {
+      const arcname = freeArcname(prefix, folder, file.filename, taken);
+      taken.take(arcname);
+      entries.push({ arcname, filePath });
     }
   }
   return entries;
+}
+
+/** The paths a model takes in a zip, as files and as the folders above them, lower-cased: unzipped, a path can't be
+ *  both, nor two that differ only in case (one on Windows or a Mac). */
+class ZipNames {
+  private readonly files = new Set<string>();
+  private readonly folders = new Set<string>();
+  // The folders the model's files have before any is numbered, which a numbered one steps around too, and where each
+  // folder numbered went, so every file of it goes there.
+  private readonly reserved = new Set<string>();
+  private readonly numbered = new Map<string, string>();
+
+  private static above(lower: string): string[] {
+    const out: string[] = [];
+    for (let at = lower.indexOf("/"); at > 0; at = lower.indexOf("/", at + 1)) out.push(lower.slice(0, at));
+    return out;
+  }
+
+  /** No file or folder has the path, and no file is called as a folder above it is. */
+  free(arcname: string): boolean {
+    const lower = arcname.toLowerCase();
+    return !this.files.has(lower) && !this.folders.has(lower) && !ZipNames.above(lower).some((f) => this.files.has(f));
+  }
+
+  take(arcname: string): void {
+    const lower = arcname.toLowerCase();
+    this.files.add(lower);
+    for (const folder of ZipNames.above(lower)) this.folders.add(folder);
+  }
+
+  /** Holds the folders above a file that will be written, so none numbered lands in one of them. */
+  reserve(arcname: string): void {
+    for (const folder of ZipNames.above(arcname.toLowerCase())) this.reserved.add(folder);
+  }
+
+  /** `parent/segment`, `parent` being where the folder `original` went, or where a file is called as it is, one
+   *  numbered onto a path no other folder has, nor one beside it in `original` another file still comes to (a folder
+   *  above may have been numbered, which the reservations don't know of): the same one for each file of it. */
+  folderAt(parent: string, original: string, segment: string): string {
+    const folder = `${parent}/${segment}`;
+    const lower = folder.toLowerCase();
+    if (!this.files.has(lower)) return folder;
+    const had = this.numbered.get(lower);
+    if (had) return had;
+    let next = folder;
+    for (let n = 2; ; n++) {
+      next = `${folder} (${n})`;
+      const each = next.toLowerCase();
+      const beside = `${original}/${segment} (${n})`.toLowerCase();
+      if (![this.files, this.folders, this.reserved].some((set) => set.has(each)) && !this.reserved.has(beside)) break;
+    }
+    this.numbered.set(lower, next);
+    return next;
+  }
+}
+
+/** `base/folder/filename`, or the file numbered "name (2).ext" and on where the zip has that path already, and a
+ *  folder on the way numbered where a file is called as it is ("lid.stl (2)/notes.txt"), apart from every other folder
+ *  (ZipNames.folderAt). A sliced print keeps all of ".gcode.3mf" after the number, as that's what says it's one. */
+function freeArcname(base: string, folder: string | null, filename: string, taken: ZipNames): string {
+  const sliced = filename.toLowerCase().endsWith(".gcode.3mf") ? filename.length - ".gcode.3mf".length : -1;
+  const dot = sliced > 0 ? sliced : filename.lastIndexOf(".");
+  const [stem, ext] = dot > 0 ? [filename.slice(0, dot), filename.slice(dot)] : [filename, ""];
+  let dir = base;
+  let original = base;
+  for (const segment of folder ? folder.split("/") : []) {
+    dir = taken.folderAt(dir, original, segment);
+    original = `${original}/${segment}`;
+  }
+  let arcname = `${dir}/${filename}`;
+  for (let n = 2; !taken.free(arcname); n++) arcname = `${dir}/${stem} (${n})${ext}`;
+  return arcname;
 }
 
 export async function sendPrintsZip(

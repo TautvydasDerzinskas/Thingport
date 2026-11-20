@@ -8,6 +8,7 @@ import { StringDecoder } from "node:string_decoder";
 import { Prisma, type Plate } from "@prisma/client";
 import { prisma } from "../db";
 import { classify3mf, plainModelScanner, storedFormat, type PlainModelScan, type ThreeMfFormat } from "../adapter";
+import { storageLockTurn, withStorageLock } from "../utils/storageLock";
 import { listZipEntries, readZipEntry, readZipEntryHead, walkZipEntries } from "../utils/zipReader";
 
 const SMALL_FILE_LIMIT = 16 * 1024 * 1024;
@@ -102,24 +103,87 @@ async function stampOf(filePath: string): Promise<FileStamp | null> {
   }
 }
 
-/** Reads and keeps the plate's format. Never throws: a format it can't read is left for the next look. */
-export async function storePlateFormat(
-  plateId: string,
-  filename: string,
-  filePath: string,
-): Promise<ThreeMfFormat | null> {
+/** A 3MF's format, with the stamp of the file it was read from. */
+export type PlateFormatReading = { format: ThreeMfFormat; file: FileStamp };
+
+/** The format `filePath` holds, stamped with the file as it was read: null when it can't be read, or when the file
+ *  changed while it was, so a format is never kept under another file's stamp. Never throws. */
+export async function readPlateFormat(filename: string, filePath: string): Promise<PlateFormatReading | null> {
   if (!isThreeMfFile(filename)) return null;
   try {
-    const file = await stampOf(filePath);
+    const before = await stampOf(filePath);
     const format = await readThreeMfFormat(filePath);
-    if (!format || !file) return null;
-    const stored = { ...format, file } as unknown as Prisma.InputJsonValue;
-    await prisma.plate.update({ where: { id: plateId }, data: { format: stored } });
-    return format;
+    const after = await stampOf(filePath);
+    if (!format || !before || !after || before.size !== after.size || before.mtimeMs !== after.mtimeMs) return null;
+    return { format, file: after };
   } catch (err) {
-    console.warn(`Reading the 3MF format of plate ${plateId} failed:`, err);
+    console.warn(`Reading the 3MF format of ${path.basename(filePath)} failed:`, err);
     return null;
   }
+}
+
+/** `reading` kept as the plate's format, or with none, the one it had cleared, so the next look reads the file again. */
+export async function keepPlateFormat(plateId: string, reading: PlateFormatReading | null): Promise<void> {
+  const format = reading
+    ? ({ ...reading.format, file: reading.file } as unknown as Prisma.InputJsonValue)
+    : Prisma.DbNull;
+  await prisma.plate.update({ where: { id: plateId }, data: { format } });
+}
+
+/** A plate and where its row had its file when `filePath` was found from it. */
+type PlateFile = Pick<Plate, "id" | "filename" | "storagePath" | "sourcePath">;
+
+/** What a look at a plate's format gives when the plate moved while it was read: its row has its file elsewhere by
+ *  then, so the path it was read from is no longer the plate's, and the plate is to be read again from its row. */
+export const PLATE_MOVED = "moved";
+
+// Reads of a plate's file made with the storage lock free, each of which another turn at it may spoil, before one is
+// made with the lock held: a plain 3MF is read through, which can take long enough to hold up every move waiting.
+const UNLOCKED_READS = 3;
+
+/** Reads and keeps the format of the plate's file at `filePath` (readPlateFormat, keepPlateFormat). The plate's row is
+ *  read again under the storage lock, as a move renames a file before it saves where it went, and the reading kept only
+ *  while the row still has the file there and nothing else had the lock while it was read (storageLockTurn): a move
+ *  then, even away and back, could have put another file where it was read. Read again so a few times, and only then
+ *  with the lock held throughout. The format, of the plate's own file; PLATE_MOVED where the plate is no longer where
+ *  it was read, as what it is then isn't known; null for none, or a look that failed. Never throws: one it can't read
+ *  is cleared, for the next look to read again, and one that moved is left for that look. */
+async function storePlateFormat(
+  plate: PlateFile,
+  filePath: string,
+): Promise<ThreeMfFormat | null | typeof PLATE_MOVED> {
+  if (!isThreeMfFile(plate.filename)) return null;
+  const stillThere = async () => {
+    const now = await prisma.plate.findUnique({
+      where: { id: plate.id },
+      select: { storagePath: true, sourcePath: true },
+    });
+    return Boolean(now && now.storagePath === plate.storagePath && now.sourcePath === plate.sourcePath);
+  };
+  const read = () => readPlateFormat(plate.filename, filePath);
+  let reading: PlateFormatReading | null = null;
+  let keep = false;
+  try {
+    for (let tries = 0; tries < UNLOCKED_READS && !keep; tries++) {
+      const found = await withStorageLock(async () => ({ there: await stillThere(), turn: storageLockTurn() }));
+      if (!found.there) return PLATE_MOVED;
+      reading = await read();
+      keep = await withStorageLock(async () => storageLockTurn() === found.turn + 1);
+    }
+    if (!keep) {
+      ({ reading, keep } = await withStorageLock(async () =>
+        (await stillThere()) ? { reading: await read(), keep: true } : { reading: null, keep: false },
+      ));
+    }
+  } catch (err) {
+    console.warn(`Looking for the file of plate ${plate.id} failed:`, err);
+    return null;
+  }
+  if (!keep) return PLATE_MOVED;
+  await keepPlateFormat(plate.id, reading).catch((err: unknown) =>
+    console.warn(`Keeping the 3MF format of plate ${plate.id} failed:`, err),
+  );
+  return reading?.format ?? null;
 }
 
 /** The plate's format as stored, when it's from the current classification. */
@@ -155,15 +219,16 @@ export async function fillPlateFormats(
     if (!isThreeMfFile(plate.filename)) continue;
     const filePath = resolveFile(plate);
     if (!filePath || (await currentFormat(plate, filePath))) continue;
-    await storePlateFormat(plate.id, plate.filename, filePath);
+    await storePlateFormat(plate, filePath);
     read++;
   }
 }
 
-/** The plate's format, read and kept first when it has none from the file as it is now. */
+/** The plate's format, read and kept first when it has none from the file as it is now. `filePath`, where its row as
+ *  given has its file; PLATE_MOVED when it no longer does by the time that's read (storePlateFormat). */
 export async function ensurePlateFormat(
-  plate: Pick<Plate, "id" | "filename" | "format">,
+  plate: PlateFile & Pick<Plate, "format">,
   filePath: string,
-): Promise<ThreeMfFormat | null> {
-  return (await currentFormat(plate, filePath)) ?? (await storePlateFormat(plate.id, plate.filename, filePath));
+): Promise<ThreeMfFormat | null | typeof PLATE_MOVED> {
+  return (await currentFormat(plate, filePath)) ?? (await storePlateFormat(plate, filePath));
 }

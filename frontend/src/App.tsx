@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import SessionNotices from "./components/SessionNotices";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
@@ -799,6 +800,7 @@ export default function App() {
           )}
         </Box>
         {sessionExpiredToast}
+        <SessionNotices account={user?.id ?? null} />
       </ThemeProvider>
     );
   }
@@ -823,7 +825,10 @@ export default function App() {
           onUserUpdated={handleUserUpdated}
         />
       </BrowserRouter>
-      <ThemeProvider theme={muiTheme}>{sessionExpiredToast}</ThemeProvider>
+      <ThemeProvider theme={muiTheme}>
+        {sessionExpiredToast}
+        <SessionNotices account={user?.id ?? null} />
+      </ThemeProvider>
     </>
   );
 }

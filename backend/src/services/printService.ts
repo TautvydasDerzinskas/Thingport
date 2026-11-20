@@ -7,7 +7,7 @@ import { folderLevels } from "../utils/fileFolder";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
-import { writePhotoJpeg } from "./imageProcessing";
+import { imageFormat, writePhotoJpeg } from "./imageProcessing";
 import {
   adoptLegacyAsset,
   ASSET_SUBFOLDERS,
@@ -29,7 +29,8 @@ import {
   type AssetFile,
   type AssetHome,
 } from "./modelAssets";
-import type { Category, Plate, Prisma, Print } from "@prisma/client";
+import type { Category, Plate, Prisma, Print, PrintFile } from "@prisma/client";
+import { isUnsettled } from "./printFileSaves";
 
 export const STORAGE_TEMPLATE_TOKENS = [
   "category-or-folder",
@@ -474,23 +475,30 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   }
 }
 
-/** Moves one file of a model; `save` records the new place, and the file goes back if that fails. `stored` is where its
- *  record finds it now, read under the lock. */
+/** Moves one file of a model; `save` records where it went, and the file goes back if that fails. `pick` says, under
+ *  the lock, where its record finds it now (`from`) and where it belongs (`to`), both within storage, or null to leave
+ *  it. Picked there, from the record as it is then: picked before, the place could be one another move has filled
+ *  since, or one for a name the file no longer has. */
 async function moveStored(
-  stored: () => Promise<string>,
-  newPath: string,
-  save: () => Promise<unknown>,
+  pick: () => Promise<{ from: string; to: string } | null>,
+  save: (to: string) => Promise<unknown>,
 ): Promise<boolean> {
+  let to: string | null = null;
   const listMove = async (): Promise<[string, string][]> => {
-    const oldPath = await stored();
-    // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
-    // that file. Asked again, this one sees the place is taken and goes elsewhere.
-    if (oldPath !== newPath && fsSync.existsSync(newPath)) {
-      throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, newPath)}`);
-    }
-    return [[oldPath, newPath]];
+    const picked = await pick();
+    if (!picked || picked.from === picked.to) return [];
+    to = picked.to;
+    // The same place written another way: only the record changes.
+    if (samePath(picked.from, picked.to)) return [];
+    const newPath = path.join(STORAGE, picked.to);
+    // Free of every record when picked; a file there none of them has still isn't this one's to replace.
+    if (fsSync.existsSync(newPath)) throw new HttpError(409, `Storage path already exists: ${picked.to}`);
+    return [[path.join(STORAGE, picked.from), newPath]];
   };
-  return (await moveAllStored(listMove, save)) > 0;
+  const saveIfPicked = async () => {
+    if (to !== null) await save(to);
+  };
+  return (await moveAllStored(listMove, saveIfPicked)) > 0;
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
@@ -527,29 +535,112 @@ async function moveAllStored(
 
 const samePath = (relative: string, other: string) => path.resolve(STORAGE, relative) === path.resolve(STORAGE, other);
 
+/** The model and its template values as they are, read under the lock for each move (relocatePrint), or null once it's
+ *  gone. */
+type Placing = () => Promise<{ print: PrintLike; values: PrintTemplateValues } | null>;
+
 /** The model's supporting and prepared files, beside its plates. Those saved before that are under bundles/ and
  *  come over here too. */
 async function relocatePrintFiles(
   print: PrintLike,
   template: string,
   printValues: PrintTemplateValues,
+  placing: Placing,
 ): Promise<number> {
   const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
   let moved = 0;
   for (const file of files) {
+    // In place by this read: a change since that moves it runs a move of its own. One whose save wasn't done is read
+    // again under the lock, as the save may be done by then.
     const rendered = renderFilePath(print, template, printValues, file.filename, null, file.folder);
-    const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
-    if (samePath(file.storagePath, newRelative)) continue;
-    const didMove = await moveStored(
-      async () => {
-        const { storagePath } = (await prisma.printFile.findUnique({ where: { id: file.id } })) ?? file;
-        return path.join(STORAGE, storagePath);
-      },
-      path.join(STORAGE, newRelative),
-      () => prisma.printFile.update({ where: { id: file.id }, data: { storagePath: newRelative } }),
-    );
-    if (didMove) moved += 1;
+    if (!isUnsettled(file) && file.storagePath === rendered) continue;
+    if (await movePrintFile(print.id, template, placing, file.id)) moved += 1;
   }
+  return moved;
+}
+
+/** Moves one of a model's supporting or prepared files to where its model's files go, its place picked from its row and
+ *  the model as they are under the lock. One whose save isn't done is left: the save puts it there once it is
+ *  (relocatePrintFile). */
+function movePrintFile(printId: string, template: string, placing: Placing, fileId: string): Promise<boolean> {
+  return moveStored(
+    async () => {
+      const now = await prisma.printFile.findUnique({ where: { id: fileId } });
+      // Another model's by now, as a plate a merge took is (relocatePrint).
+      if (!now || isUnsettled(now) || now.printId !== printId) return null;
+      const at = await placing();
+      if (!at) return null;
+      const place = renderFilePath(at.print, template, at.values, now.filename, null, now.folder);
+      // Where it already is counts as free, so a file numbered apart from another ("Notes (2).pdf") stays put.
+      return {
+        from: now.storagePath,
+        to: samePath(now.storagePath, place) ? place : await freePrintFilePath(place, now.id),
+      };
+    },
+    (to) => prisma.printFile.update({ where: { id: fileId }, data: { storagePath: to } }),
+  );
+}
+
+/** Moves a file whose save has just finished to where its model's files are now: a move of them while it was on its way
+ *  in left it where its save first put it. The model is read again under the lock for where that is: a rename of it
+ *  whose move got there first has already taken the file along, and the model as read before would send it back. */
+export async function relocatePrintFile(fileId: string): Promise<boolean> {
+  // The storage structure too, read each time: one saved in between moved the file by itself already.
+  const placeOf = async (row: Pick<PrintFile, "printId" | "filename" | "folder">) => {
+    const print = await prisma.print.findUnique({ where: { id: row.printId } });
+    if (!print) return null;
+    const template = validateStorageTemplate(await getStorageTemplate());
+    const values = await printTemplateValues(print, template);
+    return renderFilePath(print, template, values, row.filename, null, row.folder);
+  };
+  const row = await prisma.printFile.findUnique({ where: { id: fileId } });
+  // In place by this read, which comes after the save was done: a change since then moves it with the rest.
+  if (!row || row.storagePath === (await placeOf(row))) return false;
+  return moveStored(
+    async () => {
+      const now = await prisma.printFile.findUnique({ where: { id: fileId } });
+      const place = now && !isUnsettled(now) ? await placeOf(now) : null;
+      if (!now || !place) return null;
+      return {
+        from: now.storagePath,
+        to: samePath(now.storagePath, place) ? place : await freePrintFilePath(place, now.id),
+      };
+    },
+    (to) => prisma.printFile.update({ where: { id: fileId }, data: { storagePath: to } }),
+  );
+}
+
+/** Moves a plate just stored to where its model's files are now, as relocatePrintFile does a supporting file: one placed
+ *  by the model as read before a rename is passed by the rename's move when that listed the plates before this one had
+ *  a row. The model is read again under the lock for where that is. Its row as it is then when it moved, else null. */
+export async function relocatePlate(plateId: string): Promise<Plate | null> {
+  // The storage structure too, read each time: one saved in between moved the plate by itself already.
+  const placeOf = async (row: Pick<Plate, "printId" | "filename" | "position" | "folder">) => {
+    const print = await prisma.print.findUnique({ where: { id: row.printId } });
+    if (!print) return null;
+    const template = validateStorageTemplate(await getStorageTemplate());
+    const values = await printTemplateValues(print, template);
+    return renderFilePath(print, template, values, row.filename, row.position, row.folder);
+  };
+  const row = await prisma.plate.findUnique({ where: { id: plateId } });
+  // In place by this read, which comes after its row was made: a change since then moves it with the rest.
+  if (!row || row.storagePath === (await placeOf(row))) return null;
+  let moved: Plate | null = null;
+  await moveStored(
+    async () => {
+      const now = await prisma.plate.findUnique({ where: { id: plateId } });
+      const place = now && (await placeOf(now));
+      if (!now || !place) return null;
+      // Where it already is counts as free, so a plate put aside by freePlatePath stays put.
+      return {
+        from: now.storagePath,
+        to: samePath(now.storagePath, place) ? place : await freePlatePath(place, now.printId, { plateId: now.id }),
+      };
+    },
+    async (to) => {
+      moved = await prisma.plate.update({ where: { id: plateId }, data: { storagePath: to } });
+    },
+  );
   return moved;
 }
 
@@ -588,37 +679,53 @@ export async function assetOwnerIds(printId: string): Promise<string[]> {
 async function relocateAssets(
   print: PrintLike & { assetsPath: string | null },
   template: string,
-  printValues: PrintTemplateValues,
+  placing: Placing,
   plateIds: string[],
 ): Promise<number> {
-  const rendered = renderAssetsPath(print, template, printValues);
-  const current = print.assetsPath;
-  const home =
-    current && samePath(current, rendered) ? rendered : await freePlatePath(rendered, print.id, { assetsOf: print.id });
-  let moved = 0;
-  if (!current) {
-    // Saved before anything moves, so a picture moved below is found even if the move stops part-way.
-    await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
-  } else if (!samePath(current, home)) {
-    moved += await moveAllStored(
-      async () => {
-        const now = await prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } });
-        const from = now?.assetsPath ?? current;
-        return (await ownedAssetFiles(from, await assetOwnerIds(print.id))).map((file): [string, string] => [
-          path.join(STORAGE, from, file),
-          path.join(STORAGE, home, file),
-        ]);
-      },
-      () => prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } }),
-    );
-  } else if (current !== home) {
-    await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
-  }
-  print.assetsPath = home;
-  for (const file of await modelAssetFiles(print.id, plateIds)) {
-    if (await adoptLegacyAsset(home, file)) moved += 1;
-  }
-  return moved;
+  // Picked under the lock, from where the pictures are then and the model as it is then, as a file's place is
+  // (moveStored): picked before, the folder could be one another model's pictures have taken since.
+  const chosen = { found: false, from: null as string | null, home: null as string | null };
+  let moved = await moveAllStored(
+    async () => {
+      const [now, at] = await Promise.all([
+        prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } }),
+        placing(),
+      ]);
+      chosen.found = Boolean(now && at);
+      chosen.from = now?.assetsPath ?? null;
+      if (!at) return [];
+      const rendered = renderAssetsPath(at.print, template, at.values);
+      const from = chosen.from;
+      const home =
+        from && samePath(from, rendered) ? rendered : await freePlatePath(rendered, print.id, { assetsOf: print.id });
+      chosen.home = home;
+      if (!from || samePath(from, home)) return [];
+      return (await ownedAssetFiles(from, await assetOwnerIds(print.id))).map((file): [string, string] => [
+        path.join(STORAGE, from, file),
+        path.join(STORAGE, home, file),
+      ]);
+    },
+    // A model from before, with none yet, has it saved before the pictures below are brought in, so one brought in is
+    // found even if that stops part-way.
+    async () => {
+      if (chosen.found && chosen.home && chosen.from !== chosen.home) {
+        await prisma.print.update({ where: { id: print.id }, data: { assetsPath: chosen.home } });
+      }
+    },
+  );
+  // Those still in the old shared folders brought to where the model's pictures are as the lock is held, read again
+  // there: another move of them since the one above may have chosen another folder, which these would then miss.
+  const adopted = await withStorageLock(async () => {
+    const now = await prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } });
+    if (!now?.assetsPath) return { home: chosen.home, moved: 0 };
+    let count = 0;
+    for (const file of await modelAssetFiles(print.id, plateIds)) {
+      if (await adoptLegacyAsset(now.assetsPath, file)) count += 1;
+    }
+    return { home: now.assetsPath, moved: count };
+  });
+  if (adopted.home) print.assetsPath = adopted.home;
+  return moved + adopted.moved;
 }
 
 /**
@@ -626,36 +733,103 @@ async function relocateAssets(
  * storage path is built from. Returns how many files moved.
  */
 export async function relocatePrint(
-  print: PrintLike & { assetsPath?: string | null },
+  print: PrintLike & { assetsPath?: string | null; updatedAt?: Date },
   plates: Plate[],
   template?: string | null,
 ): Promise<number> {
-  const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
-  const printValues = await printTemplateValues(print, safeTemplate);
+  // Counted as begun before anything is awaited, so a move begun after this one is a later one whichever reads first.
+  const mine = ++movesBegun;
+  const moves = modelMoves.get(print.id) ?? { latest: 0, active: 0 };
+  moves.latest = mine;
+  moves.active += 1;
+  modelMoves.set(print.id, moves);
+  let seen = mine;
+  const stale = olderThanGiven(print);
+  try {
+    const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
+    // Given the model as an earlier save left it, after a later save's move began, as two edits' moves can begin in
+    // the other order: placed by the model as saved, or this would take the files back where the earlier save put them.
+    const base = (stale ? await prisma.print.findUnique({ where: { id: print.id } }) : null) ?? print;
+    const printValues = await printTemplateValues(base, safeTemplate);
+    // Where each file goes: by that, until a later move of the model begins, which is one for a change saved after
+    // this began: then by the model as saved, read once for each later move. That move may have got there first and
+    // taken the files where it puts them. The template's values are read again only then, rather than for every
+    // file, as each read takes the lock's time.
+    let at: { print: PrintLike; values: PrintTemplateValues } | null = { print: base, values: printValues };
+    const placing: Placing = async () => {
+      if (moves.latest !== seen) {
+        seen = moves.latest;
+        const now = await prisma.print.findUnique({ where: { id: print.id } });
+        at = now ? { print: now, values: await printTemplateValues(now, safeTemplate) } : null;
+      }
+      return at;
+    };
+    return await relocatePrintWith(base, plates, safeTemplate, printValues, placing);
+  } finally {
+    // Kept while any move of the model runs, so one that outlasts a later one still sees one begun after that.
+    moves.active -= 1;
+    if (moves.active === 0 && modelMoves.get(print.id) === moves) modelMoves.delete(print.id);
+  }
+}
+
+// Every model move begun so far, and for each model being moved its latest and how many run: a move that finds a later
+// one began for its model knows a change of it was saved after it began, as every save that moves a model's files
+// starts a move of them (relocatePrint).
+let movesBegun = 0;
+const modelMoves = new Map<string, { latest: number; active: number }>();
+
+// The newest version of each model a move was given (its updatedAt), kept after its moves end, as the move of an
+// earlier save can begin after a later one's has ended. The least recently moved go first past the cap.
+const givenVersions = new Map<string, number>();
+const GIVEN_VERSIONS_KEPT = 10_000;
+
+/** Whether `print` is older than a version of it a move was given already, and otherwise noted as the newest. One
+ *  given with no version is taken as it is. */
+function olderThanGiven(print: { id: string; updatedAt?: Date }): boolean {
+  const version = print.updatedAt?.getTime();
+  if (version === undefined) return false;
+  const newest = givenVersions.get(print.id);
+  if (newest !== undefined && version < newest) return true;
+  givenVersions.delete(print.id);
+  givenVersions.set(print.id, version);
+  const oldest = givenVersions.keys().next();
+  if (givenVersions.size > GIVEN_VERSIONS_KEPT && !oldest.done) givenVersions.delete(oldest.value);
+  return false;
+}
+
+/** relocatePrint's moves of the plates, files and pictures, each placed as `placing` says then. */
+async function relocatePrintWith(
+  print: PrintLike & { assetsPath?: string | null },
+  plates: Plate[],
+  safeTemplate: string,
+  printValues: PrintTemplateValues,
+  placing: Placing,
+): Promise<number> {
   let moved = 0;
   for (const plate of plates) {
-    const oldPath = managedPlatePath(plate);
-    const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
-    // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
-    const newRelative =
-      path.resolve(oldPath) === path.resolve(STORAGE, rendered)
-        ? rendered
-        : await freePlatePath(rendered, print.id, { plateId: plate.id });
-    const newPath = path.join(STORAGE, newRelative);
-    if (path.resolve(oldPath) === path.resolve(newPath)) {
-      if (plate.storagePath !== newRelative) {
-        await prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } });
-      }
+    // In place by the caller's read: a change since that moves it runs a move of its own.
+    if (
+      plate.storagePath ===
+      renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder)
+    )
       continue;
-    }
     const didMove = await moveStored(
-      async () => managedPlatePath((await prisma.plate.findUnique({ where: { id: plate.id } })) ?? plate),
-      newPath,
-      () => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
+      async () => {
+        const now = await prisma.plate.findUnique({ where: { id: plate.id } });
+        // Another model's by now, which a merge made it: that model's move takes it where its files go.
+        if (!now || now.printId !== print.id) return null;
+        const at = await placing();
+        if (!at) return null;
+        const place = renderFilePath(at.print, safeTemplate, at.values, now.filename, now.position, now.folder);
+        // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
+        const to = samePath(now.storagePath, place) ? place : await freePlatePath(place, print.id, { plateId: now.id });
+        return { from: now.storagePath, to };
+      },
+      (to) => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: to } }),
     );
     if (didMove) moved += 1;
   }
-  moved += await relocatePrintFiles(print, safeTemplate, printValues);
+  moved += await relocatePrintFiles(print, safeTemplate, printValues, placing);
   // A caller that only had some of the plates still moves every plate's pictures.
   const [current, allPlates] = await Promise.all([
     print.assetsPath === undefined
@@ -667,7 +841,7 @@ export async function relocatePrint(
   moved += await relocateAssets(
     { ...print, assetsPath: current.assetsPath },
     safeTemplate,
-    printValues,
+    placing,
     allPlates.map((plate) => plate.id),
   );
   return moved;
@@ -733,7 +907,7 @@ export async function storageOutOfPlace(template: string): Promise<{ files: numb
   const prints = await prisma.print.findMany({
     include: {
       plates: true,
-      files: { select: { filename: true, folder: true, storagePath: true } },
+      files: { select: { filename: true, folder: true, storagePath: true, ready: true } },
       _count: { select: { previewImages: true, descriptionImages: true } },
     },
   });
@@ -762,6 +936,7 @@ export async function storageOutOfPlace(template: string): Promise<{ files: numb
         ),
     ).length;
     misplaced += print.files.filter((file) => {
+      if (!file.ready) return false;
       const target = renderFilePath(print, safeTemplate, values, file.filename, null, file.folder);
       return file.storagePath !== target && withoutNumber(file.storagePath) !== target;
     }).length;
@@ -838,28 +1013,65 @@ const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {
   "thumbnail.png": 2,
 };
 
-/** Extracts an embedded thumbnail image from a .3mf archive's zip payload, if present. */
-export async function extract3mfThumbnail(plateId: string, srcPath: string): Promise<boolean> {
-  if (!srcPath.toLowerCase().endsWith(".3mf")) return false;
+/** How large a .3mf's thumbnail picture may be, and how many of them, and how much in all, are held to choose from:
+ *  all are read before one is tried, and an archive can name any number. */
+const THUMBNAIL_ENTRY_MAX = 16 * 1024 * 1024;
+const THUMBNAIL_CANDIDATES = 4;
+const THUMBNAIL_CANDIDATES_MAX = 32 * 1024 * 1024;
+// Pictures that won't read, or aren't pictures, before the rest are left: each read looks through the archive afresh,
+// and it can name any number of them.
+const THUMBNAIL_FAILURES_MAX = 8;
+
+/** The pictures a .3mf's zip payload holds as its thumbnail, best first, as many as THUMBNAIL_CANDIDATES and
+ *  THUMBNAIL_CANDIDATES_MAX allow, after as many that fail as THUMBNAIL_FAILURES_MAX; none when it holds none or
+ *  can't be read. */
+export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
+  if (!srcPath.toLowerCase().endsWith(".3mf")) return [];
   try {
     const entries = await listZipEntries(srcPath);
     const imageNames = entries
       .filter((e) => !e.isDirectory)
       .filter((e) => /\.(png|jpe?g|webp)$/i.test(e.name) && /thumbnail/i.test(path.basename(e.name)))
-      .filter((e) => e.size <= 16 * 1024 * 1024)
+      .filter((e) => e.size <= THUMBNAIL_ENTRY_MAX)
       .toSorted((a, b) => {
         const pa = THUMBNAIL_ENTRY_PRIORITY[a.name.toLowerCase().replace(/^\//, "")] ?? 10;
         const pb = THUMBNAIL_ENTRY_PRIORITY[b.name.toLowerCase().replace(/^\//, "")] ?? 10;
         return pa - pb || a.name.length - b.name.length;
       });
+    const pictures: Buffer[] = [];
+    let bytes = 0;
+    let failed = 0;
     for (const entry of imageNames) {
-      const buf = await readZipEntry(srcPath, entry.name, 16 * 1024 * 1024);
-      if (buf && (await saveThumbBuffer(plateId, buf))) return true;
+      // Checked before each read, the read held to what's left: a size the archive lists can be wrong. One that doesn't
+      // fit is passed over for a smaller one after it.
+      const room = Math.min(THUMBNAIL_ENTRY_MAX, THUMBNAIL_CANDIDATES_MAX - bytes);
+      if (pictures.length >= THUMBNAIL_CANDIDATES || failed >= THUMBNAIL_FAILURES_MAX) break;
+      if (entry.size > room) continue;
+      // One that can't be read, or isn't a picture by its header, is passed over, as one too large is, so it takes no
+      // place a picture after it could have: those read already still count.
+      const buf = await readZipEntry(srcPath, entry.name, room).catch(() => null);
+      if (!buf || !(await imageFormat(buf).catch(() => undefined))) {
+        failed += 1;
+        continue;
+      }
+      pictures.push(buf);
+      bytes += buf.length;
     }
+    return pictures;
   } catch {
-    return false;
+    return [];
   }
+}
+
+/** The plate's thumbnail made of the first of `pictures` that makes one. */
+export async function saveThumbFromPictures(plateId: string, pictures: Buffer[]): Promise<boolean> {
+  for (const picture of pictures) if (await saveThumbBuffer(plateId, picture)) return true;
   return false;
+}
+
+/** Extracts an embedded thumbnail image from a .3mf archive's zip payload, if present. */
+export async function extract3mfThumbnail(plateId: string, srcPath: string): Promise<boolean> {
+  return saveThumbFromPictures(plateId, await read3mfThumbnails(srcPath));
 }
 
 export async function ensurePlateThumbnail(plateId: string, srcPath: string): Promise<boolean> {

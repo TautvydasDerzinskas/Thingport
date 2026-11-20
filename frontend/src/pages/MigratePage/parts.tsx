@@ -49,6 +49,7 @@ const KNOWN_ERRORS = new Set([
   "failed_change",
   "source_newer",
   "upgrade_failed",
+  "upgrade_interrupted",
   "interrupted",
   "too_big",
   "upload_failed",

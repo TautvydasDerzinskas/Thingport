@@ -25,6 +25,7 @@ import { switchSlicer } from "../../../hooks/useSlicerPreference";
 import { saveResponseToDisk } from "../../../utils/downloadResponse";
 import { extOf } from "../../../utils/fileExtensions";
 import ModelFileSelect from "../../ModelDetailPage/ModelFileSelect";
+import SupportingFileChips from "../../../components/supportingFiles/SupportingFileChips";
 import OpenInSlicerButton from "../../ModelDetailPage/OpenInSlicerButton";
 import { useSlicerChoice, type ModelFile } from "../../ModelDetailPage/useOpenInSlicer";
 import ElsewhereGone from "./ElsewhereGone";
@@ -34,6 +35,10 @@ import RemoteCopyPanel from "./RemoteCopyPanel";
 const SLICES = new Set(["stl", "3mf", "step", "stp", "obj"]);
 
 const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" } as const;
+
+/** A partner's file that's kept beside the model rather than one of its files: shown as an attachment. */
+const isSupporting = (file: { kind?: string | null; role?: string | null }) =>
+  file.kind === "file" && file.role === "SUPPORTING";
 
 /** A partner's model, as it said: its pictures, description and files, whose it is and which of their collections
  *  it's in. Laid out like another user's model here: copied to the viewer's library, opened in a slicer or
@@ -84,13 +89,16 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
   usePageHeader({ title: model?.title });
 
   const { slicerOption, slicerOptions } = useSlicerChoice();
-  const [downloading, setDownloading] = useState(false);
+  // How many downloads of each model are on their way, so one ending doesn't free the controls while another still
+  // runs, and one of the model before (the page stays as another opens) doesn't hold this one's.
+  const [downloads, setDownloads] = useState<Record<string, number>>({});
+  const downloading = Boolean(modelId && downloads[modelId]);
   // Those it can be had of, through this instance. Two can share a name: told apart by where they are in the list,
   // which never changes here.
   const files = useMemo<ModelFile[]>(
     () =>
       (model?.files ?? []).flatMap((file, position) =>
-        file.url
+        file.url && !isSupporting(file)
           ? [
               {
                 key: `${position}:${file.name}`,
@@ -107,11 +115,53 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
       ),
     [model],
   );
+  // Instructions, notes and sources: attachments under the pictures, downloaded through this instance.
+  const supporting = useMemo<ModelFile[]>(
+    () =>
+      (model?.files ?? []).flatMap((file, position) =>
+        file.url && isSupporting(file)
+          ? [
+              {
+                key: `${position}:${file.name}`,
+                url: file.url,
+                filename: file.name,
+                launchFilename: file.name,
+                index: position,
+                plate: null,
+                size: file.size,
+                folder: file.folder ?? null,
+              },
+            ]
+          : [],
+      ),
+    [model],
+  );
+  // The supporting files on their way down, by model and key (a key is a place in its model's list): another click on
+  // one, on the chip or its download button, doesn't start a second, and the others stay free.
+  const supportingDownloads = useRef(new Set<string>());
+  const [supportingBusy, setSupportingBusy] = useState<ReadonlySet<string>>(() => new Set());
+  const busyKey = (key: string) => `${modelId}\n${key}`;
+  const downloadSupporting = (key: string) => {
+    const file = supporting.find((item) => item.key === key);
+    if (!file || !modelId) return;
+    const busy = busyKey(key);
+    if (supportingDownloads.current.has(busy)) return;
+    supportingDownloads.current.add(busy);
+    setSupportingBusy(new Set(supportingDownloads.current));
+    // Never rejects: a failure is said by downloadingFor.
+    void download(file).finally(() => {
+      supportingDownloads.current.delete(busy);
+      setSupportingBusy(new Set(supportingDownloads.current));
+    });
+  };
+  // What the download panel offers: the model's files, or its supporting files where those alone can be had, so the
+  // ZIP of them is still there.
+  const offered = files.length ? files : supporting;
   // The first a slicer opens, until one is picked.
   const selected =
-    files.find((file) => file.key === selectedKey) ??
-    files.find((file) => SLICES.has(extOf(file.filename))) ??
-    files[0] ??
+    offered.find((file) => file.key === selectedKey) ??
+    offered.find((file) => SLICES.has(extOf(file.filename))) ??
+    offered[0] ??
     null;
 
   const copied = useCallback(
@@ -129,29 +179,32 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
       severity: "error",
     });
   };
-  const download = async (file: ModelFile) => {
-    setDownloading(true);
+  /** Counted against the model it was started on, until it's done, wherever the page has gone meanwhile. */
+  const downloadingFor = async (id: string, task: () => Promise<void>) => {
+    setDownloads((counts) => ({ ...counts, [id]: (counts[id] ?? 0) + 1 }));
     try {
+      await task();
+    } catch (err) {
+      failedDownload(err);
+    } finally {
+      setDownloads(({ [id]: count = 1, ...rest }) => (count > 1 ? { ...rest, [id]: count - 1 } : rest));
+    }
+  };
+  const download = async (file: ModelFile) => {
+    if (!modelId) return;
+    await downloadingFor(modelId, async () => {
       const res = await fetch(printsApi.fileUrl(file.url));
       if (res.status === 401) throw new UnauthorizedError();
       if (!res.ok) throw new Error("Download failed");
       await saveResponseToDisk(res, file.filename);
-    } catch (err) {
-      failedDownload(err);
-    } finally {
-      setDownloading(false);
-    }
+    });
   };
   const downloadZip = async () => {
-    if (!model) return;
-    setDownloading(true);
-    try {
-      await saveResponseToDisk(await socialApi.elsewhere.zip(model.id), `${model.title || "model"}.zip`);
-    } catch (err) {
-      failedDownload(err);
-    } finally {
-      setDownloading(false);
-    }
+    if (!modelId || !model) return;
+    const { id, title } = model;
+    await downloadingFor(modelId, async () => {
+      await saveResponseToDisk(await socialApi.elsewhere.zip(id), `${title || "model"}.zip`);
+    });
   };
 
   if (gone) return <ElsewhereGone />;
@@ -244,6 +297,20 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
             ))}
           </Stack>
         )}
+        {supporting.length > 0 && (
+          <SupportingFileChips
+            files={supporting.map((file) => ({
+              key: file.key,
+              name: file.filename,
+              size: file.size,
+              folder: file.folder,
+            }))}
+            busy={new Set(supporting.flatMap((file) => (supportingBusy.has(busyKey(file.key)) ? [file.key] : [])))}
+            onOpen={downloadSupporting}
+            onDownload={downloadSupporting}
+            withoutViewer
+          />
+        )}
       </Paper>
 
       <Paper variant="outlined" sx={{ p: 2.5, borderRadius: "12px", minWidth: 0 }}>
@@ -280,21 +347,23 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
           {(files.length > 0 || model.library_copy_id) && (
             <RemoteCopyPanel key={model.id} model={model} onCopied={copied} onUnauthorized={onUnauthorized} />
           )}
-          {files.length > 0 ? (
+          {offered.length > 0 ? (
             <>
-              {selected && files.length > 1 && (
-                <ModelFileSelect files={files} selected={selected} onSelect={(file) => setSelectedKey(file.key)} />
+              {selected && offered.length > 1 && (
+                <ModelFileSelect files={offered} selected={selected} onSelect={(file) => setSelectedKey(file.key)} />
               )}
               {selected && (
                 <OpenInSlicerButton
                   file={selected}
-                  canOpen={SLICES.has(extOf(selected.filename))}
+                  // A supporting file offered when the model's own aren't is downloaded, never opened in a slicer.
+                  canOpen={files.length > 0 && SLICES.has(extOf(selected.filename))}
                   slicerOption={slicerOption}
                   slicerOptions={slicerOptions}
                   onOpened={(slicerId) => void switchSlicer(slicerId)}
                   downloading={downloading}
-                  onDownload={() => void download(selected)}
-                  zipCount={files.length}
+                  // A supporting file goes as its chip does, so the two never fetch it at once.
+                  onDownload={() => (files.length ? void download(selected) : downloadSupporting(selected.key))}
+                  zipCount={files.length + supporting.length}
                   onDownloadZip={() => void downloadZip()}
                 />
               )}

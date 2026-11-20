@@ -11,6 +11,7 @@ import type {
   SdkPrintProfile,
   SdkRelatedFile,
 } from "./types";
+import { sortAddedFiles, withGltfFiles } from "../utils/addedFiles";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
@@ -181,8 +182,57 @@ export function buildUserLibrary({
       if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);
       return toModel(print);
     },
-    addFiles: async (id: string, files: SdkFileInput[]) =>
-      toModel((await printsApi.addPlates(id, files.map(toFile))).print),
+    addFiles: async (id: string, files: SdkFileInput[], options: { keepPrepared?: boolean } = {}) => {
+      // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
+      // A .gltf's .bin and textures go up with it, packed into one .glb.
+      const inputs = files.map(toFile);
+      const { model, supporting, ambiguous } = await withGltfFiles(sortAddedFiles(inputs, "model"), (file) => file);
+      // Before anything is added: a .gltf finds its files by name, and two files of one name leave it guessing.
+      if (ambiguous.length) {
+        throw new Error(
+          `Two different files are named ${ambiguous.join(", ")}: a .gltf among them can't say which is its own. ` +
+            "Add each scene with its files in a call of its own.",
+        );
+      }
+      // The model's own go in one request, which the server takes back as far as it can if it fails; the others one at
+      // a time after them. One that fails says what went in before it, and whether the rest must keep the prepared
+      // print, so a call with the rest carries on from there; it's the request's own error, with nothing read
+      // afterwards that could fail in its place. What went in is said by name, and by place in `files`, which tells two
+      // of one name apart.
+      const added: string[] = [];
+      const addedIndexes: number[] = [];
+      const went = (sent: File[]) => {
+        for (const file of sent) {
+          added.push(file.name);
+          addedIndexes.push(inputs.indexOf(file));
+        }
+      };
+      // The first sliced print among them becomes the prepared print, unless the caller is sending the rest of a call
+      // that set it; the rest are kept as related files.
+      let keepPrepared = options.keepPrepared ?? false;
+      let print: Print | null = null;
+      try {
+        if (model.length) {
+          print = (await printsApi.addPlates(id, model)).print;
+          went(model);
+        }
+        for (const file of supporting) {
+          const res = await printsApi.uploadFile(id, file, { keepPrepared });
+          if (res.prepared) keepPrepared = true;
+          print = res.print;
+          went([file]);
+        }
+      } catch (err) {
+        const failure = err instanceof Error ? err : new Error(String(err));
+        throw Object.assign(failure, {
+          added,
+          addedIndexes,
+          keepPrepared,
+          ...(print ? { model: toModel(print) } : {}),
+        });
+      }
+      return toModel(print ?? (await printsApi.get(id, { record: false })));
+    },
     addImages: async (id: string, images: SdkFileInput[]) =>
       toModel((await printsApi.addPreviewImages(id, images.map(toFile))).print),
     replaceFile: async (id: string, fileId: string, file: SdkFileInput) => {

@@ -11,14 +11,21 @@ import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
-import { startingSelection, type ZipEntry } from "../../../utils/zipUtils";
+import { hasModelFolderPaths, startingSelection, type ZipEntry } from "../../../utils/zipUtils";
+import Segmented from "../../controls/Segmented";
+import HelpTip from "../../HelpTip";
 import ZipEntryList from "./ZipEntryList";
+
+/** How an uploaded zip's files become models: all of them one model, a model per folder, or a model per file. */
+export type ZipUploadMode = "one" | "folders" | "separate";
 
 export type ZipPromptConfig = {
   label: string;
   onImportAsZip: () => Promise<void>;
   loadEntries: () => Promise<ZipEntry[]>;
-  onImportSelected: (entries: string[]) => Promise<void>;
+  /** `mode` is the choice an uploaded zip offers (`chooseMode`); an import is one model and offers none. */
+  onImportSelected: (entries: string[], mode?: ZipUploadMode | null) => Promise<void>;
+  chooseMode?: boolean;
 };
 
 type ZipPromptState = {
@@ -38,6 +45,7 @@ export function useZipImportPrompt() {
   const [stage, setStage] = useState<PromptStage>("choice");
   const [entries, setEntries] = useState<ZipEntry[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [mode, setMode] = useState<ZipUploadMode>("one");
   const [busy, setBusy] = useState(false);
   // Reading a link's zip can take seconds, with nothing else on screen to say so.
   const [reading, setReading] = useState(false);
@@ -48,6 +56,7 @@ export function useZipImportPrompt() {
     setStage("choice");
     setEntries([]);
     setSelected(new Set());
+    setMode("one");
     setBusy(false);
     setReading(false);
     setError(null);
@@ -115,7 +124,8 @@ export function useZipImportPrompt() {
     setBusy(true);
     setError(null);
     try {
-      await state.config.onImportSelected(selectedEntries);
+      const chosen: ZipUploadMode = mode === "folders" && !hasModelFolderPaths(selectedEntries) ? "one" : mode;
+      await state.config.onImportSelected(selectedEntries, state.config.chooseMode ? chosen : null);
       close();
     } catch (err) {
       setError(errorMessage(err, t("zipImport.importError")));
@@ -142,6 +152,9 @@ export function useZipImportPrompt() {
 
   const selectedCount = selected.size;
   const allSelected = entries.length > 0 && selectedCount === entries.length;
+  const canSplitFolders = hasModelFolderPaths(selected);
+  // A model per folder needs a folder with model files among those picked.
+  const effectiveMode: ZipUploadMode = mode === "folders" && !canSplitFolders ? "one" : mode;
 
   const modal = state ? (
     <ZipImportModal
@@ -161,6 +174,9 @@ export function useZipImportPrompt() {
       onToggleEntry={toggleEntry}
       onSelectAll={selectAll}
       onClearAll={clearAll}
+      mode={state.config.chooseMode ? effectiveMode : null}
+      canSplitFolders={canSplitFolders}
+      onModeChange={setMode}
     />
   ) : null;
 
@@ -184,6 +200,9 @@ export function ZipImportModal({
   onToggleEntry,
   onSelectAll,
   onClearAll,
+  mode = null,
+  canSplitFolders = false,
+  onModeChange,
 }: {
   label: string;
   stage: PromptStage;
@@ -201,6 +220,10 @@ export function ZipImportModal({
   onToggleEntry: (path: string) => void;
   onSelectAll: () => void;
   onClearAll: () => void;
+  /** An uploaded zip's choice; null for an import, which is always one model. */
+  mode?: ZipUploadMode | null;
+  canSplitFolders?: boolean;
+  onModeChange?: (mode: ZipUploadMode) => void;
 }) {
   const { t } = useTranslation("app");
   const entryCount = entries.length;
@@ -269,6 +292,26 @@ export function ZipImportModal({
                 noFilesLabel={t("zipImport.noFiles")}
                 onToggleEntry={onToggleEntry}
               />
+
+              {mode && onModeChange && (
+                <Stack direction="row" alignItems="center" spacing={1.5} flexWrap="wrap" useFlexGap>
+                  <Typography variant="body2" color="text.secondary">
+                    {t("zipImport.asLabel")}
+                  </Typography>
+                  <Segmented
+                    value={mode}
+                    onChange={onModeChange}
+                    label={t("zipImport.asLabel")}
+                    disabled={busy}
+                    options={[
+                      { value: "one" as const, label: t("zipImport.modeOne") },
+                      ...(canSplitFolders ? [{ value: "folders" as const, label: t("zipImport.modeFolders") }] : []),
+                      { value: "separate" as const, label: t("zipImport.modeSeparate") },
+                    ]}
+                  />
+                  <HelpTip text={t("zipImport.modeHelp")} />
+                </Stack>
+              )}
 
               <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
                 <Button variant="contained" onClick={onImportSelected} disabled={busy || selectedCount === 0}>

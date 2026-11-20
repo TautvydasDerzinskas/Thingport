@@ -5,11 +5,12 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "../db";
 import { CONSUME_DIR, IMPORT_MAX_BYTES, RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
-import { HttpError, guessMimeFromPath, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError, guessMimeFromPath, sanitizeFilename, trimFilename } from "../utils/fileUtils";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { normalizeZipEntryPath, resolveZipCategoryId } from "./zipService";
 import { createPrint, type NewPlateInput } from "./printCreation";
-import { saveFileFromTemp } from "./printFileService";
+import { batchFileSaver } from "./printFileService";
+import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { createNotification } from "./notificationService";
 import { gltfReferencedFiles, isGltfName, packGltfFiles } from "./gltfPacker";
@@ -108,7 +109,8 @@ type Item = { rel: string; path: string; size: number };
 
 export type ConsumeSummary = { models: number; files: number; failed: string[]; printIds: string[] };
 
-const extOf = (name: string) => path.extname(name).toLowerCase();
+// By the name it's kept as (trimFilename): "body.stl " is a model file, and its folder a model's.
+const extOf = (name: string) => path.extname(trimFilename(name)).toLowerCase();
 const foldersOf = (rel: string) => rel.split("/").slice(0, -1);
 const byName = (a: Item, b: Item) =>
   path.basename(a.rel).localeCompare(path.basename(b.rel), undefined, { numeric: true, sensitivity: "base" });
@@ -317,11 +319,19 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   };
 
   // Same rules as uploading folders with "each folder is one model": a folder holding model files is
-  // one model named after it; its images are the previews, anything else is attached.
-  const importFolder = async (folders: string[], group: Item[]) => {
+  // one model named after it; its images are the previews, anything else is attached. `attached` are the files of its
+  // subfolders that hold no model files, each kept in its subfolder ("docs").
+  const importFolder = async (folders: string[], group: Item[], attached: { item: Item; folder: string }[] = []) => {
     const sorted = group.toSorted(byName);
-    const plates = sorted.filter((i) => RENDERABLE_MODEL_EXTS.has(extOf(i.rel)));
-    const rest = sorted.filter((i) => !plates.includes(i));
+    const renderable = sorted.filter((i) => RENDERABLE_MODEL_EXTS.has(extOf(i.rel)));
+    // A sliced 3MF beside the model files is their prepared print; on its own, it's what there is to print. By the name
+    // it's kept as, as extOf goes by: "frog.gcode.3mf " is one.
+    const unsliced = renderable.filter((i) => !isPreparedPrintFilename(trimFilename(path.basename(i.rel))));
+    const plates = unsliced.length ? unsliced : renderable;
+    const rest = [
+      ...sorted.filter((i) => !plates.includes(i)).map((item) => ({ item, folder: null as string | null })),
+      ...attached.toSorted((a, b) => byName(a.item, b.item)),
+    ];
     const name = folders[folders.length - 1];
     let printId: string;
     let firstPlateId: string | undefined;
@@ -345,7 +355,7 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
       for (const item of plates) await fs.rm(item.path, { force: true });
     } catch (err) {
       console.error("Consume folder: import failed for", folders.join("/"), err);
-      for (const item of group) await notImported(item);
+      for (const item of [...group, ...attached.map((entry) => entry.item)]) await notImported(item);
       return;
     }
     summary.models += 1;
@@ -353,7 +363,8 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
     summary.printIds.push(printId);
 
     let preferred = false;
-    for (const item of rest) {
+    const save = batchFileSaver(userId, printId);
+    for (const { item, folder } of rest) {
       try {
         if (PREVIEW_IMAGE_EXTS.has(extOf(item.rel)) && item.size <= PREVIEW_IMAGE_MAX_BYTES) {
           const buffer = await fs.readFile(item.path);
@@ -367,12 +378,12 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
             continue;
           }
         }
-        // saveFileFromTemp moves what it's given, so hand it a copy.
+        // Saving moves what it's given, so hand it a copy.
         const filename = path.basename(item.rel);
         const copy = tempPath();
         await fs.copyFile(item.path, copy);
         try {
-          await saveFileFromTemp(userId, printId, copy, filename, guessMimeFromPath(filename));
+          await save(copy, filename, guessMimeFromPath(filename), { folder });
         } finally {
           await fs.rm(copy, { force: true });
         }
@@ -389,13 +400,40 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
     const groups = new Map<string, Item[]>();
     for (const item of importable) {
       const key = foldersOf(item.rel).join("/");
-      groups.set(key, [...(groups.get(key) ?? []), item]);
+      const group = groups.get(key);
+      if (group) group.push(item);
+      else groups.set(key, [item]);
     }
+    const modelKeys = new Set(
+      [...groups]
+        .filter(([key, group]) => key && group.some((i) => RENDERABLE_MODEL_EXTS.has(extOf(i.rel))))
+        .map(([key]) => key),
+    );
+    // A subfolder with no model files of its own belongs to the model folder above it, rather than coming in file by
+    // file: its documents are that model's, in their folder, and its pictures are that model's photos. The nearest
+    // folder above that is a model, found by walking up from it rather than by looking through every model.
+    const ownerOf = (key: string) => {
+      for (let cut = key.lastIndexOf("/"); cut > 0; cut = key.lastIndexOf("/", cut - 1)) {
+        if (modelKeys.has(key.slice(0, cut))) return key.slice(0, cut);
+      }
+      return null;
+    };
+    const attached = new Map<string, { item: Item; folder: string }[]>();
     for (const [key, group] of groups) {
-      if (key && group.some((i) => RENDERABLE_MODEL_EXTS.has(extOf(i.rel)))) {
-        await importFolder(key.split("/"), group);
+      if (!key || modelKeys.has(key)) continue;
+      const owner = ownerOf(key);
+      if (!owner) continue;
+      const folder = key.slice(owner.length + 1);
+      const list = attached.get(owner) ?? [];
+      if (!attached.has(owner)) attached.set(owner, list);
+      for (const item of group) list.push({ item, folder });
+    }
+    const taken = new Set([...attached.values()].flat().map((entry) => entry.item));
+    for (const [key, group] of groups) {
+      if (modelKeys.has(key)) {
+        await importFolder(key.split("/"), group, attached.get(key) ?? []);
       } else {
-        for (const item of group) await importEach(item);
+        for (const item of group) if (!taken.has(item)) await importEach(item);
       }
     }
   } else {

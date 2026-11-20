@@ -362,7 +362,17 @@ export type RemoteModelOut = RemoteModelCardOut & {
   description: string | null;
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for it. */
-  files: { name: string; folder: string | null; size: number | null; media_type: string | null; url: string | null }[];
+  /** `kind` and `role` as the partner said them: a "file" with role "SUPPORTING" is a supporting file. Null from a
+   *  partner too old to say. */
+  files: {
+    name: string;
+    folder: string | null;
+    size: number | null;
+    media_type: string | null;
+    url: string | null;
+    kind: "plate" | "file" | null;
+    role: "SUPPORTING" | "PREPARED" | null;
+  }[];
   updated_at: string | null;
   owner_handle: string | null;
   /** Its owner's public collections it's in. */
@@ -401,6 +411,9 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
       size: file.size,
       media_type: file.mediaType,
       url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,
+      // A supporting file is shown apart from the model's files; a partner too old to say leaves them all as files.
+      kind: file.kind ?? null,
+      role: file.role ?? null,
     })),
     updated_at: row.updatedAt?.toISOString() ?? null,
     owner_handle: row.person.username ? `${row.person.username}@${new URL(row.peer.origin).host}` : null,

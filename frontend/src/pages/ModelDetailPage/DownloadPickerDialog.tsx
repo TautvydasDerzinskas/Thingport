@@ -11,6 +11,9 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import Skeleton from "@mui/material/Skeleton";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import FolderZipOutlinedIcon from "@mui/icons-material/FolderZipOutlined";
@@ -18,18 +21,30 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
-import type { Plate } from "../../api/prints";
+import type { Plate, PrintFile } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import TypeTile from "../../components/supportingFiles/TypeTile";
 import { fileRowText } from "./fileRowText";
 import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
 import { folderLabel, groupByFolder, hasFolders, shortNames } from "../../utils/fileFolders";
+
+/** Where the picker's supporting files are, while they're read for a card's model. */
+export type SupportingFilesState = "loading" | "failed";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   downloading: boolean;
   sortedPlates: Plate[];
+  /** The supporting files the zip holds beside the plates. */
+  supportingCount?: number;
+  /** Those files, each to download on its own where the model's page has them (a card's model has only the count). */
+  supportingFiles?: PrintFile[];
+  /** Still being read, or the read failed; unset once they're here. */
+  supportingState?: SupportingFilesState;
+  onRetrySupporting?: () => void;
+  downloadSupporting?: (file: PrintFile) => void;
   downloadAllZip: () => void;
   /** One folder of the model's (Plate.folder), with the folders in it, as a zip. */
   downloadFolderZip: (folder: string) => void;
@@ -38,16 +53,26 @@ type Props = {
 
 const folderOf = (plate: Plate) => plate.folder;
 
+const NO_FILES: PrintFile[] = [];
+
 export default function DownloadPickerDialog({
   open,
   onClose,
   downloading,
   sortedPlates,
+  supportingCount = 0,
+  supportingFiles: loadedSupportingFiles,
+  supportingState,
+  onRetrySupporting,
+  downloadSupporting,
   downloadAllZip,
   downloadFolderZip,
   downloadPlate,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  const supportingFiles = loadedSupportingFiles ?? NO_FILES;
+  // The files themselves once they're read, as another tab may have added one since the count was taken.
+  const zipCount = sortedPlates.length + (loadedSupportingFiles ? loadedSupportingFiles.length : supportingCount);
   const grouped = hasFolders(sortedPlates, folderOf);
   const names = useMemo(
     () =>
@@ -95,7 +120,7 @@ export default function DownloadPickerDialog({
             disabled={downloading}
             startIcon={downloading ? <CircularProgress size={14} /> : <DownloadIcon fontSize="small" />}
           >
-            {t("models:detail.downloadAllZip", { count: sortedPlates.length })}
+            {t("models:detail.downloadAllZip", { count: zipCount })}
           </Button>
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>
@@ -131,6 +156,60 @@ export default function DownloadPickerDialog({
                   </li>
                 ))
               : sortedPlates.map(row)}
+            {downloadSupporting && (supportingFiles.length > 0 || (supportingState && supportingCount > 0)) && (
+              <li>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.75}
+                  sx={{ pl: 1, pr: 0.5, pt: 1, color: "text.secondary" }}
+                >
+                  <AttachFileIcon aria-hidden sx={{ fontSize: 16 }} />
+                  <Typography variant="caption" fontWeight={700} noWrap sx={{ flex: 1, minWidth: 0 }}>
+                    {t("models:supporting.title")} · {supportingFiles.length || supportingCount}
+                  </Typography>
+                </Stack>
+                {supportingState === "loading" && (
+                  <Skeleton variant="rounded" height={48} sx={{ mx: 1, my: 0.75 }} aria-hidden />
+                )}
+                {supportingState === "failed" && (
+                  <Alert
+                    severity="error"
+                    sx={{ mt: 0.75 }}
+                    action={
+                      <Button color="inherit" size="small" onClick={onRetrySupporting}>
+                        {t("common:retry")}
+                      </Button>
+                    }
+                  >
+                    {t("models:supporting.loadFailed")}
+                  </Alert>
+                )}
+                <List disablePadding>
+                  {supportingFiles.map((file) => (
+                    <ListItemButton
+                      key={file.id}
+                      onClick={() => downloadSupporting(file)}
+                      disabled={downloading}
+                      title={file.filename}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 60 }}>
+                        <TypeTile filename={file.filename} size={48} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={file.filename}
+                        secondary={[file.folder, extOf(file.filename).toUpperCase() || null, formatFileSize(file.size)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        primaryTypographyProps={{ noWrap: true }}
+                        secondaryTypographyProps={{ noWrap: true }}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </li>
+            )}
           </List>
         </Stack>
       </DialogContent>

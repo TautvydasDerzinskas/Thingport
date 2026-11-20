@@ -5,10 +5,11 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import sharp from "sharp";
+import JSZip from "jszip";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
-import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
+import { plateThumbPath, read3mfThumbnails, saveThumbFromBytes } from "../src/services/printService";
 import {
   addPreviewImage,
   galleryThumbPath,
@@ -73,6 +74,52 @@ describe("preview images", () => {
     expect(res.status).toBe(200);
     expect(res.body.print.preview_images).toHaveLength(2);
     expect(res.body.print.thumb_url).not.toBeNull();
+  });
+
+  it("says which images an upload's files became, in their order, and none for one that isn't a picture", async () => {
+    const print = await uploadStl();
+    const res = await request(app)
+      .post(`/api/print/${print.id}/preview-images`)
+      .set(auth())
+      .attach("files", await png(10), "a.png")
+      .attach("files", Buffer.from("not a picture"), "b.png")
+      .attach("files", await png(200), "c.png");
+    expect(res.status).toBe(200);
+    expect(res.body.image_ids).toHaveLength(3);
+    const [first, skipped, third] = res.body.image_ids;
+    expect(skipped).toBeNull();
+    expect(res.body.print.preview_images.map((image: { id: string }) => image.id)).toEqual([first, third]);
+    // Each id is its own file's picture: a.png's red is 10, c.png's 200.
+    const home = await printAssetHome(print.id);
+    expect(await redOf(previewImagePath(first, home))).toBeLessThan(60);
+    expect(await redOf(previewImagePath(third, home))).toBeGreaterThan(180);
+  });
+
+  it("answers with a stored picture's id when making it the cover fails", async () => {
+    const print = await uploadStl();
+    const findMany = prisma.previewImage.findMany.bind(prisma.previewImage);
+    let failed = false;
+    // The look for our own renders to take over from, once.
+    const renders = vi.spyOn(prisma.previewImage, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.previewImage.findMany>[0],
+    ) => {
+      if (failed || args?.where?.generated !== true) return findMany(args);
+      failed = true;
+      return Promise.reject(new Error("the database went away"));
+    }) as never);
+    let res;
+    try {
+      res = await request(app)
+        .post(`/api/print/${print.id}/preview-images`)
+        .set(auth())
+        .attach("files", await png(10), "a.png");
+    } finally {
+      renders.mockRestore();
+    }
+    expect(failed).toBe(true);
+    expect(res.status).toBe(200);
+    expect(res.body.image_ids).toHaveLength(1);
+    expect(res.body.print.preview_images.map((image: { id: string }) => image.id)).toEqual(res.body.image_ids);
   });
 
   // Two pictures can reach one model at once: an import adds its gallery while our own card render of the first
@@ -776,5 +823,63 @@ describe("deleting a tag", () => {
     );
     expect(tagsOf).toEqual([["Kept"], [], ["Kept"]]);
     expect((await request(app).get("/api/tags/bookmarked").set(as)).body).toEqual([]);
+  });
+});
+
+describe("a .3mf's thumbnail pictures", () => {
+  // A .3mf of `entries`, each a picture's name and its bytes, in the order given.
+  const threeMf = async (entries: [string, Buffer][]) => {
+    const zip = new JSZip().file("3D/3dmodel.model", "<model/>");
+    for (const [name, bytes] of entries) zip.file(name, bytes);
+    const at = path.join(os.tmpdir(), `thumbs-${Date.now()}-${Math.random().toString(36).slice(2)}.3mf`);
+    await fs.writeFile(at, await zip.generateAsync({ type: "nodebuffer" }));
+    return at;
+  };
+  const picture = () =>
+    sharp({ create: { width: 4, height: 4, channels: 3, background: "#00cc00" } })
+      .png()
+      .toBuffer();
+  const notOne = Buffer.from("not a picture");
+
+  it("passes over ones that aren't pictures, so they take no place a picture after them could", async () => {
+    const good = await picture();
+    // Four named as the best are no pictures; the one that is comes after them.
+    const at = await threeMf([
+      ["Metadata/thumbnail.png", notOne],
+      ["3D/thumbnail.png", notOne],
+      ["thumbnail.png", notOne],
+      ["a/thumbnail.png", notOne],
+      ["after/thumbnail.png", good],
+    ]);
+    try {
+      expect(await read3mfThumbnails(at)).toEqual([good]);
+    } finally {
+      await fs.rm(at, { force: true });
+    }
+  });
+
+  it("reads on after seven that won't do, to a picture after them", async () => {
+    const good = await picture();
+    const at = await threeMf([
+      ...Array.from({ length: 7 }, (_, n): [string, Buffer] => [`${n}/thumbnail.png`, notOne]),
+      ["after-them/thumbnail.png", good],
+    ]);
+    try {
+      expect(await read3mfThumbnails(at)).toEqual([good]);
+    } finally {
+      await fs.rm(at, { force: true });
+    }
+  });
+
+  it("stops after eight that won't do, however many the archive names", async () => {
+    const at = await threeMf([
+      ...Array.from({ length: 8 }, (_, n): [string, Buffer] => [`${n}/thumbnail.png`, notOne]),
+      ["after-them/thumbnail.png", await picture()],
+    ]);
+    try {
+      expect(await read3mfThumbnails(at)).toEqual([]);
+    } finally {
+      await fs.rm(at, { force: true });
+    }
   });
 });

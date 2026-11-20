@@ -1,11 +1,16 @@
+import i18next from "i18next";
 import { UnauthorizedError } from "../api/client";
 import { categoriesApi, type Category } from "../api/categories";
 import { printsApi, type Print } from "../api/prints";
 import { MODEL_EXTS, UPLOAD_EXTS } from "../constants/fileTypes";
+import { keptExt, keptName } from "./fileExtensions";
 
 export type UploadEntry = {
   file: File;
   relativePath: string;
+  /** The path a zip named it by, where another entry of that path made this a numbered copy ("mesh (2).bin"): a scene
+   *  naming that path could mean either. */
+  zipPath?: string;
 };
 
 type FileSystemEntry = {
@@ -124,11 +129,26 @@ function splitPath(entry: UploadEntry) {
   return segments;
 }
 
-function extOf(name: string) {
-  return name.split(".").pop()?.toLowerCase() ?? "";
+/** A file as it goes up. A zip's numbered copy a scene took ("mesh (2).bin") goes under the name the zip gave it, the
+ *  one the scene names, as the server finds a scene's files by name; anything else as picked. */
+function sentFile(entry: UploadEntry, scenePart: boolean): File {
+  if (!scenePart || !entry.zipPath) return entry.file;
+  return new File([entry.file], entry.zipPath.split("/").pop()!, { type: entry.file.type });
 }
 
-function isModelFile(name: string) {
+/** Where a file was in the pick, for a scene's references: a zip's numbered copy a scene took, where the zip had it. */
+function sourceFolderOf(entry: UploadEntry, scenePart: boolean): string | null {
+  const path = scenePart && entry.zipPath ? entry.zipPath : entry.relativePath || entry.file.name;
+  return normalizeRelativePath(path).split("/").filter(Boolean).slice(0, -1).join("/") || null;
+}
+
+/** By the name it's kept by, as the server tells what a file is: "part.stl " is a model file, "stl" isn't. */
+function extOf(name: string) {
+  return keptExt(name);
+}
+
+/** A model file, by its name or its path. */
+export function isModelFile(name: string) {
   return MODEL_EXTS.has(extOf(name)) || isGltf(name);
 }
 
@@ -147,6 +167,11 @@ function normalizeSegments(path: string) {
   return out.join("/");
 }
 
+const pathOf = (entry: UploadEntry) => normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
+const pathsOf = (entry: UploadEntry) =>
+  entry.zipPath ? [pathOf(entry), normalizeSegments(normalizeRelativePath(entry.zipPath))] : [pathOf(entry)];
+const nameOf = (path: string) => path.split("/").pop()!.toLowerCase();
+
 /** The files a .gltf points at (its .bin buffers and textures), as written in it. None when it doesn't parse: the
  *  server says what's wrong with it when it's uploaded. */
 async function gltfReferences(file: File): Promise<string[]> {
@@ -163,18 +188,51 @@ async function gltfReferences(file: File): Promise<string[]> {
 /**
  * For each .gltf among `entries`, the entries it points at. A .gltf keeps its geometry in a .bin and its textures in
  * images beside it; they upload with it as one model, which the server packs into a .glb, rather than as models or
- * gallery pictures of their own. Found by path from the .gltf's folder, or by name when only one file in that folder or below has it.
+ * gallery pictures of their own. Found as the server finds them: by path from the .gltf's folder, or by name when only one
+ * file in that folder or below has it. Where more than one file could be the one it means, none is taken, and the name
+ * goes in `ambiguous`, under the scene. `unresolved`: what it points at, as written in it, that it took none for.
  */
-export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEntry, UploadEntry[]>> {
+export async function gltfBundles(
+  entries: UploadEntry[],
+  ambiguous?: Map<UploadEntry, string[]>,
+  unresolved?: Map<UploadEntry, string[]>,
+): Promise<Map<UploadEntry, UploadEntry[]>> {
   const bundles = new Map<UploadEntry, UploadEntry[]>();
-  const pathOf = (entry: UploadEntry) =>
-    normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
-  const nameOf = (entry: UploadEntry) => entry.file.name.toLowerCase();
-  const others = entries.filter((entry) => !isGltf(entry.file.name));
+  const find = gltfFinder(entries);
   for (const gltf of entries.filter((entry) => isGltf(entry.file.name))) {
+    const { found, unclear, left } = find(gltf, await gltfReferences(gltf.file));
+    bundles.set(gltf, found);
+    if (unclear.length) ambiguous?.set(gltf, unclear);
+    if (left.length) unresolved?.set(gltf, left);
+  }
+  return bundles;
+}
+
+/**
+ * What a .gltf points at among `entries` (none of them a .gltf), found as gltfBundles finds it: of `uris`, as the scene
+ * writes them, `found` the entries, `unclear` the names more than one entry could be, which it takes neither of, and
+ * `left` the uris it took none for. Each entry's places are worked out once, for every scene and name looked for.
+ */
+export function gltfFinder(entries: UploadEntry[]) {
+  // By their paths as they were picked, as the server finds them (gltfPacker's findReferenced), and the path a zip
+  // gave a numbered copy too, which the scene could mean as well.
+  const others = entries
+    .filter((entry) => !isGltf(entry.file.name))
+    .map((entry) => ({
+      entry,
+      places: pathsOf(entry).map((path) => ({ path, name: nameOf(path), kept: keptName(nameOf(path)) })),
+    }));
+  type Place = (typeof others)[number]["places"][number];
+  const matching = (test: (place: Place) => boolean) =>
+    others.filter(({ places }) => places.some(test)).map(({ entry }) => entry);
+  return (gltf: UploadEntry, uris: string[]) => {
     const folder = pathOf(gltf).split("/").slice(0, -1).join("/");
+    // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
+    const inFolder = (path: string) => !folder || path.startsWith(`${folder}/`);
     const found = new Set<UploadEntry>();
-    for (const uri of await gltfReferences(gltf.file)) {
+    const unclear = new Set<string>();
+    const left: string[] = [];
+    for (const uri of uris) {
       let decoded = uri;
       try {
         decoded = decodeURIComponent(uri);
@@ -182,18 +240,32 @@ export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEnt
         // A stray % in a file name: match it as written.
       }
       const wanted = normalizeSegments(`${folder}/${decoded.replace(/\\/g, "/")}`);
-      const byPath = others.find((entry) => pathOf(entry) === wanted);
-      const name = wanted.split("/").pop()!.toLowerCase();
-      // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
-      const byName = others.filter(
-        (entry) => nameOf(entry) === name && (!folder || pathOf(entry).startsWith(`${folder}/`)),
-      );
-      const match = byPath ?? (byName.length === 1 ? byName[0] : undefined);
-      if (match) found.add(match);
+      const named = wanted.split("/").pop()!;
+      const name = named.toLowerCase();
+      const kept = keptName(name);
+      // Each looked for only when the one before found none: at its path, by its name in the scene's folder, then by
+      // the name one is kept by ("mesh.bin " for "mesh.bin").
+      let candidates = matching((place) => place.path === wanted);
+      if (!candidates.length) candidates = matching((place) => place.name === name && inFolder(place.path));
+      if (!candidates.length) candidates = matching((place) => place.kept === kept && inFolder(place.path));
+      // Two entries of one file are one file; two files are two the scene could mean, and it takes neither.
+      const distinct = new Set(candidates.map((entry) => entry.file));
+      if (distinct.size === 1) found.add(candidates[0]);
+      else left.push(uri);
+      if (distinct.size > 1) unclear.add(named);
     }
-    bundles.set(gltf, [...found]);
-  }
-  return bundles;
+    return { found: [...found], unclear: [...unclear], left };
+  };
+}
+
+/** The pictures the gallery took, by the id its answer gave each in turn: one it couldn't keep (null) is named among
+ *  the failures rather than counted as up. An answer without ids, from an older backend, took them all. */
+function photosKept(images: UploadEntry[], ids: (string | null)[] | undefined, failed: string[]): UploadEntry[] {
+  if (!ids) return images;
+  images.forEach((entry, index) => {
+    if (ids[index] === null) failed.push(entry.file.name);
+  });
+  return images.filter((_, index) => ids[index] !== null);
 }
 
 // Larger images than the preview-image endpoint takes are attached to the model as files instead.
@@ -224,6 +296,12 @@ function failureLabel(name: string, err: unknown) {
   return message && message !== "Upload failed" ? `${name} (${message})` : name;
 }
 
+/** Why a model whose .gltf names a file more than one picked file could be stays out: the server couldn't tell which
+ *  either, and would keep the scene without it. */
+function unclearScene(names: string[]): Error {
+  return new Error(i18next.t("uploadBar.gltfAmbiguous", { ns: "app", names: names.join(", ") }));
+}
+
 export function uploadEntriesToCategory(
   entries: UploadEntry[],
   parentCategoryId: string | null,
@@ -236,23 +314,35 @@ export function uploadEntriesToCategory(
 const uploadable = (entries: UploadEntry[]) => entries.filter((e) => UPLOAD_EXTS.includes(extOf(e.file.name)));
 
 /** `batched`: more than one request, each sent without a notification; the caller sends the summary.
- *  A lone request notifies by itself, so it's recorded even if the page closes mid-upload. */
+ *  A lone request notifies by itself, so it's recorded even if the page closes mid-upload. `skipped`: the files that
+ *  can't be a model on their own (a PDF, notes), for the caller to say so. `unclearBefore`: the scenes a look at the
+ *  whole pick found more than one file for, which a look at only these can't see once another model took those. */
 async function uploadEach(
   entries: UploadEntry[],
   resolveCategory: ReturnType<typeof categoryResolver>,
   onUnauthorized?: () => void,
   partOfBatch = false,
+  unclearBefore?: Map<UploadEntry, string[]>,
 ) {
   const failed: string[] = [];
   let uploaded = 0;
   const uploadedEntries: UploadEntry[] = [];
   const prints: Print[] = [];
-  const bundles = await gltfBundles(entries);
+  const unclear = new Map<UploadEntry, string[]>(unclearBefore);
+  const bundles = await gltfBundles(entries, unclear);
   const bundled = new Set([...bundles.values()].flat());
   const todo = uploadable(entries).filter((entry) => !bundled.has(entry));
+  const skipped = entries
+    .filter((entry) => !bundled.has(entry) && !todo.includes(entry) && !isSystemFile(entry.file.name))
+    .map((entry) => entry.file.name);
   const batched = partOfBatch || todo.length > 1;
 
   for (const entry of todo) {
+    const names = unclear.get(entry);
+    if (names) {
+      failed.push(failureLabel(entry.file.name, unclearScene(names)));
+      continue;
+    }
     try {
       const segments = splitPath(entry);
       let categoryId: string | null;
@@ -267,8 +357,15 @@ async function uploadEach(
       // Folder-tree leaves are always single-plate prints; a .gltf brings the files it points at along.
       const parts = [entry, ...(bundles.get(entry) ?? [])];
       const result = await printsApi.upload(
-        parts.map((part) => part.file),
-        { category_id: categoryId || undefined, notify: !batched, ...(parts.length > 1 ? { mode: "multiplate" } : {}) },
+        parts.map((part) => sentFile(part, part !== entry)),
+        {
+          category_id: categoryId || undefined,
+          notify: !batched,
+          // A scene's files by where each was in the pick: two of one name in two folders are two files to the server.
+          ...(parts.length > 1
+            ? { mode: "multiplate", sourceFolders: parts.map((part) => sourceFolderOf(part, part !== entry)) }
+            : {}),
+        },
       );
       uploaded += 1;
       uploadedEntries.push(...parts);
@@ -282,7 +379,101 @@ async function uploadEach(
       failed.push(failureLabel(entry.file.name, err));
     }
   }
-  return { uploaded, failed, uploadedEntries, prints, batched };
+  return { uploaded, failed, uploadedEntries, prints, batched, skipped };
+}
+
+/** The folder of each entry below the folders every one of them shares: a zip named after its model holding one
+ *  folder named after it again keeps none of that. */
+function foldersBelowShared(entries: UploadEntry[]): (string | null)[] {
+  const paths = entries.map(splitPath);
+  let shared = 0;
+  while (
+    paths.length > 0 &&
+    paths.every((segments) => segments.length > shared && segments[shared] === paths[0][shared])
+  )
+    shared += 1;
+  return paths.map((segments) => (segments.length > shared ? segments.slice(shared).join("/") : null));
+}
+
+/**
+ * All of `entries` as one model, as an uploaded zip's "one model" makes it: its model files are the plates and its
+ * other files supporting ones, each in its folder below those they all share, and its pictures are the photos. One
+ * with no model file has its pictures as plates, as an upload of only pictures has. Documents alone can't be a model:
+ * nothing is sent, and they come back in `skipped`. Named `title`, or by the server from its files.
+ * The plates keep the order of `entries`: a pick of several files is the model in the order they were picked.
+ * `folder` is where they sat in the upload, a zip's in a picked folder ("Kits/Frog"): a category, as a folder pick
+ * makes one, so the model lands where the zip was, as the zip itself would.
+ */
+export async function uploadEntriesAsOneModel(
+  entries: UploadEntry[],
+  title: string | null,
+  parentCategoryId: string | null,
+  onUnauthorized?: () => void,
+  folder = "",
+) {
+  const failed: string[] = [];
+  const uploadedEntries: UploadEntry[] = [];
+  const prints: Print[] = [];
+  const kept = entries.filter((entry) => !isSystemFile(entry.file.name));
+  if (!uploadable(kept).length) {
+    return { uploaded: 0, failed, uploadedEntries, prints, batched: false, skipped: kept.map((e) => e.file.name) };
+  }
+  const label = title ?? kept[0]?.file.name ?? "";
+  // A texture is part of the scene that uses it, not a picture of the model.
+  const unclear = new Map<UploadEntry, string[]>();
+  const bundled = new Set([...(await gltfBundles(kept, unclear)).values()].flat());
+  if (unclear.size) {
+    failed.push(failureLabel(label, unclearScene([...new Set([...unclear.values()].flat())])));
+    return { uploaded: 0, failed, uploadedEntries, prints, batched: false, skipped: [] as string[] };
+  }
+  const hasModel = kept.some((entry) => isModelFile(entry.file.name));
+  const images = hasModel ? kept.filter((entry) => isPreviewImage(entry.file) && !bundled.has(entry)) : [];
+  const files = kept.filter((entry) => !images.includes(entry));
+  const folders = foldersBelowShared(kept);
+  try {
+    const segments = folder.split("/").filter(Boolean);
+    const categoryId = segments.length ? await categoryResolver(parentCategoryId)(segments) : parentCategoryId;
+    const result = await printsApi.upload(
+      files.map((entry) => sentFile(entry, bundled.has(entry))),
+      {
+        ...(title ? { title } : {}),
+        category_id: categoryId || undefined,
+        mode: "multiplate",
+        folders: files.map((entry) => folders[kept.indexOf(entry)]),
+        // Where each was in the pick, for a .gltf's references: a scene can name a file above the folders kept.
+        sourceFolders: files.map((entry) => sourceFolderOf(entry, bundled.has(entry))),
+      },
+    );
+    uploadedEntries.push(...files);
+    let print = result.prints[0];
+    if (print && images.length) {
+      try {
+        const added = await printsApi.addPreviewImages(
+          print.id,
+          images.map((entry) => entry.file),
+        );
+        print = added.print;
+        uploadedEntries.push(...photosKept(images, added.image_ids, failed));
+      } catch (err) {
+        if (err instanceof UnauthorizedError) {
+          // Up already, without its photos: still one of those uploaded.
+          prints.push(print);
+          throw err;
+        }
+        console.error("Preview images failed for", label, err);
+        failed.push(failureLabel(i18next.t("uploadBar.photosOf", { ns: "app", name: label }), err));
+      }
+    }
+    if (print) prints.push(print);
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      onUnauthorized?.();
+    } else {
+      console.error("Upload failed for", label, err);
+      failed.push(failureLabel(label, err));
+    }
+  }
+  return { uploaded: prints.length, failed, uploadedEntries, prints, batched: false, skipped: [] as string[] };
 }
 
 /**
@@ -297,7 +488,8 @@ export async function uploadFoldersAsModels(
 ) {
   const groups = new Map<string, { segments: string[]; entries: UploadEntry[] }>();
   // A .gltf's .bin and textures go in its folder's model, wherever they sit below it (a "textures" folder, often).
-  const bundles = await gltfBundles(entries);
+  const unclear = new Map<UploadEntry, string[]>();
+  const bundles = await gltfBundles(entries, unclear);
   const bundled = new Set([...bundles.values()].flat());
   for (const entry of entries) {
     if (bundled.has(entry)) continue;
@@ -313,7 +505,23 @@ export async function uploadFoldersAsModels(
   const modelGroups = [...groups.values()].filter(
     (g) => g.segments.length > 0 && g.entries.some((e) => isModelFile(e.file.name)),
   );
-  const rest = [...groups.values()].filter((g) => !modelGroups.includes(g)).flatMap((g) => g.entries);
+  // A subfolder with no model files of its own belongs to the model folder above it, rather than coming in file by
+  // file: its documents are that model's, in their folder ("docs"), and its pictures are that model's photos.
+  const attachedTo = new Map<(typeof modelGroups)[number], { entry: UploadEntry; folder: string }[]>();
+  const rest: UploadEntry[] = [];
+  for (const group of groups.values()) {
+    if (modelGroups.includes(group)) continue;
+    const key = group.segments.join("/");
+    const owner = modelGroups
+      .filter((model) => key.startsWith(`${model.segments.join("/")}/`))
+      .toSorted((a, b) => b.segments.length - a.segments.length)[0];
+    if (!owner) {
+      rest.push(...group.entries);
+      continue;
+    }
+    const folder = group.segments.slice(owner.segments.length).join("/");
+    attachedTo.set(owner, [...(attachedTo.get(owner) ?? []), ...group.entries.map((entry) => ({ entry, folder }))]);
+  }
 
   const failed: string[] = [];
   let uploaded = 0;
@@ -324,10 +532,31 @@ export async function uploadFoldersAsModels(
 
   for (const group of modelGroups) {
     const folderName = group.segments[group.segments.length - 1];
+    const names = [...new Set(group.entries.flatMap((entry) => unclear.get(entry) ?? []))];
+    if (names.length) {
+      failed.push(failureLabel(folderName, unclearScene(names)));
+      continue;
+    }
     const sorted = group.entries.toSorted(byName);
+    const attached = (attachedTo.get(group) ?? []).toSorted((a, b) => byName(a.entry, b.entry));
     // A texture is part of the scene that uses it, not a picture of the model.
-    const images = sorted.filter((e) => isPreviewImage(e.file) && !bundled.has(e));
-    const files = sorted.filter((e) => !images.includes(e));
+    const images = [
+      ...sorted.filter((e) => isPreviewImage(e.file) && !bundled.has(e)),
+      ...attached.filter((a) => isPreviewImage(a.entry.file)).map((a) => a.entry),
+    ];
+    const attachedFiles = attached.filter((a) => !isPreviewImage(a.entry.file) && !isSystemFile(a.entry.file.name));
+    const files = [...sorted.filter((e) => !images.includes(e)), ...attachedFiles.map((a) => a.entry)];
+    // A scene's .bin and textures by their path below the model's folder, so the server packs each into the scene that
+    // names it though two share a name (textures/body.png, variant/body.png). One outside it goes by its name alone.
+    const belowModel = (entry: UploadEntry) => {
+      const segments = splitPath(entry);
+      const inside = group.segments.every((segment, index) => segments[index] === segment);
+      return (inside && segments.slice(group.segments.length).join("/")) || null;
+    };
+    const folders = [
+      ...sorted.filter((e) => !images.includes(e)).map(belowModel),
+      ...attachedFiles.map((a) => a.folder),
+    ];
     try {
       let categoryId: string | null;
       try {
@@ -338,45 +567,60 @@ export async function uploadFoldersAsModels(
         failed.push(folderName);
         continue;
       }
+      // Where each was in the pick, for a scene that names a file outside its model's folder ("../shared/mesh.bin").
+      const sourceFolders = files.map((e) => sourceFolderOf(e, bundled.has(e)));
       const result = await printsApi.upload(
-        files.map((e) => e.file),
-        { title: folderName, category_id: categoryId || undefined, mode: "multiplate", notify: !batched },
+        files.map((e) => sentFile(e, bundled.has(e))),
+        {
+          title: folderName,
+          category_id: categoryId || undefined,
+          mode: "multiplate",
+          notify: !batched,
+          folders,
+          sourceFolders,
+        },
       );
       uploaded += 1;
       uploadedEntries.push(...files);
       let print = result.prints[0];
       if (print && images.length) {
         try {
-          print = (
-            await printsApi.addPreviewImages(
-              print.id,
-              images.map((e) => e.file),
-            )
-          ).print;
-          uploadedEntries.push(...images);
+          const added = await printsApi.addPreviewImages(
+            print.id,
+            images.map((e) => e.file),
+          );
+          print = added.print;
+          uploadedEntries.push(...photosKept(images, added.image_ids, failed));
         } catch (err) {
-          if (err instanceof UnauthorizedError) throw err;
+          if (err instanceof UnauthorizedError) {
+            prints.push(print);
+            throw err;
+          }
           console.error("Preview images failed for", folderName, err);
-          failed.push(failureLabel(`${folderName} (images)`, err));
+          failed.push(failureLabel(i18next.t("uploadBar.photosOf", { ns: "app", name: folderName }), err));
         }
       }
       if (print) prints.push(print);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
-        return { uploaded, failed, uploadedEntries, prints, batched };
+        return { uploaded, failed, uploadedEntries, prints, batched, skipped: [] as string[] };
       }
       console.error("Upload failed for", folderName, err);
       failed.push(failureLabel(folderName, err));
     }
   }
 
+  const skipped: string[] = [];
   if (rest.length) {
-    const result = await uploadEach(rest, resolveCategory, onUnauthorized, batched);
+    // With what the whole pick showed: a scene beside the folders whose texture is in two of them is still unclear,
+    // though those folders' models have taken both by now.
+    const result = await uploadEach(rest, resolveCategory, onUnauthorized, batched, unclear);
     uploaded += result.uploaded;
     failed.push(...result.failed);
     uploadedEntries.push(...result.uploadedEntries);
     prints.push(...result.prints);
+    skipped.push(...result.skipped);
   }
-  return { uploaded, failed, uploadedEntries, prints, batched };
+  return { uploaded, failed, uploadedEntries, prints, batched, skipped };
 }

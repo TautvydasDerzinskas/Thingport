@@ -58,3 +58,42 @@ describe("printsApi.bulkAssignCategory", () => {
     await expect(printsApi.bulkAssignCategory(ids, "category")).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });
+
+describe("printsApi.upload", () => {
+  beforeEach(() => {
+    vi.stubGlobal("window", { localStorage: { getItem: () => null } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const sent = async (files: File[], folders?: (string | null)[]) => {
+    const answer = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
+      Response.json({ prints: [] }),
+    );
+    vi.stubGlobal("fetch", answer);
+    await printsApi.upload(files, { mode: "multiplate", folders });
+    const body = answer.mock.calls[0][1].body;
+    if (!(body instanceof FormData)) throw new Error("The upload wasn't sent as multipart form data");
+    return body;
+  };
+  const foldersSent = async (files: File[], folders?: (string | null)[]) => (await sent(files, folders)).get("folders");
+  const file = (name: string) => new File(["solid x endsolid"], name);
+
+  it("sends where a lone file sat, as it does each of several, and nothing when none sat in a folder", async () => {
+    // A zip's "parts/body.stl" with its photo, which goes to the gallery: the model file goes up alone.
+    expect(await foldersSent([file("body.stl")], ["parts"])).toBe(JSON.stringify(["parts"]));
+    expect(await foldersSent([file("body.stl"), file("guide.pdf")], ["parts", "docs"])).toBe(
+      JSON.stringify(["parts", "docs"]),
+    );
+    expect(await foldersSent([file("body.stl")], [null])).toBeNull();
+    expect(await foldersSent([file("body.stl")])).toBeNull();
+  });
+
+  it("sends the files themselves, in order, beside their folders, a file at the top keeping its place", async () => {
+    const body = await sent([file("body.stl"), file("guide.pdf")], [null, "docs"]);
+    expect(body.getAll("files").map((each) => (each as File).name)).toEqual(["body.stl", "guide.pdf"]);
+    expect(body.get("folders")).toBe(JSON.stringify([null, "docs"]));
+  });
+});

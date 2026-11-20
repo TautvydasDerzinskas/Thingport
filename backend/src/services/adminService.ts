@@ -146,6 +146,8 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
 
 export type StorageUsage = {
   modelBytes: number;
+  /** Of modelBytes, what the supporting files kept beside the models take: instructions, notes, sources. */
+  supportingBytes: number;
   modelCount: number;
   /** All of storage on disk: model files plus everything made from them. */
   totalBytes: number;
@@ -214,24 +216,28 @@ export function forgetStorageUsage(): void {
  * if each had a copy.
  */
 export async function getStorageUsage(): Promise<StorageUsage> {
-  const [owned, shared, files, modelCount, disk] = await Promise.all([
+  const [owned, shared, fileRoles, modelCount, disk] = await Promise.all([
     prisma.plate.aggregate({ _sum: { size: true }, where: { sourcePath: null } }),
     prisma.$queryRaw<{ bytes: bigint | null }[]>`
       SELECT COALESCE(SUM(size), 0) AS bytes
       FROM (SELECT DISTINCT ON ("sourcePath") size FROM "Plate" WHERE "sourcePath" IS NOT NULL ORDER BY "sourcePath") s
     `,
-    prisma.printFile.aggregate({ _sum: { size: true } }),
+    // One query for both, so a file saved meanwhile can't count in the supporting files but not in all of them.
+    prisma.printFile.groupBy({ by: ["role"], _sum: { size: true } }),
     prisma.print.count(),
     measureDisk(),
   ]);
   const sharedBytes = Number(shared[0]?.bytes ?? 0);
-  const modelBytes = (owned._sum.size ?? 0) + sharedBytes + (files._sum.size ?? 0);
+  const fileBytes = fileRoles.reduce((sum, group) => sum + (group._sum.size ?? 0), 0);
+  const supportingBytes = fileRoles.find((group) => group.role === "SUPPORTING")?._sum.size ?? 0;
+  const modelBytes = (owned._sum.size ?? 0) + sharedBytes + fileBytes;
   const { bytes, compressSaving, photosBeyond } = disk.inventory;
   const pictureBytes =
     bytes.previews + bytes.old + bytes.photos + bytes.thumbnails + bytes.description + bytes.tagPictures;
   const otherGeneratedBytes = bytes.slicer + bytes.bundles;
   return {
     modelBytes,
+    supportingBytes,
     modelCount,
     totalBytes: disk.totalBytes,
     pictureBytes,

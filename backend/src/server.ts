@@ -18,6 +18,7 @@ import { holdMigrations, settleMigrations } from "./services/migrate/runs";
 import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 import { seedProviderCategoryIds } from "./services/categorySiteIds";
 import { linkUnattributedPrints } from "./services/authorService";
+import { removeAbandonedPrintFileSaves } from "./services/printFileService";
 import { startDeliveryWorker } from "./federation/delivery";
 import { startLinks } from "./federation/links";
 import { getFederationSettings } from "./federation/settings";
@@ -48,6 +49,9 @@ async function boot(): Promise<void> {
   // Before serving: settling them clears the uploads folder, and a run started meanwhile would be taken for one the
   // last process left.
   await settleMigrations();
+  // Before serving, so none of this process's own saves is under way: a save the last process didn't finish left a row
+  // that isn't ready, at a placeholder or at the place it claimed, and nothing else would ever remove it or its file.
+  await removeAbandonedPrintFileSaves().catch((err) => console.error("Failed to remove unfinished file saves:", err));
   const server = app.listen(API_PORT, () => {
     console.log(`Thingport API listening on port ${API_PORT}`);
     startConsumeWatcher();

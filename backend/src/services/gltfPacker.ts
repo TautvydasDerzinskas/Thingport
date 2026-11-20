@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { HttpError } from "../utils/fileUtils";
+import { HttpError, trimFilename } from "../utils/fileUtils";
 
 // A .gltf is a JSON scene whose geometry sits in .bin files and whose textures sit in image files beside it, found by
 // relative path. Thingport stores a model's files apart and serves them by id, so those paths would lead nowhere: a
@@ -25,7 +25,14 @@ type GltfJson = {
   [key: string]: unknown;
 };
 
-export const isGltfName = (name: string) => path.extname(name).toLowerCase() === ".gltf";
+/** The .glb a .gltf at `name` becomes: its name as it's kept ("scene.gltf " is "scene.glb"), its folders as written. */
+function glbNameOf(name: string): string {
+  const slash = name.replace(/\\/g, "/").lastIndexOf("/");
+  return name.slice(0, slash + 1) + trimFilename(name.slice(slash + 1)).replace(/\.gltf$/i, ".glb");
+}
+
+/** A .gltf by the name it's kept by (sanitizeFilename): "scene.gltf " is one, a name that's all extension isn't. */
+export const isGltfName = (name: string) => path.extname(trimFilename(name)).toLowerCase() === ".gltf";
 
 const isDataUri = (uri: string) => uri.startsWith("data:");
 const isRemoteUri = (uri: string) => /^[a-z][a-z0-9+.-]*:/i.test(uri) && !isDataUri(uri);
@@ -159,7 +166,9 @@ export type PackableFile = { name: string; path: string };
 
 /** `uri`, as written in the .gltf at `gltfName`, among `files`: by its path from the .gltf's folder, else by its
  *  file name alone, when only one file in that folder or below has it (an upload carries names, not folders), so a
- *  scene doesn't take a file that belongs to another model's folder. */
+ *  scene doesn't take a file that belongs to another model's folder. Names as they came first, so "mesh.bin%20" finds
+ *  "mesh.bin " beside a "mesh.bin"; only when none matches so, by the name one is kept by ("mesh.bin " for
+ *  "mesh.bin"), and only where one file has it. */
 function findReferenced<T extends PackableFile>(files: T[], gltfName: string, uri: string): T | undefined {
   let decoded = uri;
   try {
@@ -168,17 +177,20 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
     // A stray % in a file name: match it as written.
   }
   const folder = path.posix.dirname(gltfName.replace(/\\/g, "/"));
-  const wanted = path.posix.normalize(path.posix.join(folder, decoded));
+  // A scene written on Windows may give a folder with a backslash ("textures%5Cwood.png"), as the app reads one.
+  const wanted = path.posix.normalize(path.posix.join(folder, decoded.replace(/\\/g, "/")));
   const pathOf = (file: T) => path.posix.normalize(file.name.replace(/\\/g, "/"));
   const byPath = files.find((file) => pathOf(file) === wanted);
   if (byPath) return byPath;
   const base = path.posix.basename(wanted).toLowerCase();
-  const byName = files.filter(
-    (file) =>
-      path.posix.basename(pathOf(file)).toLowerCase() === base &&
-      (folder === "." || pathOf(file).startsWith(`${folder}/`)),
+  const inFolder = (file: T) => folder === "." || pathOf(file).startsWith(`${folder}/`);
+  const byName = files.filter((file) => path.posix.basename(pathOf(file)).toLowerCase() === base && inFolder(file));
+  if (byName.length) return byName.length === 1 ? byName[0] : undefined;
+  const kept = trimFilename(base);
+  const byKeptName = files.filter(
+    (file) => trimFilename(path.posix.basename(pathOf(file))).toLowerCase() === kept && inFolder(file),
   );
-  return byName.length === 1 ? byName[0] : undefined;
+  return byKeptName.length === 1 ? byKeptName[0] : undefined;
 }
 
 /**
@@ -219,9 +231,10 @@ export async function packGltfFiles<T extends PackableFile>(
         return fs.readFile(file.path);
       });
       const glbPath = tempPath();
-      await fs.writeFile(glbPath, glb);
+      // Listed before it's written, so one a failed write leaves part-way goes with the rest.
       written.push(glbPath);
-      glbs.set(gltf, made(gltf, glbPath, gltf.name.replace(/\.gltf$/i, ".glb")));
+      await fs.writeFile(glbPath, glb);
+      glbs.set(gltf, made(gltf, glbPath, glbNameOf(gltf.name)));
     }
   } catch (err) {
     await Promise.all(written.map((file) => fs.rm(file, { force: true }).catch(() => undefined)));

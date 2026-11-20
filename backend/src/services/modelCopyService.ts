@@ -60,7 +60,8 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
       plates: { orderBy: { position: "asc" } },
       previewImages: { orderBy: { position: "asc" } },
       descriptionImages: true,
-      files: true,
+      // Only files whose saves are done: one on its way in isn't whole yet.
+      files: { where: { ready: true } },
     },
   });
   if (!source) throw new HttpError(404, "Print not found");
