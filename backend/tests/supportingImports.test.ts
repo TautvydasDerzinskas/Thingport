@@ -823,22 +823,20 @@ describe("a file a site gives beside a model's own", () => {
     expect(kept.map((each) => each.filename).toSorted()).toEqual(["a.txt", "b.txt"]);
   });
 
-  it("holds a design's raw files, fetched for its supporting files alone, to what a model may keep of them", async () => {
+  it("downloads a design's raw files up to an import's limit, for its supporting files alone too, keeping those by theirs", async () => {
     const zip = await new JSZip()
       .file("frog.stl", "solid frog ".repeat(40))
       .file("frog.scad", "cube(1);")
       .file("guide.pdf", "%PDF-1.4")
       .generateAsync({ type: "nodebuffer" });
-    served({ "/raw.zip": zip });
+    const fetchMock = served({ "/raw.zip": zip });
     const raw = "https://example.com/raw.zip";
+    // Larger than all a model keeps of its supporting files, as its model files make it: the guide in it still fits.
     limits.value = { perFile: 100, perModel: zip.length - 1 };
-    expect(await fetchDesignRawFiles({ supportingZipUrl: raw })).toEqual({ sources: [], supporting: [] });
-    limits.value = { perFile: 100, perModel: zip.length + 100 };
     const kept = (await fetchDesignRawFiles({ supportingZipUrl: raw })).supporting;
     remove(kept);
     expect(kept.map((each) => each.filename)).toEqual(["guide.pdf"]);
-    // Fetched for the scripts it holds as well, it may be as large as any download.
-    limits.value = { perFile: 100, perModel: zip.length - 1 };
+    // Fetched for the scripts it holds as well, the same.
     const both = await fetchDesignRawFiles({
       parametricSource: { filenames: ["frog.scad"], withheld: false, zipUrl: raw },
       supportingZipUrl: raw,
@@ -846,6 +844,11 @@ describe("a file a site gives beside a model's own", () => {
     remove([...both.sources, ...both.supporting]);
     expect(both.sources.map((each) => each.filename)).toEqual(["frog.scad"]);
     expect(both.supporting.map((each) => each.filename)).toEqual(["guide.pdf"]);
+    // And not at all for its supporting files alone where the admin keeps none.
+    limits.value = null;
+    fetchMock.mockClear();
+    expect(await fetchDesignRawFiles({ supportingZipUrl: raw })).toEqual({ sources: [], supporting: [] });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("fetches a site's files one at a time, and none once what a model keeps of them is taken", async () => {
@@ -1308,13 +1311,23 @@ describe("a zip from a link, by how its files become models", () => {
       "Models/A/a.stl": "solid a endsolid",
     };
     const zip = await zipOf(files);
-    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    const progress: [number, number][] = [];
+    const { prints, failed } = await extractZipEntriesToFolderModels(
+      userId,
+      zip,
+      Object.keys(files),
+      {},
+      (processed, total) => progress.push([processed, total]),
+    );
     expect(failed).toEqual([]);
     const made = prints.map((print) => [print.title, print.plates.map((plate) => plate.filename)]);
     expect(made.toSorted()).toEqual([
       ["A", ["a.stl"]],
       ["scene", ["scene.glb"]],
     ]);
+    // Two models of two, the scene's buffer counted as neither.
+    expect(progress.at(-1)).toEqual([2, 2]);
+    expect(progress.every(([, total]) => total === 2)).toBe(true);
   });
 
   it("a model per file takes a file whose name ends in a space for what its name says it is", async () => {

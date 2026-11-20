@@ -443,6 +443,27 @@ describe("the import worker", () => {
       expect(cookies).toEqual(["Bearer fresh-bearer"]);
     });
 
+    it("makes a model of each file of a zip job stored before there were modes, and one of all for one stored since", async () => {
+      holdImportWorker();
+      const entries = ["hull.stl", "mast.stl"];
+      const before = await lineJob(
+        alice,
+        base + 46,
+        {
+          type: "ZIP",
+          sourceUrl: "https://example.com/pack.zip",
+          payload: { notes: null, tags: [], category_id: null, entries },
+        },
+        [],
+      );
+      const since = await enqueueZipImport(alice, "https://example.com/pack.zip", { entries });
+      expect((await reload(since.job.id)).payload).toMatchObject({ mode: "one" });
+      resumeImportWorker();
+      await importWorkerIdle();
+      expect(await reload(before.id)).toMatchObject({ status: "DONE", imported: 2 });
+      expect(await reload(since.job.id)).toMatchObject({ status: "DONE", imported: 1 });
+    });
+
     it("says an older batch has no saved request, and moves on", async () => {
       holdImportWorker();
       const old = await lineJob(alice, base + 38, { type: "ZIP", payload: undefined }, []);

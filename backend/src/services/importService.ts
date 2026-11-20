@@ -1217,15 +1217,12 @@ export async function fetchDesignRawFiles(
     meta.parametricSource?.zipUrl && !meta.parametricSource.withheld ? meta.parametricSource.zipUrl : null;
   const zipUrl = scripts ?? meta.supportingZipUrl;
   if (!zipUrl) return { sources: [], supporting: [] };
-  // Fetched for its supporting files alone, it's held to what a model may keep of them, as supportingDownload holds a
-  // zip: the model files it carries too are thrown away.
-  let maxBytes = IMPORT_MAX_BYTES;
-  if (!scripts) {
-    const limits = await supportingLimits();
-    if (!limits) return { sources: [], supporting: [] };
-    maxBytes = Math.min(limits.perModel, IMPORT_MAX_BYTES);
-  }
-  const result = await downloadPlainFileToTemp(zipUrl, "sources.zip", maxBytes);
+  // None for its supporting files alone where the admin keeps none. Otherwise up to an import's own limit, whichever it's
+  // fetched for: it's every file the design has, its model files the bulk of it, so held to what a model keeps of
+  // supporting files it would mostly be skipped, a download of the account's spent on it. What's kept of it is held to
+  // those limits file by file (supportingFilesFromZip).
+  if (!scripts && !(await supportingLimits())) return { sources: [], supporting: [] };
+  const result = await downloadPlainFileToTemp(zipUrl, "sources.zip", IMPORT_MAX_BYTES);
   if (!result || "rateLimited" in result || !result.input.tempFilePath) return { sources: [], supporting: [] };
   try {
     let sources: NewPlateInput[] = [];

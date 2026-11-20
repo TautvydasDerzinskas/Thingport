@@ -119,10 +119,12 @@ export const grabcadImport: SourcedImport<GrabcadSession, GrabcadModelResolution
         const documents = files.filter(
           (file) => file.system?.toLowerCase() !== "rendering" && kit.isDocumentFile(file.name),
         );
+        // One at a time, each link asked for only while the model has room for the file, and in the folder it's in.
         for (const file of documents) {
-          const url = await resolveGrabcadFileUrl(file, session).catch(() => null);
-          if (!url) continue;
-          const inputs = await kit.downloadSupportingFile({ url, name: file.name }, isGrabcadFileHost);
+          const inputs = await kit.downloadSupportingFiles(
+            [{ name: file.name, url: () => resolveGrabcadFileUrl(file, session) }],
+            isGrabcadFileHost,
+          );
           downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
         }
       }

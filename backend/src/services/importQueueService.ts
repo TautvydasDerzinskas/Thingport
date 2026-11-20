@@ -188,7 +188,8 @@ export function enqueueZipImport(
     sourceLabel: body.filename?.trim() || null,
     provider: detectProvider(url),
     total: body.entries.length,
-    payload: { ...storedImportBody(body), entries: body.entries, ...(body.mode ? { mode: body.mode } : {}) },
+    // Always said, so a job stored without one is one from before there were modes (runBatchJob).
+    payload: { ...storedImportBody(body), entries: body.entries, mode: body.mode ?? "one" },
   });
 }
 

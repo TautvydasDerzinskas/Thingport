@@ -8,6 +8,13 @@ import { prisma } from "../src/db";
 import { getMyminifactoryConnection, setUserMyminifactoryCookie } from "../src/providers/myminifactory/session";
 import { myminifactoryArchivesFrom } from "../src/providers/myminifactory/api";
 
+// Small limits for the files beside a model, where a test sets them; the admin's setting otherwise.
+const limits = vi.hoisted(() => ({ value: undefined as { perFile: number; perModel: number } | undefined }));
+vi.mock("../src/services/supportingImports", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/services/supportingImports")>();
+  return { ...actual, supportingLimits: async () => limits.value ?? actual.supportingLimits() };
+});
+
 // MyMiniFactory import end to end: metadata from the API v2 shapes, files from /download, fetch mocked.
 
 const OBJECT_ID = "9990077";
@@ -313,6 +320,29 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
       [null, "Assembly.pdf"],
       [null, "skull.chitubox"],
     ]);
+  });
+
+  it("asks for no link to a file beside the model's own once it keeps all it may of them", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    await setUserMyminifactoryCookie(userId, SESSION);
+    const served = mockLibrary({ paid: true });
+    const asked: string[] = [];
+    global.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      asked.push(String(input instanceof Request ? input.url : input));
+      return served(input, init);
+    }) as typeof fetch;
+    // The sliced file's twenty bytes are all a model keeps of them, so the guide's link is never asked for.
+    limits.value = { perFile: 100, perModel: 20 };
+    let result: Awaited<ReturnType<typeof importPrintFromUrl>>;
+    try {
+      result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    } finally {
+      limits.value = undefined;
+    }
+    const files = await prisma.printFile.findMany({ where: { printId: result.print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["skull.chitubox"]);
+    expect(asked.some((url) => url.includes("/archive-file-contents/902/"))).toBe(true);
+    expect(asked.some((url) => url.includes("/archive-file-contents/904/"))).toBe(false);
   });
 
   it("says so when a paid model isn't in the user's library", async () => {

@@ -167,9 +167,10 @@ async function runBatchJob(job: ImportJob): Promise<void> {
     const url = await enabledImportUrl(job.sourceUrl);
     const body = await storedBody(job, url);
     if (job.type === "ZIP") {
+      // Every job stored since says how; one that doesn't was stored before, when each file was a model of its own.
       const mode = ["one", "folders", "separate"].includes(payload.mode as string)
         ? (payload.mode as ZipImportMode)
-        : undefined;
+        : "separate";
       await runZipImportJob(job.id, job.userId, { ...body, entries: payload.entries as string[], mode });
       return;
     }

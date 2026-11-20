@@ -1,3 +1,4 @@
+import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
 import { getCrealitycloudConnection, setUserCrealitycloudSession } from "../../src/providers/crealitycloud/session";
@@ -28,15 +29,22 @@ const DESIGNER_PROFILE = "6ac6f004729f5ba4b35740a6";
 const OTHER_PROFILE = "6ad5fedd23030f2e2c08899b";
 const API = "/api/cxy";
 
-type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" | "refused" };
+type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" | "zip" | "refused" };
 
-/** The recorded files with a guide among them, as a model's instructions come. */
-function filesWithGuide() {
+/** The recorded files with a guide among them, as a model's instructions come, or a zip of notes and a part. */
+function filesWith(extra: "guide" | "zip") {
   const files = loadFixture("crealitycloud", "model-files") as { result: { downloadUrls: unknown[] } };
-  files.result.downloadUrls.push({
-    fileName: "Assembly guide",
-    url: "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/guide.pdf?Signature=s",
-  });
+  files.result.downloadUrls.push(
+    extra === "guide"
+      ? {
+          fileName: "Assembly guide",
+          url: "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/guide.pdf?Signature=s",
+        }
+      : {
+          fileName: "Extras",
+          url: "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/extras.zip?Signature=s",
+        },
+  );
   return files;
 }
 
@@ -45,6 +53,10 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
     if (url.hostname.endsWith(".aliyuncs.com")) {
       const name = url.pathname.split("/").pop()!;
       if (name.endsWith(".pdf")) return binary(Buffer.from("%PDF-1.4 guide"));
+      if (name.endsWith(".zip")) {
+        const zip = new JSZip().file("extras/notes.txt", "print it upright").file("extras/spare.stl", stl("spare.stl"));
+        return binary(await zip.generateAsync({ type: "nodebuffer" }));
+      }
       return binary(name.endsWith(".stl") ? stl(name) : await threeMf(name));
     }
     if (!url.pathname.startsWith(API)) return undefined;
@@ -72,7 +84,7 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
         if (scenario === "rejected" || variant.files === "refused") {
           return json(loadFixture("crealitycloud", "invalid-token"));
         }
-        if (variant.files === "guide") return json(filesWithGuide());
+        if (variant.files === "guide" || variant.files === "zip") return json(filesWith(variant.files));
         return json(loadFixture("crealitycloud", variant.files === "missing" ? "model-missing" : "model-files"));
       case "/v2/thematic/detail":
         return json(loadFixture("crealitycloud", scenario === "gone" ? "model-missing" : "collection-info"));
@@ -223,6 +235,16 @@ describe("Creality Cloud specifics", () => {
     const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
     // Named, as its model files are, by the signed link's extension.
     expect(files.map((file) => file.filename)).toEqual(["Assembly guide.pdf"]);
+  });
+
+  it("opens a zip among the model's files for the documents in it, beside the profile and none of its model files", async () => {
+    await spec.connect(ctx.userId);
+    ctx.install(handlerFor("ok", { files: "zip" }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    expect(await prisma.plate.count({ where: { printId: print.id } })).toBe(1);
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["notes.txt"]);
   });
 
   it("keeps the profile when Creality Cloud turns down listing the files beside it", async () => {

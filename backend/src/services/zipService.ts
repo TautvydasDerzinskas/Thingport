@@ -519,13 +519,12 @@ export async function extractZipEntriesToFolderModels(
         packed.set(unit, { failure });
       }
     }
+    // A file on its own that a scene took is that scene's model, not one more: out of the count it started in.
+    total -= units.filter((unit) => unit.kind === "file" && !packed.has(unit) && taken.has(unit.item)).length;
     for (const unit of units) {
       const own = packed.get(unit);
       if (!own) {
-        if (unit.kind === "file") {
-          if (taken.has(unit.item)) onProgress?.(++processed, total, prints.length, failed.length);
-          else loose.push(unit.item.name);
-        }
+        if (unit.kind === "file" && !taken.has(unit.item)) loose.push(unit.item.name);
         continue;
       }
       const where = unit.kind === "model" ? unit.folder : unit.item.name;

@@ -136,16 +136,25 @@ async function downloadFromLibrary(
       );
     }
     for (const file of files) {
-      await maybeSleep(FILE_DELAY_MS);
       if (file.supporting) {
-        // Never the import's failure.
-        const link = await resolveMyminifactoryLibraryDownload(file.path, cookie).catch(() => null);
-        const inputs = link
-          ? await kit.downloadSupportingFile({ url: link, name: file.name }, isMyminifactoryFileHost)
-          : [];
+        // Never the import's failure, and its link asked for, after the wait between files, only while the model has
+        // room for it.
+        const inputs = await kit.downloadSupportingFiles(
+          [
+            {
+              name: file.name,
+              url: async () => {
+                await maybeSleep(FILE_DELAY_MS);
+                return resolveMyminifactoryLibraryDownload(file.path, cookie);
+              },
+            },
+          ],
+          isMyminifactoryFileHost,
+        );
         downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
         continue;
       }
+      await maybeSleep(FILE_DELAY_MS);
       const url = await resolveMyminifactoryLibraryDownload(file.path, cookie);
       if (url) {
         const inputs = await downloadFile(url, kit, file.name);
