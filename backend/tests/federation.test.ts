@@ -4,7 +4,7 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
 import type { Prisma } from "@prisma/client";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -121,19 +121,25 @@ describe("connected instances, off", () => {
 
   it("turns on with nothing answering at its Public URL, to connect through links", async () => {
     await setSocialSettings({ enabled: true });
-    // A port on this network nothing listens on, as a home instance's address is to itself behind some routers.
-    const closed = http.createServer();
-    await new Promise<void>((resolve) => closed.listen(0, "127.0.0.1", resolve));
-    const { port } = closed.address() as AddressInfo;
-    await new Promise((resolve) => closed.close(resolve));
-    await setPublicUrl(`http://127.0.0.1:${port}`);
-    process.env.FEDERATION_ALLOW_LOOPBACK = "1";
+    const publicUrl = "http://127.0.0.1:8000";
+    await setPublicUrl(publicUrl);
+    vi.stubEnv("FEDERATION_ALLOW_LOOPBACK", "1");
+    const fetchNormally = globalThis.fetch;
+    // Supertest can reuse a newly closed port and answer the probe itself.
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation((input, init) =>
+        String(input).startsWith(`${publicUrl}/api/federation/probe/`)
+          ? Promise.reject(Object.assign(new Error("Connection refused"), { code: "ECONNREFUSED" }))
+          : fetchNormally(input, init),
+      );
     try {
       const res = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ enabled: true, reachability: { kind: "unreachable", reason: "refused" } });
     } finally {
-      delete process.env.FEDERATION_ALLOW_LOOPBACK;
+      fetchSpy.mockRestore();
+      vi.unstubAllEnvs();
       await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: false });
       await updateFederationSettings({ reachability: null });
     }

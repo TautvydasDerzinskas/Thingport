@@ -46,14 +46,19 @@ type Props = {
   viewer?: AuthUser | null;
 };
 
-export default function CollectionDetailPage({
+export default function CollectionDetailPage(props: Props) {
+  const { collectionId } = useParams<{ collectionId: string }>();
+  return <CollectionDetail key={collectionId} {...props} collectionId={collectionId} />;
+}
+
+function CollectionDetail({
+  collectionId,
   theme,
   previewMode,
   onUnauthorized,
   onBookmarksChanged,
   viewer,
-}: Props) {
-  const { collectionId } = useParams<{ collectionId: string }>();
+}: Props & { collectionId?: string }) {
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common"]);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
