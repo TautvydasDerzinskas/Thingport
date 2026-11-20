@@ -261,9 +261,14 @@ async function importMesh(input: Extract<StudioWorkerInput, { kind: "import" }>)
 }
 
 async function importThreeMf(input: Extract<StudioWorkerInput, { kind: "import-3mf" }>): Promise<StudioWorkerResult> {
-  const project = await loadStudioThreeMf(input.srcPath, LIMITS.meshTriangles, LIMITS.features);
+  const project = await loadStudioThreeMf(input.srcPath, MAX_TRIANGLES, LIMITS.features, LIMITS.meshTriangles);
   if (project === "too-complex")
     return { status: "refused", reason: "The 3MF exceeds Studio's object or triangle limit" };
+  if (project === "body-too-complex")
+    return {
+      status: "refused",
+      reason: `Each imported body can have up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles`,
+    };
   if (project === "missing-parts") return { status: "refused", reason: "The 3MF references missing model parts" };
   if (project === "unsupported") return { status: "refused", reason: "The 3MF has no readable printable bodies" };
   if (project.plates.length > MAX_PLATES)

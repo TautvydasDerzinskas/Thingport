@@ -593,6 +593,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       .filter((feature) => !s.bodies.has(feature.id) || outgoing.some(([id]) => id === feature.id))
       .map((feature) => feature.id);
     if (!stale.length) {
+      latest.current.onBusy(false);
       drop();
       place();
       return;

@@ -97,6 +97,17 @@ describe("Studio commands", () => {
     expect(topLevel(doc).map((feature) => feature.id)).toEqual(["extrude-2", "extrude-4"]);
   });
 
+  it("keeps an explicitly cleared body color when duplicating its feature tree", () => {
+    let doc = run(emptyDocument(), "add_box", { width: 20, depth: 20, height: 10, color: "#ff0000" });
+    doc = run(doc, "add_cylinder", { radius: 4, height: 30 });
+    doc = run(doc, "boolean", { operation: "subtract", target_id: "box-1", tool_ids: ["cylinder-2"] });
+    expect(doc.features.at(-1)).toMatchObject({ color: "#ff0000" });
+    doc = run(doc, "set_body_color", { feature_ids: ["boolean-3"], color: null });
+    doc = run(doc, "duplicate_feature", { feature_id: "boolean-3" });
+    expect(doc.features.find((feature) => feature.id === "box-4")).toMatchObject({ color: "#ff0000" });
+    expect(doc.features.at(-1)).not.toHaveProperty("color");
+  });
+
   it("won't extrude a sketch with nothing but holes, or one already extruded", () => {
     let doc = run(emptyDocument(), "add_sketch", {
       plane: "XY",

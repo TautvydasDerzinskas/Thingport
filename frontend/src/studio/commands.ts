@@ -355,14 +355,14 @@ function addPlate(doc: StudioDocument, name: string): string {
   return id;
 }
 
-function addFeature(doc: StudioDocument, feature: Feature): void {
+function addFeature(doc: StudioDocument, feature: Feature, inheritColor = true): void {
   if (doc.features.length >= LIMITS.features)
     throw new CommandError(`A design holds up to ${LIMITS.features} features. Delete or combine some first.`);
   const inputId = inputsOf(feature)[0];
   const input = inputId ? featureById(doc, inputId) : undefined;
   const plate = feature.plate_id ?? input?.plate_id;
   if (plate) feature.plate_id = findPlate(doc, plate).id;
-  if (isBody(feature) && feature.color === undefined && input && isBody(input) && input.color)
+  if (inheritColor && isBody(feature) && feature.color === undefined && input && isBody(input) && input.color)
     feature.color = input.color;
   doc.features.push(feature);
 }
@@ -608,7 +608,7 @@ function copyTree(doc: StudioDocument, id: string, copies: Map<string, string>):
       copy.body_ids = copy.body_ids.map(map);
       break;
   }
-  addFeature(doc, copy);
+  addFeature(doc, copy, false);
   return copy.id;
 }
 
