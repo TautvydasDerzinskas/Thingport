@@ -17,7 +17,7 @@ import {
 import { removeMissingPrintFiles } from "./printFileService";
 import { managedPlatePath, removePlatePictures } from "./printService";
 import { afterLicenseChange } from "./licenseService";
-import type { Plate } from "@prisma/client";
+import { Prisma, type Plate } from "@prisma/client";
 
 const log = createLogger("model-files");
 
@@ -67,10 +67,15 @@ export async function replaceModelPlates(
       if (!(await stillBroken())) return null;
       if (!plateInputs.length) throw new HttpError(400, "The source gave nothing to print");
       const rows = await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
+      // The first plate's reading, which only a change to the plates writes, with the plate order held from here on.
+      const { preparedMetadata } = await prisma.print.findUniqueOrThrow({
+        where: { id: printId },
+        select: { preparedMetadata: true },
+      });
       // Only the rows go before the download is in place, so the new files take the names and paths the model's own
       // had: adding walks around a name a plate still holds, and would bring every file back as "name (1)".
       await prisma.plate.deleteMany({ where: { printId } });
-      return rows;
+      return { rows, reading: preparedMetadata };
     });
     if (!old) return null;
     let plates: Plate[];
@@ -81,8 +86,16 @@ export async function replaceModelPlates(
       await refreshPreparedReading(printId);
     } catch (error) {
       // The rows go back pointing at the files that are gone, so the model is left exactly as broken as it was found
-      // -- and found again by the next scan.
-      await putPlatesBack(printId, old, added);
+      // -- and found again by the next scan -- and its reading with them: a refresh that failed may have saved the new
+      // first plate's all the same. Not when they can't go back, as the model then keeps plates the repair made.
+      if (await putPlatesBack(printId, old.rows, added)) {
+        const reading = old.reading === null ? Prisma.JsonNull : (old.reading as Prisma.InputJsonValue);
+        await prisma.print
+          .update({ where: { id: printId }, data: { preparedMetadata: reading } })
+          .catch((err: unknown) =>
+            log.error("couldn't put a repaired model's prepared reading back", { print: printId, error: err }),
+          );
+      }
       throw error;
     }
     // Of the other files, the rows whose files are gone go, whatever took them, before the plate order goes too: a
@@ -94,7 +107,7 @@ export async function replaceModelPlates(
     await removeMissingPrintFiles(printId).catch((error: unknown) =>
       log.error("couldn't sweep a repaired model's missing files", { print: printId, error }),
     );
-    return { old, plates };
+    return { old: old.rows, plates };
   });
   if (!swapped) return null;
   const { old, plates } = swapped;
@@ -141,13 +154,14 @@ export async function replaceModelPlates(
  *  that fails. One that can't be leaves the model with only the plates the replacement made (`made`), whose files are
  *  there, so the scan would never offer it again: their files go instead (removeMadeFiles), and the model's plates
  *  point at files that aren't there, as when it was found. One that made none leaves the model with no plates at all,
- *  so `old` goes back later instead (putPlatesBackLater). With the plate order held. */
-async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate[]): Promise<void> {
+ *  so `old` goes back later instead (putPlatesBackLater). With the plate order held. Whether `old` is back. */
+async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate[]): Promise<boolean> {
   let failure: unknown;
   for (let tries = 0; tries < 3; tries++) {
     if (tries) await sleep(250 * tries);
     try {
-      return await restorePlates(printId, old);
+      await restorePlates(printId, old);
+      return true;
     } catch (err) {
       failure = err;
     }
@@ -160,24 +174,29 @@ async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate
       error: failure,
     });
     putPlatesBackLater(printId, old);
-    return;
+    return false;
   }
   log.error("couldn't put a model's plates back, so the files of the ones a repair made go", {
     print: printId,
     error: failure,
   });
   if (!(await removeMadeFiles(printId, made))) removeMadeFilesLater(printId, made);
+  return false;
 }
 
 /** The files of `made`, the plates a failed repair made, removed where their rows say they are now. Read under the
  *  storage lock, which a move holds from renaming a file to saving where it went: a path a move has freed since, which
  *  another model's file may hold by now, is never removed. Only the plates the model still has: a merge since keeps a
- *  plate's id but makes it another model's. False when the rows can't be read or a file won't go, for a later try to
- *  read them again; a file that's gone already counts as gone. */
+ *  plate's id but makes it another model's. None once the model has plates the repair didn't make, as a merge into it
+ *  brings: it isn't broken then, and the repair's would be rows with no files beside ones that have them. False when
+ *  the rows can't be read or a file won't go, for a later try to read them again; a file that's gone already counts as
+ *  gone. */
 async function removeMadeFiles(printId: string, made: readonly Plate[]): Promise<boolean> {
   try {
     await withStorageLock(async () => {
-      const now = await prisma.plate.findMany({ where: { id: { in: made.map((plate) => plate.id) }, printId } });
+      const ids = made.map((plate) => plate.id);
+      if (await prisma.plate.count({ where: { printId, id: { notIn: ids } } })) return;
+      const now = await prisma.plate.findMany({ where: { id: { in: ids }, printId } });
       for (const plate of now) {
         if (!plate.sourcePath) await fs.rm(managedPlatePath(plate), { force: true });
       }

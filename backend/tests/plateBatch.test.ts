@@ -496,12 +496,16 @@ describe("a model's plates, changed by two requests at once", () => {
         .set(auth())
         .send({ plate_ids: [job.id, plates[0].id] });
       expect(res.status).toBe(200);
+      // A move that failed fails the test, with its own error.
+      await moving;
     } finally {
       open();
       await Promise.allSettled([watching, moving]);
       spy.mockRestore();
     }
     expect(moving).not.toBeNull();
+    // It took the plate elsewhere, and the reading is of the file where it went.
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: job.id } })).storagePath).not.toBe(job.storagePath);
     expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).not.toBeNull();
   });
 

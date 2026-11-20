@@ -14,6 +14,7 @@ import {
   ensureAssetHome,
   managedPlatePath,
   read3mfThumbnails,
+  printFilePathFree,
   pruneEmptyStorageDirs,
   relocatePlate,
   relocatePrint,
@@ -37,7 +38,7 @@ import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { deleteAllPrintFiles, removePrintFileIfGone, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
-import { createKeyedLock } from "../utils/concurrency";
+import { createKeyedLock, sleep } from "../utils/concurrency";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
 
@@ -380,6 +381,22 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
 
 const withScriptsKept = createKeyedLock();
 
+/** `read`, tried again after a moment when it fails, as a database away for a moment makes it; null once it still
+ *  fails, for a caller that goes on without it. */
+async function readRetried<T>(read: () => Promise<T>, what: string): Promise<{ value: T } | null> {
+  let failure: unknown;
+  for (let tries = 0; tries < 3; tries++) {
+    if (tries) await sleep(250 * tries);
+    try {
+      return { value: await read() };
+    } catch (err) {
+      failure = err;
+    }
+  }
+  console.warn(`Couldn't ${what}:`, failure);
+  return null;
+}
+
 async function keepScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
@@ -387,10 +404,14 @@ async function keepScripts(userId: string, printId: string, inputs: NewPlateInpu
     `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
   const stored = new Map<string, string[]>();
   const keptNow = new Set<string>();
-  for (const file of await prisma.printFile.findMany({
-    where: { printId },
-    select: { id: true, filename: true, folder: true },
-  })) {
+  // Its looks never stop the caller, as a script that won't store doesn't: a repair has its plates in by now, and
+  // its licence and pictures still to bring back. One that can't look is left out rather than kept twice.
+  const listed = await readRetried(
+    () => prisma.printFile.findMany({ where: { printId }, select: { id: true, filename: true, folder: true } }),
+    `read model ${printId}'s files, so its generator scripts are left out`,
+  );
+  if (!listed) return;
+  for (const file of listed.value) {
     const key = keyOf(file.filename, file.folder);
     stored.set(key, [...(stored.get(key) ?? []), file.id]);
   }
@@ -408,14 +429,24 @@ async function keepScripts(userId: string, printId: string, inputs: NewPlateInpu
     const key = keyOf(safeName, input.folder);
     if (keptNow.has(key)) continue;
     let held = false;
-    for (const id of stored.get(key) ?? []) if (!(await removePrintFileIfGone(id))) held = true;
+    for (const id of stored.get(key) ?? []) {
+      const gone = await removePrintFileIfGone(id).catch((err: unknown) => {
+        console.warn(`Couldn't tell whether model ${printId}'s copy of ${safeName} is gone, so it stays:`, err);
+        return false;
+      });
+      if (!gone) held = true;
+    }
     if (held) continue;
     // Asked again just before saving, as a copy saved since the list was read is one too.
-    const now = await prisma.printFile.findMany({
-      where: { printId, filename: { equals: safeName, mode: "insensitive" } },
-      select: { filename: true, folder: true },
-    });
-    if (now.some((file) => keyOf(file.filename, file.folder) === key)) continue;
+    const now = await readRetried(
+      () =>
+        prisma.printFile.findMany({
+          where: { printId, filename: { equals: safeName, mode: "insensitive" } },
+          select: { filename: true, folder: true },
+        }),
+      `look for a copy of ${safeName} on model ${printId}, so it's left out`,
+    );
+    if (!now || now.value.some((file) => keyOf(file.filename, file.folder) === key)) continue;
     try {
       // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
       await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain", {
@@ -733,12 +764,30 @@ export async function restorePlates(printId: string, previous: Plate[]): Promise
     // that won't go stops this before the swap, with the made rows still naming it, for a try after to take it then
     // (force: one an earlier try took is no error).
     for (const plate of made) await fs.rm(managedPlatePath(plate), { force: true });
+    // A place one of the model's other files took while the plates were out -- an attachment's upload doesn't wait for
+    // the plate order -- stays that file's: the plate goes back where nothing is, its own file being gone anyway,
+    // rather than take the attachment's bytes for its own.
+    const reserved = new Set(previous.map((plate) => plate.storagePath));
+    const back: Plate[] = [];
+    for (const plate of previous) {
+      const claimed = await prisma.printFile.findUnique({
+        where: { storagePath: plate.storagePath },
+        select: { id: true },
+      });
+      if (!claimed) {
+        back.push(plate);
+        continue;
+      }
+      const storagePath = await freePlacePlateBeside(plate, reserved);
+      reserved.add(storagePath);
+      back.push({ ...plate, storagePath });
+    }
     await prisma.$transaction([
       prisma.plate.deleteMany({ where: { printId } }),
       prisma.plate.createMany({
         // The printability check, the profile and the format are nullable Json, which Prisma writes with a null of its
         // own (providers/connections).
-        data: previous.map((plate) => ({
+        data: back.map((plate) => ({
           ...plate,
           qualityCheck: plate.qualityCheck === null ? Prisma.DbNull : (plate.qualityCheck as Prisma.InputJsonValue),
           profile: plate.profile === null ? Prisma.DbNull : (plate.profile as Prisma.InputJsonValue),
@@ -758,6 +807,17 @@ export async function restorePlates(printId: string, previous: Plate[]): Promise
     return { plates: made, home: found?.home, picturesLeft: !found };
   });
   await afterPlatesRemoved(removed);
+}
+
+/** The first place numbered beside `plate`'s that nothing has, on disk or in a row, nor is `reserved` for a plate. */
+async function freePlacePlateBeside(plate: Plate, reserved: ReadonlySet<string>): Promise<string> {
+  const ext = path.extname(plate.storagePath);
+  const stem = plate.storagePath.slice(0, plate.storagePath.length - ext.length);
+  for (let suffix = 2; suffix <= 1000; suffix++) {
+    const candidate = `${stem} (${suffix})${ext}`;
+    if (!reserved.has(candidate) && (await printFilePathFree(candidate, ""))) return candidate;
+  }
+  throw new HttpError(409, `No free place to put plate ${plate.id} back`);
 }
 
 /** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
