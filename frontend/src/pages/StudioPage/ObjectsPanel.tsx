@@ -28,7 +28,7 @@ import {
 } from "../../studio/document";
 import { FeatureIcon, IntersectIcon, SubtractIcon, UnionIcon } from "./studioIcons";
 import { featureLabel } from "./labels";
-import RenameDialog from "./RenameDialog";
+import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
 import type { RunCommand } from "./useStudioDesign";
 
