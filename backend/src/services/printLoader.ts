@@ -33,8 +33,9 @@ export async function loadFullPrint(
     prisma.printFile.findMany({ where: { printId, ready: true } }),
     prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } }),
   ]);
+  // Ready too, as the files above: one replaced after the model was read is on its way out.
   const preparedFile = print.preparedFileId
-    ? await prisma.printFile.findUnique({ where: { id: print.preparedFileId } })
+    ? await prisma.printFile.findFirst({ where: { id: print.preparedFileId, ready: true } })
     : null;
   return { print, plates, files, preparedFile, previewImages };
 }

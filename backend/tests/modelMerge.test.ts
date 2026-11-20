@@ -778,13 +778,19 @@ describe("merging models", () => {
     const holding = withStorageLock(() => released);
     const since = stage.lockCalls;
     const move = (model: Model) => relocatePrint({ ...model, categoryId: category.id }, model.plates);
-    const moves = models.map(move);
+    const moves = Promise.allSettled(models.map(move));
 
-    // Both read their models before either moved anything, and wait their turn at the lock.
-    await queuedAtLock(since, 2).finally(release);
-    await holding;
+    // Both read their models before either moved anything, and wait their turn at the lock. Both are done before the
+    // test is, whether they got there or not.
+    try {
+      await queuedAtLock(since, 2);
+    } finally {
+      release();
+      await holding;
+      await moves;
+    }
     // Each picks its place at its turn, so the second finds the first's file there and goes beside it.
-    expect((await Promise.allSettled(moves)).map((result) => result.status)).toEqual(["fulfilled", "fulfilled"]);
+    expect((await moves).map((result) => result.status)).toEqual(["fulfilled", "fulfilled"]);
     const places = await Promise.all(
       models.map((model) => prisma.plate.findUniqueOrThrow({ where: { id: model.plates[0].id } })),
     );

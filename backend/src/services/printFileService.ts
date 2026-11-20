@@ -5,12 +5,12 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
-import { isUnsettled, PENDING_STORAGE_PREFIX } from "./printFileSaves";
+import { isPendingStoragePath, isUnsettled, PENDING_STORAGE_PREFIX } from "./printFileSaves";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
 import { pruneEmptyStorageDirs, relocatePrint, relocatePrintFile, renderPrintFileStoragePath } from "./printService";
-import { reuseMarker, shareStoredCopy } from "./fileReuse";
+import { reuseMarker, sha256OfFile, shareStoredCopy } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
 
@@ -410,16 +410,39 @@ export function batchFileSaver(userId: string, printId: string) {
     });
 }
 
-/** Deletes the rows of the saves the last process ended before finishing, each a file that isn't there or isn't whole.
- *  At startup, before this process saves anything. A file found at a place such a row claimed stays: nothing says for
- *  sure it's the save's own and not a moved file's, so it's left for the storage browser rather than deleted. */
+/** Deletes the rows of the saves the last process ended before finishing, each a file that isn't there or isn't whole,
+ *  and of prepared prints another replaced that it hadn't removed yet. At startup, before this process saves anything.
+ *  A replaced print's file goes first, while it's still the bytes its row saved (ownedFile). A file found at a place an
+ *  unfinished save claimed stays: nothing says for sure it's the save's own and not a moved file's or a plate's, so
+ *  it's left for the storage browser rather than deleted. */
 export async function removeAbandonedPrintFileSaves(): Promise<number> {
-  const { count } = await prisma.printFile.deleteMany({
-    where: {
-      OR: [{ ready: false }, { storagePath: "pending" }, { storagePath: { startsWith: PENDING_STORAGE_PREFIX } }],
-    },
+  const where: Prisma.PrintFileWhereInput = {
+    OR: [{ ready: false }, { storagePath: "pending" }, { storagePath: { startsWith: PENDING_STORAGE_PREFIX } }],
+  };
+  return withStorageLock(async () => {
+    const rows = await prisma.printFile.findMany({ where });
+    for (const row of rows) {
+      const file = await ownedFile(row).catch(() => null);
+      if (!file) continue;
+      await fs.rm(file, { force: true });
+      await pruneEmptyStorageDirs(path.dirname(file));
+    }
+    const { count } = await prisma.printFile.deleteMany({ where: { id: { in: rows.map((row) => row.id) } } });
+    return count;
   });
-  return count;
+}
+
+/** The file of a row that was whole once -- its save set its size, and a hash where it took one, in the step that made
+ *  it ready -- when the file at its place is still those bytes and no plate is kept there. Null for any other row. */
+async function ownedFile(row: PrintFile): Promise<string | null> {
+  if (row.ready || row.size <= 0 || isPendingStoragePath(row.storagePath)) return null;
+  const where = printFilePathOrNull(row);
+  if (!where) return null;
+  const stat = await fs.lstat(where).catch(() => null);
+  if (!stat?.isFile() || stat.size !== row.size) return null;
+  if (row.contentSha256 && (await sha256OfFile(where)) !== row.contentSha256) return null;
+  if (await prisma.plate.count({ where: { storagePath: row.storagePath } })) return null;
+  return where;
 }
 
 /** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are no longer on disk, and

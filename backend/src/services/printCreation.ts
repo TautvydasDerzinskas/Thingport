@@ -170,7 +170,12 @@ async function readPlateFile(filename: string, mime: string, filePath: string | 
 /** What `readPlateFile` found, kept as the plate's: its thumbnail, and a 3MF's format, or none where it had none. */
 async function keepPlateReading(plateId: string, reading: PlateReading | null): Promise<void> {
   if (!reading) return;
-  if (reading.format !== undefined) await keepPlateFormat(plateId, reading.format);
+  // Only what the file says, kept to save reading it again: one not kept is read on the model's next open.
+  if (reading.format !== undefined) {
+    await keepPlateFormat(plateId, reading.format).catch((err: unknown) =>
+      console.warn(`Keeping the 3MF format of plate ${plateId} failed:`, err),
+    );
+  }
   if (reading.pictures.length) await saveThumbFromPictures(plateId, reading.pictures);
 }
 
@@ -640,7 +645,7 @@ async function takeBackPlates(printId: string, added: Plate[], hadPlates: boolea
   if (hadPlates && gone.length === plates.length) {
     throw new Error("Taking them back would leave the model with no plate");
   }
-  await afterPlatesRemoved(await removePlateRows(printId, gone, plates));
+  await afterPlatesRemoved(await removePlateRows(printId, gone, plates, true));
 }
 
 /** `picturesLeft` when the pictures' folder couldn't be read: the plates are gone all the same, and their pictures stay
@@ -652,9 +657,15 @@ type RemovedPlates = { plates: Plate[]; home: AssetHome; picturesLeft?: boolean 
  * transaction, with a new first plate's reading for the prepared metadata, as a reorder saves it (reorderPlates); then
  * their files go. Under the storage lock, the rows read there, as a move holds it while it renames a file and saves
  * where it went: a path read before it could be one the file has just left. The pictures' folder is read there too.
- * With the plate order held.
+ * With the plate order held. `takingBack`, plates a failed request added: they go even when the pictures' folder
+ * can't be read, as restorePlates' do.
  */
-async function removePlateRows(printId: string, gone: Plate[], plates: Plate[]): Promise<RemovedPlates> {
+async function removePlateRows(
+  printId: string,
+  gone: Plate[],
+  plates: Plate[],
+  takingBack = false,
+): Promise<RemovedPlates> {
   const ids = [...new Set(gone.map((plate) => plate.id))];
   const rest = plates.filter((plate) => !ids.includes(plate.id));
   // Read before the lock, which nothing else may use while a file is read through.
@@ -668,15 +679,23 @@ async function removePlateRows(printId: string, gone: Plate[], plates: Plate[]):
         ]
       : [];
   return withStorageLock(async () => {
-    // Before anything goes: a read that fails then leaves the plates there to remove again.
-    const home = await printAssetHome(printId);
+    // Before anything goes: a read that fails then leaves the plates there to remove again. Taking plates back, it
+    // costs only their pictures instead.
+    const found = await printAssetHome(printId).then(
+      (home) => ({ home }),
+      (err: unknown) => {
+        if (!takingBack) throw err;
+        console.warn(`Couldn't find model ${printId}'s pictures to take back the plates a failed request added:`, err);
+        return null;
+      },
+    );
     const now = await prisma.plate.findMany({ where: { id: { in: ids } } });
     await renumberPlates(
       rest.map((plate) => plate.id),
       [prisma.plate.deleteMany({ where: { id: { in: ids } } }), ...reading],
     );
     for (const plate of now) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
-    return { plates: now, home };
+    return { plates: now, home: found?.home ?? null, picturesLeft: !found };
   });
 }
 
