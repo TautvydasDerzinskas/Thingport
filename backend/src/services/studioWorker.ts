@@ -6,6 +6,7 @@ import type { ManifoldToplevel } from "manifold-3d";
 import {
   LIMITS,
   MAX_PLATES,
+  STUDIO_FILAMENT_SLOT_LIMIT,
   featureById,
   isBody,
   plateOf,
@@ -390,10 +391,16 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     const thumbnail = await studioPngRenderer(onPlate, 256, STUDIO_3MF_DEFAULT_COLOR)("iso");
     plates.push({ ...plate, thumbnail });
   }
+  const bytes = await writeStudioThreeMf(input.name, parts, plates, input.target);
+  if (!bytes)
+    return {
+      status: "refused",
+      reason: `This slicer export supports up to ${STUDIO_FILAMENT_SLOT_LIMIT} filament slots. Reduce the number of colors before exporting.`,
+    };
   return {
     status: "exported",
     format: "3mf",
-    bytes: await writeStudioThreeMf(input.name, parts, plates, input.target),
+    bytes,
   };
 }
 

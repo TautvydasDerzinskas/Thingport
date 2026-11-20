@@ -13,18 +13,24 @@ import { bedCentre, plateColumns, plateOrigin, type BedBox, type PrinterRecipe }
 import { formatTransform } from "../adapter/transform";
 import { contentTypesXml, relsXml } from "../adapter/writers/flatten";
 import { escapeXml } from "../adapter/xml";
-import type { StudioPlate } from "../studio/document.generated";
+import {
+  STUDIO_DEFAULT_BODY_COLOR,
+  STUDIO_FILAMENT_SLOT_LIMIT,
+  type StudioFilamentSlot,
+  type StudioPlate,
+} from "../studio/document.generated";
 import type { EvaluatedBody } from "../studio/geometry.generated";
 import { plateThumbEntry } from "./printProfileFile";
 
 export type StudioExportTarget = {
   slicer: string;
   printer?: { choice: PrinterChoice; recipe: PrinterRecipe };
+  filamentSlots?: StudioFilamentSlot[];
 };
 
 type Part = { body: EvaluatedBody; name: string; plateId: string; color?: string };
 const DEFAULT_BED: BedBox = { minX: 0, minY: 0, maxX: 256, maxY: 256 };
-export const STUDIO_3MF_DEFAULT_COLOR = "#B0B0B0";
+export const STUDIO_3MF_DEFAULT_COLOR = STUDIO_DEFAULT_BODY_COLOR.toUpperCase();
 const XML = '<?xml version="1.0" encoding="UTF-8"?>';
 const CORE = 'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"';
 const NS = 'xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06"';
@@ -65,12 +71,30 @@ export async function writeStudioThreeMf(
   parts: Part[],
   plates: readonly (StudioPlate & { thumbnail: Uint8Array })[],
   target?: StudioExportTarget,
-): Promise<Uint8Array> {
+): Promise<Uint8Array | null> {
+  const profile = target ? slicerProfile(target.slicer) : null;
   const recipe = target?.printer?.recipe;
   const bed = recipe?.bed ?? DEFAULT_BED;
   const [cx, cy] = bedCentre(bed);
   const columns = plateColumns(plates.length);
-  const colors = [...new Set(parts.map((part) => part.color?.toUpperCase() ?? STUDIO_3MF_DEFAULT_COLOR))];
+  const colorOf = (part: Part) => part.color?.toLowerCase() ?? STUDIO_DEFAULT_BODY_COLOR;
+  const usedColors = new Set(parts.map(colorOf));
+  if (profile?.reads === "bambu" && usedColors.size > STUDIO_FILAMENT_SLOT_LIMIT) return null;
+  const byColor = new Map<string, number>();
+  const palette: ({ color: string; material: string } | undefined)[] = [];
+  for (const { color, slot, material } of target?.filamentSlots ?? []) {
+    if (!usedColors.has(color)) continue;
+    palette[slot - 1] = { color, material };
+    byColor.set(color, slot);
+  }
+  let nextSlot = 0;
+  for (const color of usedColors) {
+    if (byColor.has(color)) continue;
+    while (palette[nextSlot]) nextSlot++;
+    palette[nextSlot] = { color, material: "PLA" };
+    byColor.set(color, nextSlot + 1);
+  }
+  const slots = Array.from(palette, (entry) => entry ?? { color: STUDIO_DEFAULT_BODY_COLOR, material: "PLA" });
   const instances = plates.map(() => [] as string[]);
   const objects: string[] = [];
   const build: string[] = [];
@@ -83,7 +107,7 @@ export async function writeStudioThreeMf(
     const id = index * 3 + 1;
     const childId = id + 1;
     const file = `/3D/Objects/object_${id}.model`;
-    const slot = colors.indexOf(part.color?.toUpperCase() ?? STUDIO_3MF_DEFAULT_COLOR) + 1;
+    const slot = byColor.get(colorOf(part))!;
     const plate = plates.findIndex((entry) => entry.id === part.plateId);
     const [px, py] = plateOrigin(plate, columns, bed);
     const m = part.body.matrix;
@@ -155,12 +179,12 @@ export async function writeStudioThreeMf(
     printer_settings_id: "",
     print_settings_id: "",
     nozzle_diameter: Array.from({ length: recipe?.extruders || 1 }, () => String(recipe?.nozzle ?? 0.4)),
-    filament_colour: colors,
-    filament_type: colors.map(() => "PLA"),
-    filament_is_support: colors.map(() => "0"),
-    filament_diameter: colors.map(() => "1.75"),
-    filament_minimal_purge_on_wipe_tower: colors.map(() => "15"),
-    filament_settings_id: colors.map(() => "Generic PLA"),
+    filament_colour: slots.map(({ color }) => color.toUpperCase()),
+    filament_type: slots.map(({ material }) => material),
+    filament_is_support: slots.map(() => "0"),
+    filament_diameter: slots.map(() => "1.75"),
+    filament_minimal_purge_on_wipe_tower: slots.map(() => "15"),
+    filament_settings_id: slots.map(({ material }) => `Generic ${material}`),
     curr_bed_type: "Textured PEI Plate",
   });
   add("[Content_Types].xml", contentTypesXml());
@@ -186,7 +210,7 @@ export async function writeStudioThreeMf(
     modelSettings,
     prusaConfig: null,
   });
-  const plan = target && planAdaptation(format, slicerProfile(target.slicer), target.printer?.choice);
+  const plan = target && planAdaptation(format, profile, target.printer?.choice);
   const result = plan ? (await adapt3mf(zip, plan, { printer: target.printer?.recipe })).zip : zip;
   return result.generateAsync({ type: "uint8array", ...ADAPT_ZIP_OPTIONS });
 }

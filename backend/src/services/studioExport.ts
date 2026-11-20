@@ -33,8 +33,13 @@ export async function exportStudioDesign(userId: string, design: StudioDesignOut
       options.printer && profile.targetsPrinter
         ? printerTarget(profile.id, options.printer.id, options.printer.nozzle)
         : null;
-    if (options.printer && !printer) throw new HttpError(400, "This slicer has no preset for that printer and nozzle.");
-    target = { slicer: profile.id, ...(printer ? { printer } : {}) };
+    if (options.printer && printer?.choice.nozzle !== options.printer.nozzle)
+      throw new HttpError(400, "This slicer has no preset for that printer and nozzle.");
+    target = {
+      slicer: profile.id,
+      ...(printer ? { printer } : {}),
+      ...(profile.reads === "bambu" ? { filamentSlots: document.filament_slots } : {}),
+    };
   }
   const made = await exportStudioGeometry({
     document,

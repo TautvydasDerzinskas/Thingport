@@ -3,6 +3,7 @@ import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
 import { isBody, plateOf, studioPlates, topLevel, type Feature, type Vec3 } from "../studio/document.generated";
 import { traceSummary } from "../studio/trace.generated";
+import { DEFAULT_PRINT_BED } from "../studio/printLayout.generated";
 import {
   createStudioDesign,
   deleteStudioDesign,
@@ -112,6 +113,9 @@ const getDesign: McpToolDefinition = {
       // What the person sees and types sizes in: every number here and in every tool stays in mm.
       display_units: design.document.units ?? "mm",
       up: "+Z",
+      print_setup: design.document.print_setup ?? null,
+      locked_layout: design.document.locked_layout ?? [],
+      filament_slots: design.document.filament_slots ?? [],
       // Each with its unit: mm, cm or in for a length, deg, or none.
       parameters: (design.document.parameters ?? []).map((parameter) => ({ unit: "mm", ...parameter })),
       features: briefFeatures(design.document.features),
@@ -303,32 +307,47 @@ const checkPrintTool: McpToolDefinition = {
     bed: z
       .tuple([z.number().positive().max(2000), z.number().positive().max(2000), z.number().positive().max(2000)])
       .optional()
-      .describe("The printer's build volume, mm [x, y, z], centred on x = y = 0. Default [256, 256, 256]."),
+      .describe("Override the Studio printer's build volume, mm [x, y, z], centered on x = y = 0."),
     overhang: z
       .number()
       .min(0)
-      .max(89)
+      .max(90)
       .optional()
       .describe("Steepest overhang that prints unsupported, degrees from vertical. Default 45."),
-    min_wall: z.number().positive().max(20).optional().describe("Thinnest wall that prints, mm. Default 0.8."),
+    min_wall: z
+      .number()
+      .min(0)
+      .max(20)
+      .optional()
+      .describe("Override the minimum wall in mm, or use 0 to skip the wall check."),
   },
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
+    const setup = design.document.print_setup;
     const outcome = await checkStudioPrint(
       `${design.id}:${design.version}`,
       design.document,
       studioAssetDir(ctx.userId, design.id),
       {
-        bed: (args.bed as Vec3 | undefined) ?? [256, 256, 256],
-        overhang: (args.overhang as number | undefined) ?? 45,
-        minWall: (args.min_wall as number | undefined) ?? 0.8,
+        bed: (args.bed as Vec3 | undefined) ?? setup?.bed ?? DEFAULT_PRINT_BED,
+        outline: args.bed ? undefined : setup?.outline,
+        overhang: (args.overhang as number | undefined) ?? setup?.overhang ?? 45,
+        minWall: (args.min_wall as number | undefined) ?? setup?.minWall ?? 0.8,
       },
     );
     if (outcome.status === "too-complex")
       throw new HttpError(422, `The design is too heavy to check here (about ${outcome.triangles} triangles).`);
     if (outcome.status !== "checked") throw new Error(`studio_check_print failed: ${JSON.stringify(outcome)}`);
     const { problems, bodies, overlaps } = outcome.check;
-    return { ...brief(ctx, design), ready: problems.length === 0, problems, bodies, overlaps };
+    const plates = new Map(design.document.features.map((feature) => [feature.id, plateOf(feature)]));
+    return {
+      ...brief(ctx, design),
+      printer: setup?.printer ?? null,
+      ready: bodies.length > 0 && problems.length === 0,
+      problems,
+      bodies: bodies.map((body) => Object.assign({}, body, { plate_id: plates.get(body.id) })),
+      overlaps,
+    };
   },
 };
 

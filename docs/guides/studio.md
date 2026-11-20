@@ -31,7 +31,14 @@ empty plates are skipped during export.
 **Download design** exports STL for one uncolored body on one plate and 3MF for designs with colors, multiple
 bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
 slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
-plate at a time, choose which plate to open. Match the project's color slots to the filaments loaded in your slicer.
+plate at a time, choose which plate to open. For Bambu-compatible slicers, **Filament assignments** shows which plates
+need each color. Choose the slot and material you loaded and save the assignments before opening or downloading the
+3MF. Studio marks unassigned colors and assigns those to free slots automatically. This handoff supports up to 16
+colors. When the slicer has a preset for the design's checked printer and nozzle, Studio selects that preset by default.
+
+Use **Arrange plate** from a plate's menu to preview where visible bodies will go before committing the move. It uses
+the chosen printer's bed and the spacing you set, keeping each body's orientation. Use **Lock position for arrangement**
+on a body to keep its place. Allow overflow if you want bodies that need more room to go to additional plates.
 
 A design is a list of features, built in order:
 
@@ -119,7 +126,12 @@ why, and OK waits until it can.
 - **Hole**: click where to drill, into the surface: a depth or right through, plain, counterbored or countersunk.
 - **Shell**: hollows the body with walls of a thickness, and clicked flat faces are left open, as a tray's top. Flat
   walls come out exactly that thick. Bodies over 20,000 triangles are refused, so shell parts before combining them.
-- **Split**: cuts a body in two by a plane, a flat face or another body; both parts stay editable.
+- **Split** cuts a body in two by a plane, a flat face or another body. A planar split can make matching pins and
+  sockets with adjustable depth, diameter, position, and radial clearance. Choose whether to put the second half
+  on a new plate. Select a half to edit the connectors on both halves in Properties.
+- **Fit test** in a split connector's properties makes a plate with a cropped pin and sockets from the joint. Each
+  socket has its clearance engraved in millimetres. After trying them, open **Fit test** on the original joint to
+  apply the clearance that fits. Give the clearance a parameter name to keep both halves linked to that value.
 - **Separate parts**: makes each loose piece of a body its own body, shown in its own colour before you press OK. A
   hollow inside a piece stays with it, and pieces that overlap without being joined come apart too: union them
   afterwards to join them properly. Each part moves, turns and scales about the middle of its base. Deleting all the
@@ -172,15 +184,14 @@ click starts again. Measuring changes nothing in the design.
 
 **Check for printing** (the checklist at the right of the status bar) checks each visible body where it is placed: on
 the bed and within it, in one piece, not overlapping another, no overhang that needs support and no wall too thin to
-print, for the bed size, overhang angle and thinnest wall you set. A floating body has **Onto bed** to put it down.
-Below it, **Measure** gives the gap or the overlap between two bodies, to check a fit or a clearance. Ask AI and an
-assistant over MCP run the same check on their own work. As in other CAD, a thread is judged as the plain cylinder it's
-cut on, so its ridges don't count as overhang or thin walls.
+print. Pick one of your saved printers to show its bed outline in the viewport and use its build height and nozzle
+for the check. You can also enter custom dimensions. Select a warning to jump to its object and plate. Overhangs
+and thin walls show markers at the affected areas. Use **Onto bed** to lower a floating body or **Lay flat** to pick
+a face to print on. **Measure** gives the gap or overlap between two bodies. Ask AI and MCP use the same printer setup.
+As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ridges don't count as overhang or thin walls.
 
-**Download STL** in the design's menu saves the visible bodies as one STL for your slicer. **Save to Thingport** makes a
-model of them in your library instead: the STL, a picture of the view as you see it, and what you asked Ask AI about
-the design as its description. Each save is a new model, a copy of the design as it was; an AI connected over MCP, or
-Ask AI, can save it too when you ask.
+**Save to Thingport** adds a new library model with the design's 3MF, a picture of the view, and what you asked Ask AI
+about the design as its description. An assistant can save it too when you ask.
 
 ## Working with an AI assistant
 

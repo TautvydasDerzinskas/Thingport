@@ -4,6 +4,7 @@ import {
   sketchFrame,
   type EdgeTreatment,
   type SketchFeature,
+  type SplitConnector,
   type Vec2,
   type Vec3,
 } from "../../studio/document";
@@ -68,6 +69,8 @@ export type Operation =
       offset: number;
       face: FacePick | null;
       tool: string | null;
+      connector: SplitConnector | null;
+      separatePlates: boolean;
     }
   | { kind: "scale"; target: string | null; factor: number }
   | { kind: "separate"; target: string | null }
@@ -197,7 +200,17 @@ export function startOperation(kind: OperationKind, on: string | null, path?: Ve
     case "shell":
       return { kind, target: on, thickness: 2, open: [] };
     case "split":
-      return { kind, target: on, by: "plane", plane: "XY", offset: 0, face: null, tool: null };
+      return {
+        kind,
+        target: on,
+        by: "plane",
+        plane: "XY",
+        offset: 0,
+        face: null,
+        tool: null,
+        connector: null,
+        separatePlates: false,
+      };
     case "scale":
       return { kind, target: on, factor: 1 };
     case "separate":
@@ -310,12 +323,12 @@ export function commandOf(op: Operation): { name: StudioCommandName; args: Recor
         : null;
     case "split": {
       if (!op.target) return null;
-      if (op.by === "body")
-        return op.tool ? { name: "split", args: { feature_id: op.target, tool_id: op.tool } } : null;
-      if (op.by === "face") return op.face ? { name: "split", args: { feature_id: op.target, plane: op.face } } : null;
+      const outputs = { feature_id: op.target, separate_plates: op.separatePlates };
+      if (op.by === "body") return op.tool ? { name: "split", args: { ...outputs, tool_id: op.tool } } : null;
       const normal = NORMALS[op.plane];
       const point = normal.map((n) => n * op.offset);
-      return { name: "split", args: { feature_id: op.target, plane: { point, normal: [...normal] } } };
+      const plane = op.by === "face" ? op.face : { point, normal: [...normal] };
+      return plane ? { name: "split", args: { ...outputs, plane, connector: op.connector ?? undefined } } : null;
     }
     case "scale":
       return op.target && op.factor !== 1
