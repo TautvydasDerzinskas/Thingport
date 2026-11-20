@@ -361,7 +361,8 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
                   slicerOptions={slicerOptions}
                   onOpened={(slicerId) => void switchSlicer(slicerId)}
                   downloading={downloading}
-                  onDownload={() => void download(selected)}
+                  // A supporting file goes as its chip does, so the two never fetch it at once.
+                  onDownload={() => (files.length ? void download(selected) : downloadSupporting(selected.key))}
                   zipCount={files.length + supporting.length}
                   onDownloadZip={() => void downloadZip()}
                 />

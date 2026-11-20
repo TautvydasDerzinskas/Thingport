@@ -177,7 +177,8 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
     // A stray % in a file name: match it as written.
   }
   const folder = path.posix.dirname(gltfName.replace(/\\/g, "/"));
-  const wanted = path.posix.normalize(path.posix.join(folder, decoded));
+  // A scene written on Windows may give a folder with a backslash ("textures%5Cwood.png"), as the app reads one.
+  const wanted = path.posix.normalize(path.posix.join(folder, decoded.replace(/\\/g, "/")));
   const pathOf = (file: T) => path.posix.normalize(file.name.replace(/\\/g, "/"));
   const byPath = files.find((file) => pathOf(file) === wanted);
   if (byPath) return byPath;

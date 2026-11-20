@@ -1541,7 +1541,7 @@
         "modelCount_one": "{{count}} modèle",
         "modelCount_other": "{{count}} modèles",
         "modelCount_many": "{{count}} modèles",
-        "breakdownHint": "Mesuré au plus toutes les quelques minutes. Les fichiers annexes sont les instructions, notes et fichiers sources conservés avec les modèles. Les anciens aperçus 3D sont des versions antérieures que plus rien n’affiche, et des aperçus de modèles supprimés. Autres, c’est le reste du stockage : projets Studio, images des étiquettes, icônes et photos de profil.",
+        "breakdownHint": "Mesuré au plus toutes les quelques minutes. Les fichiers annexes sont les instructions, notes et fichiers sources conservés avec les modèles. Les fichiers des modèles comprennent les impressions préparées, les fichiers tranchés pour une imprimante. Les anciens aperçus 3D sont des versions antérieures que plus rien n’affiche, et des aperçus de modèles supprimés. Autres, c’est le reste du stockage : projets Studio, images des étiquettes, icônes et photos de profil.",
         "chartLabel": "Utilisation du stockage par type",
         "failed": "Impossible de mesurer le stockage.",
         "kinds": {

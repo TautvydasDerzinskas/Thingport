@@ -1541,7 +1541,7 @@
         "modelCount_one": "{{count}} modelo",
         "modelCount_other": "{{count}} modelos",
         "modelCount_many": "{{count}} modelos",
-        "breakdownHint": "Se mide cada pocos minutos como mucho. Los archivos adjuntos son las instrucciones, notas y archivos fuente que se guardan con los modelos. Las vistas previas 3D antiguas son versiones anteriores que ya no se muestran en ningún sitio, y vistas previas de modelos que ya no están. Otros es el resto del almacenamiento: diseños de Studio, imágenes de etiquetas, iconos y fotos de perfil.",
+        "breakdownHint": "Se mide cada pocos minutos como mucho. Los archivos adjuntos son las instrucciones, notas y archivos fuente que se guardan con los modelos. Los archivos de modelos incluyen las impresiones preparadas, los archivos laminados para una impresora. Las vistas previas 3D antiguas son versiones anteriores que ya no se muestran en ningún sitio, y vistas previas de modelos que ya no están. Otros es el resto del almacenamiento: diseños de Studio, imágenes de etiquetas, iconos y fotos de perfil.",
         "chartLabel": "Uso del almacenamiento por tipo",
         "failed": "No se pudo medir el almacenamiento.",
         "kinds": {

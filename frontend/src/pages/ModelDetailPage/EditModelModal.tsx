@@ -150,6 +150,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   // The model's plates removed here, until each is deleted: tracked rather than diffed against the model, which can
   // gain a plate from another tab while the dialog is open, and that one isn't this dialog's to delete.
   const [removedPlateIds, setRemovedPlateIds] = useState<Set<string>>(new Set());
+  // Whether the plates were moved here: only then is their order this dialog's to send. Added ones go last, as the
+  // server puts them, and an order sent from what the dialog read would undo one another tab chose meanwhile.
+  const [platesMoved, setPlatesMoved] = useState(false);
   const [plateItems, setPlateItems] = useState<PlateItem[]>(() =>
     print.plates.map((p): PlateItem => ({
       kind: "existing",
@@ -396,6 +399,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
   const movePlateItemBy = (key: string, dir: -1 | 1) => {
+    setPlatesMoved(true);
     setPlateItems((prev) =>
       moveItem(
         prev,
@@ -650,8 +654,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           .filter((p) => !knownIds.has(p.id))
           .toSorted((a, b) => a.position - b.position)
           .map((p) => p.id);
-        const reorderRes = await printsApi.reorderPlates(print.id, [...known, ...unknown]);
-        latest = reorderRes.print ?? latest;
+        if (platesMoved) {
+          const reorderRes = await printsApi.reorderPlates(print.id, [...known, ...unknown]);
+          latest = reorderRes.print ?? latest;
+        }
       }
 
       // Each change that's done leaves what's staged, so a retry after a later step fails sends only what's left.

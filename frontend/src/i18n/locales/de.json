@@ -1480,7 +1480,7 @@
         "onDisk": "{{total}} belegt",
         "modelCount_one": "{{count}} Modell",
         "modelCount_other": "{{count}} Modelle",
-        "breakdownHint": "Wird höchstens alle paar Minuten gemessen. Alte 3D-Vorschauen sind frühere Versionen, die nichts mehr anzeigt, und Vorschauen von gelöschten Modellen. „Sonstiges“ ist der Rest des Speichers: Studio-Designs, Tag-Bilder, Icons und Profilbilder.",
+        "breakdownHint": "Wird höchstens alle paar Minuten gemessen. Zusatzdateien sind die Anleitungen, Notizen und Quelldateien, die mit den Modellen gespeichert werden. Modelldateien schließen vorbereitete Drucke ein, also für einen Drucker geslicte Dateien. Alte 3D-Vorschauen sind frühere Versionen, die nichts mehr anzeigt, und Vorschauen von gelöschten Modellen. „Sonstiges“ ist der Rest des Speichers: Studio-Designs, Tag-Bilder, Icons und Profilbilder.",
         "chartLabel": "Speichernutzung nach Art",
         "failed": "Der Speicher konnte nicht gemessen werden.",
         "kinds": {

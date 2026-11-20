@@ -1,4 +1,5 @@
 import i18next from "i18next";
+import { keptName } from "./fileExtensions";
 import { isModelFile, isSystemFile, type UploadEntry } from "./uploadTree";
 
 export type ZipEntry = {
@@ -214,11 +215,13 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 /** `path` as "guide (2).pdf", with the first number no entry has. A sliced print keeps all of ".gcode.3mf" after the
- *  number, as that's what says it's one. */
+ *  number, as that's what says it's one, told by the name it's kept by ("job.gcode.3mf " is one). */
 function numberedPath(path: string, taken: Record<string, unknown>): string {
   const slash = path.lastIndexOf("/");
   const name = path.slice(slash + 1);
-  const sliced = name.toLowerCase().endsWith(".gcode.3mf") ? name.length - ".gcode.3mf".length : -1;
+  const sliced = keptName(name).toLowerCase().endsWith(".gcode.3mf")
+    ? name.toLowerCase().lastIndexOf(".gcode.3mf")
+    : -1;
   const dot = sliced > 0 ? sliced : name.lastIndexOf(".");
   const [stem, ext] = dot > 0 ? [name.slice(0, dot), name.slice(dot)] : [name, ""];
   for (let n = 2; ; n++) {

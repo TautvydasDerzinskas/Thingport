@@ -234,7 +234,13 @@ export async function addUploadedPreviewImagesEach(
     const image = await addPreviewImage(printId, buffer, { keepExif: true });
     each.push(image?.id ?? null);
     if (!image) continue;
-    if (!added) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
+    // The picture is stored by now: one that can't be made the cover is still answered with its id, so the app doesn't
+    // send it again.
+    if (!added) {
+      await preferImageOverRenders(printId, firstPlate?.id, buffer, true).catch((err: unknown) =>
+        console.warn(`Couldn't make an uploaded picture the cover of model ${printId}:`, err),
+      );
+    }
     added = true;
   }
   return each;

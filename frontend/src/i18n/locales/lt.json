@@ -1557,7 +1557,7 @@
         "modelCount_one": "{{count}} modelis",
         "modelCount_few": "{{count}} modeliai",
         "modelCount_other": "{{count}} modelių",
-        "breakdownHint": "Matuojama ne dažniau kaip kas kelias minutes. Papildomi failai – instrukcijos, pastabos ir šaltinio failai, laikomi kartu su modeliais. Senos 3D peržiūros – ankstesnės versijos, kurios niekur nebėra rodomos, ir ištrintų modelių peržiūros. Kita – likusi saugykla: Studio projektai, žymų paveikslėliai, piktogramos ir profilių nuotraukos.",
+        "breakdownHint": "Matuojama ne dažniau kaip kas kelias minutes. Papildomi failai – instrukcijos, pastabos ir šaltinio failai, laikomi kartu su modeliais. Modelių failams priskiriami ir paruošti spaudiniai – spausdintuvui supjaustyti failai. Senos 3D peržiūros – ankstesnės versijos, kurios niekur nebėra rodomos, ir ištrintų modelių peržiūros. Kita – likusi saugykla: Studio projektai, žymų paveikslėliai, piktogramos ir profilių nuotraukos.",
         "chartLabel": "Saugyklos užimtumas pagal rūšį",
         "failed": "Nepavyko išmatuoti saugyklos.",
         "kinds": {

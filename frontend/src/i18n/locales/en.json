@@ -1480,7 +1480,7 @@
         "onDisk": "{{total}} on disk",
         "modelCount_one": "{{count}} model",
         "modelCount_other": "{{count}} models",
-        "breakdownHint": "Measured every few minutes at most. Supporting files are the instructions, notes and sources kept with the models. Old 3D previews are earlier versions that nothing shows any more, and previews of models that are gone. Other is the rest of storage: Studio designs, tag pictures, icons and profile pictures.",
+        "breakdownHint": "Measured every few minutes at most. Supporting files are the instructions, notes and sources kept with the models. Model files include prepared prints, the files sliced for a printer. Old 3D previews are earlier versions that nothing shows any more, and previews of models that are gone. Other is the rest of storage: Studio designs, tag pictures, icons and profile pictures.",
         "chartLabel": "Storage use by kind",
         "failed": "Couldn't measure the storage.",
         "kinds": {

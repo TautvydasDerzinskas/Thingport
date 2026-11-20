@@ -247,6 +247,13 @@ describe("readZipEntries numbering", () => {
     expect(read("A/mesh (3).bin")).toBe("second");
     expect(read("B/job (2).gcode.3mf")).toBe("two");
   });
+
+  it("keeps .gcode.3mf whole for a sliced print named with a space after it", async () => {
+    const text = (body: string) => new TextEncoder().encode(body);
+    const zip = zipSync({ "./job.gcode.3mf ": text("one"), "job.gcode.3mf ": text("two") });
+    const { data } = await readZipEntries(new File([zip as BlobPart], "kit.zip"));
+    expect(Object.keys(data).toSorted()).toEqual(["job (2).gcode.3mf ", "job.gcode.3mf "]);
+  });
 });
 
 describe("hasModelFolderPaths", () => {

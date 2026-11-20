@@ -99,6 +99,24 @@ export default function ModelActionsMenu({
   onAddSupportingFiles,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  // What this menu last gave the list, beside the model as drawn then. A card's list takes whole models, so a download
+  // count with no onCounted to put it in goes into the one given where the list hasn't drawn it yet (a file just
+  // added), rather than into the model as drawn, which would take that file back out of the card.
+  const shown = useRef(print);
+  useEffect(() => {
+    shown.current = print;
+  });
+  const given = useRef<{ print: Print; over: Print } | null>(null);
+  const giveToList = (next: Print) => {
+    given.current = { print: next, over: shown.current };
+    onUpdated?.(next);
+  };
+  const countInList = (printId: string, printCount: number) => {
+    const now = given.current?.over === shown.current ? given.current.print : shown.current;
+    if (now.id === printId) giveToList({ ...now, print_count: Math.max(now.print_count, printCount) });
+  };
+  const toList = onUpdated ? giveToList : undefined;
+  const counted = onCounted ?? (onUpdated ? countInList : undefined);
   const toolOwned = Boolean(print.tool_id);
   // Another user's model, from one of their public collections: everything that uses it, nothing that changes it.
   const owner = print.owner ?? null;
@@ -153,7 +171,7 @@ export default function ModelActionsMenu({
     downloadAllZip,
     sortedPlates,
     recordUse,
-  } = useDownloadPrint(print, onUnauthorized, onUpdated, onCounted);
+  } = useDownloadPrint(print, onUnauthorized, toList, counted);
 
   // A point rather than anchorPosition, so the slicer pickers this menu hands over to open in the same place.
   const menuAnchor: MenuAnchor =
@@ -223,7 +241,7 @@ export default function ModelActionsMenu({
 
   const customize = useCustomize(print, closeMenu, onUnauthorized);
   const studio = useOpenInStudio(print, onUnauthorized);
-  const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
+  const library = useCopyToLibrary(print, onUnauthorized, toList);
   const libraryCopyId = print.library_copy_id ?? null;
 
   const openEdit = () => {
@@ -291,7 +309,7 @@ export default function ModelActionsMenu({
 
   // A model in a folder has no category yet as far as AI is concerned; categorizing it moves it out.
   const uncategorized = !print.category_id || print.category_kind === "folder";
-  const queueWatched = useAiOutcomeWatch(print.id, onUpdated);
+  const queueWatched = useAiOutcomeWatch(print.id, toList);
   const recategorize = async (force = false) => {
     closeMenu();
     setRecategorizing(true);
@@ -318,7 +336,7 @@ export default function ModelActionsMenu({
   };
 
   // A description streams for as long as the model keeps writing; on a CPU that's minutes.
-  const queueDescription = useAiOutcomeWatch(print.id, onUpdated, 60 * 60_000);
+  const queueDescription = useAiOutcomeWatch(print.id, toList, 60 * 60_000);
   const improveDescription = async () => {
     closeMenu();
     setImproving(true);
@@ -347,7 +365,7 @@ export default function ModelActionsMenu({
     bindInput: bindOwnSupportingInput,
     onPicked: onOwnSupportingPicked,
     download: downloadSupportingFile,
-  } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, onUpdated, onUnauthorized);
+  } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, toList, onUnauthorized);
   const addSupportingFiles = onAddSupportingFiles ?? pickOwnSupporting;
   // Busy like the picker's other downloads, so a second click doesn't start another: by the model it's of, as theirs
   // (useDownloadPrint), so one still on its way after the header's menu has moved on doesn't hold the next model's.
@@ -705,7 +723,7 @@ export default function ModelActionsMenu({
           print={print}
           onClose={closeEdit}
           onUnauthorized={onUnauthorized}
-          onUpdated={(updated) => onUpdated?.(updated)}
+          onUpdated={giveToList}
           viewer={viewer}
         />
       )}
@@ -716,7 +734,7 @@ export default function ModelActionsMenu({
           print={print}
           gaps={sourceGaps}
           onClose={() => setFillGapsOpen(false)}
-          onUpdated={(updated) => onUpdated?.(updated)}
+          onUpdated={giveToList}
           onUnauthorized={onUnauthorized}
         />
       )}
@@ -725,7 +743,7 @@ export default function ModelActionsMenu({
         <LinkSourceDialog
           print={print}
           onClose={() => setLinkOpen(false)}
-          onLinked={(updated) => onUpdated?.(updated)}
+          onLinked={giveToList}
           onUnauthorized={onUnauthorized}
         />
       )}

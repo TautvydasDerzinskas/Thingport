@@ -227,6 +227,18 @@ describe("finding what a .gltf points at among files", () => {
     expect(json.images[0].uri).toBeUndefined();
   });
 
+  it("reads a backslash in a path a .gltf gives as a folder, at its path and by its name", async () => {
+    const { gltf, bin } = cubeGltf({ imageUri: "textures%5Cwood.png" });
+    const inFolders = [
+      write("Desk/scene.gltf", gltf),
+      write("Desk/scene.bin", bin),
+      write("Desk/textures/wood.png", await png()),
+    ];
+    expect((await packGltfFiles(inFolders, tempPath, made)).files.map((f) => f.name)).toEqual(["Desk/scene.glb"]);
+    const flat = [write("scene.gltf", gltf), write("scene.bin", bin), write("wood.png", await png())];
+    expect((await packGltfFiles(flat, tempPath, made)).files.map((f) => f.name)).toEqual(["scene.glb"]);
+  });
+
   it("matches by file name alone when the files came without folders, as an upload's do", async () => {
     const { gltf, bin } = cubeGltf();
     const files = [write("scene.gltf", gltf), write("scene.bin", bin), write("base.png", await png())];

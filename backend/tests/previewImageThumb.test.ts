@@ -94,6 +94,33 @@ describe("preview images", () => {
     expect(await redOf(previewImagePath(third, home))).toBeGreaterThan(180);
   });
 
+  it("answers with a stored picture's id when making it the cover fails", async () => {
+    const print = await uploadStl();
+    const findMany = prisma.previewImage.findMany.bind(prisma.previewImage);
+    let failed = false;
+    // The look for our own renders to take over from, once.
+    const renders = vi.spyOn(prisma.previewImage, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.previewImage.findMany>[0],
+    ) => {
+      if (failed || args?.where?.generated !== true) return findMany(args);
+      failed = true;
+      return Promise.reject(new Error("the database went away"));
+    }) as never);
+    let res;
+    try {
+      res = await request(app)
+        .post(`/api/print/${print.id}/preview-images`)
+        .set(auth())
+        .attach("files", await png(10), "a.png");
+    } finally {
+      renders.mockRestore();
+    }
+    expect(failed).toBe(true);
+    expect(res.status).toBe(200);
+    expect(res.body.image_ids).toHaveLength(1);
+    expect(res.body.print.preview_images.map((image: { id: string }) => image.id)).toEqual(res.body.image_ids);
+  });
+
   // Two pictures can reach one model at once: an import adds its gallery while our own card render of the first
   // plate finishes and takes the cover. Both read the gallery's next position, and the import used to fail
   // outright on the (printId, position) index rather than just look again.
