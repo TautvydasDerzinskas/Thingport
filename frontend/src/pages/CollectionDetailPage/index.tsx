@@ -186,6 +186,7 @@ function CollectionDetail({
     })();
     return () => {
       cancelled = true;
+      listRun.current += 1;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionId, sortMode, direction, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
