@@ -9,6 +9,7 @@ import {
   shapeFill,
   sketchFrame,
   sketchMatrix,
+  plateOf,
   topLevel,
   transformMatrix,
   type BodyFeature,
@@ -728,7 +729,7 @@ export function checkDesign(
     return value;
   };
   try {
-    const bodies: { id: string; solid: Manifold; plain?: Manifold }[] = [];
+    const bodies: { id: string; plate: string; solid: Manifold; plain?: Manifold }[] = [];
     const open: string[] = [];
     for (const feature of topLevel(doc)) {
       if (!isBody(feature) || !feature.visible) continue;
@@ -737,6 +738,7 @@ export function checkDesign(
         else
           bodies.push({
             id: feature.id,
+            plate: plateOf(feature),
             solid: made.inWorld(feature.id),
             plain: plain && threaded(doc, feature.id) ? plain.inWorld(feature.id) : undefined,
           });
@@ -923,7 +925,7 @@ export function patternCopies(feature: PatternFeature): number {
 
 /** Roughly how many triangles the design makes, before any of it is made: a server refuses one far too heavy. Each
  *  body counts what it's made from, as many times as a pattern copies it. */
-export function estimateTriangles(doc: StudioDocument): number {
+export function estimateTriangles(doc: StudioDocument, ids?: ReadonlySet<string>): number {
   const known = new Map<string, number>();
   const itself = (feature: Feature): number => {
     if (feature.type === "box") return 12;
@@ -978,5 +980,5 @@ export function estimateTriangles(doc: StudioDocument): number {
     known.set(id, total);
     return total;
   };
-  return topLevel(doc).reduce((sum, feature) => sum + of(feature.id), 0);
+  return topLevel(doc).reduce((sum, feature) => sum + (!ids || ids.has(feature.id) ? of(feature.id) : 0), 0);
 }

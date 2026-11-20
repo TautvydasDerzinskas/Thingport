@@ -4395,7 +4395,6 @@
         "sweep": "Balayage"
       },
       "tree": {
-        "heading": "Éléments",
         "empty": "Rien pour l’instant",
         "expand": "Déplier",
         "collapse": "Replier"
@@ -4536,13 +4535,33 @@
         },
         "cornerRadius": "Rayon des coins"
       },
+      "plates": {
+        "label": "Plateau d’impression",
+        "actions": "Actions du plateau",
+        "add": "Ajouter un plateau",
+        "rename": "Renommer le plateau",
+        "delete": "Supprimer le plateau vide",
+        "defaultName": "Plateau {{count}}",
+        "move": "Déplacer vers le plateau",
+        "color": "Couleur du corps",
+        "clearColor": "Effacer",
+        "applyColor": "Appliquer",
+        "openSlicer": "Ouvrir dans le trancheur",
+        "slicer": "Trancheur",
+        "printer": "Imprimante et buse",
+        "noPreset": "Utiliser l’imprimante actuelle du trancheur",
+        "oneAtATime": "Ce trancheur ouvre un plateau à la fois.",
+        "matchFilaments": "Associez les couleurs du projet aux filaments chargés dans le trancheur.",
+        "download3mf": "Télécharger le 3MF",
+        "open": "Ouvrir"
+      },
       "design": {
         "none": "Aucune conception",
         "new": "Nouvelle conception",
         "open": "Ouvrir…",
         "openTitle": "Ouvrir une conception",
         "rename": "Renommer la conception",
-        "export": "Télécharger le STL",
+        "export": "Télécharger le modèle",
         "delete": "Supprimer la conception",
         "deleteTitle": "Supprimer « {{name}} » ?",
         "deleteMessage": "La conception et son historique sont supprimés définitivement.",
@@ -4593,7 +4612,7 @@
       },
       "panels": {
         "label": "Panneaux",
-        "features": "Éléments",
+        "features": "Objets / Plateaux",
         "properties": "Propriétés",
         "hide": "Masquer {{panel}}",
         "show": "Afficher {{panel}}"

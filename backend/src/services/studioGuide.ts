@@ -29,6 +29,14 @@ read it again (studio_get_design) before building on something.
 - studio_get_design lists every feature, each body's size and volume, and problems (a feature that couldn't be made
   and why). Check problems after each step.
 
+## Build plates and colors
+
+- studio_get_design lists the plates and the plate and color of each body. New bodies go on the first plate unless
+  you pass plate_id. studio_create_plate adds a named plate and returns its ID.
+- Use studio_move_to_plate for existing bodies or sketches. Their local positions stay the same. Two different
+  plates can have bodies at the same coordinates. Use studio_set_body_color with an RGB hex color on each body.
+- studio_view_design can show an individual plate by plate_id. Saving to the library preserves plates and colors in 3MF.
+
 ## Naming faces and edges
 
 Faces and edges aren't stored as such: a body is a mesh. Name them by where they are, in the world:
@@ -85,7 +93,7 @@ Faces and edges aren't stored as such: a body is a mesh. Name them by where they
   lies on the bed, for printing.
 - set_transform (absolute) and scale_feature (a factor) move, turn and size a body.
 - update_feature changes any feature's numbers later, e.g. a fillet's radius or a hole's diameter.
-- studio_save_to_library saves the design to the user's library as a new model (an STL, a picture and their requests
+- studio_save_to_library saves the design to the user's library as a new model (a 3MF with its plates and colors, a picture and their requests
   as its description). Save only when the user asks.
 - import_model brings in a library model's STL, 3MF, STEP, OBJ or GLB (find it with search_models). A closed mesh works
   with everything above; one with gaps can only be moved, scaled and exported. A model of several pieces comes in as

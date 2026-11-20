@@ -28,6 +28,9 @@ import PanelTab from "../../components/PanelTab";
 import { useToast } from "../../components/ToastProvider";
 import {
   consumerOf,
+  DEFAULT_PLATE_ID,
+  plateOf,
+  studioPlates,
   featureById,
   isBody,
   topLevel,
@@ -41,8 +44,9 @@ import {
 } from "../../studio/document";
 import CheckDialog from "./CheckDialog";
 import DesignsDialog from "./DesignsDialog";
-import { designStl } from "./exportStl";
-import FeatureTree from "./FeatureTree";
+import StudioSlicerDialog, { studioExportName } from "./StudioSlicerDialog";
+import { saveResponseToDisk } from "../../utils/downloadResponse";
+import ObjectsPanel from "./ObjectsPanel";
 import { featureLabel } from "./labels";
 import { AssistantPanel } from "./AssistantThread";
 import PromptOverlay from "./PromptOverlay";
@@ -215,6 +219,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [promptInset, setPromptInset] = useState(0);
 
   const [selected, setSelected] = useState<string[]>([]);
+  const [pickedPlate, setPickedPlate] = useState(DEFAULT_PLATE_ID);
+  const activePlate =
+    doc && studioPlates(doc).some((plate) => plate.id === pickedPlate) ? pickedPlate : DEFAULT_PLATE_ID;
+  const [slicerOpen, setSlicerOpen] = useState(false);
   // Edit adds the design tools and side panels.
   const [editing, setEditing] = useState(false);
   const [editHandMode, setEditHandMode] = useState(false);
@@ -223,6 +231,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     designId: design?.id ?? null,
     offered: aiModels,
     selected,
+    activePlate,
     onProgress: followAssistant,
     onError,
     onUnauthorized,
@@ -276,6 +285,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [shownDesign, setShownDesign] = useState(designId);
   if (shownDesign !== designId) {
     setShownDesign(designId);
+    setPickedPlate(DEFAULT_PLATE_ID);
+    setSlicerOpen(false);
     setSelected([]);
     setSketch(null);
     setErrors({});
@@ -283,11 +294,28 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   }
   useEffect(() => {
     if (!doc) return;
-    setSelected((prev) =>
-      prev.every((id) => featureById(doc, id)) ? prev : prev.filter((id) => featureById(doc, id)),
-    );
-    setSketch((prev) => (prev && featureById(doc, prev.id)?.type !== "sketch" ? null : prev));
-  }, [doc]);
+    const onPlate = (id: string) => {
+      let feature = featureById(doc, id);
+      while (feature) {
+        const parent = consumerOf(doc, feature.id);
+        if (!parent) return plateOf(feature) === activePlate;
+        feature = parent;
+      }
+      return false;
+    };
+    setSelected((prev) => (prev.every(onPlate) ? prev : prev.filter(onPlate)));
+    setSketch((prev) => (prev && onPlate(prev.id) && featureById(doc, prev.id)?.type === "sketch" ? prev : null));
+  }, [doc, activePlate]);
+
+  const changePlate = (id: string) => {
+    if (id === activePlate) return;
+    setPickedPlate(id);
+    setSelected([]);
+    setSketch(null);
+    setOperation(null);
+    setMeasureTool(null);
+    setMenu(null);
+  };
 
   // A model opened here from its own page: the mesh it brought in, to say if it's in parts. Taken once, so going back
   // or reloading doesn't say it again.
@@ -372,7 +400,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     into: "new" | "current",
   ): Promise<boolean> => {
     if (into === "current") {
-      const created = await run("import_model", { model_id: model.id, file_id: fileId });
+      const created = await run("import_model", { model_id: model.id, file_id: fileId, plate_id: activePlate });
       if (!created) return false;
       setDesignsOpen(false);
       selectCreated(created);
@@ -395,21 +423,21 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const add = async (kind: Primitive) => {
     const created =
       kind === "box"
-        ? await run("add_box", { width: 20, depth: 20, height: 20 })
+        ? await run("add_box", { plate_id: activePlate, width: 20, depth: 20, height: 20 })
         : kind === "cylinder"
-          ? await run("add_cylinder", { radius: 10, height: 20 })
+          ? await run("add_cylinder", { plate_id: activePlate, radius: 10, height: 20 })
           : kind === "cone"
-            ? await run("add_cone", { radius_bottom: 10, radius_top: 0, height: 20 })
+            ? await run("add_cone", { plate_id: activePlate, radius_bottom: 10, radius_top: 0, height: 20 })
             : kind === "sphere"
-              ? await run("add_sphere", { radius: 10 })
+              ? await run("add_sphere", { plate_id: activePlate, radius: 10 })
               : kind === "thread"
-                ? await run("add_thread", { diameter: 8, length: 20 })
-                : await run("add_torus", { major_radius: 15, minor_radius: 5 });
+                ? await run("add_thread", { plate_id: activePlate, diameter: 8, length: 20 })
+                : await run("add_torus", { plate_id: activePlate, major_radius: 15, minor_radius: 5 });
     selectCreated(created);
   };
 
   const startSketch = async (plane: Exclude<SketchPlane, "FACE">) => {
-    const created = await run("add_sketch", { plane });
+    const created = await run("add_sketch", { plate_id: activePlate, plane });
     if (!created?.[0]) return;
     setSelected([created[0]]);
     setSketch({ id: created[0], tool: "rectangle" });
@@ -438,7 +466,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setSelected([id]);
     setOperation(startOperation("separate", id));
   };
-  const draft = operation ? commandOf(operation) : null;
+  const operationCommand = operation ? commandOf(operation) : null;
+  const draft =
+    operationCommand?.name === "add_text"
+      ? { ...operationCommand, args: { ...operationCommand.args, plate_id: activePlate } }
+      : operationCommand;
   const draftKey = draft ? JSON.stringify(draft) : "";
   // A text's preview is drawn in its font, fetched here the first time it's picked.
   const [fontsIn, setFontsIn] = useState(0);
@@ -583,7 +615,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     // A face to sketch on is all that tool needs.
     if (next.kind === "sketch_face" && next.face) {
       const command = commandOf(next)!;
-      void run(command.name, command.args as never).then((created) => {
+      void run(command.name, { ...command.args, plate_id: activePlate } as never).then((created) => {
         setOperation(null);
         if (!created?.[0]) return;
         setSelected([created[0]]);
@@ -594,7 +626,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
 
   /** A traced picture: selected once it's in, and a sketch alone goes straight on to its extrude. */
   const tracePicture = async (request: TraceRequest): Promise<boolean> => {
-    const created = await run("trace_picture", request);
+    const created = await run("trace_picture", { ...request, plate_id: activePlate });
     if (!created?.length) return false;
     setSketch(null);
     setSelected(created.slice(-1));
@@ -628,17 +660,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setSelected([]);
   };
 
-  const exportStl = async () => {
-    if (!doc || !design) return;
+  const downloadDesign = async () => {
+    if (!design) return;
     try {
-      const blob = await designStl(design.id, doc);
-      if (!blob) return toast({ message: t("studio.design.nothingToExport"), severity: "info" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${design.name.replace(/[\\/:*?"<>|]+/g, "-") || "design"}.stl`;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const filename = studioExportName(design.name);
+      await saveResponseToDisk(await studioApi.export(design.id, filename), filename);
     } catch (error) {
       showError(error);
     }
@@ -650,7 +676,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     if (!design || saving) return;
     setSaving(true);
     try {
-      const snapshot = await viewport.current?.snapshot();
+      const plateHasBodies = topLevel(design.document).some(
+        (feature) => isBody(feature) && feature.visible && plateOf(feature) === activePlate,
+      );
+      const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
       const picture = snapshot ? await studioApi.addPicture(design.id, snapshot) : null;
       const { model } = await studioApi.saveToLibrary(design.id, picture ? { picture_id: picture.id } : {});
       toast({
@@ -850,6 +879,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           selected={selected}
           mode={mode}
           handMode={handMode}
+          activePlate={activePlate}
           sketch={sketch}
           onSelect={select}
           onBoxSelect={boxSelect}
@@ -966,6 +996,9 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     );
   })();
 
+  const showObjectsPanel = editing || (doc !== null && studioPlates(doc).length > 1);
+  const objectsLabel = t("studio.panels.features");
+
   return (
     <StudioUnitsContext.Provider value={units}>
       <Paper
@@ -1003,7 +1036,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onNewDesign={() => void newDesign()}
           onOpenDesign={() => setDesignsOpen(true)}
           onRenameDesign={() => setRenaming({ kind: "design" })}
-          onExport={() => void exportStl()}
+          onExport={() => void downloadDesign()}
+          onOpenSlicer={() => setSlicerOpen(true)}
           onSaveToLibrary={() => void saveToLibrary()}
           onParameters={() => setParametersOpen(true)}
           measuring={Boolean(measureTool)}
@@ -1038,9 +1072,9 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             display: "grid",
             gridTemplateColumns: {
               xs: "minmax(0, 1fr)",
-              // A hidden panel leaves a strip with its tab, while editing.
+              // A hidden panel leaves a strip with its tab.
               md: [
-                editing && (panels.features ? "220px" : "36px"),
+                showObjectsPanel && (panels.features ? "220px" : "36px"),
                 "minmax(0, 1fr)",
                 editing && (panels.properties ? "270px" : "36px"),
                 assistantPanel && "300px",
@@ -1051,33 +1085,33 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             gridTemplateRows: { xs: "minmax(360px, 60vh) auto auto auto", md: "minmax(0, 1fr)" },
           }}
         >
-          {editing && (
+          {showObjectsPanel && (
             <Box sx={(theme) => ({ ...panelSx(theme, "right", 2), ...slideIn(fromLeft) })}>
               {panels.features ? (
-                <SidePanel
-                  title={t("studio.panels.features")}
-                  side="left"
-                  hideLabel={t("studio.panels.hide", { panel: t("studio.panels.features") })}
+                <ObjectsPanel
+                  key={designId}
+                  document={doc}
+                  activePlate={activePlate}
+                  editing={editing}
+                  selected={selected}
+                  errors={errors}
                   onHide={() => togglePanel("features")}
-                >
-                  {doc && (
-                    <FeatureTree
-                      document={doc}
-                      selected={selected}
-                      errors={errors}
-                      onSelect={select}
-                      onMenu={(id, at) => setMenu({ id, at })}
-                      onToggleVisible={(feature) =>
-                        void run("set_visibility", { feature_id: feature.id, visible: !feature.visible })
-                      }
-                    />
-                  )}
-                </SidePanel>
+                  onChangePlate={changePlate}
+                  onSelect={(plate, id, additive) => {
+                    changePlate(plate);
+                    select(id, plate === activePlate && additive);
+                  }}
+                  onMenu={(plate, id, at) => {
+                    changePlate(plate);
+                    setMenu({ id, at });
+                  }}
+                  run={run}
+                />
               ) : (
                 <PanelTab
                   side="left"
-                  label={t("studio.panels.features")}
-                  ariaLabel={t("studio.panels.show", { panel: t("studio.panels.features") })}
+                  label={objectsLabel}
+                  ariaLabel={t("studio.panels.show", { panel: objectsLabel })}
                   onOpen={() => togglePanel("features")}
                 />
               )}
@@ -1281,6 +1315,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           ]}
         </Menu>
 
+        {slicerOpen && design && (
+          <StudioSlicerDialog
+            design={design}
+            activePlate={activePlate}
+            onClose={() => setSlicerOpen(false)}
+            onError={showError}
+          />
+        )}
         <DesignsDialog
           open={designsOpen}
           currentId={design?.id ?? null}

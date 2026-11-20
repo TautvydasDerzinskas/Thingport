@@ -354,7 +354,10 @@ describe("Studio's assistant", () => {
         : index === 1
           ? claude([{ type: "text", text: "Checking it." }], "pause_turn")
           : claude([{ type: "text", text: "I added a 10 mm ball." }], "end_turn");
-    const thread = await ask(person.token, designId, "Add a ball", { selected: ["box-9"] });
+    const thread = await ask(person.token, designId, "Add a ball", {
+      selected: ["box-9"],
+      active_plate: "plate-1",
+    });
     expect(thread.run).toMatchObject({ status: "done", steps: [{ tool: "studio_add_sphere", ok: true }] });
     expect((await documentOf(person.token, designId)).features.map((feature) => feature.type)).toEqual(["sphere"]);
 
@@ -377,6 +380,7 @@ describe("Studio's assistant", () => {
     ]);
     expect(first.cache_control).toEqual({ type: "ephemeral" });
     expect(first.messages[0].content).toMatch(/Selected in the view: box-9/);
+    expect(first.messages[0].content).toMatch(/Active build plate: plate-1/);
 
     // Its answer went back whole, search and thinking included; a result only for the tool Thingport ran.
     const second = seen[1].body as {
@@ -437,8 +441,11 @@ describe("Studio's assistant", () => {
     };
     const names = body.tools.map((tool) => tool.function.name);
     expect(names).toContain("studio_add_box");
+    expect(names).toEqual(
+      expect.arrayContaining(["studio_create_plate", "studio_move_to_plate", "studio_set_body_color"]),
+    );
     expect(names).not.toContain("studio_fillet");
-    expect(names.length).toBeLessThanOrEqual(14);
+    expect(names.length).toBeLessThanOrEqual(17);
     // Its arguments named, not described: the tool's own line says what they are.
     expect(JSON.stringify(body.tools)).not.toMatch(/"properties":\{[^}]*"description"/);
     expect(body.messages[0].content).toMatch(/^You build and change 3D-printable parts/);

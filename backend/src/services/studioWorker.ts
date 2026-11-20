@@ -3,7 +3,18 @@ import path from "node:path";
 import { parentPort, workerData } from "node:worker_threads";
 import sharp from "sharp";
 import type { ManifoldToplevel } from "manifold-3d";
-import { LIMITS, type MeshData, type PartMeasure, type StudioDocument, type Vec3 } from "../studio/document.generated";
+import {
+  LIMITS,
+  featureById,
+  isBody,
+  plateOf,
+  studioPlates,
+  topLevel,
+  type MeshData,
+  type PartMeasure,
+  type StudioDocument,
+  type Vec3,
+} from "../studio/document.generated";
 import {
   checkDesign,
   describeBody,
@@ -22,6 +33,7 @@ import { binaryStl } from "../studio/stl.generated";
 import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 import { loadFontsFor } from "./studioFonts";
+import { writeStudioThreeMf, type StudioExportTarget } from "./studioThreeMf";
 
 // Studio's heavy work, off the main thread: measuring and picturing a design for an assistant, finding a body's loose
 // parts to separate them, and making the design's own copy of a library model it imports. Runs in a worker thread
@@ -50,13 +62,21 @@ export type StudioWorkerInput =
       document: StudioDocument;
       /** Where the design's imported meshes are, as <asset id>.tpsm. */
       assetDir: string;
-      render: { views: StudioView[]; size: number; color: string } | null;
+      render: { views: StudioView[]; size: number; color: string; plate?: string } | null;
     }
   | { kind: "import"; srcPath: string; ext: string; destPath: string }
   | { kind: "trace"; picturePath: string; settings: TraceSettings }
   | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string }
   | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string }
-  | { kind: "stl"; document: StudioDocument; assetDir: string }
+  | {
+      kind: "export";
+      document: StudioDocument;
+      assetDir: string;
+      name: string;
+      format: "auto" | "3mf";
+      plate?: string;
+      target?: StudioExportTarget;
+    }
   | { kind: "bounds"; document: StudioDocument; assetDir: string; ids: string[] }
   | { kind: "check"; document: StudioDocument; assetDir: string; options: PrintCheckOptions }
   | { kind: "between"; document: StudioDocument; assetDir: string; a: string; b: string };
@@ -78,8 +98,8 @@ export type StudioWorkerResult =
   | { status: "checked"; check: PrintCheck }
   | { status: "between"; between: ReturnType<typeof measureBetween> }
   | { status: "traced"; traced: Traced }
-  /** The visible bodies as a binary STL; null when there are none. */
-  | { status: "stl"; stl: Uint8Array | null; triangles: number }
+  | { status: "exported"; bytes: Uint8Array; format: "stl" | "3mf" }
+  | { status: "empty" }
   /** A file that can't come in, and why, in words for whoever asked. */
   | { status: "refused"; reason: string }
   | { status: "too-complex"; triangles: number }
@@ -138,21 +158,42 @@ async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): 
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
   const wasm = await manifold();
   const { bodies, errors } = evaluateDesign(wasm, input.document, undefined, meshesIn(input.assetDir));
-  const visible = new Set(input.document.features.filter((feature) => feature.visible).map((feature) => feature.id));
   const images: { view: StudioView; png: string }[] = [];
   if (input.render) {
-    const parts = bodies.filter((body) => visible.has(body.id)).map(worldTriangles);
-    const triangles = new Float32Array(parts.reduce((sum, part) => sum + part.length, 0));
+    const renderPlate =
+      input.render.plate ??
+      studioPlates(input.document).find((plate) =>
+        bodies.some((body) => {
+          const feature = featureById(input.document, body.id);
+          return feature?.visible && plateOf(feature) === plate.id;
+        }),
+      )?.id;
+    const parts = bodies.flatMap((body) => {
+      const feature = featureById(input.document, body.id);
+      if (!feature?.visible || !isBody(feature) || plateOf(feature) !== renderPlate) return [];
+      return [{ triangles: worldTriangles(body), color: feature.color }];
+    });
+    const triangles = new Float32Array(parts.reduce((sum, part) => sum + part.triangles.length, 0));
     let offset = 0;
-    for (const part of parts) {
-      triangles.set(part, offset);
-      offset += part.length;
-    }
     const { size, color } = input.render;
+    const faceColors = parts.some((part) => part.color) ? new Uint8Array(triangles.length / 3) : null;
+    for (const part of parts) {
+      triangles.set(part.triangles, offset);
+      if (faceColors) {
+        const rgb = Number.parseInt((part.color ?? color).slice(1), 16);
+        const end = (offset + part.triangles.length) / 3;
+        for (let i = offset / 3; i < end; i += 3) {
+          faceColors[i] = (rgb >> 16) & 255;
+          faceColors[i + 1] = (rgb >> 8) & 255;
+          faceColors[i + 2] = rgb & 255;
+        }
+      }
+      offset += part.triangles.length;
+    }
     for (const view of input.render.views) {
       const pixels =
         triangles.length > 0
-          ? renderTrianglesRgba(triangles, CAMERAS[view], { size, color, ambient: 0.3, fill: 0.15 })
+          ? renderTrianglesRgba(triangles, CAMERAS[view], { size, color, ambient: 0.3, fill: 0.15 }, faceColors)
           : Buffer.alloc(size * size * 4);
       const png = await sharp(pixels, { raw: { width: size, height: size, channels: 4 } })
         .png()
@@ -233,15 +274,52 @@ async function findBounds(input: Extract<StudioWorkerInput, { kind: "bounds" }>)
   }
 }
 
-/** The design's visible bodies as one STL, as the page's Download STL makes it. */
-async function stl(input: Extract<StudioWorkerInput, { kind: "stl" }>): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
+async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }>): Promise<StudioWorkerResult> {
+  const visible = topLevel(input.document).filter(
+    (feature) => isBody(feature) && feature.visible && (!input.plate || plateOf(feature) === input.plate),
+  );
+  if (!visible.length) return { status: "empty" };
+  const ids = visible.map((feature) => feature.id);
+  const estimate = estimateTriangles(input.document, new Set(ids));
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
-  const visible = new Set(input.document.features.filter((feature) => feature.visible).map((feature) => feature.id));
-  const { bodies, errors } = evaluateDesign(await manifold(), input.document, undefined, meshesIn(input.assetDir));
+  const byId = new Map(visible.map((feature) => [feature.id, feature]));
+  const { bodies, errors } = evaluateDesign(await manifold(), input.document, ids, meshesIn(input.assetDir));
   if (errors.length) return { status: "refused", reason: `${errors[0].id} couldn't be made: ${errors[0].message}` };
-  const parts = bodies.filter((body) => visible.has(body.id)).map(worldTriangles);
-  return { status: "stl", stl: binaryStl(parts), triangles: parts.reduce((sum, part) => sum + part.length / 9, 0) };
+  const parts = bodies.flatMap((body) => {
+    const feature = byId.get(body.id);
+    return feature && isBody(feature)
+      ? [{ body, name: feature.name || feature.id, color: feature.color, plateId: plateOf(feature) }]
+      : [];
+  });
+  if (!parts.length) return { status: "empty" };
+  if (input.format === "auto" && parts.length === 1 && !parts[0].color && studioPlates(input.document).length === 1) {
+    const bytes = binaryStl([worldTriangles(parts[0].body)]);
+    return bytes ? { status: "exported", bytes, format: "stl" } : { status: "empty" };
+  }
+  const recipe = input.target?.printer?.recipe;
+  if (recipe) {
+    const bed = recipe.bed;
+    const bad = parts.find(
+      ({
+        body: {
+          bounds: { min, max },
+        },
+      }) =>
+        min[2] < -0.01 ||
+        (recipe.height !== null && max[2] > recipe.height + 0.01) ||
+        (bed &&
+          [0, 1].some((axis) => {
+            const half = (axis === 0 ? bed.maxX - bed.minX : bed.maxY - bed.minY) / 2;
+            return min[axis] < -half - 0.01 || max[axis] > half + 0.01;
+          })),
+    );
+    if (bad) return { status: "refused", reason: `${bad.name} is outside the build volume for ${recipe.preset}.` };
+  }
+  return {
+    status: "exported",
+    format: "3mf",
+    bytes: await writeStudioThreeMf(input.name, parts, studioPlates(input.document), input.target),
+  };
 }
 
 async function trace(input: Extract<StudioWorkerInput, { kind: "trace" }>): Promise<StudioWorkerResult> {
@@ -276,8 +354,8 @@ if (parentPort) {
       ? describe(design)
       : design.kind === "parts"
         ? findParts(design)
-        : design.kind === "stl"
-          ? stl(design)
+        : design.kind === "export"
+          ? exportDesign(design)
           : design.kind === "bounds"
             ? findBounds(design)
             : design.kind === "check"

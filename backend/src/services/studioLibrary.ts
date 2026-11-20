@@ -6,11 +6,12 @@ import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { notifyUpload } from "./modelNotifications";
 import { printOutById } from "./printLoader";
-import { inspectStudioDesign, studioStl } from "./studioInspect";
+import { inspectStudioDesign } from "./studioInspect";
+import { exportStudioDesign } from "./studioExport";
 import { getStudioDesign, studioAssetDir, studioPicturePath } from "./studioService";
 import { addUploadedPreviewImages, createUploadedModel } from "./uploadService";
 
-// A Studio design saved to the user's library as a model of its own: its visible bodies as one STL, a picture of it,
+// A Studio design saved to the user's library as a model of its own: its visible bodies as one 3MF, a picture of it,
 // and what the user asked Studio's assistant about it as its description. Each save is a new model, a copy as the
 // design was then; changing the design later doesn't change it.
 
@@ -42,20 +43,7 @@ export async function saveStudioDesignToLibrary(
 ) {
   const design = await getStudioDesign(userId, designId);
   const assetDir = studioAssetDir(userId, design.id);
-  const made = await studioStl(design.document, assetDir);
-  if (made.status === "too-complex")
-    throw new HttpError(
-      422,
-      `The design is too heavy to save here (about ${made.triangles} triangles)`,
-      "studio_too_complex",
-    );
-  if (made.status === "refused") throw new HttpError(400, made.reason, "studio_save_refused");
-  if (made.status !== "stl") {
-    console.error("[studio] making a design's STL failed", made);
-    throw new HttpError(500, "Couldn't make the design's STL", "studio_save_failed");
-  }
-  if (!made.stl)
-    throw new HttpError(400, "There's nothing to save: the design has no visible body", "studio_save_empty");
+  const made = await exportStudioDesign(userId, design, { format: "3mf" });
 
   let picture: Buffer | null = null;
   if (input.pictureId) {
@@ -68,13 +56,13 @@ export async function saveStudioDesignToLibrary(
       size: PICTURE_PX,
       color: RENDER_COLOR,
     });
-    // Without a picture the library draws its own render of the STL, so a failed one isn't the end of it.
+    // Without a picture the library draws its own render of the 3MF, so a failed one isn't the end of it.
     if (pictured.status === "ok" && pictured.images[0]) picture = Buffer.from(pictured.images[0].png, "base64");
   }
 
   const name = (input.name ?? design.name).trim() || design.name;
-  const stlPath = path.join(os.tmpdir(), `thingport-studio-${crypto.randomBytes(8).toString("hex")}.stl`);
-  await fs.writeFile(stlPath, made.stl);
+  const exportPath = path.join(os.tmpdir(), `thingport-studio-${crypto.randomBytes(8).toString("hex")}.${made.format}`);
+  await fs.writeFile(exportPath, made.bytes);
   try {
     const meta = {
       title: name,
@@ -84,7 +72,7 @@ export async function saveStudioDesignToLibrary(
       createdWith: { kind: "studio" as const, ref: design.id },
     };
     const print = await createUploadedModel(userId, meta, [
-      { path: stlPath, originalname: `${name}.stl`, mimetype: "model/stl" },
+      { path: exportPath, originalname: `${name}.${made.format}`, mimetype: made.mime },
     ]);
     if (picture) await addUploadedPreviewImages(print.id, [picture]);
     await notifyUpload(userId, [{ id: print.id, name }], { names: [] }, "created").catch((error: unknown) =>
@@ -92,6 +80,6 @@ export async function saveStudioDesignToLibrary(
     );
     return printOutById(userId, print.id);
   } finally {
-    await fs.rm(stlPath, { force: true });
+    await fs.rm(exportPath, { force: true });
   }
 }

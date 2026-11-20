@@ -54,9 +54,11 @@ export function inspectStudioDesign(
   key: string,
   document: StudioDocument,
   assetDir: string,
-  render: { views: StudioView[]; size: number; color: string } | null,
+  render: { views: StudioView[]; size: number; color: string; plate?: string } | null,
 ): Promise<StudioWorkerResult> {
-  const cacheKey = render ? `${key}:${render.views.join(",")}:${render.size}` : key;
+  const cacheKey = render
+    ? `${key}:${render.views.join(",")}:${render.size}:${render.color}:${render.plate ?? ""}`
+    : key;
   const known = cache.get(cacheKey);
   if (known) return Promise.resolve(known);
   return queued({ kind: "inspect", document, assetDir, render }, INSPECT_TIMEOUT_MS).then((outcome) => {
@@ -106,9 +108,10 @@ export function traceStudioPicture(picturePath: string, settings: TraceSettings)
   return queued({ kind: "trace", picturePath, settings }, INSPECT_TIMEOUT_MS);
 }
 
-/** The design's visible bodies as one STL, for saving it to the library. */
-export function studioStl(document: StudioDocument, assetDir: string): Promise<StudioWorkerResult> {
-  return queued({ kind: "stl", document, assetDir }, IMPORT_TIMEOUT_MS);
+export function exportStudioGeometry(
+  input: Omit<Extract<StudioWorkerInput, { kind: "export" }>, "kind">,
+): Promise<StudioWorkerResult> {
+  return queued({ kind: "export", ...input }, IMPORT_TIMEOUT_MS);
 }
 
 /** Bodies' extents in the world, for align and lay_flat. Not kept: the command changes the design straight after. */

@@ -1,10 +1,12 @@
 import express, { Router } from "express";
+import { create as contentDisposition } from "content-disposition";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
-import { HttpError } from "../utils/fileUtils";
+import { HttpError, sanitizeFilename } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
+import { exportStudioDesign } from "../services/studioExport";
 import { saveStudioDesignToLibrary } from "../services/studioLibrary";
 import { getStudioAssistantPrefs } from "../services/settingsService";
 import {
@@ -15,7 +17,7 @@ import {
   studioGridSchema,
   type StudioSettings,
 } from "../services/studioSettingsService";
-import { ASSET_ID } from "../studio/document.generated";
+import { ASSET_ID, studioPlates } from "../studio/document.generated";
 import {
   assistantThread,
   clearAssistantThread,
@@ -194,7 +196,38 @@ router.get(
   }),
 );
 
-// The design as a model in the library: an STL of its visible bodies, the picture the page took of it, and what was
+const exportSchema = z.object({
+  format: z.enum(["auto", "3mf"]),
+  slicer: z.string().regex(/^[a-z0-9-]{1,40}$/),
+  printer: z.string().regex(/^[a-z0-9-]{1,120}$/),
+  nozzle: z.string().regex(/^(?:-|[A-Za-z]{0,3}\d+(?:\.\d+)?)$/),
+  plate: z.string().regex(/^(?:-|plate-[1-9]\d*)$/),
+});
+
+router.get(
+  "/studio/designs/:id/export/:format/:slicer/:printer/:nozzle/:plate/:filename",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { format, slicer, printer, nozzle, plate } = parseBody(exportSchema, req.params);
+    if ((printer === "-") !== (nozzle === "-") || (printer !== "-" && slicer === "-"))
+      throw new HttpError(400, "Choose a slicer, printer and nozzle together.");
+    const design = await getStudioDesign(req.userId!, req.params.id);
+    const file = await exportStudioDesign(req.userId!, design, {
+      format,
+      slicer: slicer === "-" ? undefined : slicer,
+      printer: printer === "-" ? undefined : { id: printer, nozzle },
+      plate: plate === "-" ? undefined : plate,
+    });
+    const plateName = plate === "-" ? null : studioPlates(design.document).find((entry) => entry.id === plate)?.name;
+    const title = plateName ? `${design.name} - ${plateName}` : design.name;
+    const name = sanitizeFilename(title).replace(/[:*?"<>|]+/g, "-");
+    res.set("Cache-Control", "private, no-store");
+    res.set("Content-Disposition", contentDisposition(`${name}.${file.format}`));
+    res.type(file.mime).send(Buffer.from(file.bytes));
+  }),
+);
+
+// The design as a model in the library: a 3MF of its visible bodies, the picture the page took of it, and what was
 // asked about it as its description.
 const saveSchema = z
   .object({
@@ -251,6 +284,11 @@ const promptSchema = z
     ai_connection_id: z.string().min(1).nullable().optional(),
     // What's selected in the view, by feature id, so "round this" has a "this".
     selected: z.array(z.string().min(1).max(100)).max(50).optional(),
+    active_plate: z
+      .string()
+      .regex(/^plate-[1-9]\d*$/)
+      .max(32)
+      .optional(),
     // Pictures the design keeps (POST .../pictures), for an AI that sees them.
     pictures: z.array(z.string().regex(ASSET_ID)).max(MAX_PICTURES).optional(),
   })
@@ -265,6 +303,7 @@ router.post(
       prompt: body.prompt,
       aiConnectionId: body.ai_connection_id ?? null,
       selected: body.selected,
+      activePlate: body.active_plate,
       pictures: body.pictures,
     });
     res.status(202).json({ run });

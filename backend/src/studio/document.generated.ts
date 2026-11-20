@@ -51,6 +51,7 @@ export type EdgeRef = { a: Vec3; b: Vec3 };
 
 type Common = {
   id: string;
+  plate_id?: string;
   /** Empty until someone names it; the UI then shows its type and number. */
   name: string;
   visible: boolean;
@@ -58,7 +59,7 @@ type Common = {
    *  "shapes.0.radius". The numbers themselves are kept in the feature too, worked out again as parameters change. */
   expressions?: Record<string, string>;
 };
-type Body = Common & { transform: Transform };
+type Body = Common & { transform: Transform; color?: string };
 
 export type BoxFeature = Body & { type: "box"; width: number; depth: number; height: number };
 export type CylinderFeature = Body & {
@@ -249,6 +250,8 @@ export type Parameter = { name: string; value: number; unit?: ParameterUnit };
 
 export type StudioDocument = {
   version: typeof DOCUMENT_VERSION;
+  plates?: StudioPlate[];
+  next_plate_id?: number;
   /** The units the design is shown and typed in, as a CAD document's are; mm when absent. Only how sizes read: every
    *  size in the document, and in every command, is in mm. */
   units?: LengthUnit;
@@ -259,6 +262,18 @@ export type StudioDocument = {
   /** The number in the next feature's id. Ids are never reused, so an old one can't point at a new feature. */
   next_id: number;
 };
+
+export type StudioPlate = { id: string; name: string };
+export const DEFAULT_PLATE_ID = "plate-1";
+export const MAX_PLATES = 32;
+
+export function studioPlates(doc: StudioDocument): readonly StudioPlate[] {
+  return doc.plates ?? [{ id: DEFAULT_PLATE_ID, name: "Plate 1" }];
+}
+
+export function plateOf(feature: Feature): string {
+  return feature.plate_id ?? DEFAULT_PLATE_ID;
+}
 
 // What one design may hold. A server evaluates designs for assistants, so these keep that bounded.
 export const LIMITS = {

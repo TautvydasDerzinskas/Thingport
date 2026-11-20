@@ -3,11 +3,14 @@ import {
   ASSET_ID,
   consumerOf,
   DEFAULT_SEGMENTS,
+  DEFAULT_PLATE_ID,
   featureById,
   inputsOf,
   isBody,
   isSolid,
   LIMITS,
+  MAX_PLATES,
+  studioPlates,
   shapeContours,
   transformMatrix,
   type BodyFeature,
@@ -121,7 +124,18 @@ const bodyId = z
   .describe("The body to work on: a top-level body's id from studio_get_design, e.g. box-1 or boolean-4.");
 const sketchId = z.string().min(1).describe("The sketch's id, e.g. sketch-2.");
 
+const plateId = z
+  .string()
+  .regex(/^plate-[1-9]\d*$/)
+  .describe("A plate ID from studio_get_design.");
+const bodyColor = z
+  .string()
+  .regex(/^#[0-9a-f]{6}$/i)
+  .transform((color) => color.toLowerCase());
+
 const placement = {
+  plate_id: plateId.optional(),
+  color: bodyColor.optional().describe("The whole body’s color as #RRGGBB."),
   position: vec3
     .optional()
     .describe("Where its origin goes, in mm, as [x, y, z]. Default [0, 0, 0]: the middle of the bed."),
@@ -303,9 +317,21 @@ function nextId(doc: StudioDocument, type: FeatureType): string {
   return id;
 }
 
+function findPlate(doc: StudioDocument, id: string) {
+  const plate = studioPlates(doc).find((entry) => entry.id === id);
+  if (!plate) throw new CommandError(`There's no plate ${id} in this design.`);
+  return plate;
+}
+
 function addFeature(doc: StudioDocument, feature: Feature): void {
   if (doc.features.length >= LIMITS.features)
     throw new CommandError(`A design holds up to ${LIMITS.features} features. Delete or combine some first.`);
+  const inputId = inputsOf(feature)[0];
+  const input = inputId ? featureById(doc, inputId) : undefined;
+  const plate = feature.plate_id ?? input?.plate_id;
+  if (plate) feature.plate_id = findPlate(doc, plate).id;
+  if (isBody(feature) && feature.color === undefined && input && isBody(input) && input.color)
+    feature.color = input.color;
   doc.features.push(feature);
 }
 
@@ -557,6 +583,7 @@ function startSketch(
     offset?: number;
     shapes?: SketchShape[];
     name?: string;
+    plate_id?: string;
   },
 ): CommandOutcome {
   if (Boolean(args.plane) === Boolean(args.face))
@@ -569,6 +596,7 @@ function startSketch(
     type: "sketch",
     name: args.name ?? "",
     visible: true,
+    ...(args.plate_id ? { plate_id: args.plate_id } : {}),
     plane: frame ? "FACE" : args.plane!,
     offset: args.offset ?? 0,
     frame: frame ? { origin: frame.origin, u: frame.u, normal: frame.normal } : null,
@@ -870,6 +898,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         width: args.width,
         depth: args.depth,
         height: args.height,
@@ -892,6 +922,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         radius: args.radius,
         height: args.height,
         segments: args.segments ?? DEFAULT_SEGMENTS,
@@ -930,6 +962,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         radius_bottom: args.radius_bottom,
         radius_top: args.radius_top,
         height: args.height,
@@ -953,6 +987,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         radius: args.radius,
         segments: args.segments ?? DEFAULT_SEGMENTS,
       });
@@ -980,6 +1016,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         major_radius: args.major_radius,
         minor_radius: args.minor_radius,
         segments: args.segments ?? DEFAULT_SEGMENTS,
@@ -1027,7 +1065,16 @@ export const STUDIO_COMMANDS = {
         segments: args.segments ?? THREAD_SEGMENTS,
       };
       checkThread(thread);
-      addFeature(doc, { id, type: "thread", name: args.name ?? "", visible: true, transform: placed(args), ...thread });
+      addFeature(doc, {
+        id,
+        type: "thread",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
+        ...thread,
+      });
       return {
         document: doc,
         created: [id],
@@ -1045,6 +1092,7 @@ export const STUDIO_COMMANDS = {
       "says which way u and v point in the world. Give plane or face, not both.",
     args: {
       plane: plane.optional(),
+      plate_id: plateId.optional(),
       face: faceArg
         .optional()
         .describe(
@@ -1121,6 +1169,7 @@ export const STUDIO_COMMANDS = {
       ...textArgs,
       height: length("How far the letters stand out, or are cut in, in mm."),
       plane: plane.optional(),
+      plate_id: plateId.optional(),
       face: faceArg
         .optional()
         .describe(
@@ -1152,7 +1201,13 @@ export const STUDIO_COMMANDS = {
         ...(args.align ? { align: args.align } : {}),
         ...(args.spacing ? { spacing: args.spacing } : {}),
       };
-      const sketch = startSketch(doc, { plane: args.plane, face: args.face, offset: args.offset, shapes: [text] });
+      const sketch = startSketch(doc, {
+        plane: args.plane,
+        face: args.face,
+        offset: args.offset,
+        shapes: [text],
+        plate_id: args.plate_id,
+      });
       const madeSketch = sketch.created[0];
       const solid = extrudeSketch(doc, {
         sketch_id: madeSketch,
@@ -2151,6 +2206,90 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  create_plate: command({
+    title: "Create a build plate",
+    description: "Creates an empty named build plate and returns its plate ID in created.",
+    args: { name: z.string().trim().min(1).max(80).describe("The name to show for the plate.") },
+    apply(doc, { name }) {
+      const plates = studioPlates(doc);
+      if (plates.length >= MAX_PLATES) throw new CommandError(`A design holds up to ${MAX_PLATES} plates.`);
+      const next = doc.next_plate_id ?? Math.max(...plates.map((plate) => Number(plate.id.slice(6)))) + 1;
+      const id = `plate-${next}`;
+      doc.next_plate_id = next + 1;
+      doc.plates = [...plates, { id, name }];
+      return { document: doc, created: [id], summary: `Created ${id} “${name}”` };
+    },
+  }),
+
+  rename_plate: command({
+    title: "Rename a build plate",
+    description: "Gives an existing build plate a new name.",
+    args: { plate_id: plateId, name: z.string().trim().min(1).max(80).describe("The plate’s new name.") },
+    apply(doc, { plate_id, name }) {
+      doc.plates = [...studioPlates(doc)];
+      findPlate(doc, plate_id).name = name;
+      return { document: doc, created: [], summary: `Named ${plate_id} “${name}”` };
+    },
+  }),
+
+  delete_plate: command({
+    title: "Delete an empty build plate",
+    description: "Deletes an empty build plate. Move its features first. Plate 1 always remains available.",
+    destructive: true,
+    args: { plate_id: plateId },
+    apply(doc, { plate_id }) {
+      findPlate(doc, plate_id);
+      if (plate_id === DEFAULT_PLATE_ID) throw new CommandError("The first plate cannot be deleted.");
+      if (doc.features.some((feature) => feature.plate_id === plate_id && !consumerOf(doc, feature.id)))
+        throw new CommandError("Move the features off this plate before deleting it.");
+      for (const feature of doc.features) {
+        if (feature.plate_id === plate_id) delete feature.plate_id;
+      }
+      doc.plates = studioPlates(doc).filter((plate) => plate.id !== plate_id);
+      return { document: doc, created: [], summary: `Deleted ${plate_id}` };
+    },
+  }),
+
+  move_to_plate: command({
+    title: "Move features to a build plate",
+    description: "Moves one or more top-level bodies or sketches to a plate, preserving their positions and rotations.",
+    args: {
+      plate_id: plateId,
+      feature_ids: z.array(featureId).min(1).max(LIMITS.features).describe("Top-level body or sketch IDs to move."),
+    },
+    apply(doc, { plate_id, feature_ids }) {
+      const plate = findPlate(doc, plate_id);
+      for (const id of new Set(feature_ids)) {
+        assertFree(doc, id);
+        find(doc, id).plate_id = plate.id;
+      }
+      return { document: doc, created: [], summary: `Moved ${feature_ids.join(", ")} to ${plate.name}` };
+    },
+  }),
+
+  set_body_color: command({
+    title: "Set body colors",
+    description:
+      "Sets the whole-body color of one or more top-level bodies. It is shown in Studio and exported to 3MF.",
+    args: {
+      feature_ids: z.array(bodyId).min(1).max(LIMITS.features).describe("Top-level body IDs to color."),
+      color: bodyColor.nullable().describe("A #RRGGBB color, or null to clear the color."),
+    },
+    apply(doc, { feature_ids, color }) {
+      for (const id of new Set(feature_ids)) {
+        const body = findBody(doc, id);
+        assertFree(doc, id);
+        if (color) body.color = color;
+        else delete body.color;
+      }
+      return {
+        document: doc,
+        created: [],
+        summary: `${color ? `Set color to ${color} on` : "Cleared color on"} ${feature_ids.join(", ")}`,
+      };
+    },
+  }),
+
   // --- The feature list ---
 
   rename_feature: command({
@@ -2245,6 +2384,7 @@ export const STUDIO_COMMANDS = {
       picture_id: z.string().regex(ASSET_ID).describe("The picture's id, as the prompt listed it."),
       width: length("How wide the traced outline is, in mm."),
       plane: plane.optional(),
+      plate_id: plateId.optional(),
       face: faceArg
         .optional()
         .describe(
@@ -2378,7 +2518,7 @@ export function parseCommandArgs(definition: AnyStudioCommand, args: unknown): R
 export function addMesh(
   doc: StudioDocument,
   mesh: Pick<MeshFeature, "asset_id" | "solid" | "triangles" | "size" | "parts" | "source">,
-  args: { position?: Vec3; rotation?: Vec3; name?: string },
+  args: { position?: Vec3; rotation?: Vec3; name?: string; plate_id?: string; color?: string },
 ): CommandOutcome {
   const next = structuredClone(doc);
   const id = nextId(next, "mesh");
@@ -2388,6 +2528,8 @@ export function addMesh(
     name: args.name ?? mesh.source.model_title.slice(0, 80),
     visible: true,
     transform: placed(args),
+    ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+    ...(args.color ? { color: args.color } : {}),
     ...mesh,
   });
   return {
@@ -2456,6 +2598,7 @@ export function addTrace(
     sketch_id?: string;
     index?: number;
     name?: string;
+    plate_id?: string;
   },
   traced: Traced,
 ): CommandOutcome {
@@ -2484,6 +2627,7 @@ export function addTrace(
       face: args.face,
       offset: args.offset,
       shapes: [traceShape],
+      plate_id: args.plate_id,
       name: args.name,
     }).created;
     into = created[0];

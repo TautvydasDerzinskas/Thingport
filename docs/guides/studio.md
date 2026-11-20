@@ -10,11 +10,27 @@ ones.
 
 ## Designing
 
-The design name at the top of Studio opens a menu for opening, renaming, exporting, and saving designs to the
-library. It's available in both modes. The **Edit** button (the pencil) shows and hides the editing tools, side
-panels, and status bar. You can turn the view and use the undo and redo shortcuts in either mode. The **Features**
-and **Properties** panels fold away with the arrows in their headers. Reopen them from their tabs or from the panels
-button at the right of the status bar, beside the print check and **Studio settings**.
+The design name at the top of Studio opens a menu for opening, renaming, exporting, opening in a slicer, and saving
+designs to the library. It's available in both modes. The **Edit** button (the pencil) shows the editing tools,
+**Properties**, and the status bar. You can turn the view and use the undo and redo shortcuts in either mode.
+The **Objects / Plates** and **Properties** panels fold away with the arrows in their headers. Reopen them from
+their tabs or from the panels button at the right of the status bar, beside the print check and **Studio settings**.
+
+### Plates, colors, and export
+
+The **Objects / Plates** panel lists each plate with its objects nested underneath. Click a plate name to show it in
+the viewport. In Edit mode, use **Add plate** in the panel header or the actions menu on a plate to rename it or
+delete it when empty. Expand an object to see the features it was built from. For multi-plate designs, the panel
+also lets you switch plates outside Edit mode.
+
+Select a body and use **Move to plate** in Properties to change its plate while keeping its position and orientation.
+You can select several bodies to move or color them together. Set **Body color** and choose **Apply** to use that
+color in the viewport and the 3MF. Hidden bodies and empty plates are skipped during export.
+
+**Download design** exports STL for one uncolored body on one plate and 3MF for designs with colors, multiple
+bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
+slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
+plate at a time, choose which plate to open. Match the project's color slots to the filaments loaded in your slicer.
 
 A design is a list of features, built in order:
 

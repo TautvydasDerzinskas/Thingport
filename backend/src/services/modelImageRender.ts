@@ -224,8 +224,9 @@ export function renderTrianglesRgba(
   triangles: Float32Array,
   camera: RenderCamera,
   { size, color, ambient = 0.3, fill = 0 }: Omit<ModelImageOptions, "view">,
+  faceColors: Uint8Array | null = null,
 ): Buffer {
-  return rasterize(triangles, null, boundsOf(triangles).center, camera, { size, color, ambient, fill })(false);
+  return rasterize(triangles, faceColors, boundsOf(triangles).center, camera, { size, color, ambient, fill })(false);
 }
 
 function boundsOf(triangles: Float32Array): { min: Vec; max: Vec; center: Vec } {

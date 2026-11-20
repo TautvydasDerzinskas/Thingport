@@ -238,7 +238,7 @@ type Problem = { rank: number; weight: number; text: string };
 export function checkPrint(
   wasm: ManifoldToplevel,
   own: Own,
-  bodies: { id: string; solid: Manifold; plain?: Manifold }[],
+  bodies: { id: string; plate?: string; solid: Manifold; plain?: Manifold }[],
   options: PrintCheckOptions,
 ): PrintCheck {
   const { bed } = options;
@@ -352,6 +352,7 @@ export function checkPrint(
   const boxes = bodies.map(({ solid }) => solid.boundingBox());
   for (let i = 0; i < bodies.length; i++) {
     for (let j = i + 1; j < bodies.length; j++) {
+      if (bodies[i].plate !== bodies[j].plate) continue;
       const [p, q] = [boxes[i], boxes[j]];
       if (![0, 1, 2].every((axis) => p.min[axis] < q.max[axis] && q.min[axis] < p.max[axis])) continue;
       const volume = own(wasm.Manifold.intersection([bodies[i].solid, bodies[j].solid])).volume();

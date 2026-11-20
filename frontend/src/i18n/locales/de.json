@@ -4204,7 +4204,6 @@
         "sweep": "Sweep"
       },
       "tree": {
-        "heading": "Elemente",
         "empty": "Noch nichts hier",
         "expand": "Aufklappen",
         "collapse": "Zuklappen"
@@ -4341,13 +4340,33 @@
         },
         "cornerRadius": "Eckenradius"
       },
+      "plates": {
+        "label": "Druckplatte",
+        "actions": "Plattenaktionen",
+        "add": "Platte hinzufügen",
+        "rename": "Platte umbenennen",
+        "delete": "Leere Platte löschen",
+        "defaultName": "Platte {{count}}",
+        "move": "Auf Platte verschieben",
+        "color": "Körperfarbe",
+        "clearColor": "Entfernen",
+        "applyColor": "Anwenden",
+        "openSlicer": "Mit Slicer öffnen",
+        "slicer": "Slicer",
+        "printer": "Drucker und Düse",
+        "noPreset": "Aktuellen Drucker des Slicers verwenden",
+        "oneAtATime": "Dieser Slicer öffnet jeweils eine Platte.",
+        "matchFilaments": "Ordne die Farbplätze des Projekts im Slicer den geladenen Filamenten zu.",
+        "download3mf": "3MF herunterladen",
+        "open": "Öffnen"
+      },
       "design": {
         "none": "Kein Design",
         "new": "Neues Design",
         "open": "Öffnen …",
         "openTitle": "Design öffnen",
         "rename": "Design umbenennen",
-        "export": "STL herunterladen",
+        "export": "Entwurf herunterladen",
         "delete": "Design löschen",
         "deleteTitle": "„{{name}}“ löschen?",
         "deleteMessage": "Das Design und sein Verlauf werden endgültig gelöscht.",
@@ -4397,7 +4416,7 @@
       },
       "panels": {
         "label": "Panels",
-        "features": "Elemente",
+        "features": "Objekte / Platten",
         "properties": "Eigenschaften",
         "hide": "{{panel}} ausblenden",
         "show": "{{panel}} einblenden"

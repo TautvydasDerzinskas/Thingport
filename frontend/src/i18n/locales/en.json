@@ -4201,7 +4201,6 @@
         "sweep": "Sweep"
       },
       "tree": {
-        "heading": "Features",
         "empty": "Nothing here yet",
         "expand": "Expand",
         "collapse": "Collapse"
@@ -4338,13 +4337,33 @@
         },
         "cornerRadius": "Corner radius"
       },
+      "plates": {
+        "label": "Build plate",
+        "actions": "Plate actions",
+        "add": "Add plate",
+        "rename": "Rename plate",
+        "delete": "Delete empty plate",
+        "defaultName": "Plate {{count}}",
+        "move": "Move to plate",
+        "color": "Body color",
+        "clearColor": "Clear",
+        "applyColor": "Apply",
+        "openSlicer": "Open with slicer",
+        "slicer": "Slicer",
+        "printer": "Printer and nozzle",
+        "noPreset": "Use slicer’s current printer",
+        "oneAtATime": "This slicer opens one plate at a time.",
+        "matchFilaments": "Match the project's color slots to your loaded filaments in the slicer.",
+        "download3mf": "Download 3MF",
+        "open": "Open"
+      },
       "design": {
         "none": "No design",
         "new": "New design",
         "open": "Open…",
         "openTitle": "Open a design",
         "rename": "Rename design",
-        "export": "Download STL",
+        "export": "Download design",
         "delete": "Delete design",
         "deleteTitle": "Delete “{{name}}”?",
         "deleteMessage": "The design and its history are deleted for good.",
@@ -4393,7 +4412,7 @@
       },
       "panels": {
         "label": "Panels",
-        "features": "Features",
+        "features": "Objects / Plates",
         "properties": "Properties",
         "hide": "Hide {{panel}}",
         "show": "Show {{panel}}"

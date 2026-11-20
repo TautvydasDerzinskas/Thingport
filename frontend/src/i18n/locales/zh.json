@@ -4023,7 +4023,6 @@
         "sweep": "扫掠"
       },
       "tree": {
-        "heading": "特征",
         "empty": "这里还什么都没有",
         "expand": "展开",
         "collapse": "折叠"
@@ -4156,13 +4155,33 @@
         },
         "cornerRadius": "圆角半径"
       },
+      "plates": {
+        "label": "打印板",
+        "actions": "打印板操作",
+        "add": "添加打印板",
+        "rename": "重命名打印板",
+        "delete": "删除空打印板",
+        "defaultName": "打印板 {{count}}",
+        "move": "移至打印板",
+        "color": "实体颜色",
+        "clearColor": "清除",
+        "applyColor": "应用",
+        "openSlicer": "用切片软件打开",
+        "slicer": "切片软件",
+        "printer": "打印机和喷嘴",
+        "noPreset": "使用切片软件当前的打印机",
+        "oneAtATime": "此切片软件一次打开一块打印板。",
+        "matchFilaments": "在切片软件中将项目的颜色槽位与已装载的耗材匹配。",
+        "download3mf": "下载 3MF",
+        "open": "打开"
+      },
       "design": {
         "none": "无设计",
         "new": "新建设计",
         "open": "打开…",
         "openTitle": "打开设计",
         "rename": "重命名设计",
-        "export": "下载 STL",
+        "export": "下载设计",
         "delete": "删除设计",
         "deleteTitle": "删除“{{name}}”？",
         "deleteMessage": "设计及其历史记录将被永久删除。",
@@ -4209,7 +4228,7 @@
       },
       "panels": {
         "label": "面板",
-        "features": "特征",
+        "features": "对象 / 打印板",
         "properties": "属性",
         "hide": "隐藏 {{panel}}",
         "show": "显示 {{panel}}"

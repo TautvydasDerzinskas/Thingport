@@ -74,7 +74,7 @@ export class StudioError extends Error {
   }
 }
 
-async function request<T>(path: string, method = "GET", payload?: unknown): Promise<T> {
+async function requestResponse(path: string, method = "GET", payload?: unknown): Promise<Response> {
   const res = await fetch(`${apiBase()}${path}`, {
     method,
     headers: authHeaders(payload === undefined ? undefined : { "Content-Type": "application/json" }),
@@ -91,10 +91,33 @@ async function request<T>(path: string, method = "GET", payload?: unknown): Prom
     } catch {}
     throw new StudioError(message, res.status, code);
   }
+  return res;
+}
+
+async function request<T>(path: string, method = "GET", payload?: unknown): Promise<T> {
+  const res = await requestResponse(path, method, payload);
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
 const design = (id: string) => `/studio/designs/${encodeURIComponent(id)}`;
+
+export type StudioExport = {
+  slicer?: string;
+  printer?: { id: string; nozzle: string };
+  plate?: string;
+};
+
+export function studioExportPath(id: string, filename: string, options?: StudioExport): string {
+  const parts = [
+    options ? "3mf" : "auto",
+    options?.slicer ?? "-",
+    options?.printer?.id ?? "-",
+    options?.printer?.nozzle ?? "-",
+    options?.plate ?? "-",
+    filename,
+  ];
+  return `${design(id)}/export/${parts.map(encodeURIComponent).join("/")}`;
+}
 
 /** Where Studio's assistant shows: the bar under the view, or a panel beside it. */
 export type StudioPromptLayout = "bar" | "panel";
@@ -112,6 +135,8 @@ export type StudioGridSettings = {
 export type StudioSettings = { prompt_layout: StudioPromptLayout; units: "mm" | "cm" | "in"; grid: StudioGridSettings };
 
 export const studioApi = {
+  export: (id: string, filename: string, options?: StudioExport) =>
+    requestResponse(studioExportPath(id, filename, options)),
   status: () => request<{ enabled: boolean }>("/studio/status"),
   settings: () => request<StudioSettings>("/studio/settings"),
   /** `grid` takes only what changes, as the rest do. */
@@ -140,7 +165,13 @@ export const studioApi = {
   /** Starts the assistant on a prompt; it works in the background, which `assistant` follows. */
   ask: (
     id: string,
-    body: { prompt: string; ai_connection_id: string | null; selected: string[]; pictures?: string[] },
+    body: {
+      prompt: string;
+      ai_connection_id: string | null;
+      selected: string[];
+      active_plate?: string;
+      pictures?: string[];
+    },
   ) => request<{ run: StudioAssistantRun }>(`${design(id)}/assistant`, "POST", body),
   /** Keeps a picture with the design: the server turns it upright and makes it no bigger than it needs. */
   addPicture: async (id: string, file: Blob): Promise<StudioPicture> => {

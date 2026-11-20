@@ -105,6 +105,7 @@ type Props = {
   onOpenDesign: () => void;
   onRenameDesign: () => void;
   onExport: () => void;
+  onOpenSlicer: () => void;
   /** Saves the design to the library as a model. */
   onSaveToLibrary: () => void;
   /** Opens the design's parameters, the named numbers its sizes can follow. */
@@ -299,6 +300,13 @@ export default function StudioToolbar(props: Props) {
             <FileDownloadOutlinedIcon fontSize="small" />,
             t("studio.design.export"),
             props.onExport,
+            closeDesign,
+          )}
+        {!noDesign &&
+          menuItem(
+            <VideocamOutlinedIcon fontSize="small" />,
+            t("studio.plates.openSlicer"),
+            props.onOpenSlicer,
             closeDesign,
           )}
         {!noDesign &&

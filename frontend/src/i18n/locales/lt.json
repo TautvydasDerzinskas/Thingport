@@ -4492,7 +4492,6 @@
         "sweep": "Tempimas"
       },
       "tree": {
-        "heading": "Elementai",
         "empty": "Kol kas nieko nėra",
         "expand": "Išskleisti",
         "collapse": "Suskleisti"
@@ -4633,13 +4632,33 @@
         },
         "cornerRadius": "Kampų spindulys"
       },
+      "plates": {
+        "label": "Spausdinimo plokštė",
+        "actions": "Plokštės veiksmai",
+        "add": "Pridėti plokštę",
+        "rename": "Pervadinti plokštę",
+        "delete": "Pašalinti tuščią plokštę",
+        "defaultName": "Plokštė {{count}}",
+        "move": "Perkelti į plokštę",
+        "color": "Kūno spalva",
+        "clearColor": "Išvalyti",
+        "applyColor": "Taikyti",
+        "openSlicer": "Atidaryti pjaustyklėje",
+        "slicer": "Pjaustyklė",
+        "printer": "Spausdintuvas ir antgalis",
+        "noPreset": "Naudoti dabartinį pjaustyklės spausdintuvą",
+        "oneAtATime": "Ši pjaustyklė vienu metu atidaro vieną plokštę.",
+        "matchFilaments": "Pjaustyklėje susiekite projekto spalvas su įdėtais filamentais.",
+        "download3mf": "Atsisiųsti 3MF",
+        "open": "Atidaryti"
+      },
       "design": {
         "none": "Nėra projekto",
         "new": "Naujas projektas",
         "open": "Atidaryti…",
         "openTitle": "Atidaryti projektą",
         "rename": "Pervadinti projektą",
-        "export": "Atsisiųsti STL",
+        "export": "Atsisiųsti dizainą",
         "delete": "Ištrinti projektą",
         "deleteTitle": "Ištrinti „{{name}}“?",
         "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
@@ -4690,7 +4709,7 @@
       },
       "panels": {
         "label": "Skydeliai",
-        "features": "Elementai",
+        "features": "Objektai / Plokštės",
         "properties": "Savybės",
         "hide": "Slėpti: {{panel}}",
         "show": "Rodyti: {{panel}}"

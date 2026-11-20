@@ -4382,7 +4382,6 @@
         "sweep": "Barrido"
       },
       "tree": {
-        "heading": "Elementos",
         "empty": "Aún no hay nada",
         "expand": "Expandir",
         "collapse": "Contraer"
@@ -4523,13 +4522,33 @@
         },
         "cornerRadius": "Radio de las esquinas"
       },
+      "plates": {
+        "label": "Placa de impresión",
+        "actions": "Acciones de placa",
+        "add": "Añadir placa",
+        "rename": "Cambiar nombre de la placa",
+        "delete": "Eliminar placa vacía",
+        "defaultName": "Placa {{count}}",
+        "move": "Mover a placa",
+        "color": "Color del cuerpo",
+        "clearColor": "Quitar",
+        "applyColor": "Aplicar",
+        "openSlicer": "Abrir con laminador",
+        "slicer": "Laminador",
+        "printer": "Impresora y boquilla",
+        "noPreset": "Usar la impresora actual del laminador",
+        "oneAtATime": "Este laminador abre una placa cada vez.",
+        "matchFilaments": "Asigna los colores del proyecto a los filamentos cargados en el laminador.",
+        "download3mf": "Descargar 3MF",
+        "open": "Abrir"
+      },
       "design": {
         "none": "Sin diseño",
         "new": "Nuevo diseño",
         "open": "Abrir…",
         "openTitle": "Abrir un diseño",
         "rename": "Cambiar nombre del diseño",
-        "export": "Descargar STL",
+        "export": "Descargar diseño",
         "delete": "Eliminar diseño",
         "deleteTitle": "¿Eliminar «{{name}}»?",
         "deleteMessage": "El diseño y su historial se eliminan para siempre.",
@@ -4580,7 +4599,7 @@
       },
       "panels": {
         "label": "Paneles",
-        "features": "Elementos",
+        "features": "Objetos / Placas",
         "properties": "Propiedades",
         "hide": "Ocultar {{panel}}",
         "show": "Mostrar {{panel}}"

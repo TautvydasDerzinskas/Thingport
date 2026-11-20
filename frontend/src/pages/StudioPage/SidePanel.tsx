@@ -15,13 +15,13 @@ const fromRight = keyframes`from { opacity: 0; transform: translateX(12px); }`;
 type Props = {
   title: string;
   side: "left" | "right";
-  /** "Hide the Features panel". */
   hideLabel: string;
   onHide: () => void;
+  actions?: React.ReactNode;
   children: React.ReactNode;
 };
 
-export default function SidePanel({ title, side, hideLabel, onHide, children }: Props) {
+export default function SidePanel({ title, side, hideLabel, onHide, actions, children }: Props) {
   return (
     <Box
       sx={{
@@ -41,6 +41,7 @@ export default function SidePanel({ title, side, hideLabel, onHide, children }: 
         >
           {title}
         </Typography>
+        {actions}
         <Tooltip title={hideLabel}>
           <IconButton size="small" aria-label={hideLabel} onClick={onHide} sx={{ p: 0.25 }}>
             {/* Towards the side it folds away to. */}

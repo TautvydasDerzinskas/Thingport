@@ -15,6 +15,7 @@ import {
   featureById,
   inputsOf,
   isBody,
+  plateOf,
   sketchFrame,
   shapeContours,
   shapeOutline,
@@ -89,6 +90,7 @@ type Props = {
   selected: readonly string[];
   mode: StudioMode;
   handMode: boolean;
+  activePlate: string;
   /** The sketch being drawn on, and with what. */
   sketch: { id: string; tool: SketchTool } | null;
   onSelect: (id: string | null, additive: boolean) => void;
@@ -147,7 +149,7 @@ function shapeKey(doc: StudioDocument, feature: BodyFeature): string {
     parts.push(input);
   };
   inputsOf(feature).forEach(visit);
-  const { transform: _transform, name: _name, visible: _visible, ...shape } = feature;
+  const { transform: _transform, name: _name, visible: _visible, color: _color, plate_id: _plate, ...shape } = feature;
   parts.push(shape);
   return JSON.stringify(parts);
 }
@@ -520,11 +522,17 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     if (!s) return;
     const doc = props.document;
     const generation = ++s.generation;
-    const bodies = topLevel(doc).filter(isBody);
+    const bodies = topLevel(doc)
+      .filter((feature) => plateOf(feature) === props.activePlate)
+      .filter(isBody);
     const wanted = new Map(bodies.map((feature) => [feature.id, shapeKey(doc, feature)]));
     // Gone, or changed shape: made again below if it's still there. What's on screen stays until what replaces it is
     // ready, so the view doesn't blink, and a tool can still be pointed at it meanwhile.
     const outgoing = [...s.bodies].filter(([id, body]) => wanted.get(id) !== body.key);
+    for (const [id, body] of outgoing) {
+      if (featureById(doc, id) && !wanted.has(id)) body.group.visible = false;
+    }
+    s.render();
     const drop = () => {
       for (const [id, body] of outgoing) {
         if (s.bodies.get(id) !== body) continue;
@@ -631,7 +639,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       place();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.document]);
+  }, [props.document, props.activePlate]);
 
   // --- Sketches: their outlines on their planes ---
   const activeSketch = props.sketch?.id ?? null;
@@ -642,7 +650,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const shown = props.document.features.filter(
       (feature): feature is SketchFeature =>
         feature.type === "sketch" &&
-        (feature.id === activeSketch || (feature.visible && topLevel(props.document).includes(feature))),
+        (feature.id === activeSketch ||
+          (feature.visible && plateOf(feature) === props.activePlate && topLevel(props.document).includes(feature))),
     );
     for (const sketch of shown) {
       const lit = sketch.id === activeSketch || props.selected.includes(sketch.id);
@@ -673,7 +682,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     }
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.document, props.selected, activeSketch, colorKey]);
+  }, [props.document, props.selected, activeSketch, colorKey, props.activePlate]);
 
   // --- Selection in the accent colour; what's under the pointer a little of it ---
   const paint = () => {
@@ -687,7 +696,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const material = body.mesh.material as THREE.MeshStandardMaterial;
       // Told apart by hue, the accent's turned on by the golden ratio for each, so neighbours never look alike.
       const tint = tinted.indexOf(id);
-      const base = tint >= 0 ? colors.accent.clone().offsetHSL(tint * 0.382, 0, 0) : colors.model;
+      const feature = featureById(latest.current.document, id);
+      const color = feature && isBody(feature) && feature.color;
+      const base =
+        tint >= 0 ? colors.accent.clone().offsetHSL(tint * 0.382, 0, 0) : color ? new THREE.Color(color) : colors.model;
       material.color.copy(base).lerp(colors.accent, on ? 0.35 : hover ? 0.15 : 0);
       material.emissive.copy(colors.accent);
       material.emissiveIntensity = on ? 0.12 : hover ? 0.05 : 0;

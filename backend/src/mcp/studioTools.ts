@@ -1,7 +1,7 @@
 import { STUDIO_UNITS, type StudioUnits } from "../services/studioSettingsService";
 import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
-import { topLevel, type Feature, type Vec3 } from "../studio/document.generated";
+import { isBody, plateOf, studioPlates, topLevel, type Feature, type Vec3 } from "../studio/document.generated";
 import { traceSummary } from "../studio/trace.generated";
 import {
   createStudioDesign,
@@ -105,6 +105,7 @@ const getDesign: McpToolDefinition = {
       ),
       studioDesignHistory(design, 10),
     ]);
+    const roots = topLevel(design.document);
     return {
       ...brief(ctx, design),
       units: "mm",
@@ -114,16 +115,26 @@ const getDesign: McpToolDefinition = {
       // Each with its unit: mm, cm or in for a length, deg, or none.
       parameters: (design.document.parameters ?? []).map((parameter) => ({ unit: "mm", ...parameter })),
       features: briefFeatures(design.document.features),
-      top_level: topLevel(design.document).map((feature) => feature.id),
+      top_level: roots.map((feature) => feature.id),
+      plates: studioPlates(design.document).map((plate) => ({
+        id: plate.id,
+        name: plate.name,
+        feature_ids: roots.filter((feature) => plateOf(feature) === plate.id).map((feature) => feature.id),
+      })),
       bodies:
         inspected.status === "ok"
-          ? inspected.bodies.map((body) => ({
-              id: body.id,
-              bounds: body.bounds,
-              size: body.bounds.max.map((max, axis) => max - body.bounds.min[axis]),
-              // An open mesh encloses nothing to measure.
-              volume_mm3: Number.isNaN(body.volume) ? null : Math.round(body.volume * 100) / 100,
-            }))
+          ? inspected.bodies.map((body) => {
+              const feature = design.document.features.find((entry) => entry.id === body.id);
+              return {
+                id: body.id,
+                plate_id: feature ? plateOf(feature) : null,
+                color: feature && isBody(feature) ? (feature.color ?? null) : null,
+                bounds: body.bounds,
+                size: body.bounds.max.map((max, axis) => max - body.bounds.min[axis]),
+                // An open mesh encloses nothing to measure.
+                volume_mm3: Number.isNaN(body.volume) ? null : Math.round(body.volume * 100) / 100,
+              };
+            })
           : null,
       problems:
         inspected.status === "ok"
@@ -147,6 +158,10 @@ const viewDesign: McpToolDefinition = {
   group: "studio",
   inputSchema: {
     design_id: designId,
+    plate_id: z
+      .string()
+      .optional()
+      .describe("Plate ID from studio_get_design. Defaults to the first plate with bodies."),
     views: z.array(z.enum(STUDIO_VIEWS)).min(1).max(4).optional().describe('Up to 4. Default ["iso"].'),
     size: z
       .number()
@@ -158,6 +173,9 @@ const viewDesign: McpToolDefinition = {
   },
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
+    const plate = args.plate_id as string | undefined;
+    if (plate && !studioPlates(design.document).some((entry) => entry.id === plate))
+      throw new HttpError(400, "That plate doesn't belong to this design.");
     const views = (args.views as (typeof STUDIO_VIEWS)[number][] | undefined) ?? ["iso"];
     const size = (args.size as number | undefined) ?? 512;
     const inspected = await inspectStudioDesign(
@@ -168,13 +186,20 @@ const viewDesign: McpToolDefinition = {
         views,
         size,
         color: RENDER_COLOR,
+        plate,
       },
     );
     if (inspected.status === "too-complex")
       throw new HttpError(422, `The design is too heavy to picture here (about ${inspected.triangles} triangles).`);
     if (inspected.status !== "ok") throw new Error(`studio_view_design failed: ${JSON.stringify(inspected)}`);
     return new WithImages(
-      { ...brief(ctx, design), views, bodies: inspected.bodies.length, problems: inspected.errors },
+      {
+        ...brief(ctx, design),
+        views,
+        plate_id: plate ?? null,
+        bodies: inspected.bodies.length,
+        problems: inspected.errors,
+      },
       inspected.images.map((image) => ({ data: image.png, mimeType: "image/png" })),
     );
   },
@@ -348,7 +373,7 @@ const saveToLibrary: McpToolDefinition = {
   name: "studio_save_to_library",
   title: "Save a Studio design to the library",
   description:
-    "Saves the design to the user's Thingport library as a new model: its visible bodies as one STL in mm, a picture " +
+    "Saves the design to the user's Thingport library as a new model: its visible bodies as one 3MF project with its plates and colors, a picture " +
     "of it, and the requests the user made to Studio's assistant about it as its description. Each save is a new " +
     "model, a copy of the design as it is now. Save when the user asks to; returns the model's id and link.",
   readOnly: false,
