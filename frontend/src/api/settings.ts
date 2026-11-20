@@ -351,18 +351,18 @@ export type ToolsView = {
 };
 
 export const settingsApi = {
-  getToolsView: async (): Promise<ToolsView> => {
-    const res = await fetch(`${apiBase()}/settings/tools-view`, { headers: authHeaders() });
+  getToolsView: async (token: string | null): Promise<ToolsView> => {
+    const res = await fetch(`${apiBase()}/settings/tools-view`, { headers: authHeaders(undefined, token) });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to load the Tools page's layout");
     return res.json();
   },
 
   /** Changes only what's given, so switching the layout keeps where the user put each tool. */
-  updateToolsView: async (patch: Partial<ToolsView>): Promise<ToolsView> => {
+  updateToolsView: async (patch: Partial<ToolsView>, token: string): Promise<ToolsView> => {
     const res = await fetch(`${apiBase()}/settings/tools-view`, {
       method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
+      headers: authHeaders({ "Content-Type": "application/json" }, token),
       body: JSON.stringify(patch),
     });
     if (res.status === 401) throw new UnauthorizedError();

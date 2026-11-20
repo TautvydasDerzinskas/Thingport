@@ -84,6 +84,9 @@ export default function ModelsPage({
   // Bumped when AI categorization changes many models at once, to refetch the grid.
   const [libraryVersion, setLibraryVersion] = useState(0);
   const refreshLibrary = useCallback(() => setLibraryVersion((version) => version + 1), []);
+  const reloadAfterRename = useRef(false);
+  // A page that finishes after its list has been replaced must be discarded.
+  const listRun = useRef(0);
   const { sortMode, direction, setSortMode, setDirection } = usePrintSort();
 
   const filters = useModelFilters();
@@ -99,8 +102,8 @@ export default function ModelsPage({
     setItems((prev) => prev.filter((item) => !ids.includes(item.id)));
   };
 
-  // Linking a model can bring a site into the sources it's filtered by, and one given another category or folder
-  // leaves the open one's list.
+  // Linking a model can bring in a new source, moving it can take it out of the open category,
+  // and renaming it can change its place in a Name-sorted list.
   const applyUpdates = (updated: Print[]) => {
     const linked = updated.some(
       (print) => print.source_provider && !items.find((item) => item.id === print.id)?.source_provider,
@@ -109,8 +112,23 @@ export default function ModelsPage({
     const left = open
       ? updated.filter((print) => !open.includes(print.category_id ?? "")).map((print) => print.id)
       : [];
-    setItems((prev) => replacePrints(prev, updated));
-    if (left.length) dropFromList(left);
+    const renamed =
+      sortMode === "name" &&
+      updated.some((print) => {
+        const current = items.find((item) => item.id === print.id);
+        return current && (current.title || current.name) !== (print.title || print.name);
+      });
+    if (renamed) {
+      // A title can move the model across a page boundary while the next page is on its way.
+      listRun.current += 1;
+      reloadAfterRename.current = true;
+      setHasMore(false);
+      setLoading(true);
+      refreshLibrary();
+    } else {
+      setItems((prev) => replacePrints(prev, updated));
+      if (left.length) dropFromList(left);
+    }
     if (linked) refreshSources();
   };
 
@@ -187,18 +205,16 @@ export default function ModelsPage({
   // Every site the library has is off, so the grid says so rather than looking empty for no visible reason.
   const noSources = sources.length > 0 && sources.every((source) => hiddenProviders.includes(source.provider));
 
-  // Which set of filters the list on screen belongs to. Changing one -- a category, the sort, or anything behind
-  // the filter button -- starts a new set, and an answer belonging to an older one is dropped rather than written over the newer
-  // list: the two requests are a page apart and the slower one can land last.
-  const listRun = useRef(0);
   const isBackgroundReload = useBackgroundReload(printsVersion);
 
   useEffect(() => {
     const run = ++listRun.current;
     setLoadingMore(false);
+    const renamed = reloadAfterRename.current;
+    reloadAfterRename.current = false;
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
-    const kept = returning();
-    const background = isBackgroundReload() || kept !== null;
+    const kept = renamed ? null : returning();
+    const background = (isBackgroundReload() || kept !== null) && !renamed;
     if (!background) {
       // Only a successful replacement can make this list pageable again.
       setItems([]);
