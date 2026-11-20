@@ -136,17 +136,24 @@ export async function signInPage(
   };
   const answers: SignAnswer[] = [];
   // Each supporting ask has its own deadline, and all of them one more: twenty the site never answers would otherwise
-  // hold up the model's files for ten minutes. One reached once it's spent is passed by unasked, its place kept.
+  // hold up the model's files for ten minutes. One it has no time left for, the gap before it waited out, is passed by
+  // unasked, its place kept: asked with no time, it would still reach the site.
   let supportingLeft = supportingTotalMs;
+  const passedBy = (): SignAnswer => ({ code: null, message: messages.requestFailed, data: null });
   for (const [index, request] of requests.entries()) {
-    if (request.supporting && supportingLeft <= 0) {
-      answers.push({ code: null, message: messages.requestFailed, data: null });
+    if (request.supporting && supportingLeft <= (index > 0 ? gapMs : 0)) {
+      answers.push(passedBy());
       continue;
     }
     const started = Date.now();
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, gapMs));
     const left = supportingLeft - (Date.now() - started);
-    let answer: SignAnswer = await ask(request, null, Math.max(0, Math.min(supportingMs, left)));
+    if (request.supporting && left <= 0) {
+      supportingLeft = 0;
+      answers.push(passedBy());
+      continue;
+    }
+    let answer: SignAnswer = await ask(request, null, Math.min(supportingMs, left));
     if (request.supporting) supportingLeft -= Date.now() - started;
     for (let shown = 0; answer.code === PUZZLE && !request.supporting && shown < MAX_PUZZLES; shown++) {
       const level = Number((answer.data as { captchaLevel?: unknown } | null)?.captchaLevel);
