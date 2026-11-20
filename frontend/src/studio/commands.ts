@@ -2424,13 +2424,12 @@ export const STUDIO_COMMANDS = {
   import_model: command({
     title: "Import a library model",
     description:
-      "Brings one of the user's library models into the design as a mesh body: an STL, 3MF, STEP, OBJ or GLB file. " +
-      "Find the model with search_models or list_models, and its files with list_model_files. It comes in at its own " +
-      "size in mm, centred and standing on the bed, before position and rotation apply. A closed mesh can be combined, " +
-      "rounded, drilled and hollowed like any body; one with gaps can only be moved, scaled and exported. It comes in " +
-      "as one body however many loose parts it has (a 3MF's plate, or an STL of several pieces): the reply says how " +
-      "many, and separate_parts makes each a body of its own. " +
-      `Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
+      "Brings in an STL, 3MF, STEP, OBJ or GLB from the library. Find the model with search_models and its files " +
+      "with list_model_files. STL, STEP, OBJ and GLB come in as one mesh, centered on the bed. A 3MF brings each " +
+      "printable object as its own body, retaining its name, layout and uniform color where given. The first plate " +
+      "imports into plate_id or the first Studio plate; additional populated plates are created. Each loose piece " +
+      "within a body can be split with separate_parts. A closed mesh can be combined, rounded, drilled and " +
+      `hollowed. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
     kind: "import",
     args: {
       model_id: z.string().min(1).describe("The library model's id."),

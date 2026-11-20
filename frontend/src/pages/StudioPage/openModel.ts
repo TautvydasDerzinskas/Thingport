@@ -12,7 +12,7 @@ export async function openModelAsDesign(model: { id: string; title: string }, fi
   const design = await studioApi.create(model.title.slice(0, 120) || untitled);
   try {
     const result = await studioApi.run(design.id, "import_model", { model_id: model.id, file_id: fileId });
-    return { id: design.id, mesh: result.created[0] ?? null };
+    return { id: design.id, mesh: result.created.length === 1 ? result.created[0] : null };
   } catch (error) {
     await studioApi.remove(design.id).catch(() => undefined);
     throw error;

@@ -66,10 +66,11 @@ A design is a list of features, built in order:
 - **Library models**: **Open…** in the design's menu has a **Library** tab with your models' STL, 3MF, STEP, OBJ and
   GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. **Open in
   Thingport Studio**, on a model's page and on its right-click menu in any grid of models, does the same from there,
-  asking which file when it has several. It comes in at its
-  own size, centred on the bed, and the design keeps its own copy, so changing the model later doesn't change the
-  design. A 3MF brings its first plate. A mesh with gaps can be moved, scaled and exported, but not combined. A model
-  of several loose pieces comes in as one body, and Studio says how many: **Separate** makes each its own.
+  asking which file when it has several. Studio keeps its own copy at the source dimensions. A 3MF imports each
+  printable object as a body, keeping its plate layout and any uniform object color. The first populated plate goes
+  into the active plate when inserting, and additional plates are added to the design. Studio uses a single color
+  per body, so face painting and slicer modifiers stay in the original file. A mesh with gaps can be moved, scaled
+  and exported. Use **Separate** to turn loose pieces within a single body into individual bodies.
 - **Combining**: select two bodies or more and pick **Union**, **Subtract** or **Intersect**. The first one you selected
   is the one the others are joined to, cut from or overlapped with. **Hull** wraps one body or more in the tightest
   convex body around them, as a rounded slot from two cylinders.

@@ -656,15 +656,104 @@ describe("Studio", () => {
         .join("\n");
     }
 
-    async function upload(session: string, filename: string, text: string) {
+    async function upload(session: string, filename: string, data: string | Buffer) {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-studio-"));
       const file = path.join(dir, filename);
-      fs.writeFileSync(file, text);
+      fs.writeFileSync(file, data);
       const res = await request(app).post("/api/upload").set(auth(session)).attach("files", file);
       fs.rmSync(dir, { recursive: true, force: true });
       if (res.status !== 200) throw new Error(`upload: ${res.status} ${JSON.stringify(res.body)}`);
       return { modelId: res.body.prints[0].id as string, fileId: res.body.prints[0].plates[0].id as string };
     }
+
+    it("reopens a Studio project with its named plates, objects, colors, and placements", async () => {
+      const original = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Round trip" }))
+        .body;
+      const lids = (await command(alice, original.id, "create_plate", { name: "Lids" })).body.created[0];
+      const box = { width: 10, depth: 20, height: 6 };
+      await command(alice, original.id, "add_box", {
+        ...box,
+        name: "Red base",
+        color: "#ff0000",
+        position: [30, -15, 0],
+      });
+      await command(alice, original.id, "add_box", {
+        ...box,
+        name: "Blue lid",
+        color: "#0000ff",
+        plate_id: lids,
+        position: [-15, 5, 2],
+      });
+      const saved = await request(app)
+        .post(`/api/studio/designs/${original.id}/save-to-library`)
+        .set(auth(alice))
+        .send({});
+      expect(saved.status).toBe(201);
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const opened = await command(alice, design.id, "import_model", { model_id: saved.body.model.id });
+      expect(opened.status).toBe(200);
+      expect(opened.body.created).toEqual(["mesh-1", "mesh-2"]);
+      const { features, plates } = opened.body.design.document;
+      expect(plates).toEqual([
+        { name: "Plate 1", id: "plate-1" },
+        { name: "Lids", id: "plate-2" },
+      ]);
+      expect(features).toMatchObject([
+        { name: "Red base", type: "mesh", color: "#ff0000", plate_id: "plate-1", solid: true, size: [10, 20, 6] },
+        { name: "Blue lid", type: "mesh", color: "#0000ff", plate_id: "plate-2", solid: true, size: [10, 20, 6] },
+      ]);
+      expect(features[0].transform.position).toEqual([30, -15, 0]);
+      expect(features[1].transform.position[0]).toBeCloseTo(-15, 3);
+      expect(features[1].transform.position.slice(1)).toEqual([5, 2]);
+      const undone = await command(alice, design.id, "undo");
+      expect(undone.body.design.document.features).toEqual([]);
+      expect(undone.body.design.document.plates).toBeUndefined();
+      const redone = await command(alice, design.id, "redo");
+      expect(redone.body.design.document.features).toEqual(features);
+    });
+
+    it("opens a plain inch 3MF with repeated, mirrored build items at their relative spacing", async () => {
+      const zip = new JSZip();
+      const vertices = [
+        [0, 0, 0],
+        [1, 0, 0],
+        [1, 1, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+        [0, 1, 1],
+      ]
+        .map(([x, y, z]) => `<vertex x="${x}" y="${y}" z="${z}"/>`)
+        .join("");
+      const triangles = [
+        0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7,
+      ];
+      const faces = [];
+      for (let i = 0; i < triangles.length; i += 3) {
+        faces.push(`<triangle v1="${triangles[i]}" v2="${triangles[i + 1]}" v3="${triangles[i + 2]}"/>`);
+      }
+      zip.file(
+        "3D/3dmodel.model",
+        `<model unit="inch" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+        <resources><object id="1" name="Inch &amp; cube" type="model"><mesh>
+        <vertices>${vertices}</vertices><triangles>${faces.join("")}</triangles>
+        </mesh></object></resources><build><item objectid="1"/>
+        <item objectid="1" transform="-1 0 0 0 1 0 0 0 1 3 0 0"/>
+        <item objectid="1" printable="0" transform="1 0 0 0 1 0 0 0 1 20 0 0"/>
+        <item objectid="1" printable="false" transform="1 0 0 0 1 0 0 0 1 30 0 0"/>
+        </build></model>`,
+      );
+      const file = await upload(alice, "inches.3mf", await zip.generateAsync({ type: "nodebuffer" }));
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const res = await command(alice, design.id, "import_model", { model_id: file.modelId });
+      expect(res.status).toBe(200);
+      const { features } = res.body.design.document;
+      expect(features).toHaveLength(2);
+      for (const body of features)
+        expect(body).toMatchObject({ name: "Inch & cube", size: [25.4, 25.4, 25.4], solid: true });
+      expect(features[1].transform.position[0] - features[0].transform.position[0]).toBeCloseTo(50.8, 3);
+    });
 
     it("brings a closed STL in as a solid, centred on the bed, that booleans can cut", async () => {
       const box = await upload(alice, "studio-box.stl", boxStl(10, 20, 30));

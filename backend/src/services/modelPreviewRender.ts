@@ -1,5 +1,8 @@
 import fs from "node:fs/promises";
 import * as cheerio from "cheerio";
+import { bedBoxOf, bedCentre, plateColumns, plateOrigin, type BedBox } from "../adapter/printer";
+import { mirrors } from "../adapter/transform";
+import { decodeXml } from "../adapter/xml";
 import { findStartPart, partNames } from "../adapter/format";
 import { listZipEntries, readZipEntry, walkZipEntries } from "../utils/zipReader";
 import { decodePaintState, readColor, readColorGroups, sharePalette, type ThreeMfColors } from "./threeMfColors";
@@ -70,7 +73,7 @@ function findPlateIdAttr(attrs: string): number | null {
 function parseTransform3MF(str: string | null): number[] | null {
   if (!str) return null;
   const v = str.trim().split(/\s+/).map(Number);
-  return v.length >= 12 ? v : null;
+  return v.length === 12 && v.every(Number.isFinite) ? v : null;
 }
 
 export function applyAffineToVertices(vertices: Float32Array, t: number[]): Float32Array {
@@ -95,6 +98,18 @@ type FastMesh = {
    *  the mesh may say otherwise. */
   ownColor?: boolean;
 };
+
+function placeMesh(mesh: FastMesh, transform: number[] | null): FastMesh {
+  if (!transform) return mesh;
+  const triangles = mirrors(transform) ? mesh.triangles.slice() : mesh.triangles;
+  if (triangles !== mesh.triangles) {
+    for (let i = 0; i < triangles.length; i += 3) {
+      triangles[i + 1] = mesh.triangles[i + 2];
+      triangles[i + 2] = mesh.triangles[i + 1];
+    }
+  }
+  return { ...mesh, triangles, vertices: applyAffineToVertices(mesh.vertices, transform) };
+}
 
 const MESH_RE = /<mesh\b[^>]*>([\s\S]*?)<\/mesh>/g;
 const VERTEX_RE = /<vertex\s+x="([^"]*)"\s+y="([^"]*)"\s+z="([^"]*)"/g;
@@ -181,7 +196,7 @@ function splitBySlot(vertices: number[], triangles: number[], slots: number[], e
   }));
 }
 
-type ObjectData = { id: string; meshes: FastMesh[]; plateId: number | null };
+type ObjectData = { id: string; name: string | null; meshes: FastMesh[]; plateId: number | null };
 type BuildItem = { objectId: string; transform: number[] | null; plateId: number | null };
 export type PlateSummary = { index: number; name: string | null; objectCount: number };
 
@@ -190,6 +205,9 @@ type StructuralData = {
   partExtruderMap: Map<string, number>;
   objectNameById: Map<string, string>;
   plateAssignmentsByObjectId: Map<string, number>;
+  plateAssignmentsByInstance: Map<string, number>;
+  plateIds: Set<number>;
+  nonModelParts: Set<string>;
   plateNames: Map<number, string>;
   plateOffsets: Map<number, { offsetX: number; offsetY: number }>;
 };
@@ -200,6 +218,9 @@ function parseModelSettingsConfig(xml: string): StructuralData {
     partExtruderMap: new Map(),
     objectNameById: new Map(),
     plateAssignmentsByObjectId: new Map(),
+    plateAssignmentsByInstance: new Map(),
+    plateIds: new Set(),
+    nonModelParts: new Set(),
     plateNames: new Map(),
     plateOffsets: new Map(),
   };
@@ -226,6 +247,8 @@ function parseModelSettingsConfig(xml: string): StructuralData {
       const $part = $(partEl);
       const partId = $part.attr("id");
       if (!partId) return;
+      const role = $part.attr("subtype");
+      if (role && role !== "normal_part") data.nonModelParts.add(`${objectId}:${partId}`);
       const partExtruderVal = $part.children('metadata[key="extruder"]').first().attr("value");
       if (partExtruderVal)
         data.partExtruderMap.set(`${objectId}:${partId}`, Math.max(0, parseInt(partExtruderVal, 10) - 1));
@@ -256,12 +279,17 @@ function parseModelSettingsConfig(xml: string): StructuralData {
       }
     });
     if (plateId == null) return;
+    data.plateIds.add(plateId);
     if (offsetX !== 0 || offsetY !== 0) data.plateOffsets.set(plateId, { offsetX, offsetY });
     if (plateName) data.plateNames.set(plateId, plateName);
 
     $plate.find("model_instance").each((_j, instEl) => {
-      const objectIdVal = $(instEl).children('metadata[key="object_id"]').first().attr("value");
-      if (objectIdVal) data.plateAssignmentsByObjectId.set(objectIdVal, plateId as number);
+      const instance = $(instEl);
+      const objectIdVal = instance.children('metadata[key="object_id"]').first().attr("value");
+      if (!objectIdVal) return;
+      const instanceId = instance.children('metadata[key="instance_id"]').first().attr("value");
+      if (instanceId === undefined) data.plateAssignmentsByObjectId.set(objectIdVal, plateId as number);
+      else data.plateAssignmentsByInstance.set(`${objectIdVal}:${instanceId}`, plateId as number);
     });
   });
 
@@ -271,6 +299,7 @@ function parseModelSettingsConfig(xml: string): StructuralData {
 function parseProjectSettingsJson(text: string): {
   filamentColors: string[];
   buildVolume: { x: number; y: number } | null;
+  bed: BedBox | null;
 } {
   try {
     const json = JSON.parse(text) as Record<string, unknown>;
@@ -283,9 +312,9 @@ function parseProjectSettingsJson(text: string): {
       const match = area[2].match(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/);
       if (match) buildVolume = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
     }
-    return { filamentColors, buildVolume };
+    return { filamentColors, buildVolume, bed: bedBoxOf(area) };
   } catch {
-    return { filamentColors: [], buildVolume: null };
+    return { filamentColors: [], buildVolume: null, bed: null };
   }
 }
 
@@ -379,9 +408,7 @@ function createPartFileResolver(loadExternalModel: (path: string) => Promise<str
     if (depth < MAX_COMPONENT_DEPTH) {
       for (const ref of innerRefs(inner, file.objects)) {
         for (const mesh of await objectMeshes(path, file, ref.refId, depth + 1)) {
-          meshes.push(
-            ref.transform ? { ...mesh, vertices: applyAffineToVertices(mesh.vertices, ref.transform) } : mesh,
-          );
+          meshes.push(placeMesh(mesh, ref.transform));
         }
       }
     }
@@ -521,6 +548,7 @@ async function parseMainModel(
   plateAssignmentsByName: Map<string, number>,
   partFiles: PartFileResolver,
   colors: ThreeMfColors | null,
+  forStudio: boolean,
 ): Promise<{ objects: Map<string, ObjectData>; buildItems: BuildItem[] }> {
   const objects = new Map<string, ObjectData>();
   // A <component> without p:path references another <object> in this document. Order isn't
@@ -556,13 +584,13 @@ async function parseMainModel(
       const compObjectId = getAttr(cAttrs, "objectid");
       const transform = parseTransform3MF(getAttr(cAttrs, "transform"));
       const partKey = compObjectId ? `${objectId}:${compObjectId}` : null;
+      if (forStudio && partKey && structural.nonModelParts.has(partKey)) continue;
       const compExtruder = partKey ? (structural.partExtruderMap.get(partKey) ?? defaultExtruder) : defaultExtruder;
 
       if (extPath) {
         for (const mesh of await partFiles.meshes(extPath, compObjectId)) {
           meshes.push({
-            ...mesh,
-            vertices: transform ? applyAffineToVertices(mesh.vertices, transform) : mesh.vertices,
+            ...placeMesh(mesh, transform),
             // A mesh whose own faces named their colours keeps them; the part's filament is for the rest.
             extruder: mesh.ownColor ? mesh.extruder : compExtruder,
           });
@@ -575,7 +603,8 @@ async function parseMainModel(
 
     // Keep pure wrapper objects too: they need an entry for the resolution pass.
     if (meshes.length > 0 || internalRefsByObjectId.has(objectId)) {
-      objects.set(objectId, { id: objectId, meshes, plateId: objectPlateId });
+      const name = structural.objectNameById.get(objectId) ?? decodeXml(getAttr(attrs, "name") ?? "");
+      objects.set(objectId, { id: objectId, name: name || null, meshes, plateId: objectPlateId });
     }
   }
 
@@ -590,8 +619,7 @@ async function parseMainModel(
       const targetMeshes = [...target.meshes, ...resolveInternalRefs(ref.refId, depth + 1)];
       for (const mesh of targetMeshes) {
         resolved.push({
-          ...mesh,
-          vertices: ref.transform ? applyAffineToVertices(mesh.vertices, ref.transform) : mesh.vertices,
+          ...placeMesh(mesh, ref.transform),
           extruder: mesh.ownColor ? mesh.extruder : ref.extruder,
         });
       }
@@ -609,6 +637,7 @@ async function parseMainModel(
   }
 
   const buildItems: BuildItem[] = [];
+  const instanceCounts = new Map<string, number>();
   const buildMatch = xml.match(/<build\b[\s\S]*?<\/build>/);
   if (buildMatch) {
     ITEM_RE.lastIndex = 0;
@@ -617,12 +646,21 @@ async function parseMainModel(
       const attrs = im[1];
       const objectId = getAttr(attrs, "objectid");
       if (!objectId) continue;
+      const instance = instanceCounts.get(objectId) ?? 0;
+      instanceCounts.set(objectId, instance + 1);
+      const printable = getAttr(attrs, "printable");
+      if (forStudio && (printable === "0" || printable === "false")) continue;
+      const instancePlate = structural.plateAssignmentsByInstance.get(`${objectId}:${instance}`);
       const transform = parseTransform3MF(getAttr(attrs, "transform"));
       const itemPlateId = findPlateIdAttr(attrs);
       const objectPlateId = objects.get(objectId)?.plateId ?? null;
       const objectName = structural.objectNameById.get(objectId);
       const namePlateId = objectName ? (plateAssignmentsByName.get(objectName) ?? null) : null;
-      buildItems.push({ objectId, transform, plateId: itemPlateId ?? objectPlateId ?? namePlateId ?? null });
+      buildItems.push({
+        objectId,
+        transform,
+        plateId: itemPlateId ?? instancePlate ?? objectPlateId ?? namePlateId ?? null,
+      });
     }
   }
 
@@ -635,6 +673,10 @@ type ParsedModel = {
   plateNames: Map<number, string>;
   plateOffsets: Map<number, { offsetX: number; offsetY: number }>;
   plateThumbnails: Map<number, string>;
+  plateIds: Set<number>;
+  bed: BedBox | null;
+  unitMm: number;
+  projectFilaments: number;
   filamentColors: string[];
   buildVolume: { x: number; y: number };
   /** Part files the main model points to that aren't in the archive. */
@@ -652,7 +694,8 @@ const MAX_RELS_BYTES = 1024 * 1024;
  * parser doesn't handle, which the browser's loaders may still manage. */
 export type PreviewRefusal = "too-complex" | "unsupported";
 
-async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewRefusal> {
+async function parseThreeMfFast(srcPath: string, studioMaxTriangles?: number): Promise<ParsedModel | PreviewRefusal> {
+  const forStudio = studioMaxTriangles !== undefined;
   const entries = (await listZipEntries(srcPath)).filter((entry) => !entry.isDirectory);
   const names = entries.map((entry) => entry.name);
   const entryNamed = partNames(names);
@@ -679,7 +722,7 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
       if (entry.name === "Metadata/project_settings.config") return true;
       if (entry.name === mainModelPath) return true;
       if (/^Metadata\/plate_\d+\.json$/.test(entry.name)) return true;
-      if (/^Metadata\/(plate|top)_\d+\.png$/.test(entry.name)) return true;
+      if (!forStudio && /^Metadata\/(plate|top)_\d+\.png$/.test(entry.name)) return true;
       return false;
     },
     async (entry, stream) => {
@@ -710,8 +753,8 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
   const structural = modelSettingsText ? parseModelSettingsConfig(modelSettingsText) : parseModelSettingsConfig("");
   const project = projectSettingsText
     ? parseProjectSettingsJson(projectSettingsText)
-    : { filamentColors: [], buildVolume: null };
-  const { buildVolume } = project;
+    : { filamentColors: [], buildVolume: null, bed: null };
+  const { buildVolume, bed } = project;
 
   // One palette for the whole model: the project's filaments first, where a slicer wrote any, then the colours
   // each model file declares in its own right -- the main one here, every part file as it is read. A painted
@@ -744,7 +787,8 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
 
   // Before any geometry is allocated, so an over-budget file fails cheaply.
   const partFiles = createPartFileResolver(loadExternalModel, filamentColors);
-  if ((await countRenderedTriangles(mainModelXml, partFiles)) > MAX_TRIANGLES) return "too-complex";
+  if ((await countRenderedTriangles(mainModelXml, partFiles)) > (studioMaxTriangles ?? MAX_TRIANGLES))
+    return "too-complex";
 
   const { objects, buildItems } = await parseMainModel(
     mainModelXml,
@@ -752,6 +796,7 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
     plateAssignmentsByName,
     partFiles,
     colors,
+    forStudio,
   );
   if (objects.size === 0) return "unsupported";
 
@@ -766,6 +811,13 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
     plateNames: structural.plateNames,
     plateOffsets: structural.plateOffsets,
     plateThumbnails,
+    plateIds: structural.plateIds,
+    bed,
+    unitMm:
+      ({ micron: 0.001, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 } as Record<string, number>)[
+        getAttr(mainModelXml.match(/<model\b([^>]*)>/)?.[1] ?? "", "unit") ?? ""
+      ] ?? 1,
+    projectFilaments: project.filamentColors.length,
     filamentColors,
     buildVolume: buildVolume ?? { x: 256, y: 256 },
     missingParts,
@@ -863,6 +915,94 @@ const SIMPLIFY_MIN_MESH_TRIANGLES = 2_000;
 // Maximum shape deviation as a fraction of the mesh's size.
 const SIMPLIFY_MAX_ERROR = 0.01;
 const UNUSED_VERTEX = 0xffffffff;
+
+type StudioThreeMfPart = { name: string | null; color?: string; triangles: Float32Array };
+
+/** The build items as placed in their own plates, before the preview path joins them by filament. */
+export async function loadStudioThreeMf(
+  srcPath: string,
+  maxTriangles: number,
+  maxObjects: number,
+): Promise<
+  | { plates: { name: string | null; parts: StudioThreeMfPart[] }[]; mixedColors: boolean }
+  | PreviewRefusal
+  | "missing-parts"
+> {
+  const parsed = await parseThreeMfFast(srcPath, maxTriangles);
+  if (typeof parsed === "string") return parsed;
+  if (parsed.missingParts) return "missing-parts";
+  const items = parsed.buildItems.filter((item) => parsed.objects.get(item.objectId)?.meshes.length);
+  if (!items.length) return "unsupported";
+  if (items.length > maxObjects) return "too-complex";
+
+  const groups = new Map<number | null, StudioThreeMfPart[]>();
+  let mixedColors = false;
+  for (const item of items) {
+    const object = parsed.objects.get(item.objectId)!;
+    const triangles = new Float32Array(object.meshes.reduce((sum, mesh) => sum + mesh.triangles.length * 3, 0));
+    const colors = new Set<string | undefined>();
+    const flip = item.transform && mirrors(item.transform);
+    let at = 0;
+    for (const mesh of object.meshes) {
+      const vertices = item.transform ? applyAffineToVertices(mesh.vertices, item.transform) : mesh.vertices;
+      const indices = mesh.triangles;
+      for (let i = 0; i < indices.length; i += 3) {
+        for (let corner = 0; corner < 3; corner++) {
+          const vertex = 3 * indices[i + (flip && corner !== 0 ? 3 - corner : corner)];
+          for (let axis = 0; axis < 3; axis++) triangles[at++] = vertices[vertex + axis] * parsed.unitMm;
+        }
+      }
+      colors.add(
+        mesh.ownColor || mesh.extruder < parsed.projectFilaments ? parsed.filamentColors[mesh.extruder] : undefined,
+      );
+    }
+    if (!triangles.every(Number.isFinite)) return "unsupported";
+    if (colors.size > 1) mixedColors = true;
+    const part = { name: object.name, color: colors.size === 1 ? colors.values().next().value : undefined, triangles };
+    const group = groups.get(item.plateId);
+    if (group) group.push(part);
+    else groups.set(item.plateId, [part]);
+  }
+
+  const plateIds = [...new Set([...parsed.plateIds, ...groups.keys()])]
+    .filter((id) => id !== null)
+    .toSorted((a, b) => a - b);
+  const plates = [...groups]
+    .toSorted(([a], [b]) => (a ?? Infinity) - (b ?? Infinity))
+    .map(([id, parts]) => {
+      const bed = parsed.bed;
+      if (bed && id !== null) {
+        const [cx, cy] = bedCentre(bed);
+        const [gx, gy] = plateOrigin(plateIds.indexOf(id), plateColumns(plateIds.length), bed);
+        const offset = parsed.plateOffsets.get(id);
+        for (const { triangles } of parts) {
+          for (let i = 0; i < triangles.length; i += 3) {
+            triangles[i] -= cx + (offset?.offsetX ?? gx);
+            triangles[i + 1] -= cy + (offset?.offsetY ?? gy);
+          }
+        }
+      } else {
+        // Generic 3MF has no bed coordinates. Center its layout as a group, preserving distances between objects.
+        const min = [Infinity, Infinity, Infinity];
+        const max = [-Infinity, -Infinity];
+        for (const { triangles } of parts) {
+          for (let i = 0; i < triangles.length; i += 3) {
+            min[0] = Math.min(min[0], triangles[i]);
+            min[1] = Math.min(min[1], triangles[i + 1]);
+            min[2] = Math.min(min[2], triangles[i + 2]);
+            max[0] = Math.max(max[0], triangles[i]);
+            max[1] = Math.max(max[1], triangles[i + 1]);
+          }
+        }
+        const center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, min[2]];
+        for (const { triangles } of parts) {
+          for (let i = 0; i < triangles.length; i++) triangles[i] -= center[i % 3];
+        }
+      }
+      return { name: id === null ? null : (parsed.plateNames.get(id) ?? null), parts };
+    });
+  return { plates, mixedColors };
+}
 
 /** The 3MF as a three.js group, one child group per plate, already turned Y-up. */
 export async function loadThreeMfGroup(srcPath: string): Promise<import("three").Group | PreviewRefusal> {

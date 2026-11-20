@@ -403,8 +403,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       const created = await run("import_model", { model_id: model.id, file_id: fileId, plate_id: activePlate });
       if (!created) return false;
       setDesignsOpen(false);
-      selectCreated(created);
-      if (design && created[0]) setPartsHint({ design: design.id, mesh: created[0] });
+      setSelected(created.slice(0, 1));
+      if (design && created.length === 1) setPartsHint({ design: design.id, mesh: created[0] });
       return true;
     }
     try {

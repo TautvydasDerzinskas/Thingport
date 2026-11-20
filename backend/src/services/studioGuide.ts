@@ -96,9 +96,9 @@ Faces and edges aren't stored as such: a body is a mesh. Name them by where they
 - studio_save_to_library saves the design to the user's library as a new model (a 3MF with its plates and colors, a picture and their requests
   as its description). Save only when the user asks.
 - import_model brings in a library model's STL, 3MF, STEP, OBJ or GLB (find it with search_models). A closed mesh works
-  with everything above; one with gaps can only be moved, scaled and exported. A model of several pieces comes in as
-  one body, and the reply says how many: separate_parts splits it, and the pieces of one with gaps that are closed
-  themselves can then be combined.
+  with everything above; one with gaps can only be moved, scaled and exported. A 3MF imports each printable object
+  with its plate, placement, and any uniform body color. A body that contains several loose meshes can be split
+  with separate_parts.
 
 ## Recipes
 
