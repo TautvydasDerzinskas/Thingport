@@ -157,6 +157,17 @@ export async function buildZipEntries(
         const filePath = resolvePlateFilePath(plate);
         return filePath ? [{ plate, filePath, arcname: `${prefix}/${folderPath(plate.folder, plate.filename)}` }] : [];
       });
+    // A model file in a folder named "supporting" can hold a supporting file's name, or be called as a supporting
+    // file's folder is, and two supporting files may share one (a merge brings each model's along).
+    const supporting = (supportingByPrint.get(print.id) ?? []).flatMap((file) => {
+      const filePath = managedPrintFilePath(file);
+      return fs.existsSync(filePath)
+        ? [{ file, filePath, folder: file.folder ? `supporting/${file.folder}` : "supporting" }]
+        : [];
+    });
+    // Every folder a file has is held before any is numbered, so none numbered is one another file still comes to.
+    for (const each of plates) taken.reserve(each.arcname);
+    for (const each of supporting) taken.reserve(`${prefix}/${each.folder}/${each.file.filename}`);
     // Each plate keeps its own path where it's the first to have it ("Parts/lid.stl" beside "parts/lid.stl"), and the
     // rest are numbered once every one is held, so none is numbered onto another's own ("lid (2).stl").
     const clashing = new Set<(typeof plates)[number]>();
@@ -178,12 +189,7 @@ export async function buildZipEntries(
         mtime: print.licenseReadAt ?? undefined,
       });
     }
-    // A model file in a folder named "supporting" can hold a supporting file's name, or be called as a supporting
-    // file's folder is, and two supporting files may share one (a merge brings each model's along).
-    for (const file of supportingByPrint.get(print.id) ?? []) {
-      const filePath = managedPrintFilePath(file);
-      if (!fs.existsSync(filePath)) continue;
-      const folder = file.folder ? `supporting/${file.folder}` : "supporting";
+    for (const { file, filePath, folder } of supporting) {
       const arcname = freeArcname(prefix, folder, file.filename, taken);
       taken.take(arcname);
       entries.push({ arcname, filePath });
@@ -197,15 +203,15 @@ export async function buildZipEntries(
 class ZipNames {
   private readonly files = new Set<string>();
   private readonly folders = new Set<string>();
+  // The folders the model's files have before any is numbered, which a numbered one steps around too, and where each
+  // folder numbered went, so every file of it goes there.
+  private readonly reserved = new Set<string>();
+  private readonly numbered = new Map<string, string>();
 
   private static above(lower: string): string[] {
     const out: string[] = [];
     for (let at = lower.indexOf("/"); at > 0; at = lower.indexOf("/", at + 1)) out.push(lower.slice(0, at));
     return out;
-  }
-
-  isFile(arcname: string): boolean {
-    return this.files.has(arcname.toLowerCase());
   }
 
   /** No file or folder has the path, and no file is called as a folder above it is. */
@@ -219,21 +225,39 @@ class ZipNames {
     this.files.add(lower);
     for (const folder of ZipNames.above(lower)) this.folders.add(folder);
   }
+
+  /** Holds the folders above a file that will be written, so none numbered lands in one of them. */
+  reserve(arcname: string): void {
+    for (const folder of ZipNames.above(arcname.toLowerCase())) this.reserved.add(folder);
+  }
+
+  /** `folder`, or where a file is called as it is, one numbered onto a path no other folder has: the same one for each
+   *  file of it. */
+  folderAt(folder: string): string {
+    const lower = folder.toLowerCase();
+    if (!this.files.has(lower)) return folder;
+    const had = this.numbered.get(lower);
+    if (had) return had;
+    let next = folder;
+    for (let n = 2; ; n++) {
+      next = `${folder} (${n})`;
+      const each = next.toLowerCase();
+      if (!this.files.has(each) && !this.folders.has(each) && !this.reserved.has(each)) break;
+    }
+    this.numbered.set(lower, next);
+    return next;
+  }
 }
 
 /** `base/folder/filename`, or the file numbered "name (2).ext" and on where the zip has that path already, and a
- *  folder on the way numbered where a file is called as it is ("lid.stl (2)/notes.txt"). A sliced print keeps all of
- *  ".gcode.3mf" after the number, as that's what says it's one. */
+ *  folder on the way numbered where a file is called as it is ("lid.stl (2)/notes.txt"), apart from every other folder
+ *  (ZipNames.folderAt). A sliced print keeps all of ".gcode.3mf" after the number, as that's what says it's one. */
 function freeArcname(base: string, folder: string | null, filename: string, taken: ZipNames): string {
   const sliced = filename.toLowerCase().endsWith(".gcode.3mf") ? filename.length - ".gcode.3mf".length : -1;
   const dot = sliced > 0 ? sliced : filename.lastIndexOf(".");
   const [stem, ext] = dot > 0 ? [filename.slice(0, dot), filename.slice(dot)] : [filename, ""];
   let dir = base;
-  for (const segment of folder ? folder.split("/") : []) {
-    let next = `${dir}/${segment}`;
-    for (let n = 2; taken.isFile(next); n++) next = `${dir}/${segment} (${n})`;
-    dir = next;
-  }
+  for (const segment of folder ? folder.split("/") : []) dir = taken.folderAt(`${dir}/${segment}`);
   let arcname = `${dir}/${filename}`;
   for (let n = 2; !taken.free(arcname); n++) arcname = `${dir}/${stem} (${n})${ext}`;
   return arcname;

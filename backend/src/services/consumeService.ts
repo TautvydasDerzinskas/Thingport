@@ -324,8 +324,9 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   const importFolder = async (folders: string[], group: Item[], attached: { item: Item; folder: string }[] = []) => {
     const sorted = group.toSorted(byName);
     const renderable = sorted.filter((i) => RENDERABLE_MODEL_EXTS.has(extOf(i.rel)));
-    // A sliced 3MF beside the model files is their prepared print; on its own, it's what there is to print.
-    const unsliced = renderable.filter((i) => !isPreparedPrintFilename(path.basename(i.rel)));
+    // A sliced 3MF beside the model files is their prepared print; on its own, it's what there is to print. By the name
+    // it's kept as, as extOf goes by: "frog.gcode.3mf " is one.
+    const unsliced = renderable.filter((i) => !isPreparedPrintFilename(trimFilename(path.basename(i.rel))));
     const plates = unsliced.length ? unsliced : renderable;
     const rest = [
       ...sorted.filter((i) => !plates.includes(i)).map((item) => ({ item, folder: null as string | null })),

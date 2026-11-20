@@ -535,12 +535,17 @@ async function moveAllStored(
 
 const samePath = (relative: string, other: string) => path.resolve(STORAGE, relative) === path.resolve(STORAGE, other);
 
+/** The model and its template values as they are, read under the lock for each move (relocatePrint), or null once it's
+ *  gone. */
+type Placing = () => Promise<{ print: PrintLike; values: PrintTemplateValues } | null>;
+
 /** The model's supporting and prepared files, beside its plates. Those saved before that are under bundles/ and
  *  come over here too. */
 async function relocatePrintFiles(
   print: PrintLike,
   template: string,
   printValues: PrintTemplateValues,
+  placing: Placing,
 ): Promise<number> {
   const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
   let moved = 0;
@@ -549,25 +554,23 @@ async function relocatePrintFiles(
     // again under the lock, as the save may be done by then.
     const rendered = renderFilePath(print, template, printValues, file.filename, null, file.folder);
     if (!isUnsettled(file) && file.storagePath === rendered) continue;
-    if (await movePrintFile(print, template, printValues, file.id)) moved += 1;
+    if (await movePrintFile(print.id, template, placing, file.id)) moved += 1;
   }
   return moved;
 }
 
-/** Moves one of a model's supporting or prepared files to where `print`'s files go, its place picked from its row as it
- *  is under the lock. One whose save isn't done is left: the save puts it there once it is (relocatePrintFile). */
-function movePrintFile(
-  print: PrintLike,
-  template: string,
-  printValues: PrintTemplateValues,
-  fileId: string,
-): Promise<boolean> {
+/** Moves one of a model's supporting or prepared files to where its model's files go, its place picked from its row and
+ *  the model as they are under the lock. One whose save isn't done is left: the save puts it there once it is
+ *  (relocatePrintFile). */
+function movePrintFile(printId: string, template: string, placing: Placing, fileId: string): Promise<boolean> {
   return moveStored(
     async () => {
       const now = await prisma.printFile.findUnique({ where: { id: fileId } });
       // Another model's by now, as a plate a merge took is (relocatePrint).
-      if (!now || isUnsettled(now) || now.printId !== print.id) return null;
-      const place = renderFilePath(print, template, printValues, now.filename, null, now.folder);
+      if (!now || isUnsettled(now) || now.printId !== printId) return null;
+      const at = await placing();
+      if (!at) return null;
+      const place = renderFilePath(at.print, template, at.values, now.filename, null, now.folder);
       // Where it already is counts as free, so a file numbered apart from another ("Notes (2).pdf") stays put.
       return {
         from: now.storagePath,
@@ -676,31 +679,36 @@ export async function assetOwnerIds(printId: string): Promise<string[]> {
 async function relocateAssets(
   print: PrintLike & { assetsPath: string | null },
   template: string,
-  printValues: PrintTemplateValues,
+  placing: Placing,
   plateIds: string[],
 ): Promise<number> {
-  const rendered = renderAssetsPath(print, template, printValues);
-  // Picked under the lock, from where the pictures are then, as a file's place is (moveStored): picked before, the
-  // folder could be one another model's pictures have taken since.
-  const chosen = { found: false, from: null as string | null, home: rendered };
+  // Picked under the lock, from where the pictures are then and the model as it is then, as a file's place is
+  // (moveStored): picked before, the folder could be one another model's pictures have taken since.
+  const chosen = { found: false, from: null as string | null, home: null as string | null };
   let moved = await moveAllStored(
     async () => {
-      const now = await prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } });
-      chosen.found = Boolean(now);
+      const [now, at] = await Promise.all([
+        prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } }),
+        placing(),
+      ]);
+      chosen.found = Boolean(now && at);
       chosen.from = now?.assetsPath ?? null;
+      if (!at) return [];
+      const rendered = renderAssetsPath(at.print, template, at.values);
       const from = chosen.from;
-      chosen.home =
+      const home =
         from && samePath(from, rendered) ? rendered : await freePlatePath(rendered, print.id, { assetsOf: print.id });
-      if (!from || samePath(from, chosen.home)) return [];
+      chosen.home = home;
+      if (!from || samePath(from, home)) return [];
       return (await ownedAssetFiles(from, await assetOwnerIds(print.id))).map((file): [string, string] => [
         path.join(STORAGE, from, file),
-        path.join(STORAGE, chosen.home, file),
+        path.join(STORAGE, home, file),
       ]);
     },
     // A model from before, with none yet, has it saved before the pictures below are brought in, so one brought in is
     // found even if that stops part-way.
     async () => {
-      if (chosen.found && chosen.from !== chosen.home) {
+      if (chosen.found && chosen.home && chosen.from !== chosen.home) {
         await prisma.print.update({ where: { id: print.id }, data: { assetsPath: chosen.home } });
       }
     },
@@ -716,7 +724,7 @@ async function relocateAssets(
     }
     return { home: now.assetsPath, moved: count };
   });
-  print.assetsPath = adopted.home;
+  if (adopted.home) print.assetsPath = adopted.home;
   return moved + adopted.moved;
 }
 
@@ -731,6 +739,21 @@ export async function relocatePrint(
 ): Promise<number> {
   const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
   const printValues = await printTemplateValues(print, safeTemplate);
+  // Where each file goes: by the model as given, unless a change of it was saved after this began, which the model is
+  // read again under the lock for at each move. A later rename's move may have got there first and taken the files
+  // where it puts them, and the model as given would send them back.
+  const saved = async () => {
+    const now = await prisma.print.findUnique({ where: { id: print.id } });
+    return now ? { print: now, values: await printTemplateValues(now, safeTemplate) } : null;
+  };
+  const placedBy = (at: { print: PrintLike; values: PrintTemplateValues }) =>
+    JSON.stringify([at.print.userId, at.values]);
+  const began = await saved();
+  const placing: Placing = async () => {
+    const now = await saved();
+    if (!now) return null;
+    return began && placedBy(began) === placedBy(now) ? { print, values: printValues } : now;
+  };
   let moved = 0;
   for (const plate of plates) {
     // In place by the caller's read: a change since that moves it runs a move of its own.
@@ -744,7 +767,9 @@ export async function relocatePrint(
         const now = await prisma.plate.findUnique({ where: { id: plate.id } });
         // Another model's by now, which a merge made it: that model's move takes it where its files go.
         if (!now || now.printId !== print.id) return null;
-        const place = renderFilePath(print, safeTemplate, printValues, now.filename, now.position, now.folder);
+        const at = await placing();
+        if (!at) return null;
+        const place = renderFilePath(at.print, safeTemplate, at.values, now.filename, now.position, now.folder);
         // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
         const to = samePath(now.storagePath, place) ? place : await freePlatePath(place, print.id, { plateId: now.id });
         return { from: now.storagePath, to };
@@ -753,7 +778,7 @@ export async function relocatePrint(
     );
     if (didMove) moved += 1;
   }
-  moved += await relocatePrintFiles(print, safeTemplate, printValues);
+  moved += await relocatePrintFiles(print, safeTemplate, printValues, placing);
   // A caller that only had some of the plates still moves every plate's pictures.
   const [current, allPlates] = await Promise.all([
     print.assetsPath === undefined
@@ -765,7 +790,7 @@ export async function relocatePrint(
   moved += await relocateAssets(
     { ...print, assetsPath: current.assetsPath },
     safeTemplate,
-    printValues,
+    placing,
     allPlates.map((plate) => plate.id),
   );
   return moved;

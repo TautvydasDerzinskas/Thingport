@@ -293,11 +293,18 @@ export async function saveFileFromTemp(
     if (now === "saved") updatedPrint = await prisma.print.findUniqueOrThrow({ where: { id: printId } });
     else {
       // Only once it's ours: a 409 above means the file there is another one's.
-      if (destination && !(err instanceof HttpError && err.status === 409)) {
-        await fs.rm(destination, { force: true }).catch(() => undefined);
-        await pruneEmptyStorageDirs(path.dirname(destination));
-      }
-      await prisma.printFile.delete({ where: { id: record.id } }).catch(() => undefined);
+      const placed = Boolean(destination) && !(err instanceof HttpError && err.status === 409);
+      // The row read under the storage lock, as any removal reads it: one gone was taken with its file by whatever took
+      // it, and another save may have its file at the place it left. Only an unfinished one is this save's to undo.
+      const removed = await withStorageLock(async () => {
+        const row = await prisma.printFile.findUnique({ where: { id: record.id } });
+        if (!row || row.ready) return null;
+        const where = placed && !isPendingStoragePath(row.storagePath) ? printFilePathOrNull(row) : null;
+        if (where) await fs.rm(where, { force: true }).catch(() => undefined);
+        await prisma.printFile.delete({ where: { id: record.id } }).catch(() => undefined);
+        return where;
+      }).catch(() => null);
+      if (removed) await pruneEmptyStorageDirs(path.dirname(removed));
       throw err;
     }
   }
@@ -446,7 +453,13 @@ export async function removeAbandonedPrintFileSaves(): Promise<number> {
     // A file that won't go keeps its row, for the next start to try again, and the rest go on.
     const settled: string[] = [];
     for (const row of rows) {
-      const file = await ownedFile(row).catch(() => null);
+      let file: string | null;
+      try {
+        file = await ownedFile(row);
+      } catch (err) {
+        console.warn(`Couldn't look at ${row.storagePath} at startup, so its row stays for the next:`, err);
+        continue;
+      }
       if (file) {
         try {
           await fs.rm(file, { force: true });
@@ -464,12 +477,16 @@ export async function removeAbandonedPrintFileSaves(): Promise<number> {
 }
 
 /** The file of a row that was whole once -- its save set its size, and a hash where it took one, in the step that made
- *  it ready -- when the file at its place is still those bytes and no plate is kept there. Null for any other row. */
+ *  it ready -- when the file at its place is still those bytes and no plate is kept there. Null for any other row,
+ *  and for one whose file is gone; a look that fails throws, as that says nothing of what's there. */
 async function ownedFile(row: PrintFile): Promise<string | null> {
   if (row.ready || row.size <= 0 || isPendingStoragePath(row.storagePath)) return null;
   const where = printFilePathOrNull(row);
   if (!where) return null;
-  const stat = await fs.lstat(where).catch(() => null);
+  const stat = await fs.lstat(where).catch((err: NodeJS.ErrnoException) => {
+    if (err?.code === "ENOENT" || err?.code === "ENOTDIR") return null;
+    throw err;
+  });
   if (!stat?.isFile() || stat.size !== row.size) return null;
   if (row.contentSha256 && (await sha256OfFile(where)) !== row.contentSha256) return null;
   if (await prisma.plate.count({ where: { storagePath: row.storagePath } })) return null;
@@ -563,15 +580,18 @@ function removeRowAndFile<T extends string | null>(remove: () => Promise<T>): Pr
   });
 }
 
-/** A prepared print another has just replaced, its row and then its file (removeRowAndFile). Best-effort: the save
- *  that replaced it stands, and a row left behind is one nothing lists, which the clean-up at startup takes. */
+/** A prepared print another has just replaced, its file and then its row, both under the storage lock, the row read
+ *  there. Best-effort: the save that replaced it stands, and a file that won't go keeps its row, unfinished since the
+ *  replacing save and listed by nothing, for the clean-up at startup to try again. */
 async function removeReplacedPrint(fileId: string): Promise<void> {
   try {
-    const where = await removeRowAndFile(async () => {
+    const where = await withStorageLock(async () => {
       const row = await prisma.printFile.findUnique({ where: { id: fileId } });
       if (!row) return null;
+      const at = printFilePathOrNull(row);
+      if (at) await fs.rm(at, { force: true });
       await prisma.printFile.delete({ where: { id: fileId } });
-      return printFilePathOrNull(row);
+      return at;
     });
     if (where) await pruneEmptyStorageDirs(path.dirname(where));
   } catch (err) {

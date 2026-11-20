@@ -128,6 +128,22 @@ describe("consume folder", () => {
     expect(frog.preparedFileId).toBe(frog.files.find((file) => file.filename === "a1.gcode")!.id);
   });
 
+  it("keeps a sliced 3MF whose name ends in a space as the folder's prepared print, not a plate", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Sliced/Newt/newt.stl", STL);
+    put(
+      "Sliced/Newt/newt.gcode.3mf ",
+      await new JSZip().file("Metadata/plate_1.gcode", "G28\n").generateAsync({ type: "nodebuffer" }),
+    );
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 1, failed: [] });
+    const [newt] = await printsNamed("Newt");
+    expect(newt.plates.map((plate) => plate.filename)).toEqual(["newt.stl"]);
+    expect(newt.files.map((file) => [file.filename, file.role])).toEqual([["newt.gcode.3mf", "PREPARED"]]);
+  });
+
   it("keeps a subfolder with the nearest model folder above it, where one model's folder holds another's", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
     await setConsumeSettings({ mode: "folder" });

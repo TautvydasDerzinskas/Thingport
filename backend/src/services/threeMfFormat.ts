@@ -8,6 +8,7 @@ import { StringDecoder } from "node:string_decoder";
 import { Prisma, type Plate } from "@prisma/client";
 import { prisma } from "../db";
 import { classify3mf, plainModelScanner, storedFormat, type PlainModelScan, type ThreeMfFormat } from "../adapter";
+import { storageLockTurn, withStorageLock } from "../utils/storageLock";
 import { listZipEntries, readZipEntry, readZipEntryHead, walkZipEntries } from "../utils/zipReader";
 
 const SMALL_FILE_LIMIT = 16 * 1024 * 1024;
@@ -129,19 +130,44 @@ export async function keepPlateFormat(plateId: string, reading: PlateFormatReadi
   await prisma.plate.update({ where: { id: plateId }, data: { format } });
 }
 
-/** Reads and keeps the plate's format (readPlateFormat, keepPlateFormat). Never throws: one it can't read is cleared,
- *  for the next look to read again. */
-export async function storePlateFormat(
-  plateId: string,
-  filename: string,
-  filePath: string,
-): Promise<ThreeMfFormat | null> {
-  if (!isThreeMfFile(filename)) return null;
-  const reading = await readPlateFormat(filename, filePath);
+/** A plate and where its row had its file when `filePath` was found from it. */
+type PlateFile = Pick<Plate, "id" | "filename" | "storagePath" | "sourcePath">;
+
+/** Reads and keeps the format of the plate's file at `filePath` (readPlateFormat, keepPlateFormat). The plate's row is
+ *  read again under the storage lock, as a move renames a file before it saves where it went, and the reading kept only
+ *  while the row still has the file there and nothing else had the lock while it was read (storageLockTurn): a move
+ *  then, even away and back, could have put another file where it was read. Otherwise it's read again with the lock
+ *  held throughout. Never throws: one it can't read is cleared, for the next look to read again, and one that moved is
+ *  left for that look. */
+async function storePlateFormat(plate: PlateFile, filePath: string): Promise<ThreeMfFormat | null> {
+  if (!isThreeMfFile(plate.filename)) return null;
+  const stillThere = async () => {
+    const now = await prisma.plate.findUnique({
+      where: { id: plate.id },
+      select: { storagePath: true, sourcePath: true },
+    });
+    return Boolean(now && now.storagePath === plate.storagePath && now.sourcePath === plate.sourcePath);
+  };
+  const read = () => readPlateFormat(plate.filename, filePath);
+  let reading: PlateFormatReading | null = null;
+  let keep = false;
   try {
-    await keepPlateFormat(plateId, reading);
+    const found = await withStorageLock(async () => ({ there: await stillThere(), turn: storageLockTurn() }));
+    reading = await read();
+    keep = found.there && (await withStorageLock(async () => storageLockTurn() === found.turn + 1));
+    if (found.there && !keep) {
+      ({ reading, keep } = await withStorageLock(async () =>
+        (await stillThere()) ? { reading: await read(), keep: true } : { reading, keep: false },
+      ));
+    }
   } catch (err) {
-    console.warn(`Keeping the 3MF format of plate ${plateId} failed:`, err);
+    console.warn(`Looking for the file of plate ${plate.id} failed:`, err);
+    return reading?.format ?? null;
+  }
+  if (keep) {
+    await keepPlateFormat(plate.id, reading).catch((err: unknown) =>
+      console.warn(`Keeping the 3MF format of plate ${plate.id} failed:`, err),
+    );
   }
   return reading?.format ?? null;
 }
@@ -179,15 +205,16 @@ export async function fillPlateFormats(
     if (!isThreeMfFile(plate.filename)) continue;
     const filePath = resolveFile(plate);
     if (!filePath || (await currentFormat(plate, filePath))) continue;
-    await storePlateFormat(plate.id, plate.filename, filePath);
+    await storePlateFormat(plate, filePath);
     read++;
   }
 }
 
-/** The plate's format, read and kept first when it has none from the file as it is now. */
+/** The plate's format, read and kept first when it has none from the file as it is now. `filePath`, where its row as
+ *  given has its file. */
 export async function ensurePlateFormat(
-  plate: Pick<Plate, "id" | "filename" | "format">,
+  plate: PlateFile & Pick<Plate, "format">,
   filePath: string,
 ): Promise<ThreeMfFormat | null> {
-  return (await currentFormat(plate, filePath)) ?? (await storePlateFormat(plate.id, plate.filename, filePath));
+  return (await currentFormat(plate, filePath)) ?? (await storePlateFormat(plate, filePath));
 }
