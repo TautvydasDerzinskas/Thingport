@@ -108,8 +108,14 @@ export default function ModelActionsMenu({
   });
   const given = useRef<{ print: Print; over: Print } | null>(null);
   const giveToList = (next: Print) => {
-    given.current = { print: next, over: shown.current };
-    onUpdated?.(next);
+    // A download count only grows: a model read before the last count came in doesn't take it back down.
+    let count = next.print_count;
+    for (const each of [shown.current, given.current?.print]) {
+      if (each?.id === next.id) count = Math.max(count, each.print_count);
+    }
+    const held = count === next.print_count ? next : { ...next, print_count: count };
+    given.current = { print: held, over: shown.current };
+    onUpdated?.(held);
   };
   const countInList = (printId: string, printCount: number) => {
     const now = given.current?.over === shown.current ? given.current.print : shown.current;

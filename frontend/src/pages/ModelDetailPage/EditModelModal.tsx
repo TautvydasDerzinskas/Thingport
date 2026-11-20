@@ -657,6 +657,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         if (platesMoved) {
           const reorderRes = await printsApi.reorderPlates(print.id, [...known, ...unknown]);
           latest = reorderRes.print ?? latest;
+          // Sent, so a retry after a later step fails doesn't send it again over one another tab chose since.
+          setPlatesMoved(false);
         }
       }
 
