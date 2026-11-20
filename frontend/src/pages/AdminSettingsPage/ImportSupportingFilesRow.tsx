@@ -46,9 +46,9 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
         if (!active) return;
         // Read again after it couldn't be, as a sign-in starts it over: the choice shows rather than the error.
         setFailed(false);
-        // Not over a pick, or a save's answer, that came while it was read; one read since, as when another admin
-        // changed it, shows.
-        if (changes.current === since) setLimit(saved);
+        // Not over a pick, or a save's answer, that came while it was read, nor while a save is still on its way, whose
+        // answer shows once it's in; one read since, as when another admin changed it, shows.
+        if (changes.current === since && !saving.current) setLimit(saved);
       },
       (err: unknown) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
