@@ -253,6 +253,7 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
         }
         if (typeof returned === "function") cleanup = returned as () => void;
       } catch (err) {
+        previewRoot?.remove();
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       }
     })();

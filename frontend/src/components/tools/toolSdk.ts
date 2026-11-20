@@ -140,6 +140,7 @@ export function buildToolSdk({
             user: person(entry.user),
             mine: entry.mine,
             modelId: entry.model_id,
+            previewMatch: entry.preview_match,
             updatedAt: entry.updated_at,
             cursor: entry.cursor,
           }))

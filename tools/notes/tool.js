@@ -29,12 +29,16 @@ async function readPersonalNotes(storage, prefix) {
   return notes;
 }
 
-async function readNotes({ shared, storage }, { prefix, model }) {
+async function readNotes({ shared, storage }, { model, preview } = {}) {
+  const personalPrefix = preview ? PREFIX + model + ":" + preview + ":" : PREFIX;
   const [personal, publicNotes] = await Promise.all([
-    readPersonalNotes(storage, prefix),
-    readPublicNotes(shared, { prefix, model }),
+    readPersonalNotes(storage, personalPrefix),
+    readPublicNotes(shared, { prefix: PREFIX, model, preview }),
   ]);
-  return [...personal, ...publicNotes.map((note) => ({ ...note, public: true }))]
+  const matchingPublic = preview
+    ? publicNotes.filter((note) => note.previewMatch ?? note.key.startsWith(personalPrefix))
+    : publicNotes;
+  return [...personal, ...matchingPublic.map((note) => ({ ...note, public: true }))]
     .filter(
       ({ value, mine }) =>
         (model || mine) &&
@@ -93,8 +97,14 @@ export default function mount(thingport) {
   let revision = 0;
   let shown = 40;
   let notes = [];
+  let loadStatus = "board.loading";
 
   labels();
+
+  function renderStatus() {
+    retry.hidden = loadStatus !== "board.error";
+    status.textContent = loadStatus ? t(loadStatus) : "";
+  }
 
   function render() {
     const query = search.value.trim().toLocaleLowerCase(language);
@@ -140,17 +150,17 @@ export default function mount(thingport) {
       return card;
     });
     cards.replaceChildren(...elements);
-    status.textContent = filtered.length ? "" : t(query ? "board.noMatches" : "board.empty");
+    renderStatus();
+    if (!loadStatus && !filtered.length) status.textContent = t(query ? "board.noMatches" : "board.empty");
     more.hidden = shown >= filtered.length;
-    retry.hidden = true;
   }
 
   async function load() {
     const run = ++revision;
-    status.textContent = t("board.loading");
-    retry.hidden = true;
+    loadStatus = "board.loading";
+    renderStatus();
     try {
-      const incoming = await readNotes(thingport, { prefix: PREFIX });
+      const incoming = await readNotes(thingport);
       const missing = [...new Set(incoming.map((note) => note.modelId))].filter((id) => id && !modelsById.has(id));
       for (let i = 0; i < missing.length && alive && revision === run; i += 8) {
         await Promise.all(
@@ -158,18 +168,19 @@ export default function mount(thingport) {
             try {
               modelsById.set(id, await models.get(id));
             } catch {
-              modelsById.set(id, null);
+              // Leave failed lookups uncached so the next load can try again.
             }
           }),
         );
       }
       if (!alive || revision !== run) return;
       notes = incoming;
+      loadStatus = null;
       render();
     } catch {
       if (!alive || revision !== run) return;
-      status.textContent = t("board.error");
-      retry.hidden = false;
+      loadStatus = "board.error";
+      renderStatus();
     }
   }
 
@@ -388,7 +399,7 @@ export function modelImage(thingport) {
           select.disabled = true;
           try {
             const contents = { x: note.value.x, y: note.value.y, text: value };
-            if (select.value === "public") await shared.set(note.key, contents, { model: modelId });
+            if (select.value === "public") await shared.set(note.key, contents, { model: note.modelId ?? modelId });
             else {
               await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
               personalChanges.dispatchEvent(new Event("change"));
@@ -445,7 +456,7 @@ export function modelImage(thingport) {
   async function load() {
     const run = ++revision;
     try {
-      const notes = await readNotes(thingport, { model: modelId, prefix });
+      const notes = await readNotes(thingport, { model: modelId, preview: preview.key });
       if (!alive || run !== revision) return;
       const oldPins = new Map([...pins.children].map((pin) => [pin.dataset.key, pin]));
       const keep = new Set();

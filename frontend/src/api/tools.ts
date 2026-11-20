@@ -71,6 +71,7 @@ export type SharedEntry = {
   mine: boolean;
   /** The model it's about, as its writer has it. */
   model_id: string | null;
+  preview_match?: boolean;
   updated_at: string;
   /** Where it is in the order: `before` in a read for the entries after it. */
   cursor: string;
@@ -238,12 +239,13 @@ export const toolsApi = {
 
   sharedList: async (
     id: string,
-    query: { prefix?: string; model?: string; before?: string } = {},
+    query: { prefix?: string; model?: string; before?: string; preview?: string } = {},
   ): Promise<SharedEntry[]> => {
     const params = new URLSearchParams();
     if (query.prefix) params.set("prefix", query.prefix);
     if (query.model) params.set("model", query.model);
     if (query.before) params.set("before", query.before);
+    if (query.preview) params.set("preview", query.preview);
     const res = await fetch(`${apiBase()}/tools/${id}/shared?${params}`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to read what the tool's users share");
     return (await res.json()).entries;

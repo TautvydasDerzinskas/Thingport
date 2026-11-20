@@ -812,6 +812,8 @@ export interface SdkSharedEntry {
   mine: boolean;
   /** The model it's about, as its writer has it: another user's id may not be one the reader can open. */
   modelId: string | null;
+  /** Whether the entry refers to the requested preview, including on an equivalent model copy. */
+  previewMatch?: boolean;
   updatedAt: string;
   /** Where it is in the order a read gives: `before` in the next read, for the entries after it. */
   cursor: string;
@@ -835,7 +837,8 @@ export interface SdkShared {
    *
    * @param options `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy
    * of it in anyone's library (the same original, or imported from the same page). `before`: an entry's `cursor`, for
-   * the entries after it.
+   * the entries after it. With both `prefix` and `model`, pass the current `preview.key` as `preview` to annotate
+   * the results with `previewMatch`. Entries use keys of the form `<prefix><writer's model ID>:<preview key>:<suffix>`.
    * @example
    * const queued = (await thingport.shared.list({ prefix: "job:", model: modelId })).filter((e) => !e.mine);
    * @example
@@ -847,7 +850,7 @@ export interface SdkShared {
    *   all.push(...page);
    * }
    */
-  list(options?: { prefix?: string; model?: string; before?: string }): Promise<SdkSharedEntry[]>;
+  list(options?: { prefix?: string; model?: string; before?: string; preview?: string }): Promise<SdkSharedEntry[]>;
   /**
    * Keeps one of the user's entries, replacing their entry under the key. At most 256 KB a value as JSON, 5 MB and
    * 5,000 entries a user.

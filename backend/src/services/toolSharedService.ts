@@ -9,6 +9,7 @@ import type { UserCardOut } from "../dto";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { readablePrintWhere, userCards } from "./socialService";
+import { matchingSharedPreviews } from "./toolSharedPreviews";
 import { STORAGE_KEY, toolUsers, usableTool, type ToolUser } from "./toolsService";
 
 const SHARED_VALUE_MAX_BYTES = 256 * 1024;
@@ -90,6 +91,7 @@ export type SharedEntryOut = {
   mine: boolean;
   /** The model it's about, as its writer has it. */
   model_id: string | null;
+  preview_match?: boolean;
   updated_at: string;
   /** Where it is in the order, for reading the entries after it. */
   cursor: string;
@@ -111,7 +113,7 @@ function afterCursor(cursor: string): Prisma.ToolSharedDataWhereInput {
 export async function listSharedData(
   user: ToolUser,
   toolId: string,
-  options: { prefix?: string; model?: string; before?: string },
+  options: { prefix?: string; model?: string; before?: string; preview?: string },
 ): Promise<SharedEntryOut[]> {
   const tool = await usableTool(user, toolId);
   const keys = options.model ? await readableModel(user, options.model) : null;
@@ -134,16 +136,25 @@ export async function listSharedData(
       }),
     { isolationLevel: "RepeatableRead" },
   );
-  const cards = await userCards(rows.map((row) => row.userId));
-  return rows.map((row) => ({
-    key: row.key,
-    value: row.value,
-    user: cards.get(row.userId) ?? null,
-    mine: row.userId === user.id,
-    model_id: row.printId,
-    updated_at: row.updatedAt.toISOString(),
-    cursor: cursorOf(row),
-  }));
+  const [cards, matches] = await Promise.all([
+    userCards(rows.map((row) => row.userId)),
+    keys && options.prefix && options.preview
+      ? matchingSharedPreviews(keys.id, options.preview, options.prefix, rows)
+      : null,
+  ]);
+  return rows.map((row, index) => {
+    const entry: SharedEntryOut = {
+      key: row.key,
+      value: row.value,
+      user: cards.get(row.userId) ?? null,
+      mine: row.userId === user.id,
+      model_id: row.printId,
+      updated_at: row.updatedAt.toISOString(),
+      cursor: cursorOf(row),
+    };
+    if (matches) entry.preview_match = matches[index];
+    return entry;
+  });
 }
 
 /** Keeps one of the user's entries, replacing what was under the key. */
