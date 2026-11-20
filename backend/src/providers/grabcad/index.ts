@@ -13,7 +13,6 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import type { NewPlateInput } from "../../services/printCreation";
 import { HttpError } from "../../utils/fileUtils";
-import { joinFolders } from "../../utils/fileFolder";
 import { MANIFESTS } from "../index.generated";
 import { detailsOf } from "../details";
 import type {
@@ -83,9 +82,10 @@ async function download(
 ): Promise<void> {
   for (const file of files) {
     const url = await resolveGrabcadFileUrl(file, session);
-    const inputs = (await kit.downloadSignedFile({ url, name: file.name }, isGrabcadFileHost, RATE_LIMITED)) ?? [];
-    // A zip's own folders go inside the one it was in.
-    into.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
+    // In the folder it's in, a zip's own folders inside that.
+    into.push(
+      ...((await kit.downloadSignedFile({ url, name: file.name }, isGrabcadFileHost, RATE_LIMITED, file.folder)) ?? []),
+    );
   }
 }
 
@@ -112,6 +112,26 @@ export const grabcadImport: SourcedImport<GrabcadSession, GrabcadModelResolution
       await download(first, session, kit, downloaded);
       if (!downloaded.some((input) => kit.isModelFile(input.filename)))
         await download(fallback, session, kit, downloaded);
+      // Its documents and drawings, where the admin keeps any: never its renderings, which its gallery has, nor the
+      // part again in another CAD format. Each link counts a download on GrabCAD, and none fails the import.
+      const keeps = (await kit.supportingLimit()) !== null;
+      if (keeps && downloaded.some((input) => kit.isModelFile(input.filename))) {
+        const documents = files.filter(
+          (file) => file.system?.toLowerCase() !== "rendering" && kit.isDocumentFile(file.name),
+        );
+        // One at a time, each link asked for only while the model has room for the file, which is counted in the
+        // folder it's in: a guide in each of two is two.
+        downloaded.push(
+          ...(await kit.downloadSupportingFiles(
+            documents.map((file) => ({
+              name: file.name,
+              url: () => resolveGrabcadFileUrl(file, session),
+              folder: file.folder,
+            })),
+            isGrabcadFileHost,
+          )),
+        );
+      }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw err;

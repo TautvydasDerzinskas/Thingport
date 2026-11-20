@@ -198,6 +198,31 @@ Rules of thumb:
   a model's creator kept its script back, report it in `meta.parametricSource` with `withheld: true`, as MakerWorld
   does for a design whose `.scad` files are all `protected`: the model then shows "Script not shared" rather than
   looking as if Thingport lost the script.
+- **Supporting files** are the other files a site gives with a model: instructions, notes, sources. They're kept beside
+  the model as SUPPORTING files.
+  - **From a zip:** a zip that `kit.downloadSignedFile` unpacks gives them up with its model files, placed beside
+    them.
+  - **From a file list:** a site that lists files one by one asks for them with `kit.isSupportingFile`, and downloads
+    them through `kit.downloadSupportingFile`. That keeps them within the admin's limits (Administration → Storage),
+    takes only the supporting files from a zip, and skips one that's blocked or fails rather than failing the import.
+    The kit a model's download is given holds all of its supporting files, however they're fetched, to what the model
+    keeps of them in all: they're fetched one at a time, each within what the ones before it left, so a list started
+    together can't fill the disk with files that would only be thrown away.
+    `kit.supportingLimit()` is null when the admin keeps none: ask nothing then, not even a file list or a signing
+    call. Otherwise it's the largest file they keep: skip a file whose size the site lists as bigger before asking for
+    its link. Not a zip, though, even one of a single file as 3DExport gives each format: its size isn't that of what's
+    in it, and `kit.downloadSupportingFile` holds a zip to what the model may keep and each file in it to the limit.
+  - **Beside a print profile:** a model imported as one of its print profiles still brings the files its site lists
+    beside it, as NexPrint, eufyMake, Snapmaker, Creality Cloud, VoxelShare and MakerWorld do. MakerWorld spends one
+    of the account's daily downloads on its raw files, so only where the design's file list names such a file
+    (`supportingZipUrl`). MakerOnline's are signed by Grab, which asks for them with `supporting: true` on its
+    `/plan` call, so an older Grab, which fails an import at a file it can't get signed, is never handed them.
+  - **A site that offers the model in many formats** (CGTrader, GrabCAD, 3DExport) asks only for `kit.isDocumentFile`
+    ones -- documents and 2D drawings -- and only once a model file came: anything else there is the model again.
+  - **Never kept:** pictures, render-only scenes and programs.
+  - **A sliced file** stays a supporting file, not the prepared print.
+  - **Other files:** the pipeline marks any other file a provider hands back the same way (`asImported`).
+  - **Counting:** only model files and scripts count as something to import.
 - **Folders**: where the site keeps a model's files in folders, set each file's `folder` on the `NewPlateInput` it
   gives back (levels joined by "/"), as Printables (`stls { folder }`), GrabCAD (`folder_path`), MyMiniFactory (an
   archive's paths) and PIXUP (its variants and file groups) do; a zip's own folders are kept by `kit.downloadSignedFile`
@@ -244,9 +269,9 @@ Rules of thumb:
   watermarked per buyer and built when it's first asked for, so until it's ready that page shows the progress
   instead, which the provider reports as "come back in a minute" rather than a failure.
 - **Makerables** keeps a project's files on its CDN unsigned, so an import needs no sign-in at all. They sit on three
-  tabs -- NC programs, CAM projects and the model files the other two were cut from -- and only the model files are
-  worth importing, so the other two tabs are never asked for. A project named by its id is kept under the slug its
-  page gives as canonical (`canonicalId` and `keptId`, as Creality Cloud's alias is).
+  tabs -- NC programs, CAM projects and the model files the other two were cut from. The model files are imported, and
+  the other two tabs' files come along as supporting files, in folders named `NC` and `CAM`. A project named by its id
+  is kept under the slug its page gives as canonical (`canonicalId` and `keptId`, as Creality Cloud's alias is).
 - **CGTrader** lists a model's files one by one on its download page, each redirecting a signed-in user to a signed
   CloudFront link, a free model's and a bought one's alike. It often has the same mesh in many formats, so only what
   a plate takes and the zips that may hold some are fetched first, its OBJs only when those brought nothing. Free

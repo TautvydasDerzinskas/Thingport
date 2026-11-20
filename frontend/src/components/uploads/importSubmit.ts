@@ -173,8 +173,12 @@ export function createImportSubmit({
         label: inspect.filename,
         onImportAsZip: () => submittingFromPrompt(() => queue.submitLink(payload)),
         loadEntries: () => notingSignOut(async () => (await importsApi.listZipEntries(payload)).entries),
-        onImportSelected: (entries) =>
-          submittingFromPrompt(() => queue.submitZip({ ...payload, entries, filename: inspect.filename })),
+        // As an uploaded zip asks: one model of what's picked, a model per folder, or one per file.
+        chooseMode: true,
+        onImportSelected: (entries, mode) =>
+          submittingFromPrompt(() =>
+            queue.submitZip({ ...payload, entries, filename: inspect.filename, ...(mode ? { mode } : {}) }),
+          ),
       });
     } catch (err) {
       reportFailure(err, url, profileScope);

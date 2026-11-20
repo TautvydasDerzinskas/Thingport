@@ -103,6 +103,17 @@ export const threedexportImport: SourcedImport<ThreedexportVisit, ThreedexportMo
       await download(first, visit, kit, downloaded);
       if (!downloaded.some((input) => kit.isModelFile(input.filename)))
         await download(fallback, visit, kit, downloaded);
+      // Its formats that are documents or drawings -- a cut file, a PDF -- where the admin keeps any: a zip each, of
+      // which only those files are kept, each held to the limit as it's opened. Never the import's failure.
+      if ((await kit.supportingLimit()) !== null && downloaded.some((input) => kit.isModelFile(input.filename))) {
+        const documents = resolved.files.filter((file) => file.ext && kit.isDocumentFile(`file.${file.ext}`));
+        for (const file of documents) {
+          const url = await resolveThreedexportDownload(file, visit).catch(() => null);
+          if (!url) continue;
+          const name = new URL(url).pathname.split("/").pop() || `3dexport-${file.ext}.zip`;
+          downloaded.push(...(await kit.downloadSupportingFile({ url, name }, isThreedexportFileHost)));
+        }
+      }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw err;

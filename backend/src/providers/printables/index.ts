@@ -10,7 +10,9 @@
 //   the others.
 // - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
 
+import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
+import { joinFolders } from "../../utils/fileFolder";
 import type { NewPlateInput } from "../../services/printCreation";
 import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending, ProviderDetails } from "../types";
 import {
@@ -24,7 +26,10 @@ import {
 } from "./api";
 import { detailsOf } from "../details";
 
-type Model = ResolvedModel & { plateFiles: PrintablesPlateFile[] };
+type Model = ResolvedModel & { plateFiles: PrintablesPlateFile[]; otherFiles: PrintablesPlateFile[] };
+
+/** Where the download links point: files.printables.com. */
+const isPrintablesFileHost = (hostname: string) => hostname.endsWith(".printables.com");
 
 /** Read from Printables' public API, so no sign-in; each model file a plate of its own, from the download links the
  *  API hands out. */
@@ -36,6 +41,7 @@ export const printablesImport: SourcedImport<null, Model> = {
       resolved && {
         meta: resolved.meta,
         plateFiles: resolved.plateFiles,
+        otherFiles: resolved.otherFiles,
         galleryImages: resolved.galleryImages.map((img) => ({ url: img.url, filename: img.name })),
       }
     );
@@ -52,26 +58,50 @@ export const printablesImport: SourcedImport<null, Model> = {
         "This Printables model has no downloadable model files (only sliced/print-ready files, if any).",
       );
     }
-    const links = await resolvePrintablesDownloadLinks(
-      externalId,
-      modelFiles.map((file) => file.id),
-    );
+    // The other files listed with them come along as supporting files, from every list of the Files tab: sliced
+    // prints and other files too. None is asked for when the admin keeps none.
+    const extras =
+      (await kit.supportingLimit()) === null
+        ? []
+        : [...model.plateFiles, ...model.otherFiles].filter(
+            (file) => !kit.isImportableFile(file.name) && kit.isSupportingFile(file.name),
+          );
+    // A script listed among the other files is the model's source all the same, kept as model files' scripts are.
+    const scripts = model.otherFiles.filter((file) => kit.isImportableFile(file.name) && !kit.isModelFile(file.name));
+    const links = await resolvePrintablesDownloadLinks(externalId, [...modelFiles, ...scripts, ...extras]);
     const results = await Promise.all(
-      modelFiles.flatMap((file) => {
+      [...modelFiles, ...scripts].flatMap((file) => {
         const link = links.get(file.id);
         return link ? [kit.downloadFile(link, file.name).then((result) => ({ result, folder: file.folder }))] : [];
+      }),
+    );
+    const supporting = await Promise.all(
+      extras.flatMap((file) => {
+        const link = links.get(file.id);
+        return link
+          ? [
+              kit
+                .downloadSupportingFile({ url: link, name: file.name }, isPrintablesFileHost)
+                .then((inputs) =>
+                  inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })),
+                ),
+            ]
+          : [];
       }),
     );
     const downloaded = results.flatMap(({ result, folder }): NewPlateInput[] =>
       result !== null && "input" in result ? [{ ...result.input, folder }] : [],
     );
-    if (!downloaded.length && results.some(({ result }) => result !== null && "rateLimited" in result)) {
+    const blocked = results.some(({ result }) => result !== null && "rateLimited" in result);
+    if (blocked && !downloaded.some((input) => kit.isImportableFile(input.filename))) {
+      const fetched = [...downloaded, ...supporting.flat()];
+      await Promise.all(fetched.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw new HttpError(
         429,
         "Printables blocked a file download (rate limit or Cloudflare challenge). This usually clears after a while -- wait, then retry the same import.",
       );
     }
-    return downloaded;
+    return [...downloaded, ...supporting.flat()];
   },
 };
 

@@ -84,6 +84,24 @@ while files are being moved or identical files are being checked, and neither of
 them (the default), 10, 5, 3 or 1. A photo that couldn't be downloaded doesn't count, so the next one is taken. Models
 already stored keep theirs until **Free up space** trims them, and photos users upload aren't limited.
 
+### Supporting files from imports
+
+**Supporting files from imports** sets how large a file an import keeps beside a model as a
+[supporting file](supporting-files.md): the instructions, notes and sources a site gives with it. Not the generator
+script a model is made from: an import keeps that whatever the choice, Off included.
+
+- **The choices:** Off, 25 MB, 100 MB (the default), 500 MB or any size.
+- **Per model:** a model keeps two and a half times that in all, so 250 MB at the default. With any size there's no
+  total. Whatever the size, a model keeps 100 of a site's files at most.
+- **Never past an import's own limit:** whatever the choice, a file is kept only up to the size an import takes, 512 MB
+  by default (`IMPORT_MAX_MB`). A larger choice counts as that, for the total too.
+- **Over the size:** a file is skipped.
+- **A site's zip of them:** fetched for these files alone, downloaded only when the whole zip fits a model's total,
+  250 MB at the default; a larger one is skipped, with the files in it that would each have fit. MakerWorld's zip of
+  all of a design's files, its model files with them, is downloaded up to an import's own limit, whether it's fetched
+  for these files or the model's generator scripts, and its files are kept by the rules above.
+- **Not affected:** models already imported keep theirs, and files users add themselves aren't limited.
+
 ## The same model for several users
 
 When several users import the same model, each gets a copy of its files in their own folder. Admins can have

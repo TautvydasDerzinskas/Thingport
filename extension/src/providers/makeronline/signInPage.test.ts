@@ -42,6 +42,13 @@ function api(...answers: Record<string, unknown>[]) {
 
 const PUZZLE = { code: 1003, message: "Please verify", data: { captchaLevel: 1 } };
 const SIGNED = { code: 0, message: "ok", data: "https://acop-prod-private.s3.us-east-2.amazonaws.com/f.3mf?X-Amz=1" };
+/** A file beside the model's own, by its key. */
+const besideModel = (key: string): DownloadRequest => ({
+  payload: { key },
+  name: `${key}.pdf`,
+  profile_id: null,
+  supporting: true,
+});
 
 describe("MakerOnline's download call, made in its page", () => {
   beforeEach(() => vi.useRealTimers());
@@ -128,6 +135,89 @@ describe("MakerOnline's download call, made in its page", () => {
     expect(answers).toHaveLength(1);
     expect(nuxt.$initCaptcha).toHaveBeenCalledTimes(2);
     expect(asks).toHaveLength(3);
+  });
+
+  it("passes by a file beside the model's own it isn't handed, showing no puzzle for it", async () => {
+    const nuxt = page(async (level) => `solved-${level}`);
+    const asks = api(SIGNED, PUZZLE, SIGNED);
+    const guide: DownloadRequest = { ...SECOND, name: "Guide.pdf", supporting: true };
+    const answers = await signInPage([REQUEST, guide, SECOND], 0, "mo_access_token", HOSTS, 1000);
+    expect(answers.map((answer) => answer.code)).toEqual([0, 1003, 0]);
+    expect(nuxt.$initCaptcha).not.toHaveBeenCalled();
+    expect(asks).toHaveLength(3);
+  });
+
+  it("passes by a file beside the model's own the site never answers, and asks for the rest", async () => {
+    page();
+    let asked = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        asked += 1;
+        // The guide's ask hangs.
+        if (asked === 2) return new Promise<never>(() => undefined);
+        return { json: async () => SIGNED };
+      }),
+    );
+    const guide: DownloadRequest = { ...SECOND, name: "Guide.pdf", supporting: true };
+    const answers = await signInPage([REQUEST, guide, SECOND], 0, "mo_access_token", HOSTS, 1000, undefined, 20);
+    expect(answers.map((answer) => answer.code)).toEqual([0, null, 0]);
+    expect(asked).toBe(3);
+  });
+
+  it("asks for the files beside the model's own only as long as they may take in all, and for the rest", async () => {
+    vi.useFakeTimers();
+    page();
+    let asked = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: { body: string }) => {
+        asked += 1;
+        // Every guide's ask hangs.
+        if (JSON.parse(init.body).key === "guide") return new Promise<never>(() => undefined);
+        return { json: async () => SIGNED };
+      }),
+    );
+    const guides = Array.from({ length: 10 }, (_, index): DownloadRequest => ({
+      payload: { key: "guide" },
+      name: `Guide ${index}.pdf`,
+      profile_id: null,
+      supporting: true,
+    }));
+    const signing = signInPage([REQUEST, ...guides, SECOND], 1500, "mo_access_token", HOSTS, 1000);
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    const answers = await signing;
+    // Thirty seconds each and a minute in all, gaps included: two guides asked for, the rest passed by in their places.
+    expect(answers.map((answer) => answer.code)).toEqual([0, ...guides.map(() => null), 0]);
+    expect(asked).toBe(4);
+  });
+
+  it("asks for none of the files beside the model's own once what's left of their time is shorter than the gap", async () => {
+    vi.useFakeTimers();
+    page();
+    const asked: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: { body: string }) => {
+        const key = String(JSON.parse(init.body).key);
+        asked.push(key);
+        if (key === "hangs") return new Promise<never>(() => undefined);
+        const answer = { json: async () => SIGNED };
+        // Answered with half a second of the minute left: less than the gap before the next.
+        return key === "slow" ? new Promise((resolve) => setTimeout(() => resolve(answer), 26_500)) : answer;
+      }),
+    );
+    const signing = signInPage(
+      [REQUEST, besideModel("hangs"), besideModel("slow"), besideModel("late"), SECOND],
+      1500,
+      "mo_access_token",
+      HOSTS,
+      1000,
+    );
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    const answers = await signing;
+    expect(answers.map((answer) => answer.code)).toEqual([0, null, 0, null, 0]);
+    expect(asked).toEqual(["k1", "hangs", "slow", SECOND.payload.key]);
   });
 
   it("stops at a file it isn't handed, as when signed out", async () => {

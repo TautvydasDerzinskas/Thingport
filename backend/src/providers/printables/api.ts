@@ -81,6 +81,9 @@ const MODEL_QUERY = `
       tags { name }
       category { id name }
       stls { id name folder }
+      gcodes { id name folder }
+      slas { id name folder }
+      otherFiles { id name folder }
       license { id name abbreviation content }
     }
   }
@@ -115,15 +118,20 @@ function extractAuthor(user: Record<string, unknown>): ImportedAuthorInfo | null
   };
 }
 
+/** Which list of a model's Files tab a file is in, as its download asks for it: `stl` holds every model file despite
+ *  its name, `gcode` and `sla` sliced prints, `other` anything else (instructions, sources). */
+export type PrintablesFileType = "stl" | "gcode" | "sla" | "other";
 /** `folder` is the one the designer put it in on the model's Files tab, or null. */
-export type PrintablesPlateFile = { name: string; id: string; folder: string | null };
+export type PrintablesPlateFile = { name: string; id: string; folder: string | null; fileType: PrintablesFileType };
 export type PrintablesGalleryImage = { name: string; url: string };
 
 export type PrintablesModelResolution = {
   meta: Partial<ImportedPageMetadata>;
-  /** From the `stls` bucket, which holds every model-file type despite its name. Pre-sliced
-   * gcodes/slas are excluded. Download links are resolved separately. */
+  /** From the `stls` bucket, which holds every model-file type despite its name. Download links are resolved
+   * separately. */
   plateFiles: PrintablesPlateFile[];
+  /** The other lists' files: sliced prints and anything else, which a model keeps beside it. */
+  otherFiles: PrintablesPlateFile[];
   /** Includes the cover image. */
   galleryImages: PrintablesGalleryImage[];
 };
@@ -173,32 +181,46 @@ export async function resolvePrintablesModel(modelId: string): Promise<Printable
     }
   }
 
-  const plateFiles: PrintablesPlateFile[] = Array.isArray(model.stls)
-    ? model.stls
-        .filter((f): f is Record<string, unknown> => isRecord(f) && typeof f.name === "string" && f.id != null)
-        .map((f) => ({
-          name: f.name as string,
-          id: String(f.id),
-          folder: typeof f.folder === "string" && f.folder.trim() ? f.folder : null,
-        }))
-    : [];
+  const filesIn = (list: unknown, fileType: PrintablesFileType): PrintablesPlateFile[] =>
+    Array.isArray(list)
+      ? list
+          .filter((f): f is Record<string, unknown> => isRecord(f) && typeof f.name === "string" && f.id != null)
+          .map((f) => ({
+            name: f.name as string,
+            id: String(f.id),
+            folder: typeof f.folder === "string" && f.folder.trim() ? f.folder : null,
+            fileType,
+          }))
+      : [];
+  const plateFiles = filesIn(model.stls, "stl");
+  const otherFiles = [
+    ...filesIn(model.gcodes, "gcode"),
+    ...filesIn(model.slas, "sla"),
+    ...filesIn(model.otherFiles, "other"),
+  ];
 
   const license = printablesLicenseFrom(model.license);
   if (license !== undefined) meta.license = license;
 
-  return { meta, plateFiles, galleryImages };
+  return { meta, plateFiles, otherFiles, galleryImages };
 }
 
 /** Printables has no static file URLs; every download goes through this mutation. A file missing
  * from the response is skipped. */
-export async function resolvePrintablesDownloadLinks(modelId: string, fileIds: string[]): Promise<Map<string, string>> {
+export async function resolvePrintablesDownloadLinks(
+  modelId: string,
+  wanted: Pick<PrintablesPlateFile, "id" | "fileType">[],
+): Promise<Map<string, string>> {
   const links = new Map<string, string>();
-  if (!fileIds.length) return links;
+  if (!wanted.length) return links;
+  // One entry per list the files are in, as the site's own Download all asks.
+  const byType = new Map<PrintablesFileType, string[]>();
+  for (const file of wanted) byType.set(file.fileType, [...(byType.get(file.fileType) ?? []), file.id]);
 
   const data = (await fetchPrintablesGraphql(DOWNLOAD_LINK_MUTATION, {
     printId: modelId,
     source: "model_detail",
-    files: [{ fileType: "stl", ids: fileIds }],
+    files: [...byType].map(([fileType, ids]) => ({ fileType, ids })),
   })) as { data?: { getDownloadLink?: Record<string, unknown> } } | null;
 
   const result = data?.data?.getDownloadLink;

@@ -12,7 +12,7 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
 import type { NewPlateInput } from "../../services/printCreation";
-import { HttpError } from "../../utils/fileUtils";
+import { HttpError, sanitizeFilename } from "../../utils/fileUtils";
 import { MANIFESTS } from "../index.generated";
 import { detailsOf } from "../details";
 import type { ProviderDetails, ProviderList, ProviderLists, ProviderTrending, SourcedImport } from "../types";
@@ -67,8 +67,15 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
     if (!resolved.files.length && !resolved.zipPath && resolved.price) {
       throw new HttpError(403, `This is a paid Pinshape model (${resolved.price}): Thingport can't download it.`);
     }
-    // Only what a plate takes, or a zip to unpack: no point asking for the rest.
-    const wanted = resolved.files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
+    // What a plate takes, a zip to unpack, and the other files a model keeps beside it where the admin keeps any: no
+    // point asking for pictures, nor for a link to a file that would be dropped. Each by the name it's kept under, as
+    // downloadSignedFile tells them apart by: so one it downloads as a model file fails the import when it fails.
+    const besideToo = (await kit.supportingLimit()) !== null;
+    const beside = (file: { name: string }) => kit.isSupportingFile(sanitizeFilename(file.name));
+    const wanted = resolved.files.filter((file) => {
+      const name = sanitizeFilename(file.name);
+      return kit.isImportableFile(name) || (besideToo && beside(file)) || /\.zip$/i.test(name);
+    });
     const files =
       resolved.files.length || !resolved.zipPath
         ? wanted
@@ -76,10 +83,15 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
     const downloaded: NewPlateInput[] = [];
     try {
       for (const file of files) {
-        const url = await resolvePinshapeDownload(file.path, cookie);
-        downloaded.push(
-          ...((await kit.downloadSignedFile({ url, name: file.name }, isPinshapeFileHost, BLOCKED)) ?? []),
-        );
+        try {
+          const url = await resolvePinshapeDownload(file.path, cookie);
+          downloaded.push(
+            ...((await kit.downloadSignedFile({ url, name: file.name }, isPinshapeFileHost, BLOCKED)) ?? []),
+          );
+        } catch (err) {
+          // A file beside the model's own never fails the import.
+          if (!beside(file)) throw err;
+        }
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

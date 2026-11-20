@@ -14,6 +14,7 @@ import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { createNotification } from "./notificationService";
 import { gltfReferencedFiles, isGltfName, packGltfFiles } from "./gltfPacker";
+import { modelFolderUnits } from "./modelFolders";
 
 export const CONSUME_MODES = ["separate", "folder"] as const;
 export type ConsumeMode = (typeof CONSUME_MODES)[number];
@@ -396,44 +397,14 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   };
 
   if (mode === "folder") {
-    const groups = new Map<string, Item[]>();
-    for (const item of importable) {
-      const key = foldersOf(item.rel).join("/");
-      const group = groups.get(key);
-      if (group) group.push(item);
-      else groups.set(key, [item]);
-    }
-    const modelKeys = new Set(
-      [...groups]
-        .filter(([key, group]) => key && group.some((i) => RENDERABLE_MODEL_EXTS.has(extOf(i.rel))))
-        .map(([key]) => key),
+    const units = modelFolderUnits(
+      importable,
+      (item) => foldersOf(item.rel).join("/"),
+      (item) => RENDERABLE_MODEL_EXTS.has(extOf(item.rel)),
     );
-    // A subfolder with no model files of its own belongs to the model folder above it, rather than coming in file by
-    // file: its documents are that model's, in their folder, and its pictures are that model's photos. The nearest
-    // folder above that is a model, found by walking up from it rather than by looking through every model.
-    const ownerOf = (key: string) => {
-      for (let cut = key.lastIndexOf("/"); cut > 0; cut = key.lastIndexOf("/", cut - 1)) {
-        if (modelKeys.has(key.slice(0, cut))) return key.slice(0, cut);
-      }
-      return null;
-    };
-    const attached = new Map<string, { item: Item; folder: string }[]>();
-    for (const [key, group] of groups) {
-      if (!key || modelKeys.has(key)) continue;
-      const owner = ownerOf(key);
-      if (!owner) continue;
-      const folder = key.slice(owner.length + 1);
-      const list = attached.get(owner) ?? [];
-      if (!attached.has(owner)) attached.set(owner, list);
-      for (const item of group) list.push({ item, folder });
-    }
-    const taken = new Set([...attached.values()].flat().map((entry) => entry.item));
-    for (const [key, group] of groups) {
-      if (modelKeys.has(key)) {
-        await importFolder(key.split("/"), group, attached.get(key) ?? []);
-      } else {
-        for (const item of group) if (!taken.has(item)) await importEach(item);
-      }
+    for (const unit of units) {
+      if (unit.kind === "model") await importFolder(unit.folder.split("/"), unit.files, unit.attached);
+      else await importEach(unit.item);
     }
   } else {
     for (const item of importable) await importEach(item);

@@ -87,3 +87,17 @@ export function sharedTopLevels(folders: readonly (string | null | undefined)[])
 export function withoutTopLevels(folder: string | null | undefined, count: number): string | null {
   return normalizeFolder(folderLevels(folder).slice(count));
 }
+
+/** The top levels every one of `folders` shares, by name. */
+export function sharedTopFolder(folders: readonly (string | null | undefined)[]): string[] {
+  return folders.length ? folderLevels(folders[0]).slice(0, sharedTopLevels(folders)) : [];
+}
+
+/** `folder` without as much of `top` as it starts with: a file beside a model's files, placed as withoutSharedTop
+ *  placed theirs, keeps whatever of its folder isn't theirs ("Frog/docs" beside files all in "Frog/STL" is "docs"). */
+export function withoutTopOf(folder: string | null | undefined, top: readonly string[]): string | null {
+  const levels = folderLevels(folder);
+  let shared = 0;
+  while (shared < top.length && levels[shared] === top[shared]) shared++;
+  return normalizeFolder(levels.slice(shared));
+}

@@ -55,6 +55,25 @@ async function downloadProfile(
   return { ...inputs[0], sourceInstanceId: profileId };
 }
 
+/** The files a model lists beside its own that it keeps as supporting files -- instructions, sources -- for a model
+ *  that came as a profile, which brings none of its own files. Signed only when the admin keeps any; never the import's
+ *  failure, a sign-in refused here included: the profile came with that sign-in already. */
+async function supportingFiles(
+  resolved: NexprintModelResolution,
+  token: string,
+  kit: ImportKit,
+): Promise<NewPlateInput[]> {
+  const wanted = resolved.files.filter((file) => kit.isSupportingFile(file.name));
+  if (!wanted.length || (await kit.supportingLimit()) === null) return [];
+  let signed: NexprintFile[];
+  try {
+    signed = await fetchNexprintModelFiles({ files: wanted, internalId: resolved.internalId }, token);
+  } catch {
+    return [];
+  }
+  return kit.downloadSupportingFiles(signed, isNexprintFileHost);
+}
+
 /** Like Creality Cloud: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the
  *  profile. An import brings the profile the link names, else the designer's first; a model without profiles brings
  *  its model files instead. Files only download as the user, so everything needs their NexPrint sign-in. */
@@ -81,7 +100,10 @@ export const nexprintImport: SourcedImport<string, NexprintModelResolution> = {
       const [profileId] = selectNexprintProfiles(resolved, "url", requested);
       if (profileId) {
         const profile = await downloadProfile(resolved, profileId, token, kit);
-        if (profile) downloaded.push(profile);
+        if (profile) {
+          downloaded.push(profile);
+          downloaded.push(...(await supportingFiles(resolved, token, kit)));
+        }
       }
       if (!downloaded.length) {
         for (const file of await fetchNexprintModelFiles(resolved, token)) {

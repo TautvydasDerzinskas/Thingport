@@ -213,7 +213,8 @@ export const importQueueApi = {
   submitLinks: (payload: Omit<ImportLinkPayload, "url"> & { urls: string[]; scope?: MakerworldProfileScope }) =>
     submitToQueue("/import/links", payload, "Import failed"),
 
-  submitZip: (payload: ImportLinkPayload & { entries: string[] }) =>
+  /** `mode`: how the picked files become models; without one, they're one model. */
+  submitZip: (payload: ImportLinkPayload & { entries: string[]; mode?: "one" | "folders" | "separate" }) =>
     submitToQueue("/import/zip", payload, "Zip import failed"),
 
   /** `collection_title` is what the job is called while it waits, before anything has read the list. */

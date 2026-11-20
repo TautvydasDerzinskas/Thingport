@@ -10,10 +10,15 @@ vi.mock("node:dns/promises", () => ({
   },
 }));
 
-import { makerworldMetaFromDesign } from "../src/providers/makerworld/pageData";
+import { makerworldListedFileNames, makerworldMetaFromDesign } from "../src/providers/makerworld/pageData";
 import { resolveMakerworldSourcesUrl, resolveMakerworldViaCloudApi } from "../src/providers/makerworld/api";
-import { noteCaptchaChallenge, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
+import {
+  makerworldCaptchaCooloffActive,
+  noteCaptchaChallenge,
+  resetCaptchaCooloffForTest,
+} from "../src/providers/makerworld/captcha";
 import { openImportResponse } from "../src/services/importService";
+import { emptyImportedPageMetadata } from "../src/services/importResolvers";
 
 // The shapes here are MakerWorld's own, taken from design-service answers: 831106 (a Parametric Model Maker
 // keychain whose source is shared), 3082544 (five protected sources) and an ordinary model with no .scad.
@@ -144,6 +149,25 @@ function mockCloud(design: unknown, rawFiles: () => Response): string[] {
   return fetched;
 }
 
+describe("makerworldListedFileNames", () => {
+  // A folder's name has no extension, so it would pass for a document and spend a download on a zip with none.
+  it("names the files in the design's folders, but not the folders", () => {
+    const names = makerworldListedFileNames(
+      designWith([
+        {
+          modelName: "Models",
+          modelType: "",
+          isDir: true,
+          dirName: "Models",
+          children: [{ modelName: "bracket.stl" }],
+        },
+        { modelName: "", isDir: true, dirName: "Docs", children: [{ modelName: "Guide.pdf" }] },
+      ]),
+    );
+    expect(names).toEqual(["bracket.stl", "Guide.pdf"]);
+  });
+});
+
 describe("resolveMakerworldViaCloudApi: generator scripts of a design with print profiles", () => {
   const originalFetch = global.fetch;
 
@@ -177,6 +201,19 @@ describe("resolveMakerworldViaCloudApi: generator scripts of a design with print
 
     expect(result?.meta.parametricSource).toEqual({ filenames: ["panel.scad"], withheld: true });
     expect(fetched.some((url) => url.includes(SOURCES_PATH))).toBe(false);
+  });
+
+  it("asks for the raw files once for a script and a document, though the CAPTCHA turned the first away", async () => {
+    const fetched = mockCloud(
+      designWithProfiles([scadFile("keychain.scad", false), { modelName: "Guide.pdf", modelType: "pdf" }]),
+      () => jsonResponse(200, { code: 1, message: "Please complete the captcha" }),
+    );
+
+    const result = await resolveMakerworldViaCloudApi("831106", null, "test-token");
+
+    expect(result?.meta.parametricSource?.zipUrl).toBeNull();
+    expect(result?.meta.supportingZipUrl).toBeNull();
+    expect(fetched.filter((url) => url.includes(SOURCES_PATH))).toHaveLength(1);
   });
 
   it("imports the model anyway when the sources request is turned down", async () => {
@@ -218,6 +255,35 @@ describe("resolveMakerworldSourcesUrl", () => {
 
     expect(await resolveMakerworldSourcesUrl("831106", "test-token")).toBeNull();
     expect(fetched).toHaveLength(0);
+  });
+
+  // It can be held where the profiles' own downloads aren't: a CAPTCHA here mustn't shut out the downloads the user
+  // asked for, which start the cooloff themselves if the account is blocked.
+  it("meets a CAPTCHA without starting the cooloff", async () => {
+    mockCloud(designWithProfiles([]), () => jsonResponse(200, { code: 1, message: "Please complete the captcha" }));
+
+    expect(await resolveMakerworldSourcesUrl("831106", "test-token")).toBeNull();
+    expect(makerworldCaptchaCooloffActive()).toBe(false);
+  });
+
+  // A required download that meets the CAPTCHA while this one waits its turn starts the cooloff, which this one keeps.
+  it("asks for nothing when the cooloff starts while it waits its turn", async () => {
+    const fetched = mockCloud(designWithProfiles([]), () => {
+      throw new Error("no request may reach MakerWorld during the cooloff");
+    });
+    setTimeout(noteCaptchaChallenge, 10);
+
+    expect(await resolveMakerworldSourcesUrl("831106", "test-token", 100)).toBeNull();
+    expect(fetched).toHaveLength(0);
+  });
+
+  // A first 418 is tried again after a wait, as a one-off often is; a block a required download starts meanwhile holds.
+  it("doesn't try a 418 again once the cooloff starts while it waits to", async () => {
+    const fetched = mockCloud(designWithProfiles([]), () => jsonResponse(418, { error: "temporary" }));
+    setTimeout(noteCaptchaChallenge, 200);
+
+    expect(await resolveMakerworldSourcesUrl("831106", "test-token")).toBeNull();
+    expect(fetched.filter((url) => url.includes(SOURCES_PATH))).toHaveLength(1);
   });
 });
 
@@ -302,6 +368,91 @@ describe("openImportResponse: the scripts of a design imported through Grab", ()
     expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(false);
   });
 
+  it("fetches the raw files for a document Grab's file list names, and asks MakerWorld for the design again never", async () => {
+    const fetched = mockGrabImport(designWithProfiles([]));
+
+    const result = await grabImport({
+      id: 831106,
+      designExtension: { model_files: [{ modelName: "Assembly guide.pdf", modelType: "pdf" }] },
+    });
+    await result.response.body?.cancel();
+
+    expect(result.meta.parametricSource).toBeUndefined();
+    expect(result.meta.supportingZipUrl).toBe(SOURCES_ZIP);
+    expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(false);
+  });
+
+  it("fetches the raw files for a sliced 3MF Grab's file list names, which their zip keeps, and not for a plain 3MF", async () => {
+    const listing = (...names: string[]) => ({
+      id: 831106,
+      designExtension: {
+        model_files: names.map((modelName) => ({ modelName, modelType: modelName.split(".").pop() })),
+      },
+    });
+    mockGrabImport(designWithProfiles([]));
+    const plain = await grabImport(listing("body.stl", "body.3mf"));
+    await plain.response.body?.cancel();
+    expect(plain.meta.supportingZipUrl).toBeNull();
+
+    mockGrabImport(designWithProfiles([]));
+    const sliced = await grabImport(listing("body.stl", "body.gcode.3mf"));
+    await sliced.response.body?.cancel();
+    expect(sliced.meta.supportingZipUrl).toBe(SOURCES_ZIP);
+  });
+
+  it("asks for the raw files once for a script and a document Grab's list names, though the first was turned away", async () => {
+    const fetched = mockGrabImport(designWithProfiles([]));
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      fetched.push(url);
+      if (url.includes(SOURCES_PATH)) return jsonResponse(200, { code: 1, message: "Please complete the captcha" });
+      if (url === PROFILE_FILE) return new Response("3mf", { status: 200 });
+      return jsonResponse(404, {});
+    }) as unknown as typeof fetch;
+
+    const result = await grabImport({
+      id: 831106,
+      designExtension: {
+        model_files: [scadFile("keychain.scad", false), { modelName: "Guide.pdf", modelType: "pdf", protected: false }],
+      },
+    });
+    await result.response.body?.cancel();
+
+    expect(result.meta.parametricSource?.zipUrl).toBeNull();
+    expect(result.meta.supportingZipUrl).toBeNull();
+    expect(fetched.filter((url) => url.includes(SOURCES_PATH))).toHaveLength(1);
+  });
+
+  // Grab sends no design that's too large for the request; the page the import then reads holds it whole.
+  it("reads the files beside the model off the page when Grab sent no design", async () => {
+    const fetched = mockGrabImport(designWithProfiles([]));
+    const pageDesign = { ...designWithProfiles([{ modelName: "Guide.pdf", modelType: "pdf" }]), title: "Big" };
+    const page = `<html><head><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: { pageProps: { design: pageDesign } },
+    })}</script></head></html>`;
+    const served = global.fetch;
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      if (String(input) === MODEL_URL) {
+        fetched.push(String(input));
+        return new Response(page, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
+      }
+      return served(input);
+    }) as unknown as typeof fetch;
+
+    const result = await openImportResponse(MODEL_URL, {
+      url: MODEL_URL,
+      resolved_download_url: PROFILE_FILE,
+      resolved_instance_id: "1",
+      makerworld_cookie: "token=test-token",
+    });
+    await result.response.body?.cancel();
+
+    expect(result.meta.supportingZipUrl).toBe(SOURCES_ZIP);
+    expect(fetched.filter((url) => url.includes(SOURCES_PATH))).toHaveLength(1);
+    // The page said it all: MakerWorld isn't asked for the design.
+    expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(false);
+  });
+
   it("spends no download on a script MakerWorld's design says is withheld", async () => {
     const fetched = mockGrabImport(designWithProfiles([scadFile("panel.scad", true)]));
 
@@ -310,6 +461,18 @@ describe("openImportResponse: the scripts of a design imported through Grab", ()
 
     expect(result.meta.parametricSource).toEqual({ filenames: ["panel.scad"], withheld: true });
     expect(fetched.some((url) => url.includes(SOURCES_PATH))).toBe(false);
+  });
+
+  // A read of the design the import can do without: a CAPTCHA there mustn't shut out the downloads the user asked for.
+  it("meets a CAPTCHA reading the design for a Grab that sent no file list without starting the cooloff", async () => {
+    const fetched = mockGrabImport({ captchaId: "abc123", error: "We need you to confirm you are not a robot" });
+
+    const result = await grabImport({ id: 831106, designExtension: { design_pictures: [] } });
+    await result.response.body?.cancel();
+
+    expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(true);
+    expect(result.meta.parametricSource).toBeUndefined();
+    expect(makerworldCaptchaCooloffActive()).toBe(false);
   });
 
   it("imports the plates anyway when the design can't be read", async () => {
@@ -321,5 +484,44 @@ describe("openImportResponse: the scripts of a design imported through Grab", ()
 
     expect(result.meta.parametricSource).toBeUndefined();
     expect(fetched.some((url) => url.includes("/design-service/"))).toBe(false);
+  });
+});
+
+describe("openImportResponse: a download that goes by way of a page", () => {
+  const originalFetch = global.fetch;
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("keeps the zip of the files beside the model it was handed, which the page on the way says nothing of", async () => {
+    const RAW = "https://makerworld.bblmw.com/831106/all.zip?key=k";
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      if (url === "https://files.example.com/get") {
+        return new Response('<html><body><a href="https://files.example.com/model.stl">model.stl</a></body></html>', {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        });
+      }
+      if (url === "https://files.example.com/model.stl") {
+        return new Response("solid model", { status: 200, headers: { "content-type": "application/octet-stream" } });
+      }
+      return jsonResponse(404, {});
+    }) as unknown as typeof fetch;
+
+    const result = await openImportResponse(
+      "https://files.example.com/get",
+      { url: "https://files.example.com/get" },
+      null,
+      1,
+      {
+        ...emptyImportedPageMetadata(),
+        supportingZipUrl: RAW,
+      },
+    );
+    await result.response.body?.cancel();
+
+    expect(result.finalUrl).toBe("https://files.example.com/model.stl");
+    expect(result.meta.supportingZipUrl).toBe(RAW);
   });
 });

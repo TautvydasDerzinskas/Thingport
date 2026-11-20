@@ -42,6 +42,7 @@ import {
   withImportUserLock,
 } from "./importWorker";
 import { createNotification } from "./notificationService";
+import type { ZipImportMode } from "./zipService";
 
 const log = createLogger("import");
 
@@ -180,14 +181,15 @@ export function enqueueLinksImport(
 export function enqueueZipImport(
   userId: string,
   url: string,
-  body: StoredRequest & { entries: string[] },
+  body: StoredRequest & { entries: string[]; mode?: ZipImportMode },
 ): Promise<EnqueuedJob> {
   return enqueue(userId, "ZIP", {
     sourceUrl: url,
     sourceLabel: body.filename?.trim() || null,
     provider: detectProvider(url),
     total: body.entries.length,
-    payload: { ...storedImportBody(body), entries: body.entries },
+    // Always said, so a job stored without one is one from before there were modes (runBatchJob).
+    payload: { ...storedImportBody(body), entries: body.entries, mode: body.mode ?? "one" },
   });
 }
 

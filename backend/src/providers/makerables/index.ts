@@ -16,6 +16,7 @@ import { detailsOf } from "../details";
 import { MANIFESTS } from "../index.generated";
 import type { ProviderDetails, ProviderLists, ProviderTrending, SourcedImport } from "../types";
 import {
+  fetchMakerablesMachineFiles,
   fetchMakerablesModelFiles,
   fetchMakerablesPopular,
   fetchMakerablesSaved,
@@ -64,16 +65,30 @@ export const makerablesImport: SourcedImport<null, MakerablesModelResolution> = 
   noFilesMessage: "This Makerables project has no model files Thingport can import.",
   async downloadModel(_target, resolved, _auth, _requested, kit) {
     const files = await fetchMakerablesModelFiles(resolved.projectId);
-    // Only what a plate takes, or a zip to unpack: its tab also holds pictures and the odd native CAD file.
-    const wanted = files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
+    // What a plate takes, a zip to unpack, and the other files a model keeps beside it, its native CAD files among
+    // them, where the admin keeps any and the site doesn't say they're over the limit: no point asking for its
+    // pictures, nor for a file that would only be thrown away.
+    const own = files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
+    const limit = await kit.supportingLimit();
+    const beside = (file: (typeof files)[number]) =>
+      limit !== null && kit.isSupportingFile(file.name) && (file.size ?? 0) <= limit;
+    const wanted = files.filter((file) => own.includes(file) || beside(file));
     const downloaded: NewPlateInput[] = [];
     try {
       for (const file of wanted) {
         const inputs = (await kit.downloadSignedFile(file, isMakerablesFileHost, BLOCKED)) ?? [];
         // A designer's uploads are often zips named for what's in them ("Replacement Jaws"): with more than one file
         // on the tab, each zip's files keep its name as their folder.
-        const folder = wanted.length > 1 && /\.zip$/i.test(file.name) ? file.name.replace(/\.zip$/i, "") : null;
+        const folder = own.length > 1 && /\.zip$/i.test(file.name) ? file.name.replace(/\.zip$/i, "") : null;
         downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })));
+      }
+      // The toolpaths cut from them, from the project's other tabs, the same way: never the import's failure.
+      if (limit !== null) {
+        const machine = await fetchMakerablesMachineFiles(resolved.projectId).catch(() => []);
+        for (const file of machine.filter(beside)) {
+          const inputs = await kit.downloadSupportingFile(file, isMakerablesFileHost);
+          downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
+        }
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

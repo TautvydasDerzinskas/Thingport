@@ -45,7 +45,12 @@ import { siteHost } from "../providers/names";
 import { MakerworldAuthError } from "../providers/makerworld/api";
 import { downloadImportToTemp, importPrintFromUrl, type ImportRequestBody } from "./importService";
 import { upsertAuthorFromImport } from "./authorService";
-import { extractZipEntriesToPrints } from "./zipService";
+import {
+  extractZipEntriesToFolderModels,
+  extractZipEntriesToOneModel,
+  extractZipEntriesToPrints,
+  type ZipImportMode,
+} from "./zipService";
 import { createLog } from "./auditLog";
 import { CLOUDFLARE_BLOCKED_CODE } from "./flaresolverr";
 import { PROVIDER_DISABLED_CODE } from "./providerSettingsService";
@@ -57,7 +62,7 @@ import { createLogger } from "../logger";
 const log = createLogger("import");
 const syncLog = createLogger("sync");
 
-type ZipImportJobBody = ImportRequestBody & { entries: string[] };
+type ZipImportJobBody = ImportRequestBody & { entries: string[]; mode?: ZipImportMode };
 export type ProfilesImportJobBody = ImportRequestBody & { scope: Exclude<ProfileScope, "url"> };
 
 // Why a design failed, so a batch reads as one clear cause instead of "N failed". Once a CAPTCHA
@@ -433,36 +438,42 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     const { filename, meta } = downloaded;
     if (path.extname(filename).toLowerCase() !== ".zip") throw new HttpError(415, "Imported file is not a zip");
 
-    await updateJob(jobId, { sourceLabel: filename, total: body.entries.length });
-    log.info("zip job started", { job: jobId, file: filename, entries: body.entries.length });
+    // One model of everything picked, unless the client asked for a model per folder or per file.
+    const mode = body.mode ?? "one";
+    await updateJob(jobId, { sourceLabel: filename, total: mode === "one" ? 1 : body.entries.length });
+    log.info("zip job started", { job: jobId, file: filename, entries: body.entries.length, mode });
 
     const author = await upsertAuthorFromImport(meta.author);
     const progress = jobProgress(jobId);
-    const { prints, failed } = await extractZipEntriesToPrints(
-      userId,
-      tempPath,
-      body.entries,
-      {
-        title: body.title ?? meta.title,
-        notes: body.notes ?? meta.description,
-        tags: body.tags && body.tags.length ? body.tags : meta.tags,
-        categoryId: body.category_id,
-        creator: meta.creator,
-        authorId: author?.id ?? null,
-        previewImageUrl: meta.previewImageUrl,
-        galleryImages: meta.galleryImages,
-      },
-      (processed, total, imported, failedSoFar) => {
-        progress.write({ processed, total, imported, failedCount: failedSoFar });
-      },
-    );
+    const options = {
+      title: body.title ?? meta.title,
+      notes: body.notes ?? meta.description,
+      tags: body.tags && body.tags.length ? body.tags : meta.tags,
+      categoryId: body.category_id,
+      creator: meta.creator,
+      authorId: author?.id ?? null,
+      previewImageUrl: meta.previewImageUrl,
+      galleryImages: meta.galleryImages,
+    };
+    // What the extractor counts in: models per folder, or files per file. It ends on that count too.
+    let units = body.entries.length;
+    const onProgress = (processed: number, total: number, imported: number, failedSoFar: number) => {
+      units = total;
+      progress.write({ processed, total, imported, failedCount: failedSoFar });
+    };
+    const { prints, failed } =
+      mode === "separate"
+        ? await extractZipEntriesToPrints(userId, tempPath, body.entries, options, onProgress)
+        : mode === "folders"
+          ? await extractZipEntriesToFolderModels(userId, tempPath, body.entries, options, onProgress)
+          : await extractZipEntriesToOneModel(userId, tempPath, filename, body.entries, options);
     await progress.settled();
 
     log.info("zip job done", { job: jobId, file: filename, imported: prints.length, failed: failed.length });
     await updateJob(jobId, {
       status: "DONE",
       errorMessage: null,
-      processed: body.entries.length,
+      processed: mode === "one" ? 1 : units,
       imported: prints.length,
       failedCount: failed.length,
       resultPrintId: prints.length === 1 ? prints[0].id : null,
@@ -478,7 +489,10 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     await noteFailureSummary(jobId, bodyParts);
     await createNotification(userId, {
       type: "import",
-      title: `Imported ${prints.length} of ${body.entries.length} models from ${filename}`,
+      title:
+        mode === "one"
+          ? `Imported ${prints[0]?.title || prints[0]?.name || filename} from ${filename}`
+          : `Imported ${prints.length} of ${units} models from ${filename}`,
       body: bodyParts.length ? `${bodyParts.join(", ")}.` : null,
       externalUrl: body.url,
       internalPath: null,

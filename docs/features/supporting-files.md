@@ -29,7 +29,13 @@ goes to the model files. A sliced file added this way becomes the prepared print
 several at once and the first does, while the others stay with the supporting files.
 
 Supporting files come with the model's downloads: **Download** lists them under the model files, to take one at a time,
-and the zip holds them in a `supporting` folder. They come with copies others make of the model too. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its manuals and notes are attached
+and the zip holds them in a `supporting` folder. They come with copies others make of the model too. An
+[import](importing.md) tries to bring the ones a site gives with a model, each within the size an admin set; one the
+site won't hand over, or that doesn't download, is left out and the model imported without it. A zip a site gives of
+them alone is downloaded only when the whole zip fits what a model keeps in all, 250 MB by default. MakerWorld's zip of
+all of a design's files, fetched for these or for its generator scripts, is downloaded up to an import's own limit, and
+only what fits is kept of it (see [Supporting files from imports](storage.md#supporting-files-from-imports)). When you
+[upload a folder](../guides/upload-folders.md) with one model per folder, its manuals and notes are attached
 automatically, and its images become photos where each is a PNG, JPG, WebP or BMP of up to 8 MiB; a larger picture is
 attached too.
 

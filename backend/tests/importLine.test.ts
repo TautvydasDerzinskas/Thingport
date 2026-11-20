@@ -1579,6 +1579,8 @@ describe("the line from outside", () => {
         await join(ann, "/import/zip?queue=1", {
           url: ZIP_URL,
           entries: ["hull.stl", "mast.stl"],
+          // A model of each, which the job keeps with what it stored.
+          mode: "separate",
           notes: "Keep it dry",
           tags: ["boat"],
           category_id: category.id,
@@ -1656,7 +1658,11 @@ describe("the line from outside", () => {
 
     it("stays a zip's final counts, however late its progress lands", async () => {
       const landed = slowFirstStep();
-      const id = await join(ann, "/import/zip?queue=1", { url: ZIP_URL, entries: ["hull.stl", "lost.stl"] });
+      const id = await join(ann, "/import/zip?queue=1", {
+        url: ZIP_URL,
+        entries: ["hull.stl", "lost.stl"],
+        mode: "separate",
+      });
       await runLine();
       await landed();
       expect(await reload(id)).toMatchObject({ status: "DONE", processed: 2, imported: 1, failedCount: 1 });

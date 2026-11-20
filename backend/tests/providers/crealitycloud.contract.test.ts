@@ -1,3 +1,4 @@
+import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
 import { getCrealitycloudConnection, setUserCrealitycloudSession } from "../../src/providers/crealitycloud/session";
@@ -28,12 +29,35 @@ const DESIGNER_PROFILE = "6ac6f004729f5ba4b35740a6";
 const OTHER_PROFILE = "6ad5fedd23030f2e2c08899b";
 const API = "/api/cxy";
 
-type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" };
+type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" | "zip" | "sliced" | "refused" };
+
+const EXTRA_FILES = {
+  guide: { fileName: "Assembly guide", file: "guide.pdf" },
+  zip: { fileName: "Extras", file: "extras.zip" },
+  sliced: { fileName: "Body.gcode.3mf", file: "body.gcode.3mf" },
+};
+
+/** The recorded files with a guide among them, as a model's instructions come, a zip of notes and a part, or the
+ *  designer's sliced 3MF. */
+function filesWith(extra: keyof typeof EXTRA_FILES) {
+  const files = loadFixture("crealitycloud", "model-files") as { result: { downloadUrls: unknown[] } };
+  const { fileName, file } = EXTRA_FILES[extra];
+  files.result.downloadUrls.push({
+    fileName,
+    url: `https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/${file}?Signature=s`,
+  });
+  return files;
+}
 
 function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
   return async ({ url, json: body, headers }) => {
     if (url.hostname.endsWith(".aliyuncs.com")) {
       const name = url.pathname.split("/").pop()!;
+      if (name.endsWith(".pdf")) return binary(Buffer.from("%PDF-1.4 guide"));
+      if (name.endsWith(".zip")) {
+        const zip = new JSZip().file("extras/notes.txt", "print it upright").file("extras/spare.stl", stl("spare.stl"));
+        return binary(await zip.generateAsync({ type: "nodebuffer" }));
+      }
       return binary(name.endsWith(".stl") ? stl(name) : await threeMf(name));
     }
     if (!url.pathname.startsWith(API)) return undefined;
@@ -58,7 +82,12 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
       }
       case "/v3/model/memberDownload":
         assertThat(signedIn, "the model's files are signed for the signed-in user");
-        if (scenario === "rejected") return json(loadFixture("crealitycloud", "invalid-token"));
+        if (scenario === "rejected" || variant.files === "refused") {
+          return json(loadFixture("crealitycloud", "invalid-token"));
+        }
+        if (variant.files === "guide" || variant.files === "zip" || variant.files === "sliced") {
+          return json(filesWith(variant.files));
+        }
         return json(loadFixture("crealitycloud", variant.files === "missing" ? "model-missing" : "model-files"));
       case "/v2/thematic/detail":
         return json(loadFixture("crealitycloud", scenario === "gone" ? "model-missing" : "collection-info"));
@@ -196,6 +225,54 @@ describe("Creality Cloud specifics", () => {
       [null, "fidget base.stl"],
     ]);
     expect(stub.calls.some((call) => call.url.pathname.endsWith("/3mfDownload"))).toBe(false);
+  });
+
+  it("keeps the model's documents beside the profile a link brings, and none of its model files", async () => {
+    await spec.connect(ctx.userId);
+    ctx.install(handlerFor("ok", { files: "guide" }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    // Named, as its model files are, by the signed link's extension.
+    expect(files.map((file) => file.filename)).toEqual(["Assembly guide.pdf"]);
+  });
+
+  it("opens a zip among the model's files for the documents in it, beside the profile and none of its model files", async () => {
+    await spec.connect(ctx.userId);
+    ctx.install(handlerFor("ok", { files: "zip" }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    expect(await prisma.plate.count({ where: { printId: print.id } })).toBe(1);
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["notes.txt"]);
+  });
+
+  it("keeps the designer's sliced 3MF beside the profile a link brings, as a file beside it rather than a plate", async () => {
+    await spec.connect(ctx.userId);
+    ctx.install(handlerFor("ok", { files: "sliced" }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([["Body.gcode.3mf", "SUPPORTING"]]);
+  });
+
+  it("keeps the profile when Creality Cloud turns down listing the files beside it", async () => {
+    await spec.connect(ctx.userId);
+    const stub = ctx.install(handlerFor("ok", { files: "refused" }));
+    expectStatus(await ctx.importUrl(), 200);
+    // Asked for, and turned down.
+    expect(stub.calls.some((call) => call.url.pathname === `${API}/v3/model/memberDownload`)).toBe(true);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates.map((plate) => plate.sourceInstanceId)).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    expect(await prisma.printFile.count({ where: { printId: print.id, role: "SUPPORTING" } })).toBe(0);
   });
 
   it("answers a model it can't find with 404, and files that are gone too", async () => {

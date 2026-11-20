@@ -68,6 +68,31 @@ describe("makerworldDesignForImport", () => {
     expect(makerworldScripts(sent as MakerworldDesign)).toEqual({ filenames: ["connector.scad"], withheld: false });
   });
 
+  it("carries the files a model may keep beside its own, and none of its model files or pictures", () => {
+    const sent = makerworldDesignForImport(
+      design([
+        { modelName: "connector.3mf", modelType: "3mf" },
+        { modelName: "connector.STL", modelType: "stl" },
+        { modelName: "photo.jpg", modelType: "" },
+        { modelName: "Assembly guide.pdf", modelType: "pdf" },
+        { modelName: "README", modelType: "" },
+        { modelName: "scan.ply", modelType: "ply" },
+        { modelName: "colours.amf", modelType: "amf" },
+        { modelName: "Sources", modelType: "", isDir: true, dirName: "Sources", children: [{ modelName: "body.f3d" }] },
+      ]),
+    );
+    expect(getModelFiles(sent)).toEqual([
+      { modelType: "pdf", modelName: "Assembly guide.pdf", protected: undefined },
+      { modelType: "", modelName: "README", protected: undefined },
+      // Kept beside the model by the backend, so sent, though they're the model again in another format.
+      { modelType: "ply", modelName: "scan.ply", protected: undefined },
+      { modelType: "amf", modelName: "colours.amf", protected: undefined },
+      { modelType: undefined, modelName: "body.f3d", protected: undefined },
+    ]);
+    // They're no scripts.
+    expect(makerworldScripts(sent as MakerworldDesign)).toBeNull();
+  });
+
   it("keeps a withheld script withheld, so the import doesn't promise one it can't fetch", () => {
     const sent = makerworldDesignForImport(design([{ modelName: "box.scad", modelType: "scad", protected: true }]));
     expect(makerworldScripts(sent as MakerworldDesign)?.withheld).toBe(true);

@@ -28,6 +28,7 @@ import {
 import { hasSavedRequest, jobPayload, linkTotals, QUEUE_ATTENTION_PATH } from "./importJobService";
 import type { ImportRequestBody } from "./importService";
 import { createNotification } from "./notificationService";
+import type { ZipImportMode } from "./zipService";
 
 const log = createLogger("import");
 
@@ -166,7 +167,11 @@ async function runBatchJob(job: ImportJob): Promise<void> {
     const url = await enabledImportUrl(job.sourceUrl);
     const body = await storedBody(job, url);
     if (job.type === "ZIP") {
-      await runZipImportJob(job.id, job.userId, { ...body, entries: payload.entries as string[] });
+      // Every job stored since says how; one that doesn't was stored before, when each file was a model of its own.
+      const mode = ["one", "folders", "separate"].includes(payload.mode as string)
+        ? (payload.mode as ZipImportMode)
+        : "separate";
+      await runZipImportJob(job.id, job.userId, { ...body, entries: payload.entries as string[], mode });
       return;
     }
     if (!job.provider || !isProviderId(job.provider)) throw new Error(`Unknown provider "${job.provider}"`);

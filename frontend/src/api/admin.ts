@@ -61,6 +61,7 @@ export type LogAction =
   | "file_reuse_backfill_started"
   | "storage_cleanup_started"
   | "photos_per_model_changed"
+  | "import_supporting_files_changed"
   | "custom_widgets_changed"
   | "tool_installed"
   | "tool_uninstalled"
@@ -154,6 +155,10 @@ export type StorageKind =
 
 export const PHOTO_KEEP_OPTIONS = [1, 3, 5, 10] as const;
 export type PhotoKeep = (typeof PHOTO_KEEP_OPTIONS)[number];
+
+/** The largest supporting file an import keeps beside a model, in MB: "off" keeps none, "any" any an import takes. */
+export const SUPPORTING_FILE_MB_OPTIONS = [25, 100, 500] as const;
+export type SupportingFileLimit = (typeof SUPPORTING_FILE_MB_OPTIONS)[number] | "off" | "any";
 
 /** In the order they run. */
 export const CLEANUP_TASKS = ["old", "compress", "slicer", "photos"] as const;

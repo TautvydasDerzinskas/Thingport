@@ -10,7 +10,13 @@ import {
   type ImportedPageMetadata,
   type ParametricSourceInfo,
 } from "../../services/importResolvers";
-import { makerworldInstanceCover, makerworldInstanceTitles, makerworldMetaFromDesign } from "./pageData";
+import {
+  makerworldInstanceCover,
+  makerworldInstanceTitles,
+  makerworldListedFileNames,
+  makerworldMetaFromDesign,
+} from "./pageData";
+import { isKeptBesideModel, supportingLimits } from "../../services/supportingImports";
 import { maybeSleep, sleep } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
 import {
@@ -69,11 +75,14 @@ function cloudApiHeaders(bearerToken: string | null): Record<string, string> {
 // treating it as real and triggering the hours-long captcha cooloff.
 const TRANSIENT_418_RETRY_DELAY_MS = 1500;
 
+/** `skip`, asked before each try, the retry too: true gives up with null, sending nothing. */
 async function fetchCloudJson(
   url: string,
   bearerToken: string | null,
+  skip?: () => boolean,
 ): Promise<{ status: number; data: unknown } | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
+    if (skip?.()) return null;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
     try {
@@ -313,17 +322,28 @@ export function selectMakerworldProfiles(
   return [primary, ...wanted.filter((id) => id !== primary)];
 }
 
+/** A design as the user may read it. `optional`, for a read the import can do without, as fetchMakerworldRawFiles'
+ *  `startsCooloff: false`: none during the cooloff (null, even one that starts while it waits), and a CAPTCHA it meets
+ *  starts none. */
 export async function fetchMakerworldDesign(
   designId: string,
   bearerToken: string,
   paceMs?: number,
+  optional = false,
 ): Promise<Record<string, unknown> | null> {
-  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
+  if (makerworldCaptchaCooloffActive()) {
+    if (optional) return null;
+    throw new MakerworldCaptchaError();
+  }
   await maybeSleep(paceMs);
-  const result = await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}`, bearerToken);
+  const result = await fetchCloudJson(
+    `${DESIGN_API_BASE}/design/${designId}`,
+    bearerToken,
+    optional ? makerworldCaptchaCooloffActive : undefined,
+  );
   if (!result) return null;
   if (isCaptchaChallenge(result.data)) {
-    noteCaptchaChallenge();
+    if (!optional) noteCaptchaChallenge();
     throw new MakerworldCaptchaError();
   }
   if (result.status === 401 || result.status === 403) throw new MakerworldAuthError();
@@ -346,11 +366,15 @@ export async function fetchMakerworldPublicDesign(designId: string): Promise<Rec
   return result.data.id == null ? null : result.data;
 }
 
-/** A download request's JSON body, or null; a CAPTCHA, the daily limit and a rejected login are thrown. */
-function downloadReplyBody(result: { status: number; data: unknown } | null): Record<string, unknown> | null {
+/** A download request's JSON body, or null; a CAPTCHA, the daily limit and a rejected login are thrown. A CAPTCHA
+ *  starts the cooloff unless `startsCooloff` is false, for a request the import can do without. */
+function downloadReplyBody(
+  result: { status: number; data: unknown } | null,
+  startsCooloff = true,
+): Record<string, unknown> | null {
   if (!result) return null;
   if (isCaptchaChallenge(result.data)) {
-    noteCaptchaChallenge();
+    if (startsCooloff) noteCaptchaChallenge();
     throw new MakerworldCaptchaError();
   }
   if (isDownloadLimitReply(result.data)) throw new MakerworldDownloadLimitError();
@@ -358,15 +382,24 @@ function downloadReplyBody(result: { status: number; data: unknown } | null): Re
   return result.status === 200 && isRecord(result.data) ? result.data : null;
 }
 
-/** The signed URL for everything the page's "Download STL/CAD files" offers, as one zip, and the name it gives it. */
+/** The signed URL for everything the page's "Download STL/CAD files" offers, as one zip, and the name it gives it.
+ *  `startsCooloff` as downloadReplyBody's. */
 async function fetchMakerworldRawFiles(
   designId: string,
   bearerToken: string,
   paceMs?: number,
+  startsCooloff = true,
 ): Promise<{ url: string; filename: string | null } | null> {
   await maybeSleep(paceMs);
+  // An optional request skips a block a required one started while it waited, as it skips one before: before its
+  // retry after a 418 too, which waits again.
   const body = downloadReplyBody(
-    await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`, bearerToken),
+    await fetchCloudJson(
+      `${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`,
+      bearerToken,
+      startsCooloff ? undefined : makerworldCaptchaCooloffActive,
+    ),
+    startsCooloff,
   );
   const url = body && pickString(body, ["url"]);
   return body && url ? { url, filename: pickString(body, ["name"]) } : null;
@@ -378,7 +411,9 @@ async function fetchMakerworldRawFiles(
  *
  * Best-effort on purpose. It spends one of the account's daily downloads and may meet the CAPTCHA or the daily
  * limit, and none of that is worth failing an import that already has the model's plates. Skipped during the
- * CAPTCHA cooloff, as a request into the block would only extend it for every other MakerWorld import.
+ * CAPTCHA cooloff, as a request into the block would only extend it for every other MakerWorld import; and a CAPTCHA
+ * it meets starts none, as this download may be held where the profiles' own aren't, and the next profile's download
+ * (the import's own, or another's) meets the CAPTCHA itself and starts it, if the block is the account's.
  */
 export async function resolveMakerworldSourcesUrl(
   designId: string,
@@ -387,7 +422,7 @@ export async function resolveMakerworldSourcesUrl(
 ): Promise<string | null> {
   if (makerworldCaptchaCooloffActive()) return null;
   try {
-    return (await fetchMakerworldRawFiles(designId, bearerToken, paceMs))?.url ?? null;
+    return (await fetchMakerworldRawFiles(designId, bearerToken, paceMs, false))?.url ?? null;
   } catch {
     return null;
   }
@@ -397,8 +432,9 @@ export async function resolveMakerworldSourcesUrl(
  * The scripts a design is generated from, with the zip to fetch them from where the creator shared them.
  *
  * `known` is what the caller read off the design already, or null where what it holds has no file list to read it
- * from: the design is fetched for one then. Best-effort, as the zip is -- a design that can't be read leaves the
- * model's plates without a script rather than failing the import.
+ * from: the design is fetched for one then, optionally (fetchMakerworldDesign), as the zip is asked for. Best-effort,
+ * as the zip is -- a design that can't be read leaves the model's plates without a script rather than failing the
+ * import.
  */
 export async function resolveMakerworldParametricSource(
   designId: string,
@@ -408,12 +444,36 @@ export async function resolveMakerworldParametricSource(
 ): Promise<ParametricSourceInfo | undefined> {
   let source = known;
   if (source === null) {
-    const design = await fetchMakerworldDesign(designId, bearerToken, paceMs).catch(() => null);
+    const design = await fetchMakerworldDesign(designId, bearerToken, paceMs, true).catch(() => null);
     source = design ? makerworldMetaFromDesign(design).parametricSource : undefined;
   }
   // Only worth a download when the creator shared them.
   if (!source || source.withheld) return source;
   return { ...source, zipUrl: await resolveMakerworldSourcesUrl(designId, bearerToken, paceMs) };
+}
+
+/** Whether the zip of the design's raw files was asked for already, for its scripts (resolveMakerworldParametricSource
+ *  sets `zipUrl`, null where it wasn't given): the files beside the model are in that same zip, so it isn't asked for
+ *  again for them, which a refusal would only meet again. One whose scripts were withheld was never asked for. */
+export const askedForScripts = (source: ParametricSourceInfo | undefined) => source?.zipUrl !== undefined;
+
+/**
+ * The zip of a design's raw files, for the files it keeps beside its own -- instructions, sources -- where its own
+ * download is a profile's 3MF, which carries none. Only where the design's file list names one and the admin keeps
+ * any, as it spends one of the account's daily downloads; best-effort, as resolveMakerworldSourcesUrl is. `design` is
+ * the design as read already, or null to read it here: Grab sends one trimmed to its scripts.
+ */
+export async function resolveMakerworldSupportingUrl(
+  designId: string,
+  design: Record<string, unknown> | null,
+  bearerToken: string,
+  paceMs?: number,
+): Promise<string | null> {
+  if ((await supportingLimits()) === null) return null;
+  const read = design ?? (await fetchMakerworldDesign(designId, bearerToken, paceMs, true).catch(() => null));
+  // By the rule the zip's pass keeps them by, its sliced 3MFs among them (fetchDesignRawFiles).
+  if (!read || !makerworldListedFileNames(read).some((name) => isKeptBesideModel(name))) return null;
+  return resolveMakerworldSourcesUrl(designId, bearerToken, paceMs);
 }
 
 /** A design with no print profiles, only the raw files the page's "Download STL/CAD files" offers: all of them, as
@@ -450,6 +510,8 @@ export async function resolveMakerworldViaCloudApi(
   requestedInstanceId: string | null,
   bearerToken: string,
   paceMs?: number,
+  /** False where only the profile is kept: no download goes on a zip of the files beside it. */
+  supporting = true,
 ): Promise<MakerworldCloudResolution | null> {
   if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
 
@@ -503,6 +565,11 @@ export async function resolveMakerworldViaCloudApi(
     bearerToken,
     paceMs,
   );
+  // And the files it keeps beside its own, which the scripts' zip holds already where it's fetched.
+  const supportingZipUrl =
+    askedForScripts(parametricSource) || !supporting
+      ? null
+      : await resolveMakerworldSupportingUrl(designId, design, bearerToken, paceMs);
 
   return {
     downloadUrl,
@@ -512,6 +579,7 @@ export async function resolveMakerworldViaCloudApi(
       filename: pickString(body, ["name"]),
       author,
       parametricSource,
+      supportingZipUrl,
       makerworldProfile: {
         instanceId,
         coverUrl: makerworldInstanceCover(design, instanceId),

@@ -30,6 +30,7 @@ import { createKeyedLock, maybeSleep, sleep } from "../utils/concurrency";
 import { isCloudflareChallenge } from "./flaresolverr";
 import {
   emptyImportedPageMetadata,
+  extractNextDataJson,
   extractPageMetadata,
   findDownloadUrl,
   getPath,
@@ -52,6 +53,7 @@ import {
 // providers/makerworld/: it is the link import every page link of no provider's goes through too (LINK_PROVIDER),
 // woven into the download, plate and print steps below.
 import {
+  askedForScripts,
   extractMakerworldBearerToken,
   MAKERWORLD_AUTH_CODE,
   MakerworldAuthError,
@@ -61,6 +63,7 @@ import {
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
   resolveMakerworldParametricSource,
+  resolveMakerworldSupportingUrl,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
@@ -89,10 +92,22 @@ import {
   isZipJunk,
   joinFolders,
   normalizeFolder,
+  sharedTopFolder,
   sharedTopLevels,
   withoutSharedTop,
   withoutTopLevels,
+  withoutTopOf,
 } from "../utils/fileFolder";
+import {
+  isDocumentFile,
+  isKeptBesideModel,
+  isSupportingImportFile,
+  SUPPORTING_FILES_PER_MODEL,
+  supportingImportName,
+  supportingLimits,
+  withoutModelsSharedTop,
+  type SupportingLimits,
+} from "./supportingImports";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { importedLicenseData } from "./licenseService";
 import { upsertAuthorFromImport } from "./authorService";
@@ -101,6 +116,7 @@ import {
   createPrint,
   isGeneratorScript,
   keepGeneratorScripts,
+  keepSupportingFiles,
   refreshIfFirstPlate,
   resolvePlateFilePath,
   type NewPlateInput,
@@ -147,6 +163,9 @@ export type ImportRequestBody = ImportCookies & {
   makerworld_design?: Record<string, unknown> | null;
   /** Internal only: per-request delay for MakerWorld collection imports. Never from the body. */
   makerworldPaceMs?: number;
+  /** Internal only: false where the import keeps no supporting files -- a profile added to a model already in the
+   *  library -- so none of the account's daily downloads goes on a zip of them. Never from the body. */
+  makerworldSupporting?: false;
   /** Internal only: the 3MF Thingport Grab exported from OwlCAD's editor, already written to a temp file by its
    *  route. OwlCAD hands out no link for a CAD project's geometry -- the editor builds the file in the page -- so
    *  unlike `resolved_files` this is the file itself. Never from the body. */
@@ -186,30 +205,50 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
     unverified: true,
   };
   const author = await completeMakerworldAuthor(basicAuthor, body.makerworldPaceMs);
-  // What Grab resolved is one profile's 3MF, as the cloud API's download is, so the scripts the design is
-  // generated from need fetching of their own. Without this an import through Grab brought no script at all,
-  // while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's plates.
-  //
-  // The design Grab sent is trimmed to fit the request, and a Grab from before it kept the file list (1.8.1 and
-  // older) sends none at all, which reads as a model with no script. So what it sent is taken at its word only
-  // where it has a file list; otherwise the design is read from MakerWorld.
-  const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
-  const sentFileList = Array.isArray(getPath(design, "designExtension", "model_files"));
-  const parametricSource = bearerToken
-    ? await resolveMakerworldParametricSource(
-        parsed.designId,
-        sentFileList ? meta.parametricSource : null,
-        bearerToken,
-        body.makerworldPaceMs,
-      )
-    : meta.parametricSource;
   return {
     ...meta,
     author,
     creator: author?.name ?? meta.creator,
-    parametricSource,
+    ...(await grabbedDesignRawFiles(parsed.designId, design, meta.parametricSource, body)),
     makerworldProfile: extensionProfile(url, body),
   };
+}
+
+/**
+ * What a design Grab resolved one profile's 3MF of doesn't carry, as the cloud API's download doesn't: the scripts it's
+ * generated from, and the zip of the files it keeps beside its own. Without this an import through Grab brought no
+ * script at all, while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's
+ * plates. `design` is the one Grab sent, or the page's where it sent none (too large for the request), and `known` its
+ * scripts as read off it.
+ *
+ * The design Grab sends is trimmed to fit the request, and a Grab from before it kept the file list (1.8.1 and older)
+ * sends none at all, which reads as a model with no script. So a design is taken at its word only where it has a file
+ * list; otherwise it's read from MakerWorld for the scripts. The files beside the model come from that list, which
+ * names them beside the scripts: one from a Grab that sent scripts only names none, so none is fetched, and MakerWorld
+ * isn't asked to say it again. The zip asked for the scripts holds them already, so it isn't asked for twice.
+ */
+async function grabbedDesignRawFiles(
+  designId: string,
+  design: unknown,
+  known: ParametricSourceInfo | undefined,
+  body: ImportRequestBody,
+): Promise<Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">> {
+  const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
+  if (!bearerToken) return { parametricSource: known, supportingZipUrl: null };
+  const listed = Array.isArray(getPath(design, "designExtension", "model_files"))
+    ? (design as Record<string, unknown>)
+    : null;
+  const parametricSource = await resolveMakerworldParametricSource(
+    designId,
+    listed ? known : null,
+    bearerToken,
+    body.makerworldPaceMs,
+  );
+  const supportingZipUrl =
+    listed && !askedForScripts(parametricSource) && body.makerworldSupporting !== false
+      ? await resolveMakerworldSupportingUrl(designId, listed, bearerToken, body.makerworldPaceMs)
+      : null;
+  return { parametricSource, supportingZipUrl };
 }
 
 /** The picked profile from the design the extension sent: its picture, limited to MakerWorld's CDN as it's
@@ -392,6 +431,7 @@ async function tryMakerworldCloudApi(url: string, body: ImportRequestBody): Prom
       parsed.requestedInstanceId,
       bearerToken,
       body.makerworldPaceMs,
+      body.makerworldSupporting !== false,
     );
     return resolved;
   } catch (err) {
@@ -495,6 +535,8 @@ export async function openImportResponse(
       makerworldProfile: inheritedMeta.makerworldProfile,
       // Whether the creator withheld the script is read off the design, before anything downloads.
       parametricSource: extracted.parametricSource ?? inheritedMeta.parametricSource,
+      // Found with the download this page is a hop on the way to, which the page says nothing of.
+      supportingZipUrl: inheritedMeta.supportingZipUrl,
     };
     if (URLS.makerworld.isHost(pageHost) && extracted.author) {
       resolvedMeta.author = await completeMakerworldAuthor(extracted.author, body.makerworldPaceMs);
@@ -504,6 +546,16 @@ export async function openImportResponse(
       if (body.resolved_download_url) {
         downloadUrl = body.resolved_download_url;
         resolvedMeta.makerworldProfile = { instanceId: body.resolved_instance_id ?? null };
+        // Grab sent no design, as one too large for the request: the page's stands in, and what the profile's 3MF
+        // doesn't carry is looked up from it as from one Grab sent. None of those lookups starts the cooloff.
+        const designId = depth === 0 ? parseMakerworldModelUrl(validatedUrl)?.designId : undefined;
+        if (designId) {
+          const pageDesign = getPath(extractNextDataJson(html), "props", "pageProps", "design");
+          Object.assign(
+            resolvedMeta,
+            await grabbedDesignRawFiles(designId, pageDesign, resolvedMeta.parametricSource, body),
+          );
+        }
       } else {
         if (!makerworldCookie) makerworldCookie = resolveMakerworldCookie(body);
         const requestedInstanceId = parseMakerworldModelUrl(validatedUrl)?.requestedInstanceId ?? null;
@@ -676,7 +728,10 @@ export async function attachImportedPreviewImages(
     stored++;
     if (!firstAdded) {
       firstAdded = true;
-      await preferImageOverRenders(printId, plateId, buf);
+      // A cover that can't be set leaves its photo stored, and the page's other photos still come.
+      await preferImageOverRenders(printId, plateId, buf).catch((err: unknown) =>
+        console.warn(`Import: couldn't make a photo the cover of model ${printId}:`, err),
+      );
     }
   }
   return stored;
@@ -850,11 +905,13 @@ async function addMakerworldProfileToPrint(
   const wanted = body.resolved_instance_id ?? parseMakerworldModelUrl(url)?.requestedInstanceId ?? null;
   if (!wanted || hasProfile(wanted)) return alreadyImported;
 
-  // Fetch the extension-resolved download as is: another page request per profile risks the CAPTCHA.
+  // Fetch the extension-resolved download as is: another page request per profile risks the CAPTCHA. Only the profile
+  // is kept, so no supporting files are looked for.
   const presolved = Boolean(body.resolved_download_url && body.resolved_instance_id);
+  const profileOnly = { ...body, makerworldSupporting: false as const };
   const opened = presolved
-    ? await openImportResponse(body.resolved_download_url!, { ...body, resolved_download_url: null }, url)
-    : await openImportResponse(url, body);
+    ? await openImportResponse(body.resolved_download_url!, { ...profileOnly, resolved_download_url: null }, url)
+    : await openImportResponse(url, profileOnly);
   // The presolved download is fetched bare, so its profile's details come from the design the extension sent.
   const profile = presolved ? extensionProfile(url, body) : opened.meta.makerworldProfile;
   const instanceId = profile?.instanceId ?? null;
@@ -944,7 +1001,11 @@ function isDownloadBlocked(res: Response): boolean {
 
 /** Best-effort: null on failure so one bad file doesn't fail the whole import, except a block,
  * which is retried once and then reported so the caller can say why. */
-export async function downloadPlainFileToTemp(url: string, suggestedName: string): Promise<PlainDownloadResult> {
+export async function downloadPlainFileToTemp(
+  url: string,
+  suggestedName: string,
+  maxBytes = IMPORT_MAX_BYTES,
+): Promise<PlainDownloadResult> {
   let tempFilePath: string | null = null;
   try {
     const headers = { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "*/*" };
@@ -967,7 +1028,7 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
       os.tmpdir(),
       `thingport-thingiverse-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
     );
-    await streamToFileCapped(res, tempFilePath, IMPORT_MAX_BYTES);
+    await streamToFileCapped(res, tempFilePath, maxBytes);
     return { input: { filename, mime: guessMimeFromPath(filename), tempFilePath } };
   } catch {
     // A stream that broke off or ran over the cap leaves what it had written.
@@ -996,36 +1057,64 @@ function isUnreadableZip(err: unknown): boolean {
 
 /** The files wanted from the zips a zip holds, for an archive that wraps the model's own instead of its files. Each
  *  nested zip's files go in a folder named after it, where it sat ("Base/32mm.zip" gives "Base/32mm"), less what all of
- *  them share: one zip wrapped in another adds no folder, two side by side keep theirs apart. */
+ *  them share: one zip wrapped in another adds no folder, two side by side keep theirs apart. `placements` is told the
+ *  folders the model's own files ended up in, for an archive wrapping this one to go by. `topIsModelTop`, as
+ *  filesFromZip's. */
 async function filesFromNestedZips(
   zipPath: string,
-  exts: ReadonlySet<string>,
+  pick: ZipPick,
   depth: number,
   budget: NestedZipBudget,
+  placements?: (string | null)[],
+  beside: NewPlateInput[] = [],
+  topIsModelTop = false,
 ): Promise<NewPlateInput[]> {
-  const nested = (await listZipEntries(zipPath)).filter(
-    (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
-  );
+  // A zip by the name it's kept by, as supportingZipEntries takes one: "Frog.zip " is one.
+  const nested = (await listZipEntries(zipPath))
+    .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
+    .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
+    .filter(({ parts }) => parts.length && keptExtOf(parts) === ".zip");
   const inputs: NewPlateInput[] = [];
   // Every importable file's folder, of both kinds whichever this call takes, so the plates and the scripts of a zip
   // read twice over (platesAndSourcesFromZip) lose the same levels. The files beside the zips count too: a script at
   // the top keeps the folder the zip of its parts gives them.
   const everyFolder: (string | null)[] = (await zipEntriesInFolders(zipPath)).map((placed) => placed.folder);
+  const modelFolders: (string | null)[] = [];
+  // The one zip this one wraps, beside none of the model's files: the levels every file shares come off down to the
+  // model's own (sharedTopFolder below), so the top of that zip, where it holds model files, is the model's top too.
+  const alone = topIsModelTop && nested.length === 1 && !everyFolder.length;
   try {
-    for (const entry of nested) {
-      if (budget.archives <= 0 || budget.bytes <= 0) break;
+    for (const { entry, parts } of nested) {
+      // Not for a model's supporting files once they're all taken: none of what the archive holds would be kept.
+      if (budget.archives <= 0 || budget.bytes <= 0 || allowanceSpent(pick)) break;
       budget.archives -= 1;
       const tempZipPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
       try {
         const written = await extractZipEntryToFile(zipPath, entry.name, tempZipPath, budget.bytes);
         if (written === null) continue;
         budget.bytes -= written;
-        const folder = normalizeFolder(entry.name.replace(/\.zip$/i, ""));
-        const found = await filesFromZip(tempZipPath, exts, depth + 1, budget);
-        for (const input of found) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
-        // A zip that only wraps yet another has no files of its own to go by: the ones found in it stand in.
-        const placed = await placedZipEntries(tempZipPath);
-        for (const each of placed.length ? placed : found) everyFolder.push(joinFolders(folder, each.folder));
+        const folder = normalizeFolder([...parts.slice(0, -1), keptNameOf(parts).replace(/\.zip$/i, "")]);
+        const found: (string | null)[] = [];
+        const keptBefore = picksSupporting(pick) ? { ...pick.kept } : null;
+        // Where its model files are, read before any of its files are taken: a zip that can't be listed for that is
+        // skipped with none of them, rather than leaving them in with no place to go by.
+        const placed = (await placedZipEntries(tempZipPath)).map((each) => each.folder);
+        let got: NewPlateInput[];
+        try {
+          // Its top is the model's only where it holds model files: those are what the levels come off down to.
+          got = await filesFromZip(tempZipPath, pick, depth + 1, budget, found, alone && placed.length > 0);
+        } catch (err) {
+          // Its files went with it, and so does what they took of the model's share; the work it did still counts.
+          if (keptBefore && picksSupporting(pick)) Object.assign(pick.kept, keptBefore);
+          throw err;
+        }
+        for (const input of got) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
+        // A zip that only wraps yet another has no files of its own to go by: where the model's files turned up in
+        // it stands in, however deep, and never a supporting file, which isn't the model's own.
+        for (const each of placed.length ? placed : found) {
+          everyFolder.push(joinFolders(folder, each));
+          modelFolders.push(joinFolders(folder, each));
+        }
       } catch (err) {
         // One entry that isn't the zip it's named like doesn't make the files out of its siblings unimportable.
         if (!isUnreadableZip(err)) throw err;
@@ -1038,7 +1127,15 @@ async function filesFromNestedZips(
     throw err;
   }
   const shared = sharedTopLevels(everyFolder);
-  return inputs.map((input) => ({ ...input, folder: withoutTopLevels(input.folder, shared) }));
+  placements?.push(...modelFolders.map((folder) => withoutTopLevels(folder, shared)));
+  // A supporting file loses only the levels it shares with the model's files, as supportingZipEntries places one: a
+  // guide from a zip of its own beside the model's keeps that zip's folder, so two such guides don't meet on one name.
+  // So do the files `beside` the archives, which the zip that wraps them gave: Frog/docs/guide.pdf beside Frog.zip, whose
+  // model is at the top of it, is docs/guide.pdf.
+  const top = sharedTopFolder(everyFolder);
+  const keptFolder = (folder: string | null | undefined) =>
+    picksSupporting(pick) ? withoutTopOf(folder, top) : withoutTopLevels(folder, shared);
+  return [...beside, ...inputs].map((input) => ({ ...input, folder: keptFolder(input.folder) }));
 }
 
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. */
@@ -1051,44 +1148,147 @@ export async function parametricSourcesFromZip(zipPath: string): Promise<NewPlat
   return filesFromZip(zipPath, PARAMETRIC_SOURCE_EXTS);
 }
 
-/**
- * A zip read twice over: the files to print, and the scripts beside them.
- *
- * Each half writes a temp file per entry and cleans up only its own if it throws. So the plates are removed here
- * when reading the scripts fails -- the caller is handed both halves or neither, and never a set of temp files it
- * doesn't know it has to clean up.
- */
-async function platesAndSourcesFromZip(
+/** What a model has kept so far of the files beside its own, in bytes and in number. */
+/** `names`, those of them by the key they're stored under (supportingAllowance's), where a download's share keeps it. */
+type Kept = { readonly bytes: number; readonly files: number; readonly names?: ReadonlySet<string> };
+const NOTHING_KEPT: Kept = { bytes: 0, files: 0 };
+
+/** A file beside a model, by its folder and the name it's kept under, which one with the same name in the same folder
+ *  would take. */
+const supportingKey = (folder: string | null | undefined, filename: string) =>
+  `${normalizeFolder(folder) ?? ""}\0${sanitizeFilename(filename).toLowerCase()}`;
+
+/** The other files beside a zip's model files -- instructions, notes, sources -- as far as the admin's limits allow,
+ *  marked as supporting, counted on from `kept`, what the model has of them already, and none of those `except` names
+ *  (supportingKey). Best-effort: a zip whose other files can't be read gives none, rather than failing the import of its
+ *  model. `sliced`, for a zip no plate is taken from: its sliced 3MFs too (SupportingPick). `into`, the model's folder
+ *  the zip's files go in, where they're placed, named and told apart from what's kept as they'll be stored there. */
+export async function supportingFilesFromZip(
   zipPath: string,
-): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[] }> {
-  const plates = await modelFilesFromZip(zipPath);
+  kept: Kept = NOTHING_KEPT,
+  except?: ReadonlySet<string>,
+  sliced = false,
+  into?: string | null,
+): Promise<NewPlateInput[]> {
+  const limits = await supportingLimits();
+  if (!limits) return [];
   try {
-    return { plates, sources: await parametricSourcesFromZip(zipPath) };
+    const files = await filesFromZip(zipPath, {
+      supporting: limits,
+      kept: { bytes: kept.bytes, files: kept.files },
+      except,
+      sliced,
+      accepted: keptInside(kept, into).names,
+      into: normalizeFolder(into),
+    });
+    return inFolder(into, files);
   } catch (err) {
-    await Promise.all(plates.map((plate) => fs.rm(plate.tempFilePath!, { force: true }).catch(() => undefined)));
-    throw err;
+    console.warn("Couldn't read the files beside a zip's model files:", err);
+    return [];
   }
 }
 
 /**
- * The generator scripts of a model whose own download didn't carry them, from the zip its metadata points at.
+ * A zip read three times over: the files to print, the scripts beside them, and the other files a model keeps beside
+ * it, a pass that never throws.
+ *
+ * Each pass writes a temp file per entry and cleans up only its own if it throws. So the plates are removed here
+ * when reading the scripts fails -- the caller is handed all of them or none, and never a set of temp files it
+ * doesn't know it has to clean up. `supportingOf` is the last pass, held to what the model keeps by the caller.
+ */
+async function platesAndSourcesFromZip(
+  zipPath: string,
+  supportingOf: (zipPath: string) => Promise<NewPlateInput[]> = (zip) => supportingFilesFromZip(zip),
+): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
+  const plates = await modelFilesFromZip(zipPath);
+  let sources: NewPlateInput[];
+  try {
+    sources = await parametricSourcesFromZip(zipPath);
+  } catch (err) {
+    await Promise.all(plates.map((plate) => fs.rm(plate.tempFilePath!, { force: true }).catch(() => undefined)));
+    throw err;
+  }
+  return { plates, sources, supporting: await supportingOf(zipPath) };
+}
+
+/**
+ * What a model's own download -- one profile's 3MF -- didn't carry, from the zip of its raw files its metadata points
+ * at: the scripts it's generated from, and the files it keeps beside its own.
  *
  * Best-effort throughout: this is an extra download on top of the one the user asked for, and a model with its
  * plates is worth more than a failed import over the script it could also have been generated from.
  */
-async function fetchParametricSources(source: ParametricSourceInfo | undefined): Promise<NewPlateInput[]> {
-  if (!source?.zipUrl || source.withheld) return [];
-  const result = await downloadPlainFileToTemp(source.zipUrl, "sources.zip");
-  if (!result || "rateLimited" in result || !result.input.tempFilePath) return [];
+export async function fetchDesignRawFiles(
+  meta: Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">,
+  had?: { kept: Kept; except?: ReadonlySet<string> },
+): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
+  const scripts =
+    meta.parametricSource?.zipUrl && !meta.parametricSource.withheld ? meta.parametricSource.zipUrl : null;
+  const zipUrl = scripts ?? meta.supportingZipUrl;
+  if (!zipUrl) return { sources: [], supporting: [] };
+  // None for its supporting files alone where the admin keeps none. Otherwise up to an import's own limit, whichever it's
+  // fetched for: it's every file the design has, its model files the bulk of it, so held to what a model keeps of
+  // supporting files it would mostly be skipped, a download of the account's spent on it. What's kept of it is held to
+  // those limits file by file (supportingFilesFromZip).
+  if (!scripts && !(await supportingLimits())) return { sources: [], supporting: [] };
+  const result = await downloadPlainFileToTemp(zipUrl, "sources.zip", IMPORT_MAX_BYTES);
+  if (!result || "rateLimited" in result || !result.input.tempFilePath) return { sources: [], supporting: [] };
   try {
-    return await parametricSourcesFromZip(result.input.tempFilePath);
-  } catch (err) {
-    console.warn("Couldn't read the generator scripts the model points at:", err);
-    return [];
+    let sources: NewPlateInput[] = [];
+    if (scripts) {
+      try {
+        sources = await parametricSourcesFromZip(result.input.tempFilePath);
+      } catch (err) {
+        console.warn("Couldn't read the generator scripts the model points at:", err);
+      }
+    }
+    // The files beside them come in the same zip, and never fail the import (supportingFilesFromZip): those the model
+    // `had` already left out, and the rest held to what's left of its share.
+    return {
+      sources,
+      supporting: await supportingFilesFromZip(result.input.tempFilePath, had?.kept, had?.except, true),
+    };
   } finally {
     await fs.rm(result.input.tempFilePath, { force: true }).catch(() => undefined);
   }
 }
+
+/** A link's download, made up from the design where it gave no scripts: a profile's 3MF holds none, nor the files
+ *  beside the model (fetchDesignRawFiles fetches both), and a zip of raw files can hold those files without the scripts,
+ *  which the creator shared as a zip of their own. Then only that zip is fetched, for its scripts, and of the other
+ *  files in it only the ones the download didn't give already. */
+export async function withDesignRawFiles(
+  meta: Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">,
+  sources: NewPlateInput[],
+  supporting: NewPlateInput[],
+): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
+  if (sources.length) return { sources, supporting };
+  if (!supporting.length) return fetchDesignRawFiles(meta);
+  // By the name each is stored under, as the zip's pass tells them apart (Kept's `names`): the download's root
+  // "LICENSE.txt" and the zip's "LICENSE (original).txt" are one file.
+  const keyOf = (input: NewPlateInput) => {
+    const folder = normalizeFolder(input.folder);
+    return supportingKey(folder, supportingImportName(sanitizeFilename(input.filename), folder));
+  };
+  const given = new Set(supporting.map(keyOf));
+  // What the download gave counts towards the share, and none of it is taken again.
+  let bytes = 0;
+  for (const input of supporting) bytes += (await fs.stat(input.tempFilePath!).catch(() => null))?.size ?? 0;
+  const fetched = await fetchDesignRawFiles(
+    { parametricSource: meta.parametricSource },
+    { kept: { bytes, files: supporting.length, names: given } },
+  );
+  const again = fetched.supporting.filter((input) => given.has(keyOf(input)));
+  await Promise.all(again.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+  return {
+    sources: fetched.sources,
+    supporting: [...supporting, ...fetched.supporting.filter((input) => !given.has(keyOf(input)))],
+  };
+}
+
+/** A zip entry's name as it's kept (`parts`, its path), and what it is goes by that: "photo.png " is a picture. */
+const keptNameOf = (parts: string[]) => sanitizeFilename(parts.at(-1)!);
+const keptExtOf = (parts: string[]) => path.extname(keptNameOf(parts)).toLowerCase();
 
 /** What a zip's folders are worked out over, whichever of its files a call takes, so its plates and scripts, read
  *  twice over (platesAndSourcesFromZip), get the same folders. */
@@ -1108,50 +1308,271 @@ async function zipEntriesInFolders(
   return (await listZipEntries(zipPath))
     .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
     .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
+    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(keptExtOf(parts)))
     .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
 }
 
-/** The entries of a downloaded zip whose extension is one of `exts`, each written to its own temp file and kept in the
- *  folder it has in the zip, less the top folders every file in it shares (a zip named after its model holding one
- *  folder named after it again); the zip itself is left for the caller. An archive holding none of the files wanted
- *  is opened a level deeper, where the ones that only wrap another zip keep them. */
+/** A zip's supporting files where its plates and scripts are, each in its folder less what it shares of the levels
+ *  those all share, so it lands beside them; `holdsModels`, whether it has model files of its own, and `holdsZips`,
+ *  zips (filesFromNestedZips). */
+async function supportingZipEntries(
+  zipPath: string,
+  sliced = false,
+): Promise<{
+  entries: { entry: ZipEntryInfo; parts: string[]; folder: string | null }[];
+  holdsModels: boolean;
+  holdsZips: boolean;
+}> {
+  const listed = (await listZipEntries(zipPath))
+    .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
+    .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
+    .filter(({ parts }) => parts.length)
+    .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
+  const top = sharedTopFolder(listed.filter(({ parts }) => ZIP_FOLDER_EXTS.has(keptExtOf(parts))).map((p) => p.folder));
+  const entries = listed
+    .filter(({ parts }) => (sliced ? isKeptBesideModel : isSupportingImportFile)(keptNameOf(parts)))
+    .map((placed) => ({ ...placed, folder: withoutTopOf(placed.folder, top) }));
+  return {
+    entries,
+    holdsModels: listed.some(({ parts }) => MULTI_FILE_PLATE_EXTS.has(keptExtOf(parts))),
+    holdsZips: listed.some(({ parts }) => keptExtOf(parts) === ".zip"),
+  };
+}
+
+/** What one pass over a zip takes: the files with one of these extensions, or the supporting files beside them, as far
+ *  as their limits go, counting what the pass has kept so far. */
+type SupportingPick = {
+  supporting: SupportingLimits;
+  kept: { bytes: number; files: number };
+  /** The files the model has already, by supportingKey: skipped, taking none of what's left. */
+  except?: ReadonlySet<string>;
+  /** Sliced 3MFs too, for a zip no plate is taken from: one beside its model files is the designer's print file, kept
+   *  beside the model's own as an upload keeps one (zipService), where a zip read for plates too makes it a plate. */
+  sliced?: boolean;
+  /** The files other downloads kept beside the model already (Kept's `names`): skipped where an entry's key is the one
+   *  it's stored under too, taking none of what's left. */
+  accepted?: ReadonlySet<string>;
+  /** The model's folder the zip's files go in, which `except` and `accepted` are named from inside of: a licence
+   *  there keeps its name, as only one at the model's top is renamed (supportingImportName). */
+  into?: string | null;
+};
+type ZipPick = ReadonlySet<string> | SupportingPick;
+const picksSupporting = (pick: ZipPick): pick is SupportingPick => "supporting" in pick;
+/** All a model keeps of its supporting files is taken, in bytes or in number, so a pass for more finds none. */
+const allowanceSpent = (pick: ZipPick) =>
+  picksSupporting(pick) &&
+  (pick.kept.files >= SUPPORTING_FILES_PER_MODEL || pick.kept.bytes >= pick.supporting.perModel);
+
+/** The entries of a downloaded zip `pick` takes, each written to its own temp file and kept in the folder it has in the
+ *  zip, less the top folders every file in it shares (a zip named after its model holding one folder named after it
+ *  again); the zip itself is left for the caller. An archive holding none of the files wanted is opened a level
+ *  deeper, where the ones that only wrap another zip keep them. Supporting files are looked for where the model's
+ *  files are, so only an archive holding none of those is opened for them. `topIsModelTop`: what's at the top of this
+ *  zip is at the top of the model, as for the zip the import opened, and one it only wraps (filesFromNestedZips). */
 async function filesFromZip(
   zipPath: string,
-  exts: ReadonlySet<string>,
+  pick: ZipPick,
   depth = 0,
   budget: NestedZipBudget = { archives: NESTED_ZIP_BUDGET, bytes: IMPORT_MAX_BYTES },
+  placements?: (string | null)[],
+  topIsModelTop = depth === 0,
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
+  // Each one's folder as the zip has it, for placing them with what the archives it wraps hold.
+  const inZip: (string | null)[] = [];
   try {
-    const entries = (await placedZipEntries(zipPath)).filter(({ parts }) =>
-      exts.has(path.extname(parts.at(-1)!).toLowerCase()),
-    );
+    const supporting = picksSupporting(pick) ? await supportingZipEntries(zipPath, pick.sliced) : null;
+    const entries =
+      supporting?.entries ??
+      (await placedZipEntries(zipPath)).filter(({ parts }) => !picksSupporting(pick) && pick.has(keptExtOf(parts)));
+    // A name the model keeps once, in any case ("GUIDE.pdf" beside "guide.pdf"), is taken once: a second copy would
+    // take a share of what the model keeps that it then wouldn't. Noted once it's out, so an unreadable first copy
+    // leaves room for a readable second. By the name it's stored under (supportingImportName), where its folder here
+    // is the one it's stored in: at the top of the model (`topIsModelTop`, and no folder it goes `into`), a licence of
+    // the site's is "LICENSE (original).txt" as one called so is. Another nested zip's top may yet be a folder of its own. Its folder
+    // is the one it's placed in here, as this zip's own files share levels, unless the zip only wraps archives it will
+    // be opened for: then they're placed from the folders they have in it, with what those hold (filesFromNestedZips),
+    // and told apart by those, which one placed folder never holds two of.
+    const descends = Boolean(supporting && !supporting.holdsModels && supporting.holdsZips && depth < NESTED_ZIP_DEPTH);
+    const taken = new Set<string>();
+    const into = picksSupporting(pick) ? pick.into : null;
     for (const { entry, parts, folder } of entries) {
-      const filename = sanitizeFilename(parts.at(-1)!);
+      const placedIn = descends ? normalizeFolder(parts.slice(0, -1)) : folder;
+      const named = topIsModelTop
+        ? supportingImportName(keptNameOf(parts), joinFolders(into, placedIn))
+        : keptNameOf(parts);
+      const stored = supportingKey(placedIn, named);
+      // Ones the model has, and ones another download kept, where it's known here where this one is stored: at the
+      // model's top, placed by this zip alone. Elsewhere that's known only once its folders are (withoutHad).
+      const had =
+        picksSupporting(pick) &&
+        topIsModelTop &&
+        !descends &&
+        (pick.except?.has(supportingKey(placedIn, keptNameOf(parts))) || pick.accepted?.has(stored));
+      if (picksSupporting(pick) && (had || taken.has(stored))) continue;
+      // As many files as a model keeps, whatever their size: each is written out before it's counted.
+      if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
+        console.warn(
+          `Kept the ${SUPPORTING_FILES_PER_MODEL} files beside a model that it may have, and left the rest:`,
+          {
+            zip: path.basename(zipPath),
+            left: entries.length - entries.findIndex((each) => each.entry === entry),
+          },
+        );
+        break;
+      }
+      const cap = picksSupporting(pick)
+        ? Math.min(pick.supporting.perFile, pick.supporting.perModel - pick.kept.bytes)
+        : IMPORT_MAX_BYTES;
+      if (cap <= 0) break;
+      // One the listing says is too large is skipped as extracting it would, without opening the zip again for it: the
+      // extraction still stops at the cap for one whose listed size is understated.
+      if (entry.size > cap) continue;
+      const filename = keptNameOf(parts);
       const tempFilePath = path.join(
         os.tmpdir(),
         `thingport-zip-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
       );
       // Straight to the file: a model file is as big as an import is allowed to be, and holding it is pointless.
-      if ((await extractZipEntryToFile(zipPath, entry.name, tempFilePath, IMPORT_MAX_BYTES)) === null) continue;
-      inputs.push({ filename, mime: guessMimeFromPath(filename), tempFilePath, folder });
+      let written: number | null;
+      try {
+        written = await extractZipEntryToFile(zipPath, entry.name, tempFilePath, cap);
+      } catch (err) {
+        // A model file that can't be read fails the import; a supporting file is skipped, as one too large is, and
+        // the ones kept before it stay.
+        if (!picksSupporting(pick)) throw err;
+        await fs.rm(tempFilePath, { force: true }).catch(() => undefined);
+        console.warn(`Couldn't read ${entry.name} from a zip to keep it beside the model:`, err);
+        continue;
+      }
+      if (written === null) continue;
+      if (picksSupporting(pick)) {
+        pick.kept.bytes += written;
+        pick.kept.files += 1;
+        taken.add(stored);
+      }
+      inputs.push({
+        filename,
+        mime: guessMimeFromPath(filename),
+        tempFilePath,
+        folder,
+        ...(picksSupporting(pick) ? { supporting: true } : {}),
+      });
+      inZip.push(normalizeFolder(parts.slice(0, -1)));
     }
+    // None of what was wanted here, so it is in an archive this one only wraps. The files beside that archive are kept
+    // with what it holds: a site's instructions beside the zip of its model, or a zip of nothing but such files.
+    // A script beside the archive doesn't make it the model's: only model files do. Not once a model's supporting
+    // files are all taken: nothing more would be kept of what it holds, for all it costs to write it out.
+    const wraps = picksSupporting(pick)
+      ? !(await zipEntriesInFolders(zipPath)).some(({ parts }) => MULTI_FILE_PLATE_EXTS.has(keptExtOf(parts)))
+      : !inputs.length;
+    // The zip the import opened: its files' folders are where they're stored by now.
+    const placed = async (files: NewPlateInput[]) =>
+      depth === 0 && picksSupporting(pick) ? withoutHad(pick, files) : files;
+    if (!wraps || depth >= NESTED_ZIP_DEPTH || allowanceSpent(pick)) {
+      placements?.push(...(await placedZipEntries(zipPath)).map((each) => each.folder));
+      return await placed(inputs);
+    }
+    // Its own files go with the archives', placed once, as the model in them is.
+    const beside = inputs.map((input, index) => ({ ...input, folder: inZip[index] }));
+    return await placed(await filesFromNestedZips(zipPath, pick, depth, budget, placements, beside, topIsModelTop));
   } catch (err) {
+    // The files written out so far go with it, whichever step failed: the caller is handed all or none.
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
-  // None of what was wanted here, so it is in an archive this one only wraps.
-  if (!inputs.length && depth < NESTED_ZIP_DEPTH) return filesFromNestedZips(zipPath, exts, depth, budget);
-  return inputs;
+}
+
+/** A zip's supporting files, placed where they're stored, less those the model has (`except`) and those another download
+ *  kept (`accepted`), by that placement: what each took of the pass's share is given back, and its file removed. The
+ *  pass leaves out at once those it knows are stored so (filesFromZip); this is every other's, once it's known. */
+async function withoutHad(pick: SupportingPick, files: NewPlateInput[]): Promise<NewPlateInput[]> {
+  if (!pick.except?.size && !pick.accepted?.size) return files;
+  const left: NewPlateInput[] = [];
+  for (const file of files) {
+    const folder = normalizeFolder(file.folder);
+    const name = sanitizeFilename(file.filename);
+    const had =
+      pick.except?.has(supportingKey(folder, name)) ||
+      pick.accepted?.has(supportingKey(folder, supportingImportName(name, joinFolders(pick.into, folder))));
+    if (!had || !file.tempFilePath) {
+      left.push(file);
+      continue;
+    }
+    const size = (await fs.stat(file.tempFilePath).catch(() => null))?.size ?? 0;
+    pick.kept.bytes -= size;
+    pick.kept.files -= 1;
+    await fs.rm(file.tempFilePath, { force: true }).catch(() => undefined);
+  }
+  return left;
+}
+
+/** A model's turn at what it keeps of the files beside its own: `fetch` is given what it has of them by then, and the
+ *  supporting files it gives count from then on. */
+type SupportingTake = (fetch: (kept: Kept) => Promise<NewPlateInput[]>) => Promise<NewPlateInput[]>;
+
+/** The turn of a download that's the only one, with nothing kept before it. */
+const takeAlone: SupportingTake = (fetch) => fetch(NOTHING_KEPT);
+
+/** One model's share of the files a site gives beside its own, which every download of them for it takes its turn at
+ *  (an import's kit, importKit): one at a time, each given what the ones before it kept, in bytes and in number, so
+ *  files asked for at once can't each take the same room. A file by the name and folder of one a turn before gave
+ *  takes none of it, as the model keeps one by each (keepSupportingFiles); one that failed gave nothing. */
+export function supportingAllowance(): SupportingTake {
+  // Handed to each turn as what's kept by name too, so a zip's pass leaves out a file one before gave (filesFromZip).
+  const names = new Set<string>();
+  let kept: Kept = { ...NOTHING_KEPT, names };
+  let turn: Promise<unknown> = Promise.resolve();
+  return (fetch) => {
+    const next = turn.then(async () => {
+      const inputs = await fetch(kept);
+      for (const input of inputs) {
+        if (!input.supporting || !input.tempFilePath) continue;
+        const folder = normalizeFolder(input.folder);
+        const name = supportingKey(folder, supportingImportName(sanitizeFilename(input.filename), folder));
+        if (names.has(name)) continue;
+        names.add(name);
+        const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size ?? 0;
+        kept = { bytes: kept.bytes + size, files: kept.files + 1, names };
+      }
+      return inputs;
+    });
+    turn = next.catch(() => undefined);
+    return next;
+  };
+}
+
+/** What a download gives, inside the folder on the site its file is in: where the model keeps it, so what it takes of
+ *  the model's share goes by that (supportingAllowance), and a guide in each of two folders is two. */
+function inFolder(folder: string | null | undefined, inputs: NewPlateInput[]): NewPlateInput[] {
+  if (!normalizeFolder(folder)) return inputs;
+  return inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) }));
+}
+
+/** What's kept, with the names of those in `folder` as they're named from inside it, for a zip's pass there: that goes
+ *  by where its files are in the zip (filesFromZip). */
+function keptInside(kept: Kept, folder: string | null | undefined): Kept {
+  const top = normalizeFolder(folder);
+  if (!top || !kept.names) return kept;
+  const names = new Set<string>();
+  for (const name of kept.names) {
+    const at = name.slice(0, name.indexOf("\0"));
+    if (at === top) names.add(name.slice(at.length));
+    else if (at.startsWith(`${top}/`)) names.add(name.slice(top.length + 1));
+  }
+  return { ...kept, names };
 }
 
 /** A provider's signed file link, on one of its own hosts; a zip is unpacked into its model files. Null when it
- *  didn't download. */
+ *  didn't download. A file beside the model's own, and the ones in a zip beside its model files, take their turn at
+ *  what the model keeps of them (`take`), in `folder`, the one the site has the file in. */
 async function downloadSignedFile(
   file: { url: string; name: string },
   isFileHost: (hostname: string) => boolean,
   blockedMessage: string,
+  take: SupportingTake = takeAlone,
+  folder?: string | null,
 ): Promise<NewPlateInput[] | null> {
   let hostname: string;
   try {
@@ -1160,24 +1581,158 @@ async function downloadSignedFile(
     return null;
   }
   if (!isFileHost(hostname)) return null;
+  if (isSupportingImportFile(sanitizeFilename(file.name))) {
+    return take(async (kept) => inFolder(folder, await signedSupportingFile(file, kept)));
+  }
   const result = await downloadPlainFileToTemp(file.url, file.name);
   if (result && "rateLimited" in result) throw new HttpError(429, blockedMessage);
   if (!result) return null;
   const ext = path.extname(result.input.filename).toLowerCase();
   if (ext === ".zip") {
     try {
-      // The scripts come along with the model files; createPrint keeps each as what it is.
-      const { plates, sources } = await platesAndSourcesFromZip(result.input.tempFilePath!);
-      return [...plates, ...sources];
+      // The scripts and the other files come along with the model files; createPrint keeps each as what it is.
+      const { plates, sources, supporting } = await platesAndSourcesFromZip(result.input.tempFilePath!, (zip) =>
+        take((kept) => supportingFilesFromZip(zip, kept, undefined, false, folder)),
+      );
+      return [...inFolder(folder, plates), ...inFolder(folder, sources), ...supporting];
     } finally {
       await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
     }
   }
   // A site that lists a model's files one by one -- Thingiverse's customizable models, Printables' sources --
   // offers the script as a file of its own rather than inside a zip.
-  if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return [result.input];
+  if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return inFolder(folder, [result.input]);
   await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
+}
+
+/** A file beside the model's own from a signed link: worth what the admin's limits allow, held to the room `kept`
+ *  leaves, and never the import's failure, so a block or a failure skips it. */
+async function signedSupportingFile(file: { url: string; name: string }, kept: Kept): Promise<NewPlateInput[]> {
+  const limits = await supportingLimits();
+  if (!limits || kept.files >= SUPPORTING_FILES_PER_MODEL) return [];
+  const cap = Math.min(limits.perFile, limits.perModel - kept.bytes);
+  if (cap <= 0) return [];
+  try {
+    const result = await downloadPlainFileToTemp(file.url, file.name, cap);
+    return result && "input" in result ? [{ ...result.input, supporting: true }] : [];
+  } catch (err) {
+    console.warn(`Couldn't keep ${file.name} beside the model:`, err);
+    return [];
+  }
+}
+
+/** A file a site gives beside a model's own (ImportKit.downloadSupportingFile): within the admin's limits, never the
+ *  import's failure, and a zip only for the supporting files in it. Held, with a zip's files, to the room `kept`
+ *  leaves of what a model keeps. */
+export async function downloadSupportingFile(
+  file: { url: string; name: string },
+  isFileHost: (hostname: string) => boolean,
+  kept: Kept = NOTHING_KEPT,
+  folder?: string | null,
+): Promise<NewPlateInput[]> {
+  try {
+    return await supportingDownload(file, isFileHost, kept, folder);
+  } catch (err) {
+    console.warn(`Couldn't keep ${file.name} beside the model:`, err);
+    return [];
+  }
+}
+
+/** Files a site gives beside a model's own (ImportKit.downloadSupportingFiles), each in its turn at what the model keeps
+ *  of them (`take`): once the ones fetched fill it, in bytes or in number, the rest aren't fetched, nor their links
+ *  asked for where a function gives them. One that fails or is over the limit is skipped and counts for nothing, as
+ *  is one whose link can't be had, however the function says so. Each goes in `folder`, the one the site has it in. */
+export async function downloadSupportingFiles(
+  files: { url: string | (() => Promise<string | null>); name: string; folder?: string | null }[],
+  isFileHost: (hostname: string) => boolean,
+  take: SupportingTake = supportingAllowance(),
+): Promise<NewPlateInput[]> {
+  const fetched: NewPlateInput[] = [];
+  for (const file of files) {
+    let filled = false;
+    const inputs = await take(async (kept) => {
+      // The admin's limits read at each turn, before a link is asked for: kept off meanwhile, none is.
+      const limits = await supportingLimits();
+      filled = !limits || kept.files >= SUPPORTING_FILES_PER_MODEL || kept.bytes >= limits.perModel;
+      if (filled) return [];
+      let url: string | null = null;
+      try {
+        url = typeof file.url === "string" ? file.url : await file.url();
+      } catch {
+        // Skipped, as one whose link comes back empty is.
+      }
+      return url ? downloadSupportingFile({ url, name: file.name }, isFileHost, kept, file.folder) : [];
+    });
+    if (filled) break;
+    fetched.push(...inputs);
+  }
+  return fetched;
+}
+
+async function supportingDownload(
+  file: { url: string; name: string },
+  isFileHost: (hostname: string) => boolean,
+  kept: Kept,
+  folder?: string | null,
+): Promise<NewPlateInput[]> {
+  const limits = await supportingLimits();
+  if (!limits || kept.files >= SUPPORTING_FILES_PER_MODEL) return [];
+  const room = limits.perModel - kept.bytes;
+  if (room <= 0) return [];
+  let hostname: string;
+  try {
+    hostname = new URL(file.url).hostname;
+  } catch {
+    return [];
+  }
+  if (!isFileHost(hostname)) return [];
+  // A zip's files are held to the limits as it's opened, each to the room left, so the zip may be as large as all a
+  // model keeps, whatever it has already: two guides that each fit can make one too large for a file of its own, or
+  // for the room. By the name it's kept by, as it's opened by that.
+  const isZip = path.extname(sanitizeFilename(file.name)).toLowerCase() === ".zip";
+  const cap = isZip ? Math.min(limits.perModel, IMPORT_MAX_BYTES) : Math.min(limits.perFile, room);
+  if (cap <= 0) return [];
+  const result = await downloadPlainFileToTemp(file.url, file.name, cap);
+  if (!result || "rateLimited" in result) return [];
+  const input = result.input;
+  if (path.extname(input.filename).toLowerCase() === ".zip") {
+    try {
+      return await supportingFilesFromZip(input.tempFilePath!, kept, undefined, true, folder);
+    } finally {
+      await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
+    }
+  }
+  if (isKeptBesideModel(input.filename)) return inFolder(folder, [{ ...input, supporting: true }]);
+  await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
+  return [];
+}
+
+/** A site's downloaded files as an import keeps them: its model files and scripts as they are, any other file worth
+ *  keeping marked as a supporting one, and what isn't removed. One with no extension is left as it came. */
+async function asImported(inputs: NewPlateInput[]): Promise<NewPlateInput[]> {
+  const kept: NewPlateInput[] = [];
+  for (const input of inputs) {
+    const ext = path.extname(input.filename).toLowerCase();
+    if (input.supporting || !ext || MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) {
+      kept.push(input);
+    } else if (isSupportingImportFile(input.filename)) {
+      kept.push({ ...input, supporting: true });
+    } else if (input.tempFilePath) {
+      await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
+    }
+  }
+  return kept;
+}
+
+/** Whether a site's files hold anything to print: its supporting files alone don't. Removes them when they don't, as
+ *  the caller is about to say there's nothing to import. */
+async function holdsModelFiles(inputs: NewPlateInput[]): Promise<boolean> {
+  if (inputs.some((input) => !input.supporting)) return true;
+  await Promise.all(
+    inputs.map((input) => input.tempFilePath && fs.rm(input.tempFilePath, { force: true }).catch(() => undefined)),
+  );
+  return false;
 }
 
 /** A new print from a provider model whose files are downloaded: its metadata, author, category and gallery. Removes
@@ -1192,6 +1747,7 @@ async function createSourcedPrint(
   profiles: ProfileDetails = {},
 ): Promise<ImportResult> {
   const { meta, galleryImages } = resolved;
+  const kept = await asImported(downloaded);
   try {
     const author = await upsertAuthorFromImport(meta.author ?? null);
     const categoryId =
@@ -1216,7 +1772,7 @@ async function createSourcedPrint(
         userId,
         printMeta,
         meta.title || nameHint,
-        nameInputsApart(downloaded, profiles.titles),
+        nameInputsApart(kept, profiles.titles),
         IMPORTED,
       );
     } catch (err) {
@@ -1249,21 +1805,43 @@ async function createSourcedPrint(
   }
 }
 
+/** The kit one model's download is given: every file a site gives beside the model's own, whichever way it's fetched,
+ *  takes its turn at the one share of them the model has (supportingAllowance). */
+export function importKit(): PipelineKit {
+  const take = supportingAllowance();
+  return {
+    ...IMPORT_KIT,
+    downloadSignedFile: (file, isFileHost, blockedMessage, folder) =>
+      downloadSignedFile(file, isFileHost, blockedMessage, take, folder),
+    downloadSupportingFile: (file, isFileHost) => take((kept) => downloadSupportingFile(file, isFileHost, kept)),
+    downloadSupportingFiles: (files, isFileHost) => downloadSupportingFiles(files, isFileHost, take),
+  };
+}
+
 const IMPORT_KIT: PipelineKit = {
-  downloadSignedFile,
+  downloadSignedFile: (file, isFileHost, blockedMessage, folder) =>
+    downloadSignedFile(file, isFileHost, blockedMessage, takeAlone, folder),
   downloadFile: downloadPlainFileToTemp,
   isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()),
   isImportableFile: (name) =>
     MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
     PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
+  isSupportingFile: isSupportingImportFile,
+  isKeptBesideModel,
+  isDocumentFile: (name) => Boolean(path.extname(name)) && isDocumentFile(name),
+  supportingLimit: async () => (await supportingLimits())?.perFile ?? null,
+  downloadSupportingFile: (file, isFileHost) => downloadSupportingFile(file, isFileHost),
+  downloadSupportingFiles,
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {
     // A generator script is never a plate, however it arrives (see createPrint), so one that came down beside a
     // profile is kept beside the model instead -- addProfilePlateWithDetails would make a plate of it, and the
     // script belongs to the model rather than to the profile that happened to bring it.
-    const scripts = inputs.filter((input) => isGeneratorScript(input.filename));
-    const plateInputs = inputs.filter((input) => !isGeneratorScript(input.filename));
+    const imported = await asImported(inputs);
+    const supporting = imported.filter((input) => input.supporting);
+    const scripts = imported.filter((input) => !input.supporting && isGeneratorScript(input.filename));
+    const plateInputs = imported.filter((input) => !input.supporting && !isGeneratorScript(input.filename));
     let current: ExistingImportedPrint = existing;
     let profileAdded = false;
     try {
@@ -1275,6 +1853,8 @@ const IMPORT_KIT: PipelineKit = {
       // Deliberately not counted as something imported: whether the import found a profile the library hadn't
       // got is what `alreadyImported` answers, and a script picked up along the way doesn't change that answer.
       await keepGeneratorScripts(existing.print.userId, existing.print.id, scripts);
+      // Beside the model, as its scripts are, and only those it hasn't got yet.
+      await keepSupportingFiles(existing.print.userId, existing.print.id, supporting);
     } finally {
       for (const input of inputs) {
         if (input.tempFilePath && fsSync.existsSync(input.tempFilePath)) {
@@ -1330,14 +1910,15 @@ async function importSourced(
       resolved,
       auth,
       requested,
-      IMPORT_KIT,
+      importKit(),
     );
   } catch (err) {
     throw await impl.mapError(userId, err, auth);
   }
-  if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
+  downloaded = await asImported(downloaded);
+  if (!(await holdsModelFiles(downloaded))) throw new HttpError(400, impl.noFilesMessage);
   // A folder every file shares says nothing of which is which.
-  downloaded = withoutSharedTop(downloaded);
+  downloaded = withoutModelsSharedTop(downloaded);
   return createSourcedPrint(
     userId,
     source,
@@ -1373,7 +1954,7 @@ async function addSourcedProfile(
       model ??= await impl.resolveModel(externalId, auth);
       if (!model) throw new HttpError(404, impl.missingMessage);
     }
-    profile = await profiles.download({ userId, externalId }, model, wanted, auth, IMPORT_KIT);
+    profile = await profiles.download({ userId, externalId }, model, wanted, auth, importKit());
   } catch (err) {
     throw await impl.mapError(userId, err, auth);
   }
@@ -1441,8 +2022,8 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   if (existing && sourced) return addSourcedProfile(existing, url, body, sourced);
   if (sourced) return importSourced(userId, source!, url, body, sourced);
   const custom = source && isProviderId(source.provider) ? PROVIDERS[source.provider].customImport : undefined;
-  if (existing && custom) return custom.addToExisting(existing, body, IMPORT_KIT);
-  if (custom) return custom.importModel(userId, source!, body, IMPORT_KIT);
+  if (existing && custom) return custom.addToExisting(existing, body, importKit());
+  if (custom) return custom.importModel(userId, source!, body, importKit());
   // MakerWorld still imports here: its pages are what the link import below reads.
   if (existing) return addMakerworldProfileToPrint(existing, url, body);
   return importLinkedFile(userId, url, source, body);
@@ -1459,38 +2040,48 @@ async function importLinkedFile(
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
   let sources: NewPlateInput[] = [];
+  let supporting: NewPlateInput[] = [];
   try {
-    ({ plates, sources } = await rawFilesZipContents(source, tempPath, filename));
+    ({ plates, sources, supporting } = await rawFilesZipContents(source, tempPath, filename));
   } catch (err) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
   }
-  if (!plates.length) {
-    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
-  }
-  // A zip of raw files already gave up its scripts above; anything else has to fetch them separately.
-  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
-  const author = await upsertAuthorFromImport(meta.author);
-  const categoryId =
-    body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));
-  const printMeta: PrintMetaInput = {
-    title: body.title ?? meta.title ?? null,
-    notes: body.notes ?? meta.description ?? null,
-    tags: body.tags && body.tags.length ? body.tags : meta.tags,
-    categoryId,
-    categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-    creator: meta.creator ?? null,
-    authorId: author?.id ?? null,
-    sourceProvider: source?.provider ?? null,
-    sourceExternalId: source?.externalId ?? null,
-    generatorScriptWithheld: meta.parametricSource?.withheld === true,
-    licenseColumns: importedLicenseData(source?.provider, meta.license),
-  };
-
+  // The files written for it go at the end, whatever happens from here: the lookups below can fail too.
   try {
+    if (!plates.length) {
+      plates = [
+        { filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null },
+      ];
+    }
+    // A zip of raw files already gave up its scripts and the files beside them above; a profile's 3MF fetches them.
+    ({ sources, supporting } = await withDesignRawFiles(meta, sources, supporting));
+    const author = await upsertAuthorFromImport(meta.author);
+    const categoryId =
+      body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));
+    const printMeta: PrintMetaInput = {
+      title: body.title ?? meta.title ?? null,
+      notes: body.notes ?? meta.description ?? null,
+      tags: body.tags && body.tags.length ? body.tags : meta.tags,
+      categoryId,
+      categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
+      creator: meta.creator ?? null,
+      authorId: author?.id ?? null,
+      sourceProvider: source?.provider ?? null,
+      sourceExternalId: source?.externalId ?? null,
+      generatorScriptWithheld: meta.parametricSource?.withheld === true,
+      licenseColumns: importedLicenseData(source?.provider, meta.license),
+    };
+
     let result: { print: Print; plates: Plate[] };
     try {
-      result = await createPrint(userId, printMeta, path.parse(filename).name, [...plates, ...sources], IMPORTED);
+      result = await createPrint(
+        userId,
+        printMeta,
+        path.parse(filename).name,
+        [...plates, ...sources, ...supporting],
+        IMPORTED,
+      );
     } catch (err) {
       // Race guard: a concurrent import of the same source model won.
       if (source && isUniqueConstraintError(err)) {
@@ -1514,7 +2105,7 @@ async function importLinkedFile(
     });
     return { ...result, author, previewImages, alreadyImported: false };
   } finally {
-    for (const file of [tempPath, ...[...plates, ...sources].map((input) => input.tempFilePath)]) {
+    for (const file of [tempPath, ...[...plates, ...sources, ...supporting].map((input) => input.tempFilePath)]) {
       if (file && fsSync.existsSync(file)) await fs.rm(file, { force: true }).catch(() => undefined);
     }
   }
@@ -1528,14 +2119,15 @@ async function rawFilesZipContents(
   source: { provider: string } | null,
   tempPath: string,
   filename: string,
-): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[] }> {
+): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
   const zipOfFiles = source && isProviderId(source.provider) && manifestOf(source.provider).capabilities.rawFilesZip;
-  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return { plates: [], sources: [] };
-  const { plates, sources } = await platesAndSourcesFromZip(tempPath);
+  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip")
+    return { plates: [], sources: [], supporting: [] };
+  const { plates, sources, supporting } = await platesAndSourcesFromZip(tempPath);
   // Only once it has given up something to print. A zip of nothing but scripts has no geometry in it, so the
   // zip itself stands in as the model's file, and removing it would leave that pointing at nothing.
   if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
-  return { plates, sources };
+  return { plates, sources, supporting };
 }
 
 /** A model's files, downloaded without a print to put them on: what a repair needs when the row is already there
@@ -1565,14 +2157,15 @@ export async function downloadSourcedModelFiles(
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   let downloaded: NewPlateInput[];
   try {
-    downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, IMPORT_KIT);
+    downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, importKit());
   } catch (err) {
     throw await impl.mapError(userId, err, auth);
   }
-  if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
+  downloaded = await asImported(downloaded);
+  if (!(await holdsModelFiles(downloaded))) throw new HttpError(400, impl.noFilesMessage);
   const profiles = profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true });
   return {
-    inputs: nameInputsApart(withoutSharedTop(downloaded), profiles.titles),
+    inputs: nameInputsApart(withoutModelsSharedTop(downloaded), profiles.titles),
     coverImageUrl: resolved.meta.previewImageUrl ?? null,
     galleryImages: resolved.galleryImages,
     profiles,
@@ -1586,8 +2179,9 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
   let sources: NewPlateInput[] = [];
+  let supporting: NewPlateInput[] = [];
   try {
-    ({ plates, sources } = await rawFilesZipContents(source, tempPath, filename));
+    ({ plates, sources, supporting } = await rawFilesZipContents(source, tempPath, filename));
   } catch (err) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
@@ -1595,10 +2189,17 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
   if (!plates.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
-  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
+  try {
+    ({ sources, supporting } = await withDesignRawFiles(meta, sources, supporting));
+  } catch (err) {
+    // The caller is handed all of them or none.
+    const written = [tempPath, ...[...plates, ...sources, ...supporting].map((input) => input.tempFilePath)];
+    await Promise.all(written.map((file) => file && fs.rm(file, { force: true }).catch(() => undefined)));
+    throw err;
+  }
   const profiles = makerworldProfileDetails(meta.makerworldProfile);
   return {
-    inputs: nameInputsApart([...plates, ...sources], profiles.titles),
+    inputs: nameInputsApart([...plates, ...sources, ...supporting], profiles.titles),
     coverImageUrl: meta.previewImageUrl ?? null,
     galleryImages: meta.galleryImages,
     profiles,

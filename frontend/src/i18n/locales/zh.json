@@ -1441,6 +1441,15 @@
         "saveFailed": "无法保存图片保留数量",
         "loadFailed": "无法加载图片保留数量。"
       },
+      "importSupportingFiles": {
+        "label": "导入时保留附加文件",
+        "help": "模型网站在模型文件旁提供的文件（说明、笔记、零件清单、源文件）会作为其附加文件保留，每个文件不超过此大小。每个模型总共最多保留其两倍半。图片会被跳过，因为模型照片来自其页面。“关闭”不保留任何文件；已导入的模型保留原有文件。",
+        "off": "关闭",
+        "any": "不限大小",
+        "size": "{{count}} MB",
+        "saveFailed": "无法保存导入保留哪些附加文件",
+        "loadFailed": "无法加载导入保留哪些附加文件。"
+      },
       "freeSpace": {
         "open": "释放空间",
         "freeing": "正在释放空间…",
@@ -2202,7 +2211,8 @@
           "migration_export_read": "被另一个实例复制",
           "achievement_settings_changed": "更改成就设置",
           "storage_cleanup_started": "开始释放空间",
-          "photos_per_model_changed": "更改每个模型保留的图片数"
+          "photos_per_model_changed": "更改每个模型保留的图片数",
+          "import_supporting_files_changed": "更改了导入保留哪些附加文件"
         },
         "authorsLinked": "已关联 {{count}} 个模型",
         "descriptionsRefetched": "{{email}}：{{total}} 条描述中有 {{updated}} 条已更改",

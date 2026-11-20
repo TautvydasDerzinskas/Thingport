@@ -269,21 +269,29 @@ export type MakeronlineDownloadRequest = {
   payload: { key: string; file_type: 1 | 2; is_batch_down: 0; mold_id?: number; print_profile_id?: number };
   name: string;
   profile_id: string | null;
+  /** A file the model keeps beside its own, which the import does without: Grab asks for it last, shows no puzzle for
+   *  it, and leaves it when it isn't signed. Only for a Grab that asked for them. */
+  supporting?: boolean;
 };
 
 /** The files an import of `scope` needs: each picked profile's 3MF, or, for a model without profiles, its model
- *  files. */
+ *  files. With `beside`, the model's own files it tells apart as ones to keep beside it come last and marked, so Grab
+ *  can do without one it can't get signed: alongside a profile's 3MF, or after the model files of a model without. */
 export function makeronlineDownloadPlan(
   modelId: string,
   resolution: MakeronlineModelResolution,
   scope: MakeronlineProfileScope,
   requestedProfileId: string | null,
+  beside?: (name: string) => boolean,
 ): MakeronlineDownloadRequest[] {
   const modelFile = (file: { key: string; name: string }): MakeronlineDownloadRequest => ({
     payload: { key: file.key, file_type: 1, is_batch_down: 0, mold_id: Number(modelId) },
     name: file.name,
     profile_id: null,
   });
+  // A script is the model's own, never a file beside it.
+  const isExtra = (file: { name: string }) => !!beside && !isGeneratorScript(file.name) && beside(file.name);
+  const extras = resolution.modelFiles.filter(isExtra).map((file) => ({ ...modelFile(file), supporting: true }));
   const picked = selectMakeronlineProfiles(resolution, scope, requestedProfileId);
   if (picked.length) {
     const profiles: MakeronlineDownloadRequest[] = picked.map((profileId) => {
@@ -296,9 +304,12 @@ export function makeronlineDownloadPlan(
     });
     // A profile is one printer's 3MF; the script the model was generated from belongs to the model, so it
     // comes alongside and untagged. Without this a model with profiles never asks for its scripts at all.
-    return [...profiles, ...resolution.modelFiles.filter((file) => isGeneratorScript(file.name)).map(modelFile)];
+    const scripts = resolution.modelFiles.filter((file) => isGeneratorScript(file.name)).map(modelFile);
+    return [...profiles, ...scripts, ...extras];
   }
-  return resolution.modelFiles.map(modelFile);
+  // Without `beside`, the model's files as they come, as the plan always was.
+  if (!beside) return resolution.modelFiles.map(modelFile);
+  return [...resolution.modelFiles.filter((file) => !isExtra(file)).map(modelFile), ...extras];
 }
 
 /** The hosts MakerOnline's signed file links point at: its own, and its private S3 buckets. */

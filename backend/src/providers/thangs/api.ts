@@ -238,7 +238,22 @@ export type ThangsModelResolution = {
   access: ThangsAccess;
   /** In US dollars, when it's for sale. */
   price: number | null;
+  /** The files its designer put beside it under Reference Files, on Thangs' public bucket. */
+  referenceFiles: ThangsFile[];
 };
+
+/** Where Thangs keeps its public uploads, a reference file's among them. */
+const PUBLIC_BUCKET = "https://storage.googleapis.com/production-thangs-public/";
+
+/** A model's reference files, each named by its upload's last part. */
+function referenceFilesIn(list: unknown): ThangsFile[] {
+  return (Array.isArray(list) ? list : []).flatMap((file) => {
+    const path = isRecord(file) ? str(file.filename) : null;
+    const name = path?.split("/").pop()?.trim();
+    if (!path || !name || path.startsWith("/") || path.includes("..")) return [];
+    return [{ name, url: `${PUBLIC_BUCKET}${path.split("/").map(encodeURIComponent).join("/")}` }];
+  });
+}
 
 function authorOf(owner: unknown): ImportedAuthorInfo | null {
   if (!isRecord(owner)) return null;
@@ -322,6 +337,7 @@ export function thangsMetaFromModel(model: Record<string, unknown>): ThangsModel
     modelId,
     access: accessOf(model),
     price: marketplace && typeof marketplace.priceInUSD === "number" ? marketplace.priceInUSD : null,
+    referenceFiles: referenceFilesIn(model.referenceFiles),
   };
 }
 

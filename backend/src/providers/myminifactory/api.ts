@@ -376,7 +376,8 @@ export async function checkMyminifactorySession(cookie: string): Promise<"ok" | 
 
 /** A file in the user's library, where its download starts, and the folder it's in within its archive (with the
  *  archive's name above it when the object has several), or null. */
-export type MyminifactoryLibraryFile = { name: string; path: string; folder?: string | null };
+/** `supporting`: a file the model keeps beside its own (instructions, sources), which never fails an import. */
+export type MyminifactoryLibraryFile = { name: string; path: string; folder?: string | null; supporting?: boolean };
 
 /** What's in an archive's MyMiniFactory unpacked, or the archive itself when it wasn't. */
 type LibraryArchive = { id: string | null; name: string; files: { id: string; path: string }[] };
@@ -399,6 +400,7 @@ export async function listMyminifactoryLibraryFiles(
   objectId: string,
   cookie: string,
   isModelFile: (name: string) => boolean,
+  isSupportingFile: (name: string) => boolean = () => false,
 ): Promise<MyminifactoryLibraryFile[] | null> {
   const res = await sessionFetch(
     `/api/data-library/myObjects/object-${encodeURIComponent(objectId)}/downloadables`,
@@ -412,31 +414,35 @@ export async function listMyminifactoryLibraryFiles(
   const data: unknown = await res.json().catch(() => null);
   if (!isRecord(data)) throw new Error("Couldn't read this model from your MyMiniFactory library");
   const id = encodeURIComponent(objectId);
-  const parts = Array.isArray(data.parts)
-    ? data.parts.flatMap((part) => {
-        const name = isRecord(part) ? str(part.name) : null;
-        return name && isModelFile(name)
-          ? [{ name, path: `/download/${id}?downloadfile=${encodeURIComponent(name)}` }]
-          : [];
-      })
-    : [];
+  // A list is the one to take for its model files; the files beside them in it come along.
+  const withBeside = (files: MyminifactoryLibraryFile[]) => {
+    const models = files.filter((file) => isModelFile(file.name));
+    const beside = files.filter((file) => !isModelFile(file.name) && isSupportingFile(file.name));
+    return models.length ? [...models, ...beside.map((file) => ({ ...file, supporting: true }))] : [];
+  };
+  const parts = withBeside(
+    Array.isArray(data.parts)
+      ? data.parts.flatMap((part) => {
+          const name = isRecord(part) ? str(part.name) : null;
+          return name ? [{ name, path: `/download/${id}?downloadfile=${encodeURIComponent(name)}` }] : [];
+        })
+      : [],
+  );
   if (parts.length) return parts;
   const archives = Array.isArray(data.archives) ? data.archives.flatMap((a) => libraryArchive(a) ?? []) : [];
-  const unpacked = archives.flatMap((archive) =>
-    archive.files.flatMap((file) => {
-      const levels = file.path.split(/[\\/]+/).filter(Boolean);
-      const name = levels.pop() ?? file.path;
-      const folder = joinFolders(archives.length > 1 ? archive.name.replace(/\.[^.]+$/, "") : null, levels.join("/"));
-      return isModelFile(name)
-        ? [
-            {
-              name,
-              path: `/api/data-library/archive-file-contents/${encodeURIComponent(file.id)}/download`,
-              folder,
-            },
-          ]
-        : [];
-    }),
+  const unpacked = withBeside(
+    archives.flatMap((archive) =>
+      archive.files.map((file) => {
+        const levels = file.path.split(/[\\/]+/).filter(Boolean);
+        const name = levels.pop() ?? file.path;
+        const folder = joinFolders(archives.length > 1 ? archive.name.replace(/\.[^.]+$/, "") : null, levels.join("/"));
+        return {
+          name,
+          path: `/api/data-library/archive-file-contents/${encodeURIComponent(file.id)}/download`,
+          folder,
+        };
+      }),
+    ),
   );
   if (unpacked.length) return unpacked;
   // Not unpacked by MyMiniFactory: the archive itself, for the caller to open if it can.

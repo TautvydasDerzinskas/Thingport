@@ -3,6 +3,7 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { importPrintFromUrl } from "../src/services/importService";
 import { prisma } from "../src/db";
+import { setImportSupportingFiles } from "../src/services/settingsService";
 
 // Printables import end to end against the public GraphQL API's shapes, with fetch mocked.
 
@@ -171,6 +172,91 @@ describe("importPrintFromUrl -- Printables", () => {
       ["USB A+B version 30mm", "Lid.stl"],
       [null, "Box.stl"],
     ]);
+  });
+
+  // The Files tab's other lists -- sliced prints, anything else -- and a document among the model files come along.
+  describe("a model's other files", () => {
+    const files = {
+      stls: [
+        { id: "21", name: "Holder.stl", folder: null },
+        { id: "22", name: "Assembly.pdf", folder: "docs" },
+      ],
+      gcodes: [{ id: "23", name: "Holder_PLA.gcode", folder: null }],
+      slas: [],
+      otherFiles: [{ id: "24", name: "SOURCES.txt", folder: null }],
+    };
+    const asked: { fileType: string; ids: string[] }[][] = [];
+    const serve = (modelId: string, listed: Partial<typeof files> = {}) =>
+      vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
+        const target = String(input);
+        if (target === "https://api.printables.com/graphql/") {
+          const body = JSON.parse(String(init?.body ?? "{}"));
+          if (body.query.includes("getDownloadLink")) {
+            asked.push(body.variables.files);
+            const ids = body.variables.files.flatMap((each: { ids: string[] }) => each.ids);
+            const links = ids.map((id: string) => ({ id, link: `https://files.printables.com/media/${id}` }));
+            return jsonResponse(200, {
+              data: { getDownloadLink: { ok: true, errors: null, output: { files: links } } },
+            });
+          }
+          return jsonResponse(200, {
+            data: { print: { ...MODEL_RESPONSE.data.print, id: modelId, ...files, ...listed } },
+          });
+        }
+        if (target === "https://files.printables.com/media/21") return new Response("solid x endsolid");
+        if (target.startsWith("https://files.printables.com/media/")) return new Response("a document");
+        if (target.startsWith("https://media.printables.com/")) return pngResponse();
+        throw new Error(`Unexpected fetch to ${target}`);
+      }) as unknown as typeof fetch;
+    const supportingOf = async (printId: string) =>
+      (await prisma.printFile.findMany({ where: { printId, role: "SUPPORTING" }, orderBy: { filename: "asc" } })).map(
+        (file) => [file.folder, file.filename],
+      );
+
+    afterEach(async () => {
+      asked.length = 0;
+      await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
+    });
+
+    it("keeps them beside the model's files, asking for each list's files once", async () => {
+      const url = "https://www.printables.com/model/2000001-holder";
+      global.fetch = serve("2000001");
+      const result = await importPrintFromUrl(userId, url, { url, tags: [] });
+      expect(result.plates.map((plate) => plate.filename)).toEqual(["Holder.stl"]);
+      expect(await supportingOf(result.print.id)).toEqual([
+        ["docs", "Assembly.pdf"],
+        [null, "Holder_PLA.gcode"],
+        [null, "SOURCES.txt"],
+      ]);
+      expect(asked).toEqual([
+        [
+          { fileType: "stl", ids: ["21", "22"] },
+          { fileType: "gcode", ids: ["23"] },
+          { fileType: "other", ids: ["24"] },
+        ],
+      ]);
+    });
+
+    it("keeps a script listed among the other files, as one among the model files is", async () => {
+      const url = "https://www.printables.com/model/2000003-holder";
+      const otherFiles = [{ id: "25", name: "holder.scad", folder: "source" }];
+      global.fetch = serve("2000003", { gcodes: [], otherFiles });
+      const result = await importPrintFromUrl(userId, url, { url, tags: [] });
+      expect(result.plates.map((plate) => plate.filename)).toEqual(["Holder.stl"]);
+      expect(await supportingOf(result.print.id)).toEqual([
+        ["docs", "Assembly.pdf"],
+        ["source", "holder.scad"],
+      ]);
+    });
+
+    it("asks for none of them when the admin keeps none", async () => {
+      await setImportSupportingFiles("off");
+      const url = "https://www.printables.com/model/2000002-holder";
+      global.fetch = serve("2000002");
+      const result = await importPrintFromUrl(userId, url, { url, tags: [] });
+      expect(await supportingOf(result.print.id)).toEqual([]);
+      expect(asked).toEqual([[{ fileType: "stl", ids: ["21"] }]]);
+    });
   });
 
   it("dedupes a re-import of the same model instead of hitting the API again", async () => {

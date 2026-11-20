@@ -40,6 +40,12 @@ import { importingQuietly } from "../utils/quietImport";
 import { createKeyedLock } from "../utils/concurrency";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
+import {
+  SUPPORTING_FILES_PER_MODEL,
+  supportingImportName,
+  supportingLimits,
+  type SupportingLimits,
+} from "./supportingImports";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -57,6 +63,9 @@ export type NewPlateInput = {
   profile?: Prisma.JsonValue | null;
   /** The folder its source kept it in (Plate.folder); untrusted, normalized here. */
   folder?: string | null;
+  /** A file a site gave beside the model's own (an import's instructions, notes, sources): kept as a SUPPORTING file
+   *  within the admin's limits (keepSupportingFiles), never a plate. */
+  supporting?: boolean;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -365,6 +374,121 @@ async function createPlateAtPosition(
 }
 
 /**
+ * The files a site gave beside a model's own -- instructions, notes, sources -- kept as its SUPPORTING files, each once
+ * by folder and name, as far as the admin's limits allow: none past the largest kept, and no more in all than a model
+ * takes. A sliced file among them stays one, rather than taking the owner's prepared slot: it was sliced for the
+ * designer's printer. Best-effort throughout: a file that can't be kept is skipped, never failing the import.
+ */
+export async function keepSupportingFiles(userId: string, printId: string, inputs: NewPlateInput[]): Promise<number> {
+  if (!inputs.length) return 0;
+  // Best-effort as each file's save is: a read of the limits, or of what the model keeps, that fails costs the files,
+  // never the model, whose plates are in by then.
+  try {
+    // One model's at a time, from what's stored to the last save: a repair and a profile's import of the same model
+    // would otherwise both read the same total and each keep a file that fits only alone. The limits are read in its
+    // turn too: one waiting while an admin turned them off keeps none.
+    return await withSupportingAllowance(printId, async () => {
+      const limits = await supportingLimits();
+      return limits ? keepWithin(userId, printId, inputs, limits) : 0;
+    });
+  } catch (err) {
+    console.warn(`Couldn't keep the files a site gave beside model ${printId}:`, err);
+    return 0;
+  }
+}
+
+const withSupportingAllowance = createKeyedLock();
+
+async function keepWithin(
+  userId: string,
+  printId: string,
+  inputs: NewPlateInput[],
+  limits: SupportingLimits,
+): Promise<number> {
+  const keyOf = (filename: string, folder: string | null | undefined) =>
+    `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
+  // What the model keeps already counts: a later profile's files share the model's allowance, of bytes and of files.
+  // Every row by each name: nothing keeps a model from holding two (a merge brings each model's along).
+  const read = async () => {
+    const files = await prisma.printFile.findMany({
+      where: { printId },
+      select: { id: true, filename: true, folder: true, role: true, size: true },
+    });
+    const stored = new Map<string, typeof files>();
+    for (const file of files) {
+      const key = keyOf(file.filename, file.folder);
+      stored.set(key, [...(stored.get(key) ?? []), file]);
+    }
+    const supporting = files.filter((file) => file.role === "SUPPORTING");
+    return { stored, bytes: supporting.reduce((sum, file) => sum + file.size, 0), count: supporting.length };
+  };
+  let { stored, bytes, count } = await read();
+  const added = new Set<string>();
+  let kept = 0;
+  let leftOut = 0;
+  for (const input of inputs) {
+    if (!input.tempFilePath) continue;
+    const filename = supportingImportName(sanitizeFilename(input.filename), normalizeFolder(input.folder));
+    const key = keyOf(filename, input.folder);
+    if (added.has(key)) continue;
+    // One the model has by that name stays, unless its file is gone for sure: a row a repair's sweep left would
+    // otherwise keep out the file the site gives back. A save of it still under way counts as there. Each row by the
+    // name is looked at, as keepScripts does: one gone beside one that's there leaves the name taken.
+    const held: NonNullable<ReturnType<typeof stored.get>> = [];
+    for (const there of stored.get(key) ?? []) {
+      if (!(await removePrintFileIfGone(there.id))) {
+        held.push(there);
+        continue;
+      }
+      if (there.role === "SUPPORTING") {
+        bytes -= there.size;
+        count--;
+      }
+    }
+    stored.set(key, held);
+    if (held.length) continue;
+    // Counted once a row of its name whose file is gone has made way: it takes that one's place.
+    if (count >= SUPPORTING_FILES_PER_MODEL) {
+      leftOut++;
+      continue;
+    }
+    const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size;
+    if (size === undefined || size > limits.perFile || bytes + size > limits.perModel) continue;
+    try {
+      await saveFileFromTemp(userId, printId, input.tempFilePath, filename, input.mime ?? null, {
+        role: "SUPPORTING",
+        folder: input.folder,
+      });
+      added.add(key);
+      bytes += size;
+      count++;
+      kept++;
+    } catch (err) {
+      console.warn(`Couldn't keep ${filename} beside the model:`, err);
+      // A save whose answer was lost may have gone in all the same (saveFileFromTemp), so what the model keeps is read
+      // again before the next; where that can't be read either, no more are kept.
+      try {
+        ({ stored, bytes, count } = await read());
+      } catch (readErr) {
+        console.warn(`Couldn't read what model ${printId} keeps beside it after that, so it keeps no more:`, readErr);
+        break;
+      }
+      if (stored.get(key)?.length) {
+        added.add(key);
+        kept++;
+      }
+    }
+  }
+  if (leftOut) {
+    console.warn(
+      `Model ${printId} keeps the ${SUPPORTING_FILES_PER_MODEL} files beside it that it may have; left out:`,
+      { files: leftOut },
+    );
+  }
+  return kept;
+}
+
+/**
  * Generator scripts kept beside a model as supporting files, which is the only way one ever reaches a model: it
  * describes a shape but holds none, so it is never a plate.
  *
@@ -441,8 +565,9 @@ export async function createPrint(
   // A generator script holds no geometry until something runs it, so it is never a plate: it comes along as a
   // SUPPORTING file instead. Split here rather than in each caller, so a script reaches a model the same way
   // whether it was imported, uploaded beside it, or unpacked from a provider's zip.
-  const sourceInputs = plateInputs.filter((input) => isGeneratorScript(input.filename));
-  const plateInputs2 = plateInputs.filter((input) => !isGeneratorScript(input.filename));
+  const supportingInputs = plateInputs.filter((input) => input.supporting);
+  const sourceInputs = plateInputs.filter((input) => !input.supporting && isGeneratorScript(input.filename));
+  const plateInputs2 = plateInputs.filter((input) => !input.supporting && !isGeneratorScript(input.filename));
   if (!plateInputs2.length) {
     // A script on its own is answerable, not a bug: it describes a model but holds none, so there is nothing to
     // show, print or render until something runs it. Attach it to a model instead.
@@ -514,6 +639,7 @@ export async function createPrint(
     }
 
     await keepGeneratorScripts(userId, print.id, sourceInputs);
+    await keepSupportingFiles(userId, print.id, supportingInputs);
     // Once the files are in place, so LICENSE.txt lands in the folder they chose.
     if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
     else if (print.sourceProvider) scheduleLicenseFill(print.id);

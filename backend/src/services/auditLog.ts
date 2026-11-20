@@ -15,6 +15,7 @@ export type LogAction =
   | "file_reuse_backfill_started"
   | "storage_cleanup_started"
   | "photos_per_model_changed"
+  | "import_supporting_files_changed"
   | "license_files_changed"
   | "custom_widgets_changed"
   | "tool_installed"

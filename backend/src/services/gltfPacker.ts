@@ -71,19 +71,30 @@ export function gltfFileReferences(bytes: Buffer, name = "scene.gltf"): string[]
 
 const pad4 = (length: number) => (4 - (length % 4)) % 4;
 
+const PACKED_TOO_LARGE = "The glTF scenes, packed, would come to more than an import may write";
+
 /**
  * The .gltf in `bytes` as one .glb, with every buffer and texture it points at read through `read` (a relative URI
- * in, the file's bytes out, or null when it isn't there). A missing buffer is an error, since the scene has no
- * geometry without it; a missing texture is left pointing where it did, and the scene shows without it.
+ * in, the file's bytes out, or null when it isn't there; `length`, for a buffer, how much of the file from its start
+ * it uses, as more needn't be read, and none for a texture, which takes it all). A missing buffer is an error, since
+ * the scene has no geometry without it; a missing texture is left pointing where it did, and the scene shows without
+ * it. A .glb that would come to more than `maxBytes` fails (413) before the buffer or texture that takes it past is
+ * added, so a scene naming one large buffer again and again never holds it all again and again.
  */
 export async function packGltf(
   bytes: Buffer,
   name: string,
-  read: (uri: string) => Promise<Buffer | null>,
+  read: (uri: string, length?: number) => Promise<Buffer | null>,
+  maxBytes = Number.POSITIVE_INFINITY,
 ): Promise<Buffer> {
   const json = parseGltf(bytes, name);
   const parts: Buffer[] = [];
   let length = 0;
+  // What's in, and `more` with its padding: the binary chunk alone, as the JSON's length is known only once it's
+  // written (and less than it came, for a scene of data URIs), which the caller checks the whole .glb against.
+  const fits = (more: number) => {
+    if (length + more + pad4(more) > maxBytes) throw new HttpError(413, PACKED_TOO_LARGE);
+  };
   const append = (data: Buffer) => {
     const offset = length;
     parts.push(data);
@@ -99,9 +110,11 @@ export async function packGltf(
   const bufferOffsets: number[] = [];
   for (const buffer of json.buffers ?? []) {
     const uri = buffer.uri;
+    fits(Number(buffer.byteLength) || 0);
+    const uses = Number.isSafeInteger(buffer.byteLength) && buffer.byteLength >= 0 ? buffer.byteLength : undefined;
     let data: Buffer | null = null;
     if (typeof uri === "string") {
-      data = isDataUri(uri) ? (decodeDataUri(uri)?.bytes ?? null) : isRemoteUri(uri) ? null : await read(uri);
+      data = isDataUri(uri) ? (decodeDataUri(uri)?.bytes ?? null) : isRemoteUri(uri) ? null : await read(uri, uses);
     }
     if (!data) {
       throw new HttpError(400, `${name} needs ${uri ?? "a buffer"}, which wasn't uploaded with it`);
@@ -109,7 +122,9 @@ export async function packGltf(
     if (data.length < buffer.byteLength) {
       throw new HttpError(400, `${uri} is shorter than ${name} says it is`);
     }
-    bufferOffsets.push(append(data.subarray(0, buffer.byteLength)));
+    // A copy of the part it uses where that's less than all of it, so the rest isn't held until the .glb is written.
+    const used = data.subarray(0, buffer.byteLength);
+    bufferOffsets.push(append(used.length < data.length ? Buffer.from(used) : used));
   }
 
   const bufferViews = json.bufferViews ?? [];
@@ -126,6 +141,7 @@ export async function packGltf(
     const decoded = isDataUri(uri) ? decodeDataUri(uri) : null;
     const data = decoded ? decoded.bytes : isDataUri(uri) ? null : await read(uri);
     if (!data) continue;
+    fits(data.length);
     const mimeType =
       image.mimeType || decoded?.mime || IMAGE_MIME[path.extname(uri.split(/[?#]/)[0]).toLowerCase()] || "image/png";
     bufferViews.push({ buffer: 0, byteOffset: append(data), byteLength: data.length });
@@ -161,6 +177,27 @@ export async function packGltf(
   ]);
 }
 
+/** The first `length` bytes of a file, or all of it when `length` is none or it's no longer than that: never more than
+ *  the file holds, whatever a scene says it uses. */
+async function readPart(filePath: string, length?: number): Promise<{ bytes: Buffer; whole: boolean }> {
+  if (length === undefined) return { bytes: await fs.readFile(filePath), whole: true };
+  const handle = await fs.open(filePath, "r");
+  try {
+    const size = (await handle.stat()).size;
+    if (size <= length) return { bytes: await handle.readFile(), whole: true };
+    const bytes = Buffer.alloc(length);
+    let filled = 0;
+    while (filled < length) {
+      const { bytesRead } = await handle.read(bytes, filled, length - filled, filled);
+      if (!bytesRead) break;
+      filled += bytesRead;
+    }
+    return { bytes: filled < length ? bytes.subarray(0, filled) : bytes, whole: false };
+  } finally {
+    await handle.close();
+  }
+}
+
 /** A file among others, as its relative path (or bare name) and where its bytes are on disk. */
 export type PackableFile = { name: string; path: string };
 
@@ -168,8 +205,14 @@ export type PackableFile = { name: string; path: string };
  *  file name alone, when only one file in that folder or below has it (an upload carries names, not folders), so a
  *  scene doesn't take a file that belongs to another model's folder. Names as they came first, so "mesh.bin%20" finds
  *  "mesh.bin " beside a "mesh.bin"; only when none matches so, by the name one is kept by ("mesh.bin " for
- *  "mesh.bin"), and only where one file has it. */
-function findReferenced<T extends PackableFile>(files: T[], gltfName: string, uri: string): T | undefined {
+ *  "mesh.bin"), and only where one file has it. By name, only `nameable` files: a zip names every file's folder,
+ *  and a scene at its top would otherwise take another model's .bin. */
+function findReferenced<T extends PackableFile>(
+  files: T[],
+  gltfName: string,
+  uri: string,
+  nameable: (file: T) => boolean = () => true,
+): T | undefined {
   let decoded = uri;
   try {
     decoded = decodeURIComponent(uri);
@@ -182,7 +225,7 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
   const byPath = files.find((file) => pathOf(file) === wanted);
   if (byPath) return byPath;
   const base = path.posix.basename(wanted).toLowerCase();
-  const inFolder = (file: T) => folder === "." || pathOf(file).startsWith(`${folder}/`);
+  const inFolder = (file: T) => nameable(file) && (folder === "." || pathOf(file).startsWith(`${folder}/`));
   const byName = files.filter((file) => path.posix.basename(pathOf(file)).toLowerCase() === base && inFolder(file));
   if (byName.length) return byName.length === 1 ? byName[0] : undefined;
   const kept = trimFilename(base);
@@ -192,11 +235,6 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
   return byKeptName.length === 1 ? byKeptName[0] : undefined;
 }
 
-/**
- * Packs each .gltf among `files` with the files it points at. Returns what's left: the files no .gltf used, and for
- * each .gltf a .glb written to a new path from `tempPath`, named as the .gltf was (`made` gives it the rest of its
- * shape). The packed files leave the list but stay on disk, for the caller to clean up with the rest.
- */
 /** The files among `files` the .gltf `gltf` points at, found as packing finds them; none when it can't be read. */
 export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gltf: T): Promise<T[]> {
   let uris: string[];
@@ -209,10 +247,24 @@ export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gl
   return [...new Set(found.filter((file): file is T => !!file && !isGltfName(file.name)))];
 }
 
+/**
+ * Packs each .gltf among `files` with the files it points at. Returns what's left: the files no .gltf used, and for
+ * each .gltf a .glb written to a new path from `tempPath`, named as the .gltf was (`made` gives it the rest of its
+ * shape). The packed files leave the list but stay on disk, for the caller to clean up with the rest. Each .glb holds
+ * every file its scene points at, so scenes sharing one large buffer write it out again and again: `room`, the bytes
+ * the caller lets the .glbs come to, shared by every call it hands it to, is taken from before each is written, and a
+ * scene that wouldn't fit fails the packing (413), as soon as what it's packed into would; what a call that fails took
+ * of it is given back, as its .glbs go. Of each file only as much is read as a buffer uses, unless a texture takes it
+ * all (readPart), so a scene using a few bytes of large files holds those bytes alone; an entry naming it again reads
+ * it again only where it needs more of it than was read, a longer part or all of it, which then takes the place of
+ * what was. `nameable`, the files a scene may take by name rather than by its path (findReferenced); all by default.
+ */
 export async function packGltfFiles<T extends PackableFile>(
   files: T[],
   tempPath: () => string,
   made: (gltf: T, glbPath: string, glbName: string) => T,
+  room?: { bytes: number },
+  nameable?: (file: T) => boolean,
 ): Promise<{ files: T[]; packed: T[] }> {
   const gltfs = files.filter((file) => isGltfName(file.name));
   if (!gltfs.length) return { files, packed: [] };
@@ -220,15 +272,32 @@ export async function packGltfFiles<T extends PackableFile>(
   const used = new Set<T>(gltfs);
   const glbs = new Map<T, T>();
   const written: string[] = [];
+  let taken = 0;
   try {
     for (const gltf of gltfs) {
       const bytes = await fs.readFile(gltf.path);
-      const glb = await packGltf(bytes, path.basename(gltf.name), async (uri) => {
-        const file = findReferenced(files, gltf.name, uri);
-        if (!file || isGltfName(file.name)) return null;
-        used.add(file);
-        return fs.readFile(file.path);
-      });
+      // What's been read of each file, and whether that's all of it. packGltf reads one at a time.
+      const reads = new Map<T, { bytes: Buffer; whole: boolean }>();
+      const glb = await packGltf(
+        bytes,
+        path.basename(gltf.name),
+        async (uri, length) => {
+          const file = findReferenced(files, gltf.name, uri, nameable);
+          if (!file || isGltfName(file.name)) return null;
+          used.add(file);
+          const had = reads.get(file);
+          if (had && (had.whole || (length !== undefined && had.bytes.length >= length))) return had.bytes;
+          const read = await readPart(file.path, length);
+          reads.set(file, read);
+          return read.bytes;
+        },
+        room?.bytes,
+      );
+      if (room) {
+        if (glb.length > room.bytes) throw new HttpError(413, PACKED_TOO_LARGE);
+        room.bytes -= glb.length;
+        taken += glb.length;
+      }
       const glbPath = tempPath();
       // Listed before it's written, so one a failed write leaves part-way goes with the rest.
       written.push(glbPath);
@@ -236,6 +305,7 @@ export async function packGltfFiles<T extends PackableFile>(
       glbs.set(gltf, made(gltf, glbPath, glbNameOf(gltf.name)));
     }
   } catch (err) {
+    if (room) room.bytes += taken;
     await Promise.all(written.map((file) => fs.rm(file, { force: true }).catch(() => undefined)));
     throw err;
   }

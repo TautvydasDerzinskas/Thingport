@@ -8,6 +8,7 @@ import { assetExists, galleryImageFile } from "./modelAssets";
 import {
   isGeneratorScript,
   keepGeneratorScripts,
+  keepSupportingFiles,
   refreshPreparedReading,
   restorePlates,
   withPlateBatch,
@@ -53,9 +54,11 @@ export async function replaceModelPlates(
     include: { previewImages: { select: { id: true } } },
   });
   if (!print) throw new HttpError(404, "Model not found");
-  // A generator script is never a plate (see printCreation.createPrint): it goes beside the model instead.
-  const scripts = inputs.filter((input) => isGeneratorScript(input.filename));
-  const plateInputs = inputs.filter((input) => !isGeneratorScript(input.filename));
+  // A generator script is never a plate (see printCreation.createPrint): it goes beside the model instead, as does a
+  // file the site gave beside its own.
+  const supporting = inputs.filter((input) => input.supporting);
+  const scripts = inputs.filter((input) => !input.supporting && isGeneratorScript(input.filename));
+  const plateInputs = inputs.filter((input) => !input.supporting && !isGeneratorScript(input.filename));
 
   // With the plate order held, from the look at the files to the new plates, as an upload's are added: one an upload
   // adds in between would otherwise go with the old rows, seen or not.
@@ -111,6 +114,8 @@ export async function replaceModelPlates(
       log.error("couldn't remove a repaired model's old plate pictures", { print: printId, error }),
     );
   await keepGeneratorScripts(userId, printId, scripts);
+  // Only those the model hasn't still got: a supporting file that went with the plates comes back from the site.
+  await keepSupportingFiles(userId, printId, supporting);
   // LICENSE.txt is written again when it went too.
   await afterLicenseChange(printId);
 

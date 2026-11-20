@@ -1502,6 +1502,15 @@
         "saveFailed": "Couldn't save how many photos to keep",
         "loadFailed": "Couldn't load how many photos to keep."
       },
+      "importSupportingFiles": {
+        "label": "Supporting files from imports",
+        "help": "The files a model's site gives beside its model files — instructions, notes, a parts list, source files — kept as its supporting files, each up to this size. A model keeps two and a half times that in all. Pictures are left out, since a model's photos come from its page. Off keeps none; models already imported keep theirs.",
+        "off": "Off",
+        "any": "Any size",
+        "size": "{{count}} MB",
+        "saveFailed": "Couldn't save which supporting files imports keep",
+        "loadFailed": "Couldn't load which supporting files imports keep."
+      },
       "freeSpace": {
         "open": "Free up space",
         "freeing": "Freeing space…",
@@ -2282,7 +2291,8 @@
           "migration_export_read": "Copied by another instance",
           "achievement_settings_changed": "Achievements changed",
           "storage_cleanup_started": "Started freeing space",
-          "photos_per_model_changed": "Changed how many photos are kept per model"
+          "photos_per_model_changed": "Changed how many photos are kept per model",
+          "import_supporting_files_changed": "Changed which supporting files imports keep"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",

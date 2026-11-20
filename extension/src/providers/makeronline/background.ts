@@ -81,6 +81,8 @@ export async function resolveMakeronlineFiles(
     plan = await apiCall<{ requests: DownloadRequest[] }>("POST", `/import/${MANIFESTS.makeronline.id}/plan`, {
       url,
       scope,
+      // The files the model keeps beside its own too, last and marked: an instance before them leaves them out.
+      supporting: true,
     });
   } catch (err) {
     // fetch rejects with a TypeError when the instance can't be reached; an answer it gave is about the model.
@@ -129,6 +131,8 @@ async function signRequests(
   const files: MakeronlineSignedFile[] = [];
   for (const [index, answer] of answers.entries()) {
     const request = requests[index];
+    // A file beside the model's own that wasn't handed over is done without.
+    if (request.supporting && (answer.code !== CODE_OK || !signedUrl(answer.data))) continue;
     if (answer.code === CODE_CAPTCHA && answer.unsolved) {
       throw new SigningBlockedError(await backgroundText("makeronlinePuzzleUnsolved"));
     }

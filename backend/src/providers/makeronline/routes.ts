@@ -35,9 +35,12 @@ const makeronlineScopeSchema = z.enum(["url", "designer", "all"]).default("url")
 router.post(
   `/import/${MAKERONLINE}/plan`,
   asyncHandler(async (req, res) => {
-    const body = parseBody(z.object({ url: z.string(), scope: makeronlineScopeSchema }), req.body);
+    const body = parseBody(
+      z.object({ url: z.string(), scope: makeronlineScopeSchema, supporting: z.boolean().optional() }),
+      req.body,
+    );
     const url = await enabledImportUrl(body.url);
-    res.json(await planMakeronlineDownloads(url, body.scope));
+    res.json(await planMakeronlineDownloads(url, body.scope, { supporting: body.supporting }));
   }),
 );
 

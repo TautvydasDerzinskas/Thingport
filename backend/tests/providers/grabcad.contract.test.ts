@@ -18,6 +18,13 @@ import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import { binary, expectStatus, html, json, loadFixture, loadFixtureHtml, stl, zip, type FetchHandler } from "./support";
 
+// Small limits for the files beside a model, where a test sets them; the admin's setting otherwise.
+const limits = vi.hoisted(() => ({ value: undefined as { perFile: number; perModel: number } | undefined }));
+vi.mock("../../src/services/supportingImports", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/services/supportingImports")>();
+  return { ...actual, supportingLimits: async () => limits.value ?? actual.supportingLimits() };
+});
+
 vi.mock("node:dns/promises", () => ({
   default: {
     resolve4: async () => ["93.184.216.34"],
@@ -90,6 +97,7 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
       const name = byCadid.get(file[1])!;
       const zipped = variant.zips?.[name];
       if (zipped) return binary(await zip(`grabcad:${name}`, zipped));
+      if (/\.(pdf|dxf)$/i.test(name)) return binary(Buffer.from(`${name}: a drawing`));
       return binary(/\.(step|stp)$/i.test(name) ? step(name) : stl(name));
     }
     if (p === `${API}/models/${SLUG}`) {
@@ -192,6 +200,125 @@ describe("GrabCAD specifics", () => {
     const lists = stub.calls.filter((call) => call.url.pathname.endsWith("/files"));
     expect(lists.map((call) => call.url.searchParams.get("folder_id"))).toEqual([null, String(RENDERINGS)]);
     expect(lists.every((call) => !call.headers.cookie)).toBe(true);
+  });
+
+  it("keeps the model's documents and drawings beside it, never its renderings or the part in other CAD formats", async () => {
+    await connect(ctx.userId);
+    const recorded = loadFixture<Folder>("grabcad", "files");
+    const stub = ctx.install(
+      handlerFor("ok", {
+        folders: {
+          root: {
+            ...recorded,
+            files: [
+              ...recorded.files,
+              fileRow("Board.pdf", "Other", "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"),
+              fileRow("Outline.dxf", "AutoCAD", "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
+              fileRow("Board.igs", "STEP / IGES", "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c"),
+              fileRow("Render.pdf", "Rendering", "0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d"),
+            ],
+          },
+          [RENDERINGS]: loadFixture<Folder>("grabcad", "files-renderings"),
+        },
+      }),
+    );
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({
+      where: { printId: print.id, role: "SUPPORTING" },
+      orderBy: { filename: "asc" },
+    });
+    expect(files.map((file) => file.filename)).toEqual(["Board.pdf", "Outline.dxf"]);
+    const asked = stub.calls
+      .filter((call) => call.url.pathname.endsWith("/files/download"))
+      .map((call) => call.url.searchParams.get("cadid"));
+    expect(asked).not.toContain("0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c");
+    expect(asked).not.toContain("0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d");
+  });
+
+  it("asks for no document's link, each a download on GrabCAD, once the model keeps all it may of them", async () => {
+    await connect(ctx.userId);
+    const recorded = loadFixture<Folder>("grabcad", "files");
+    const stub = ctx.install(
+      handlerFor("ok", {
+        folders: {
+          root: {
+            ...recorded,
+            files: [
+              ...recorded.files,
+              fileRow("Board.pdf", "Other", "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"),
+              fileRow("Outline.dxf", "AutoCAD", "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
+            ],
+          },
+          [RENDERINGS]: loadFixture<Folder>("grabcad", "files-renderings"),
+        },
+      }),
+    );
+    // "Board.pdf: a drawing" is all of the twenty bytes a model keeps.
+    limits.value = { perFile: 100, perModel: 20 };
+    try {
+      expectStatus(await ctx.importUrl(), 200);
+    } finally {
+      limits.value = undefined;
+    }
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["Board.pdf"]);
+    const asked = stub.calls
+      .filter((call) => call.url.pathname.endsWith("/files/download"))
+      .map((call) => call.url.searchParams.get("cadid"));
+    expect(asked).toContain("0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a");
+    expect(asked).not.toContain("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
+  });
+
+  it("counts a document in each of two folders as two, asking for no link once they fill what a model keeps", async () => {
+    await connect(ctx.userId);
+    const recorded = loadFixture<Folder>("grabcad", "files");
+    const model = { id: 1, name: "Arduino Uno R3" };
+    const folder = (id: number, name: string, file: FileRow) => ({
+      folder_path: [model, { id, name }],
+      files: [file],
+      folders: [],
+    });
+    const stub = ctx.install(
+      handlerFor("ok", {
+        folders: {
+          root: {
+            ...recorded,
+            folder_path: [model],
+            folders: [
+              { id: 7, name: "A" },
+              { id: 8, name: "B" },
+              { id: 9, name: "C" },
+            ],
+          },
+          7: folder(7, "A", fileRow("guide.pdf", "Other", "1a".repeat(16))),
+          8: folder(8, "B", fileRow("guide.pdf", "Other", "2b".repeat(16))),
+          9: folder(9, "C", fileRow("notes.pdf", "Other", "3c".repeat(16))),
+        } as Record<string, Folder>,
+      }),
+    );
+    // "guide.pdf: a drawing" is twenty bytes, and a model keeps forty: the two guides fill it.
+    limits.value = { perFile: 100, perModel: 40 };
+    try {
+      expectStatus(await ctx.importUrl(), 200);
+    } finally {
+      limits.value = undefined;
+    }
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({
+      where: { printId: print.id, role: "SUPPORTING" },
+      orderBy: { folder: "asc" },
+    });
+    expect(files.map((file) => [file.folder, file.filename])).toEqual([
+      ["A", "guide.pdf"],
+      ["B", "guide.pdf"],
+    ]);
+    const asked = stub.calls
+      .filter((call) => call.url.pathname.endsWith("/files/download"))
+      .map((call) => call.url.searchParams.get("cadid"));
+    expect(asked).toContain("2b".repeat(16));
+    expect(asked).not.toContain("3c".repeat(16));
   });
 
   it("finds model files in the model's folders, and opens a CAD system's zip only when nothing else brought one", async () => {

@@ -61,6 +61,25 @@ Fab365, 3DExport, QIDI Maker and VoxelShare.
   [customised and generated again](supporting-files.md#models-you-can-generate-again). MakerWorld also says when a
   creator kept the script back, and the model is marked **Script not shared**. On a MakerWorld page, Thingport Grab
   says before you import whether the script comes along.
+- The other files that come with it, such as instructions, notes, a parts list or source files, as its
+  [supporting files](supporting-files.md), in their folders. They come from any zip the site hands over, from the
+  file lists of the sites that list a model's files one by one, and from what a site lists beside a print profile:
+  - A model imported as one of its print profiles (MakerWorld, NexPrint, eufyMake, Snapmaker, Creality Cloud,
+    VoxelShare, MakerOnline) brings the files beside it too. On MakerWorld that spends one of the account's daily
+    downloads, so it's only done where the design lists such a file. On MakerOnline it needs a Thingport Grab newer
+    than 1.12.0.
+  - Snapmaker's **Documents**, Thangs' **Reference Files** (not the zips of the model's other versions there),
+    Printables' sliced files and **Other files**, in the folders the designer put them in, and Makerables' NC programs
+    and CAM projects, each in a folder named after its tab.
+  - CGTrader, GrabCAD and 3DExport offer a model in many formats, so only their documents and 2D drawings come along
+    (PDF, text, Office files, CSV, DXF and SVG), never the model again in another one.
+  - Pictures are left out, since the gallery has them, and so are scenes only a CG program opens.
+  - A sliced file among them stays a supporting file rather than the model's prepared print: it was sliced for the
+    designer's printer.
+  - Each is kept up to the size an admin set, 100 MB by default (see
+    [Supporting files from imports](storage.md#supporting-files-from-imports)).
+  - One that can't be downloaded is skipped, never failing the import.
+  - A site's own licence file is kept as `LICENSE (original).txt`, beside the `LICENSE.txt` Thingport writes.
 - The photo gallery, the formatted description, tags and, where the site gives one, its category, which Thingport maps
   to your own [categories](organize-and-search.md).
 - The author, where the site names one, with their avatar and profile, linked to an [author page](authors.md).
@@ -68,6 +87,20 @@ Fab365, 3DExport, QIDI Maker and VoxelShare.
 
 If a detail couldn't be fetched at the time, such as the author, **Fetch missing details** on the model page tries
 again.
+
+### A link to a zip
+
+A link straight to a `.zip` asks what to do with it, as an [uploaded zip](../guides/upload-files.md) does. **Import as
+zip** keeps it whole. **Import and unzip** lists its files to pick from, then **Import as**:
+
+- **One model**, the default: the files you picked go into one model, its folders kept.
+- **A model per folder**: each folder that holds model files becomes a model, with its documents and pictures.
+- **A model per file**: each model file becomes a model of its own.
+
+For one model or a model per folder, the files you pick can add up to four times the import size limit, 2 GB by
+default (`IMPORT_MAX_MB`). Any past that are left out, and counted among the files that failed.
+
+Thingport Grab's **Choose files** on MakerWorld makes one model of the files you chose.
 
 ## Link a model you already have
 

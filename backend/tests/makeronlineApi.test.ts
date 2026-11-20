@@ -190,6 +190,51 @@ describe("MakerOnline model details", () => {
     ]);
   });
 
+  it("adds the files a model keeps beside its own last and marked, for a Grab that asked for them", () => {
+    const withGuide = makeronlineMetaFromDetail({
+      ...DETAIL,
+      files: [...DETAIL.files, { key: "aa11bb", file_name: "scraper.scad" }, { key: "cc22dd", file_name: "Guide.pdf" }],
+    });
+    const isDocument = (name: string) => name.endsWith(".pdf");
+    expect(
+      makeronlineDownloadPlan("281521", withGuide, "url", null, isDocument).map((r) => [r.name, r.supporting]),
+    ).toEqual([
+      ["scraper.3mf", undefined],
+      ["scraper.scad", undefined],
+      ["Guide.pdf", true],
+    ]);
+    // An older Grab, which would stop at a file it can't get signed, is asked for none of them.
+    expect(makeronlineDownloadPlan("281521", withGuide, "url", null).map((r) => r.name)).toEqual([
+      "scraper.3mf",
+      "scraper.scad",
+    ]);
+  });
+
+  it("marks the files a model without profiles keeps beside its own too, after its model files", () => {
+    const bare = makeronlineMetaFromDetail({
+      ...DETAIL,
+      print_profiles: [],
+      files: [{ key: "cc22dd", file_name: "Guide.pdf" }, ...DETAIL.files, { key: "aa11bb", file_name: "scraper.scad" }],
+    });
+    const isDocument = (name: string) => name.endsWith(".pdf");
+    // So a Guide.pdf that can't be signed doesn't stop the import of the model's own files.
+    expect(makeronlineDownloadPlan("281521", bare, "all", null, isDocument).map((r) => [r.name, r.supporting])).toEqual(
+      [
+        ["Left Hand Version.stl", undefined],
+        ["Right Hand Version.stl", undefined],
+        ["scraper.scad", undefined],
+        ["Guide.pdf", true],
+      ],
+    );
+    // Asked for without them, the plan is the model's files as they come.
+    expect(makeronlineDownloadPlan("281521", bare, "all", null).map((r) => [r.name, r.supporting])).toEqual([
+      ["Guide.pdf", undefined],
+      ["Left Hand Version.stl", undefined],
+      ["Right Hand Version.stl", undefined],
+      ["scraper.scad", undefined],
+    ]);
+  });
+
   it("leaves a model's meshes out of a profile plan: only the scripts come alongside", () => {
     const resolution = makeronlineMetaFromDetail(DETAIL);
     // DETAIL's own files are two STLs and no script, so a profile plan is the profile alone.

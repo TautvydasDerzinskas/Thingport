@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
+import { setImportSupportingFiles } from "../../src/services/settingsService";
 import { pinshapeBrowse } from "../../src/providers/pinshape/browse";
 import { pinshapeConnection } from "../../src/providers/pinshape/connection";
 import { getPinshapeConnection, setUserPinshapeSession } from "../../src/providers/pinshape/session";
@@ -48,7 +49,13 @@ function handlerFor(scenario: string): FetchHandler {
     if (url.hostname !== "pinshape.com") return undefined;
     const path = url.pathname;
     if (path === "/items/111504") {
-      return scenario === "missing" ? redirect("/index") : html(loadFixtureHtml("pinshape", "model-page"));
+      if (scenario === "missing") return redirect("/index");
+      const page = loadFixtureHtml("pinshape", "model-page");
+      // Its second file a guide instead, as a model's instructions come, or named with a control character after it.
+      if (scenario === "guide") return html(page.replaceAll("Resin_Draco_short.stl", "guide.pdf"));
+      return html(
+        scenario === "control" ? page.replaceAll("Resin_Draco_short.stl", "Resin_Draco_short.stl\u0085") : page,
+      );
     }
     const file = path.match(/^\/items\/111504-articulated-dragon\/download\/file\/(\d+)$/)?.[1];
     if (file && FILES[file]) {
@@ -56,7 +63,9 @@ function handlerFor(scenario: string): FetchHandler {
         headers.cookie?.includes(`remember_token=${REMEMBER}`),
         "the file is asked for with the user's sign-in",
       );
-      if (scenario === "rejected") return redirect(`/auth/login?next=http://pinshape.com${path}`);
+      if (scenario === "rejected" || (scenario === "control" && file === "1784514")) {
+        return redirect(`/auth/login?next=http://pinshape.com${path}`);
+      }
       return redirect(
         `https://mh-pinshape-private.s3.amazonaws.com/uploads/shape_file/file/${file}/${FILES[file]}` +
           `?response-content-disposition=attachment&AWSAccessKeyId=AKIAEXAMPLE&Signature=c2ln&Expires=1792910109`,
@@ -142,6 +151,36 @@ describe("Pinshape specifics", () => {
       "/items/111504-articulated-dragon/download/file/1784513",
       "/items/111504-articulated-dragon/download/file/1784514",
     ]);
+  });
+
+  it("fails the import over a model file it couldn't have, however its listed name ends", async () => {
+    await connect(ctx.userId);
+    // Downloaded as the STL it's kept as, so its sign-in turned down is the import's, not a supporting file's skip.
+    ctx.stub("control");
+    const res = await ctx.importUrl();
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("pinshape_session");
+    expect(await ctx.prints()).toHaveLength(0);
+  });
+
+  it("asks for a file kept beside the model only where the admin keeps any", async () => {
+    await connect(ctx.userId);
+    const guide = "/items/111504-articulated-dragon/download/file/1784514";
+    await setImportSupportingFiles("off");
+    try {
+      const off = ctx.stub("guide");
+      expectStatus(await ctx.importUrl(), 200);
+      expect(off.callsTo("pinshape.com").some((call) => call.url.pathname === guide)).toBe(false);
+    } finally {
+      await setImportSupportingFiles(100);
+    }
+    await prisma.print.deleteMany({ where: { userId: ctx.userId } });
+    const on = ctx.stub("guide");
+    expectStatus(await ctx.importUrl(), 200);
+    expect(on.callsTo("pinshape.com").some((call) => call.url.pathname === guide)).toBe(true);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["guide.pdf"]);
   });
 
   it("lists someone's likes, as many as their profile shows, named after them", async () => {

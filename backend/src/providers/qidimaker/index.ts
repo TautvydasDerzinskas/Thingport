@@ -93,7 +93,8 @@ async function downloadModelFiles(resolved: QidimakerModelResolution, kit: Impor
       throw new HttpError(400, "QIDI Maker's zip of this model's files can't be opened. Try again later.");
     }
     // Loaded when it's needed: the import service loads the providers' registry, which loads this module.
-    const { modelFilesFromZip, parametricSourcesFromZip } = await import("../../services/importService");
+    const { modelFilesFromZip, parametricSourcesFromZip, supportingFilesFromZip } =
+      await import("../../services/importService");
     const plates = await modelFilesFromZip(zipPath);
     let sources: NewPlateInput[];
     try {
@@ -102,7 +103,9 @@ async function downloadModelFiles(resolved: QidimakerModelResolution, kit: Impor
       await Promise.all(plates.map((plate) => fs.rm(plate.tempFilePath!, { force: true }).catch(() => undefined)));
       throw err;
     }
-    return namedAfterModel([...plates, ...sources], resolved.meta.title ?? resolved.modelId);
+    // The other files beside them too, which never fail the import.
+    const supporting = await supportingFilesFromZip(zipPath);
+    return namedAfterModel([...plates, ...sources, ...supporting], resolved.meta.title ?? resolved.modelId);
   } finally {
     await fs.rm(zipPath, { force: true }).catch(() => undefined);
   }

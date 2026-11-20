@@ -58,13 +58,39 @@ const COLLECTED = ["10602179", "9610105", "9578063", "9560984"];
 const LIKED = COLLECTED.slice(1);
 const TITLE = "Flexi mechanical dragon";
 
-type Model = "several" | "bare" | "folder" | "hidden";
+type Model = "several" | "bare" | "folder" | "hidden" | "guides" | "bareGuides";
+
+/** The recorded files with documents among them: a guide, notes kept zipped on their own, as a copy of another site's
+ *  model keeps each of its files, a README with no extension, and a zip named for no file in particular. */
+function filesWithGuides() {
+  const recorded = loadFixture("voxelshare", "files");
+  const [cow] = recorded.data.items;
+  const doc = (id: string, name: string, file: string) => ({
+    ...cow,
+    id,
+    name,
+    fileInfo: { ...cow.fileInfo, url: cow.fileInfo.url.replace("0_highland.stl.zip", file) },
+  });
+  return {
+    ...recorded,
+    data: {
+      items: [
+        cow,
+        doc("9001", "Assembly guide.pdf", "guide.pdf"),
+        doc("9002", "notes.txt", "0_notes.txt.zip"),
+        doc("9003", "README", "README"),
+        doc("9004", "Sources.zip", "Sources.zip"),
+      ],
+    },
+  };
+}
 
 /** The model's print profiles: the recorded one, with a second of the designer's and one of someone else's after it,
  *  as the site lists several; for "hidden", the recorded one made private, as its page leaves it out. */
 function profiles(model: Model) {
   const recorded = loadFixture("voxelshare", "profiles");
-  if (model === "bare" || model === "folder") return loadFixture("voxelshare", "profiles-none");
+  if (model === "bare" || model === "folder" || model === "bareGuides")
+    return loadFixture("voxelshare", "profiles-none");
   const [first] = recorded.data.items;
   if (model === "hidden") return { ...recorded, data: { items: [{ ...first, privateFlag: true }] } };
   const other = (id: string, designer: boolean) => ({
@@ -87,6 +113,12 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
       if (scenario === "fileDown" && !/\.(png|jpe?g|webp)$/i.test(url.pathname)) return json({}, 404);
       if (url.pathname.endsWith(".3mf")) return binary(await threeMf(url.pathname.split("/").pop()!));
       if (url.pathname.endsWith(".stl.zip")) return binary(await zip("cow", { "highland.stl": stl("cow") }));
+      if (url.pathname.endsWith("notes.txt.zip"))
+        return binary(await zip("notes", { "notes.txt": Buffer.from("glue last") }));
+      if (url.pathname.endsWith(".pdf")) return binary(Buffer.from("%PDF-1.4 guide"));
+      if (url.pathname.endsWith("/README")) return binary(Buffer.from("print the lid first"));
+      if (url.pathname.endsWith("/Sources.zip"))
+        return binary(await zip("sources", { "body.f3d": Buffer.from("f3d") }));
       if (url.pathname.endsWith(".stl")) return binary(stl(url.pathname));
       return undefined;
     }
@@ -99,7 +131,7 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
     );
     const signedIn = headers.authorization === `Bearer ${china ? CHINA_TOKEN : TOKEN}`;
     if (scenario === "outage") return json({ code: 500, msg: "system error" }, 500);
-    const bare = model !== "several";
+    const bare = model !== "several" && model !== "guides";
     switch (url.pathname.slice(API.length)) {
       case "model/detail/info":
         if (scenario === "missing") return json(loadFixture("voxelshare", "model-missing"));
@@ -107,6 +139,7 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
       case "model/detail/print_configs":
         return json(profiles(model));
       case "model/detail/source_files":
+        if (model === "guides" || model === "bareGuides") return json(filesWithGuides());
         return json(loadFixture("voxelshare", model === "folder" ? "files-folder" : "files"));
       case "model/recommend":
         return json(loadFixture("voxelshare", "trending"));
@@ -214,6 +247,36 @@ describe("VoxelShare specifics", () => {
     ctx.install(handlerFor("ok", "several"));
     expectStatus(await ctx.importUrl(`${MODEL_URL}#profileId-${COMMUNITY}`), 200);
     expect((await plateRows()).map((plate) => plate.sourceInstanceId)).toEqual([COMMUNITY]);
+  });
+
+  it("keeps a model's documents beside the profile a link brings, one zipped on its own unpacked", async () => {
+    const stub = ctx.install(handlerFor("ok", "guides"));
+    expectStatus(await ctx.importUrl(), 200);
+    const plates = await plateRows();
+    expect(plates).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    const files = await prisma.printFile.findMany({
+      where: { printId: plates[0].printId, role: "SUPPORTING" },
+      orderBy: { filename: "asc" },
+    });
+    expect(files.map((file) => file.filename).toSorted()).toEqual(["Assembly guide.pdf", "README", "notes.txt"]);
+    // None of the model files the profile stands for, nor a zip that may hold only those.
+    expect(stub.calls.some((call) => call.url.pathname.endsWith(".stl.zip"))).toBe(false);
+    expect(stub.calls.some((call) => call.url.pathname.endsWith("/Sources.zip"))).toBe(false);
+  });
+
+  it("keeps a file with no extension beside a model without profiles, never as a plate", async () => {
+    ctx.install(handlerFor("ok", "bareGuides"));
+    expectStatus(await ctx.importUrl(`https://www.voxelshare.com/en/models/${BARE_ID}`), 200);
+    const plates = await plateRows();
+    expect(plates.map((plate) => plate.filename)).toEqual(["highland.stl"]);
+    const files = await prisma.printFile.findMany({ where: { printId: plates[0].printId, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename).toSorted()).toEqual([
+      "Assembly guide.pdf",
+      "README",
+      "body.f3d",
+      "notes.txt",
+    ]);
   });
 
   it("imports a model without profiles from its own files, a file kept zipped on its own unpacked", async () => {

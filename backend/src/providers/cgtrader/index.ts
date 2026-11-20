@@ -14,6 +14,7 @@ import { z } from "zod";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
 import type { NewPlateInput } from "../../services/printCreation";
 import { HttpError } from "../../utils/fileUtils";
+import { bytesFromSizeText } from "../../utils/sizeText";
 import { MANIFESTS } from "../index.generated";
 import { detailsOf } from "../details";
 import type {
@@ -139,6 +140,21 @@ export const cgtraderImport: SourcedImport<CgtraderSession, CgtraderModelResolut
     try {
       await download(first, auth, kit, downloaded);
       if (!downloaded.some((input) => kit.isModelFile(input.filename))) await download(fallback, auth, kit, downloaded);
+      // Its documents and drawings, where the admin keeps any, and none the site says is bigger than that: each link is
+      // asked for through the site's bot check, so only while the model has room for another. Never the import's
+      // failure: one that can't be had leaves the room to the next.
+      const limit = await kit.supportingLimit();
+      if (limit !== null && downloaded.some((input) => kit.isModelFile(input.filename))) {
+        const documents = files.filter(
+          (file) => kit.isDocumentFile(file.name) && (bytesFromSizeText(file.size) ?? 0) <= limit,
+        );
+        downloaded.push(
+          ...(await kit.downloadSupportingFiles(
+            documents.map((file) => ({ name: file.name, url: () => resolveCgtraderFileUrl(file.path, auth) })),
+            isCgtraderFileHost,
+          )),
+        );
+      }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw err;

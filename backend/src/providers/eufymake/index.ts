@@ -70,8 +70,16 @@ export const eufymakeImport: SourcedImport<null, EufymakeModelResolution> = {
     try {
       const [profileId] = selectEufymakeProfiles(resolved, "url", requested);
       const profile = profileId ? await downloadProfile(resolved, profileId, kit) : null;
-      if (profile) downloaded.push(profile);
-      else {
+      if (profile) {
+        downloaded.push(profile);
+        // A print file brings none of the model's own files: those it keeps beside it come along, one by one. Where it
+        // lists them only as the zip of them all, the zip is opened for those alone (downloadSupportingFile), so the
+        // print file stays the only plate.
+        const beside = (name: string) => kit.isSupportingFile(name) || /\.zip$/i.test(name.trim());
+        for (const file of resolved.files.filter((each) => beside(each.name))) {
+          downloaded.push(...(await kit.downloadSupportingFile(file, isEufymakeFileHost)));
+        }
+      } else {
         for (const file of resolved.files) {
           downloaded.push(...((await kit.downloadSignedFile(file, isEufymakeFileHost, BLOCKED)) ?? []));
         }
