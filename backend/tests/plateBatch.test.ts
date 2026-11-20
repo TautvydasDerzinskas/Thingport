@@ -279,19 +279,22 @@ describe("a model's plates, changed by two requests at once", () => {
     fs.writeFileSync(notes, "notes");
     const update = prisma.printFile.update.bind(prisma.printFile);
     let renamed = "";
+    let moving: Promise<unknown> | null = null;
     const spy = vi.spyOn(prisma.printFile, "update").mockImplementation((async (
       args: Parameters<typeof prisma.printFile.update>[0],
     ) => {
       const updated = await update(args);
       if (!renamed && typeof args.data.storagePath === "string") {
-        // Another tab renames the model, and its files move, while notes.txt, sent before lid.stl, is being saved.
+        // Another tab renames the model, and its files move, while notes.txt, sent before lid.stl, is being saved: the
+        // name is saved now, and the move runs beside the save, as it would, since the save claims its place in a turn
+        // at the storage lock that the move takes too.
         renamed = `Renamed meanwhile ${stamp}`;
         const moved = await prisma.print.update({
           where: { id: print.id },
           data: { name: renamed },
           include: { plates: true },
         });
-        await relocatePrint(moved, moved.plates);
+        moving = relocatePrint(moved, moved.plates);
       }
       return updated;
     }) as never);
@@ -300,8 +303,10 @@ describe("a model's plates, changed by two requests at once", () => {
         { path: notes, originalname: "notes.txt" },
         { path: tempStl("lid"), originalname: "lid.stl" },
       ]);
+      await moving;
     } finally {
       spy.mockRestore();
+      await Promise.allSettled([moving].filter(Boolean));
     }
     expect(renamed).not.toBe("");
     const lid = (await platesOf(print.id)).find((plate) => plate.filename === "lid.stl")!;
@@ -1110,6 +1115,17 @@ describe("a model's plates, changed by two requests at once", () => {
 // The pictures a 3MF names as its thumbnail, read before one is tried: as many as an archive names, they're held to a
 // few, and to so much in all.
 describe("a 3MF's thumbnail pictures", () => {
+  // A picture by its header, as only one is taken, with `tag` after it to tell them apart, or as long as `size`.
+  let png: Buffer | null = null;
+  async function picture(tag: string | { size: number }): Promise<Buffer> {
+    png ??= await sharp({ create: { width: 1, height: 1, channels: 3, background: "#808080" } })
+      .png()
+      .toBuffer();
+    const after = typeof tag === "string" ? Buffer.from(tag) : Buffer.alloc(tag.size - png.length);
+    return Buffer.concat([png, after]);
+  }
+  const tagOf = (each: Buffer) => each.subarray(png!.length).toString();
+
   async function threeMfWith(pictures: Record<string, Buffer>): Promise<string> {
     const JSZip = (await import("jszip")).default;
     const zip = new JSZip();
@@ -1130,9 +1146,11 @@ describe("a 3MF's thumbnail pictures", () => {
       "3D/thumbnail.png",
       "Metadata/thumbnail.png",
     ];
-    const file = await threeMfWith(Object.fromEntries(names.map((name) => [name, Buffer.from(name)])));
+    const file = await threeMfWith(
+      Object.fromEntries(await Promise.all(names.map(async (name) => [name, await picture(name)] as const))),
+    );
     const pictures = await read3mfThumbnails(file);
-    expect(pictures.map((each) => each.toString())).toEqual([
+    expect(pictures.map(tagOf)).toEqual([
       "Metadata/thumbnail.png",
       "3D/thumbnail.png",
       "thumbnail.png",
@@ -1142,34 +1160,35 @@ describe("a 3MF's thumbnail pictures", () => {
 
   it("keep the ones read already when a later one can't be read", async () => {
     const file = await threeMfWith({
-      "Metadata/thumbnail.png": Buffer.from("best"),
-      "3D/thumbnail.png": Buffer.from("broken"),
-      "thumbnail.png": Buffer.from("third"),
+      "Metadata/thumbnail.png": await picture("best"),
+      "3D/thumbnail.png": await picture("broken"),
+      "thumbnail.png": await picture("third"),
     });
     stage.zipEntryFails = "3D/thumbnail.png";
-    expect((await read3mfThumbnails(file)).map((each) => each.toString())).toEqual(["best", "third"]);
+    expect((await read3mfThumbnails(file)).map(tagOf)).toEqual(["best", "third"]);
   });
 
   it("come to no more than 32 MiB in all, however large the archive says each is", async () => {
     // Two of the largest a picture may be make 32 MiB exactly; a byte more is one too many.
-    const largest = Buffer.alloc(16 * 1024 * 1024);
+    const largest = await picture({ size: 16 * 1024 * 1024 });
     const file = await threeMfWith({
       "Metadata/thumbnail.png": largest,
       "3D/thumbnail.png": largest,
-      "thumbnail.png": Buffer.from("a"),
+      "thumbnail.png": await picture("a"),
     });
     expect((await read3mfThumbnails(file)).map((each) => each.length)).toEqual([largest.length, largest.length]);
   });
 
   it("pass over one that doesn't fit what's left for a smaller one after it", async () => {
-    const big = Buffer.alloc(12 * 1024 * 1024);
+    const big = await picture({ size: 12 * 1024 * 1024 });
+    const small = await picture("a small picture");
     const file = await threeMfWith({
       "Metadata/thumbnail.png": big,
       "3D/thumbnail.png": big,
       "thumbnail.png": big,
-      "a/thumbnail.png": Buffer.from("a small picture"),
+      "a/thumbnail.png": small,
     });
     const pictures = await read3mfThumbnails(file);
-    expect(pictures.map((each) => each.length)).toEqual([big.length, big.length, 15]);
+    expect(pictures.map((each) => each.length)).toEqual([big.length, big.length, small.length]);
   });
 });

@@ -86,16 +86,10 @@ export async function replaceModelPlates(
       await refreshPreparedReading(printId);
     } catch (error) {
       // The rows go back pointing at the files that are gone, so the model is left exactly as broken as it was found
-      // -- and found again by the next scan -- and its reading with them: a refresh that failed may have saved the new
-      // first plate's all the same. Not when they can't go back, as the model then keeps plates the repair made.
-      if (await putPlatesBack(printId, old.rows, added)) {
-        const reading = old.reading === null ? Prisma.JsonNull : (old.reading as Prisma.InputJsonValue);
-        await prisma.print
-          .update({ where: { id: printId }, data: { preparedMetadata: reading } })
-          .catch((err: unknown) =>
-            log.error("couldn't put a repaired model's prepared reading back", { print: printId, error: err }),
-          );
-      }
+      // -- and found again by the next scan -- and its reading with them, in one transaction: a refresh that failed
+      // may have saved the new first plate's all the same. Not when they can't go back, as the model then keeps plates
+      // the repair made, and the reading that goes with them.
+      await putPlatesBack(printId, old.rows, added, old.reading);
       throw error;
     }
     // Of the other files, the rows whose files are gone go, whatever took them, before the plate order goes too: a
@@ -150,17 +144,22 @@ export async function replaceModelPlates(
   return { plates, galleryWhole, gallery };
 }
 
-/** The model's plates put back as `old` after a replacement that stopped part-way (restorePlates), tried again when
- *  that fails. One that can't be leaves the model with only the plates the replacement made (`made`), whose files are
+/** The model's plates put back as `old` after a replacement that stopped part-way (restorePlates), with `reading`, its
+ *  prepared reading from before, in the same transaction, tried again when that fails. One that can't be leaves the model with only the plates the replacement made (`made`), whose files are
  *  there, so the scan would never offer it again: their files go instead (removeMadeFiles), and the model's plates
  *  point at files that aren't there, as when it was found. One that made none leaves the model with no plates at all,
  *  so `old` goes back later instead (putPlatesBackLater). With the plate order held. Whether `old` is back. */
-async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate[]): Promise<boolean> {
+async function putPlatesBack(
+  printId: string,
+  old: Plate[],
+  made: readonly Plate[],
+  reading: Prisma.JsonValue | null,
+): Promise<boolean> {
   let failure: unknown;
   for (let tries = 0; tries < 3; tries++) {
     if (tries) await sleep(250 * tries);
     try {
-      await restorePlates(printId, old);
+      await restorePlates(printId, old, { preparedMetadata: reading });
       return true;
     } catch (err) {
       failure = err;
@@ -173,7 +172,7 @@ async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate
       print: printId,
       error: failure,
     });
-    putPlatesBackLater(printId, old);
+    putPlatesBackLater(printId, old, reading);
     return false;
   }
   log.error("couldn't put a model's plates back, so the files of the ones a repair made go", {
@@ -239,27 +238,27 @@ function removeMadeFilesLater(printId: string, made: readonly Plate[], attempt =
 
 /** putPlatesBack tried again later, as removeMadeFilesLater is, for a model a failed repair left with no plates: `old`
  *  goes back only while it has none, as one added since is the owner's. Each try holds the plate order. */
-function putPlatesBackLater(printId: string, old: Plate[], attempt = 0): void {
+function putPlatesBackLater(printId: string, old: Plate[], reading: Prisma.JsonValue | null, attempt = 0): void {
   const delay = cleanupDelaysMs[attempt];
   if (delay === undefined) {
     log.error("gave up putting a failed repair's model's plates back, so it has none", { print: printId });
     return;
   }
   void cleanupWait(delay)
-    .then(() => withPlateOrder(printId, () => putBackIfNone(printId, old)))
+    .then(() => withPlateOrder(printId, () => putBackIfNone(printId, old, reading)))
     .then((done) => {
-      if (!done) putPlatesBackLater(printId, old, attempt + 1);
+      if (!done) putPlatesBackLater(printId, old, reading, attempt + 1);
     });
 }
 
 /** `old` put back as the model's plates while it's there and has none. False when that fails, for a later try. */
-async function putBackIfNone(printId: string, old: Plate[]): Promise<boolean> {
+async function putBackIfNone(printId: string, old: Plate[], reading: Prisma.JsonValue | null): Promise<boolean> {
   try {
     const model = await prisma.print.findUnique({
       where: { id: printId },
       select: { _count: { select: { plates: true } } },
     });
-    if (model && !model._count.plates) await restorePlates(printId, old);
+    if (model && !model._count.plates) await restorePlates(printId, old, { preparedMetadata: reading });
     return true;
   } catch (error) {
     log.error("couldn't put a failed repair's model's plates back", { print: printId, error });

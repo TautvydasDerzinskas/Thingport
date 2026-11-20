@@ -752,11 +752,16 @@ async function afterPlatesRemoved({ plates, home, picturesLeft }: RemovedPlates)
 /**
  * The model's plates put back as `previous` were, after a replacement of them that stopped part-way
  * (modelFilesReplace): the plates it made go, files, pictures and all, and `previous` take their place in the same
- * transaction, so the model is never left with neither. Under the storage lock, the rows read there, as
- * removePlateRows does. With the plate order held since the old rows went, which whatever adds plates to a model
- * takes, a merge included: the model's plates are then only those the replacement made.
+ * transaction, so the model is never left with neither, and `reading`, the model's prepared reading with them, in it
+ * too. Under the storage lock, the rows read there, as removePlateRows does. With the plate order held since the old
+ * rows went, which whatever adds plates to a model takes, a merge included: the model's plates are then only those
+ * the replacement made.
  */
-export async function restorePlates(printId: string, previous: Plate[]): Promise<void> {
+export async function restorePlates(
+  printId: string,
+  previous: Plate[],
+  reading?: { preparedMetadata: Prisma.JsonValue | null },
+): Promise<void> {
   const removed = await withStorageLock(async () => {
     const made = await prisma.plate.findMany({ where: { printId } });
     // Their files first, where their rows say they are now: a plate put back can name the same place, as the
@@ -794,6 +799,21 @@ export async function restorePlates(printId: string, previous: Plate[]): Promise
           format: plate.format === null ? Prisma.DbNull : (plate.format as Prisma.InputJsonValue),
         })),
       }),
+      // With the rows, so the model never has its old plates beside the replacement's reading, nor that reading without
+      // them.
+      ...(reading
+        ? [
+            prisma.print.update({
+              where: { id: printId },
+              data: {
+                preparedMetadata:
+                  reading.preparedMetadata === null
+                    ? Prisma.JsonNull
+                    : (reading.preparedMetadata as Prisma.InputJsonValue),
+              },
+            }),
+          ]
+        : []),
     ]);
     // Read once the rows are back: a read that fails then costs only the made plates' pictures, never the model its
     // own plates, nor the caller the error it's putting them back for.

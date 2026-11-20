@@ -35,7 +35,11 @@ export async function listSupportingFiles(printId: string): Promise<PrintFile[]>
  *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
  *  after a file saved at a path its row just freed); removing the temp file is not. */
 async function placeUpload(tempPath: string, destination: string): Promise<void> {
-  await withStorageLock(() => linkOrCopy(tempPath, destination));
+  // Its folder made again in the same turn: one made before could be pruned by a move emptying it in between.
+  await withStorageLock(async () => {
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await linkOrCopy(tempPath, destination);
+  });
   await fs.rm(tempPath, { force: true });
 }
 
@@ -225,9 +229,14 @@ export async function saveFileFromTemp(
     await normalizeGeneratorScript(tempPath, safeName);
     // Again, since dropping each CRLF's CR leaves the file shorter than it arrived.
     const stat = await fs.stat(tempPath);
-    // Claimed in the database first, so two uploads of one name can't both pick the same place.
-    const storagePath = await renderPrintFileStoragePath(print, safeName, folder);
-    await prisma.printFile.update({ where: { id: record.id }, data: { storagePath } });
+    // Claimed in the database first, so two uploads of one name can't both pick the same place, and chosen and claimed
+    // in one turn at the storage lock, as a failed repair puts its plates back in one (restorePlates): chosen outside
+    // it, a place could be one a plate is just being given back, and both rows would name it.
+    const storagePath = await withStorageLock(async () => {
+      const chosen = await renderPrintFileStoragePath(print, safeName, folder);
+      await prisma.printFile.update({ where: { id: record.id }, data: { storagePath: chosen } });
+      return chosen;
+    });
     destination = path.join(STORAGE, storagePath);
     await fs.mkdir(path.dirname(destination), { recursive: true });
     // A clone of a stored copy of the same bytes (any user's, any kind of file) when the admin setting allows; the
