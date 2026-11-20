@@ -32,6 +32,7 @@ type Options = {
   offered: StudioAiModels | null;
   /** What's selected in the view, by feature id, sent along so "round this" has a "this". */
   selected: readonly string[];
+  activePlate: string;
   /** A step landed: the design changed on the server. */
   onProgress: () => void;
   onError: (message: string) => void;
@@ -40,7 +41,15 @@ type Options = {
 
 export type StudioAssistant = ReturnType<typeof useStudioAssistant>;
 
-export function useStudioAssistant({ designId, offered, selected, onProgress, onError, onUnauthorized }: Options) {
+export function useStudioAssistant({
+  designId,
+  offered,
+  selected,
+  activePlate,
+  onProgress,
+  onError,
+  onUnauthorized,
+}: Options) {
   const { t } = useTranslation("app");
   const confirm = useConfirm();
   const [minimized, setMinimized] = useState(() => stored(MINIMIZED_KEY) === "true");
@@ -116,6 +125,7 @@ export function useStudioAssistant({ designId, offered, selected, onProgress, on
         prompt,
         ai_connection_id: modelId || null,
         selected: [...selected],
+        active_plate: activePlate,
         ...(pictures.length ? { pictures: pictures.map((picture) => picture.id) } : {}),
       });
       // The prompt shows at once; the server has kept it too.

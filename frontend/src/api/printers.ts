@@ -35,6 +35,7 @@ export type UserPrinter = {
   nozzle: string;
   /** Each slicer's printer preset for it and its nozzle, null where the slicer has none. */
   presets: Record<string, string | null>;
+  exact_nozzles?: Record<string, string[]>;
 };
 
 export type PrinterSuggestion = {

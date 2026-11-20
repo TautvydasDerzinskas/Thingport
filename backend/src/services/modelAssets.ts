@@ -38,10 +38,10 @@ const LEGACY_DIRS: Record<AssetKind, string> = {
 // Part of a render's name, so changing its look (modelPreviewCache's MODEL_IMAGE_KINDS) draws older ones again.
 export const RENDER_FILE_TAG = "render.v4";
 // The same, for the picture drawn in a model's own colours rather than in one the app tints.
-export const COLOR_RENDER_FILE_TAG = "color.v2";
+export const COLOR_RENDER_FILE_TAG = "color.v3";
 // Part of a 3D preview's name, so bumping it draws older GLBs again on next view. Failure markers carry it too, so a
 // file an older renderer refused gets another attempt.
-export const PREVIEW_FORMAT_VERSION = 5;
+export const PREVIEW_FORMAT_VERSION = 6;
 
 const DESCRIPTION_EXTS: Record<string, string> = {
   "image/jpeg": ".jpg",

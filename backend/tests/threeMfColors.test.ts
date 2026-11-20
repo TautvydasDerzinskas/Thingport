@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { writeZip } from "../src/utils/zipWriter";
 import { readColor, readColorGroups, sharePalette } from "../src/services/threeMfColors";
-import { loadThreeMfGroup } from "../src/services/modelPreviewRender";
+import { loadStudioThreeMf, loadThreeMfGroup } from "../src/services/modelPreviewRender";
 
 // Two triangles, two colours, written the way frontend/src/sdk/threeMf.ts writes a generated model: a colour
 // group the object points at, each triangle naming its own entry, and the same assignment again as the painting
@@ -77,7 +77,7 @@ afterAll(async () => {
 });
 
 /** A .3mf holding this model XML, and a project config where one is given. */
-async function threeMf(name: string, xml: string, settings?: string): Promise<string> {
+async function threeMf(name: string, xml: string, settings?: string, modelSettings?: string): Promise<string> {
   const modelPath = path.join(dir, `${name}.model`);
   await fs.writeFile(modelPath, xml);
   const entries = [{ arcname: "3D/3dmodel.model", filePath: modelPath }];
@@ -85,6 +85,11 @@ async function threeMf(name: string, xml: string, settings?: string): Promise<st
     const settingsPath = path.join(dir, `${name}.config`);
     await fs.writeFile(settingsPath, settings);
     entries.push({ arcname: "Metadata/project_settings.config", filePath: settingsPath });
+  }
+  if (modelSettings) {
+    const modelSettingsPath = path.join(dir, `${name}-model.config`);
+    await fs.writeFile(modelSettingsPath, modelSettings);
+    entries.push({ arcname: "Metadata/model_settings.config", filePath: modelSettingsPath });
   }
   const file = path.join(dir, `${name}.3mf`);
   await writeZip(file, entries);
@@ -124,6 +129,121 @@ describe("readColor", () => {
     expect(readColor("#00AE42")).toBe("#00ae42");
     expect(readColor("not a colour")).toBeNull();
   });
+});
+
+it("uses separate limits for a Studio 3MF project and each of its bodies", async () => {
+  const file = await threeMf(
+    "studio-triangle-limits",
+    COLOURED_XML.replace("</build>", '<item objectid="2"/></build>'),
+  );
+  const project = await loadStudioThreeMf(file, 4, 2, 2);
+  expect(
+    typeof project === "string" ? project : project.plates[0].parts.map((part) => part.triangles.length / 9),
+  ).toEqual([2, 2]);
+  expect(await loadStudioThreeMf(file, 3, 2, 2)).toBe("too-complex");
+  expect(await loadStudioThreeMf(file, 4, 2, 1)).toBe("body-too-complex");
+});
+
+it("reads 3MF vertex coordinates in any XML attribute order", async () => {
+  const reordered = COLOURED_XML.replace(
+    /<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"/g,
+    '<vertex z=\'$3\' y="$2" x = "$1"',
+  );
+  const [canonical, mixedOrder] = await Promise.all([
+    threeMf("studio-canonical-vertices", COLOURED_XML),
+    threeMf("studio-reordered-vertices", reordered),
+  ]);
+  const expected = await loadStudioThreeMf(canonical, 2, 1);
+  const actual = await loadStudioThreeMf(mixedOrder, 2, 1);
+  if (typeof expected === "string" || typeof actual === "string") throw new Error("Expected both fixtures to import");
+  expect(actual.plates[0].parts[0].triangles).toEqual(expected.plates[0].parts[0].triangles);
+});
+
+it("reads single-quoted build attributes and converts inch geometry", async () => {
+  const model = COLOURED_XML.replace('unit="millimeter"', "unit = 'inch'").replace(
+    '<item objectid="2"/>',
+    `<item objectid='2'/><item objectid="2" printable='false'/>`,
+  );
+  const file = await threeMf("studio-single-quoted", model);
+  const project = await loadStudioThreeMf(file, 2, 1);
+  if (typeof project === "string") throw new Error(project);
+  const [{ parts }] = project.plates;
+  expect(parts).toHaveLength(1);
+  const xs = Array.from(parts[0].triangles).filter((_, i) => i % 3 === 0);
+  expect(Math.max(...xs) - Math.min(...xs)).toBe(254);
+});
+
+it("preserves an empty project filament slot before later filaments and indexed colors", async () => {
+  const mesh = COLOURED_XML.match(/<mesh>[\s\S]*?<\/mesh>/)![0].replace(/ (?:p1|paint_color)="[^"]*"/g, "");
+  const model = COLOURED_XML.replace(
+    /<object id="2"[\s\S]*?<\/object>/,
+    `<object id="2">${mesh}</object><object id="3">${mesh}</object><object id="4" pid="1" pindex="1">${mesh}</object>`,
+  ).replace('<item objectid="2"/>', '<item objectid="2"/><item objectid="3"/><item objectid="4"/>');
+  const file = await threeMf(
+    "studio-empty-filament-slot",
+    model,
+    JSON.stringify({ filament_colour: ["#ff0000", "", "#008000"] }),
+    `<config><object id="2"><metadata key="extruder" value="3"/></object>
+    <object id="3"><metadata key="extruder" value="2"/></object></config>`,
+  );
+  const project = await loadStudioThreeMf(file, 6, 3);
+  if (typeof project === "string") throw new Error(project);
+  expect(project.plates[0].parts.map((part) => part.color)).toEqual(["#008000", undefined, "#0000ff"]);
+  const preview = await loadThreeMfGroup(file);
+  if (typeof preview === "string") throw new Error(preview);
+  expect(JSON.parse(preview.userData.thingportPreview).filamentColors).toEqual([
+    "#ff0000",
+    "",
+    "#008000",
+    "#ff0000",
+    "#0000ff",
+  ]);
+});
+
+it("budgets only printable Studio placements and their model components", async () => {
+  const duplicate = COLOURED_XML.match(/<object id="2"[\s\S]*?<\/object>/)![0].replace('id="2"', 'id="3"');
+  const model = COLOURED_XML.replace(
+    "</resources>",
+    `${duplicate}<object id="4"><components><component objectid="2"/><component objectid="3"/></components></object></resources>`,
+  ).replace(
+    '<item objectid="2"/>',
+    '<item objectid="4"/><item objectid="3" printable="0"/><item objectid="3" printable="false"/>',
+  );
+  const file = await threeMf(
+    "studio-printable-budget",
+    model,
+    undefined,
+    '<config><object id="4"><part id="3" subtype="modifier_part"/></object></config>',
+  );
+  const project = await loadStudioThreeMf(file, 2, 1, 2);
+  expect(
+    typeof project === "string" ? project : project.plates[0].parts.map((part) => part.triangles.length / 9),
+  ).toEqual([2]);
+  const preview = await loadThreeMfGroup(file);
+  if (typeof preview === "string") throw new Error(preview);
+  expect(meshColors(preview).reduce((sum, mesh) => sum + mesh.triangles, 0)).toBe(8);
+});
+
+it("keeps explicit zero offsets on a later Studio plate", async () => {
+  const model = COLOURED_XML.replace(
+    '<item objectid="2"/>',
+    '<item objectid="2" transform="1 0 0 0 1 0 0 0 1 60 55 0"/><item objectid="2" transform="1 0 0 0 1 0 0 0 1 65 52 0"/>',
+  );
+  const settings = JSON.stringify({ printable_area: ["0x0", "100x0", "100x100", "0x100"] });
+  const plate = (number: number, offsets = "") => `<plate><metadata key="plater_id" value="${number}"/>${offsets}
+    <model_instance><metadata key="object_id" value="2"/><metadata key="instance_id" value="${number - 1}"/></model_instance></plate>`;
+  const file = await threeMf(
+    "studio-explicit-zero",
+    model,
+    settings,
+    `<config>${plate(1)}${plate(2, '<metadata key="pos_x" value="0"/><metadata key="pos_y" value="0"/>')}</config>`,
+  );
+  const project = await loadStudioThreeMf(file, 4, 2);
+  if (typeof project === "string") throw new Error(project);
+  expect(project.plates.map(({ parts }) => Array.from(parts[0].triangles.subarray(0, 3)))).toEqual([
+    [10, 5, 0],
+    [15, 2, 0],
+  ]);
 });
 
 describe("readColorGroups", () => {

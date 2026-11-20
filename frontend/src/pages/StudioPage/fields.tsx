@@ -35,7 +35,9 @@ export function NumberField({
   value,
   unit,
   onCommit,
+  validate,
   live,
+  disabled,
   expression,
   onExpression,
 }: {
@@ -43,8 +45,11 @@ export function NumberField({
   value: number;
   unit?: string;
   onCommit: (value: number) => void;
+  /** Rejects a numeric value before committing it, restoring the current value on blur. */
+  validate?: (value: number) => boolean;
   /** Every valid number as it's typed, for a preview. */
   live?: boolean;
+  disabled?: boolean;
   /** The formula the number follows, if it does. */
   expression?: string;
   onExpression?: (expression: string) => void;
@@ -56,6 +61,7 @@ export function NumberField({
   const show = (mm: number) =>
     length ? String(Number((mm / MM_PER[units]).toFixed(FIELD_DIGITS[units])) + 0) : String(Number(mm.toFixed(3)) + 0);
   const parse = (typed: string) => (length ? typedLength(typed, units) : parsePlain(typed));
+  const valid = (number: number) => Number.isFinite(number) && (validate?.(number) ?? true);
   const [text, setText] = useState(show(value));
   const [editing, setEditing] = useState(false);
   useEffect(() => {
@@ -74,7 +80,7 @@ export function NumberField({
     // Left as shown, it's left alone: shown rounded in inches, it would come back a hair off.
     if (text.trim() === show(value)) return;
     const next = parse(text);
-    if (!Number.isFinite(next)) return setText(show(value));
+    if (!valid(next)) return setText(show(value));
     if (next !== value) onCommit(next);
     setText(show(next));
   };
@@ -83,6 +89,7 @@ export function NumberField({
   return (
     <Tooltip title={follows ? t("studio.parameters.follows", { expression }) : ""} placement="top">
       <TextField
+        disabled={disabled}
         size="small"
         label={
           follows ? (
@@ -104,8 +111,7 @@ export function NumberField({
         onChange={(event) => {
           setText(event.target.value);
           const next = parse(event.target.value);
-          if (live && !event.target.value.trim().startsWith("=") && Number.isFinite(next) && next !== value)
-            onCommit(next);
+          if (live && !event.target.value.trim().startsWith("=") && valid(next) && next !== value) onCommit(next);
         }}
         onBlur={commit}
         onKeyDown={(event) => {

@@ -30,8 +30,6 @@ import { getStudioDesign, studioPicturePath, type StudioPicture } from "./studio
 
 const log = createLogger("studio-assistant");
 
-/** Tool calls one run may make before it's stopped. */
-export const MAX_STEPS = 30;
 /** How long one run may take in all. */
 const RUN_MS = 10 * 60_000;
 /** How much of the conversation a new prompt is sent with; less for the compact set's small models. */
@@ -52,6 +50,7 @@ you to make or change the design open on their screen, and watches each step lan
 - After a change, read the tool's reply for problems, and fix them before you finish. Before finishing a part meant
   for printing, run studio_check_print and fix what it says.
 - Don't ask before an ordinary change. Ask only when the request is unclear in a way that matters.
+- The request includes the user's active plate. Use it for new bodies unless the user asks for another plate.
 - When you're done, answer in one to three short sentences, in the person's language, saying what you made or changed.
   No tables, code or ids they didn't use.
 
@@ -72,7 +71,7 @@ const CORE = new Set([
 ]);
 const SEARCH_NOTE = `Only a few of your tools are loaded at first. Search for the rest by what they do: other shapes
 (cone, sphere, torus), screw threads, text, tracing a picture, sketches and SVG paths, extrude, revolve, loft and
-sweep, press/pull, fillet, chamfer, hole, shell, split, separating parts, patterns and mirrors, hulls, aligning bodies
+sweep, create and move bodies between build plates, set body colors, press/pull, fillet, chamfer, hole, shell, split, separating parts, patterns and mirrors, hulls, aligning bodies
 and laying them flat, scaling, moving, editing, renaming and deleting features, undo, looking at the design, checking
 it for printing, measuring between bodies, parameters and formulas, finding a library model to import, and saving
 the design to the library.`;
@@ -80,22 +79,28 @@ the design to the library.`;
 // For small local models: the few tools most requests need, each said in a line, and the arguments that matter. Every
 // one is the same command as in full, so a person and the AI still change a design the same way.
 const COMPACT: Record<string, { description: string; args: string[] }> = {
+  studio_create_plate: { description: "Creates a named build plate and returns its id.", args: ["name"] },
+  studio_move_to_plate: { description: "Moves bodies to a plate.", args: ["plate_id", "feature_ids"] },
+  studio_set_body_color: {
+    description: "Sets a body's #RRGGBB color (null clears it).",
+    args: ["feature_ids", "color"],
+  },
   studio_get_design: {
     description: "Reads the design: every feature with its id and sizes, and each body's size.",
     args: [],
   },
   studio_add_box: {
     description: "Adds a box: width (X), depth (Y), height (Z) in mm, its base centred on position.",
-    args: ["width", "depth", "height", "position", "rotation"],
+    args: ["width", "depth", "height", "position", "rotation", "plate_id"],
   },
   studio_add_cylinder: {
     description: "Adds a cylinder: radius and height in mm, its base centred on position.",
-    args: ["radius", "height", "position", "rotation"],
+    args: ["radius", "height", "position", "rotation", "plate_id"],
   },
   studio_add_cone: {
     description:
       "Adds a cone: radius_bottom, radius_top (0 for a point) and height in mm, its base centred on position.",
-    args: ["radius_bottom", "radius_top", "height", "position", "rotation"],
+    args: ["radius_bottom", "radius_top", "height", "position", "rotation", "plate_id"],
   },
   studio_add_sphere: {
     description: "Adds a sphere of a radius in mm, its lowest point at position.",
@@ -140,6 +145,7 @@ const COMPACT: Record<string, { description: string; args: string[] }> = {
 const COMPACT_SYSTEM = `You build and change 3D-printable parts in Thingport Studio with the tools. Millimetres; Z is up and
 the bed is z = 0. A box, cylinder or cone stands on its position, the middle of its base; a sphere on its lowest point.
 Rotation is degrees about X, then Y, then Z. Features have ids like box-1. Take one step at a time and read each reply.
+Put new bodies on the active plate named in the request unless the person asks for another.
 The person thinks in the design's display_units: convert their sizes to mm (1 in = 25.4 mm, 1 cm = 10 mm), and give
 sizes back in their units. When done, say in one or two sentences, in the person's language, what you made.`;
 
@@ -252,6 +258,7 @@ function compactState(state: string): string {
     return JSON.stringify(
       {
         display_units: read.display_units,
+        plates: read.plates,
         top_level: read.top_level,
         features: read.features,
         bodies: read.bodies,
@@ -264,7 +271,7 @@ function compactState(state: string): string {
 }
 
 export type AssistantStep = { tool: string; title: string; summary: string | null; ok: boolean };
-export type AssistantOutcome = "done" | "stopped" | "limit" | "failed";
+export type AssistantOutcome = "done" | "stopped" | "failed";
 
 type Run = {
   designId: string;
@@ -350,7 +357,7 @@ function historyMessage(message: StudioMessage): ChatMessage | null {
     message.outcome === "stopped"
       ? "The person stopped this run."
       : message.outcome === "limit"
-        ? `This run stopped at the ${MAX_STEPS}-step limit.`
+        ? `This run stopped at the step limit after ${steps.length} steps.`
         : message.outcome === "failed"
           ? `This run failed: ${message.error ?? "unknown error"}.`
           : "";
@@ -415,7 +422,13 @@ async function picturesFor(userId: string, designId: string, pictures: StudioPic
 export async function startAssistantRun(
   userId: string,
   designId: string,
-  input: { prompt: string; aiConnectionId?: string | null; selected?: string[]; pictures?: string[] },
+  input: {
+    prompt: string;
+    aiConnectionId?: string | null;
+    selected?: string[];
+    activePlate?: string;
+    pictures?: string[];
+  },
 ) {
   const prefs = await getStudioAssistantPrefs();
   if (!prefs.enabled)
@@ -486,7 +499,7 @@ async function work(
   run: Run,
   connectionId: string,
   mode: ToolMode,
-  input: { prompt: string; selected?: string[]; pictures: StudioPicture[] },
+  input: { prompt: string; selected?: string[]; activePlate?: string; pictures: StudioPicture[] },
   history: StudioMessage[],
 ): Promise<void> {
   const settings = await resolveAiProvider(connectionId);
@@ -517,6 +530,7 @@ async function work(
     const request = [
       input.prompt,
       pictureNote(input.pictures),
+      input.activePlate ? `Active build plate: ${input.activePlate}` : "",
       input.selected?.length ? `Selected in the view: ${input.selected.join(", ")}` : "",
       `The design now (studio_get_design):\n${mode === "compact" ? compactState(state.result.text) : state.result.text}`,
     ]
@@ -562,7 +576,6 @@ async function work(
       const results: ToolResult[] = [];
       for (const call of turn.calls) {
         stillGoing();
-        if (run.steps.length >= MAX_STEPS) break;
         const entry = byName.get(call.name);
         const step: AssistantStep = {
           tool: call.name,
@@ -575,10 +588,6 @@ async function work(
         step.ok = !result.isError;
         step.summary = summary ?? (result.isError ? result.text.slice(0, 300) : null);
         results.push(result);
-      }
-      if (run.steps.length >= MAX_STEPS) {
-        outcome = "limit";
-        break;
       }
       messages.push({ role: "tool", results });
     }

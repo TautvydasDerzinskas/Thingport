@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { studioApi, type StudioDesign } from "../../api/studio";
 import { UnauthorizedError } from "../../api/client";
 import {
@@ -16,7 +16,11 @@ import { fontsLoadedFor, loadFontsFor } from "./studioFonts";
 // How often an open design asks whether something else, an assistant, changed it.
 const POLL_MS = 2000;
 
-export type RunCommand = <N extends StudioCommandName>(name: N, args: StudioCommandArgs<N>) => Promise<string[] | null>;
+export type RunCommand = <N extends StudioCommandName>(
+  name: N,
+  args: StudioCommandArgs<N>,
+  options?: { waitForSave?: boolean },
+) => Promise<string[] | null>;
 
 export function useStudioDesign(
   designId: string | null,
@@ -24,11 +28,13 @@ export function useStudioDesign(
 ) {
   const [design, setDesign] = useState<StudioDesign | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const active = useRef<{ id: string } | null>(null);
   // The design as run() sees it, which a command updates before the page renders again.
   const current = useRef<StudioDesign | null>(null);
-  useEffect(() => {
-    current.current = design;
-  }, [design]);
+  const showDesign = useCallback((next: StudioDesign | null) => {
+    current.current = next;
+    setDesign(next);
+  }, []);
   // Commands go to the server one after another, in the order they were run.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const inFlight = useRef(0);
@@ -44,25 +50,33 @@ export function useStudioDesign(
 
   const reload = useCallback(
     async (id: string) => {
+      const scope = active.current;
+      if (scope?.id !== id) return;
       try {
         const loaded = await studioApi.get(id);
         // Its text shows in its fonts, so they come in first; one that won't load leaves its text undrawn.
         await loadFontsFor(loaded.document).catch(() => undefined);
-        if (current.current === null || current.current.id === id) setDesign(loaded);
+        if (active.current !== scope || (current.current && loaded.version < current.current.version)) return;
+        showDesign(loaded);
         setLoadFailed(false);
       } catch (error) {
+        if (active.current !== scope) return;
         setLoadFailed(true);
         fail(error);
       }
     },
-    [fail],
+    [fail, showDesign],
   );
 
-  useEffect(() => {
-    setDesign(null);
-    current.current = null;
+  useLayoutEffect(() => {
+    active.current = designId ? { id: designId } : null;
+    showDesign(null);
+    setLoadFailed(false);
     if (designId) void reload(designId);
-  }, [designId, reload]);
+    return () => {
+      active.current = null;
+    };
+  }, [designId, reload, showDesign]);
 
   // Picks up what an assistant did while the page is open. Not while a command of the page's own is on its way, whose
   // answer brings the design back anyway.
@@ -82,43 +96,40 @@ export function useStudioDesign(
   }, [designId, reload]);
 
   const run: RunCommand = useCallback(
-    async (name, args) => {
-      // Text is drawn in its font, fetched the first time it's used.
-      if (!fontsLoadedFor(args)) {
-        try {
-          await loadFontsFor(args);
-        } catch (error) {
-          fail(error);
-          return null;
-        }
-      }
+    async (name, args, options) => {
+      const scope = active.current;
       const open = current.current;
-      if (!open) return null;
-      const send = async (): Promise<string[] | null> => {
+      if (!open || open.id !== designId || open.id !== scope?.id) return null;
+      const fontsReady = fontsLoadedFor(args);
+      const send = (): Promise<string[] | null> => {
         inFlight.current += 1;
-        const sent = queue.current.then(() => studioApi.run(open.id, name, args));
+        const sent = queue.current.then(async () => {
+          try {
+            // Reserve the command's place even while fetching the font needed to draw its text.
+            if (!fontsReady) await loadFontsFor(args);
+            const result = await studioApi.run(open.id, name, args);
+            if (active.current !== scope) return null;
+            showDesign(result.design);
+            return result.created;
+          } catch (error) {
+            if (active.current === scope) {
+              fail(error);
+              if (inFlight.current === 1) await reload(open.id);
+            }
+            return null;
+          } finally {
+            inFlight.current -= 1;
+          }
+        });
         queue.current = sent.catch(() => undefined);
-        try {
-          const result = await sent;
-          inFlight.current -= 1;
-          // With more of the page's commands still on their way, the newer local state stands until the last answer.
-          if (inFlight.current === 0 && current.current?.id === result.design.id) setDesign(result.design);
-          return result.created;
-        } catch (error) {
-          inFlight.current -= 1;
-          fail(error);
-          if (inFlight.current === 0) void reload(open.id);
-          return null;
-        }
+        return sent;
       };
-      // A change to the feature tree shows at once, and what it made can be selected at once; the server's answer
-      // then takes over. Undo, redo and the design's name wait for the server, which keeps the history.
-      if (!studioCommand(name)?.apply) return send();
+      // An earlier command can consume the next feature or plate ID. Use the server's IDs until the queue settles.
+      if (inFlight.current > 0 || !fontsReady || options?.waitForSave || !studioCommand(name)?.apply) return send();
       try {
         const outcome = applyCommand(open.document, name, args);
         const next = { ...open, document: outcome.document, can_undo: true, can_redo: false };
-        current.current = next;
-        setDesign(next);
+        showDesign(next);
         void send();
         return outcome.created;
       } catch (error) {
@@ -127,8 +138,20 @@ export function useStudioDesign(
         return null;
       }
     },
-    [fail, reload],
+    [designId, fail, reload, showDesign],
   );
 
-  return { design, loadFailed, run, reload };
+  const waitForSaves = useCallback(async (id: string) => {
+    const scope = active.current;
+    if (scope?.id !== id) return null;
+    while (active.current === scope) {
+      const pending = queue.current;
+      await pending;
+      if (active.current !== scope) return null;
+      if (pending === queue.current) return current.current;
+    }
+    return null;
+  }, []);
+
+  return { design, loadFailed, run, reload, waitForSaves };
 }

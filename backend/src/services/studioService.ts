@@ -13,8 +13,11 @@ import {
   alignBody,
   alignMeasures,
   applyCommand,
+  arrangeMeasures,
+  arrangePlate,
   layFlat,
   layFlatTurn,
+  makeFitTest,
   CommandError,
   parseCommandArgs,
   separableBody,
@@ -25,13 +28,31 @@ import {
   type CommandOutcome,
 } from "../studio/commands.generated";
 import type { Traced } from "../studio/trace.generated";
-import { ASSET_ID, emptyDocument, topLevel, type StudioDocument, type Vec3 } from "../studio/document.generated";
+import {
+  ASSET_ID,
+  DEFAULT_PLATE_ID,
+  LIMITS,
+  emptyDocument,
+  studioPlates,
+  topLevel,
+  transformMatrix,
+  type StudioDocument,
+  type Vec3,
+} from "../studio/document.generated";
+import { applyMatrix } from "../studio/vec.generated";
+import { boundsOnBed, DEFAULT_PRINT_BED } from "../studio/printLayout.generated";
 import { resolvePlateFilePath } from "./printCreation";
 import { readablePrintWhere } from "./socialService";
 import { listPrints } from "./printQuery";
 import { loadFontsFor } from "./studioFonts";
-import { importStudioMesh, measureStudioBounds, measureStudioParts, traceStudioPicture } from "./studioInspect";
-import type { StudioWorkerResult } from "./studioWorker";
+import {
+  importStudioMesh,
+  importStudioThreeMf,
+  measureStudioBounds,
+  measureStudioParts,
+  traceStudioPicture,
+} from "./studioInspect";
+import type { StudioImportedBody, StudioWorkerResult } from "./studioWorker";
 import { getStudioSettings, type StudioUnits } from "./studioSettingsService";
 
 // Studio's designs: each user's own, changed only by the commands in frontend/src/studio/commands.ts, whether the page
@@ -237,9 +258,148 @@ export async function listStudioLibrary(userId: string, q: string | undefined, o
   };
 }
 
+type ImportedMesh = Parameters<typeof addMesh>[1];
+type ImportedFile =
+  | { kind: "mesh"; destinations: string[]; mesh: ImportedMesh }
+  | {
+      kind: "project";
+      destinations: string[];
+      plates: {
+        name: string | null;
+        bodies: { mesh: ImportedMesh; name: string | null; color?: string; position: Vec3 }[];
+      }[];
+      mixedColors: boolean;
+    };
+
+function importedMesh(
+  assetId: string,
+  result: Pick<StudioImportedBody, "solid" | "triangles" | "size" | "parts">,
+  source: ImportedMesh["source"],
+): ImportedMesh {
+  return {
+    asset_id: assetId,
+    solid: result.solid,
+    triangles: result.triangles,
+    size: result.size.map((n) => Number(n.toFixed(3))) as Vec3,
+    parts: result.parts,
+    source,
+  };
+}
+
+function importFailed(filename: string, result: StudioWorkerResult): never {
+  if (result.status === "refused") throw new HttpError(422, `${filename}: ${result.reason}`, "studio_import_refused");
+  console.error(`[studio] importing ${filename} failed`, result);
+  throw new HttpError(422, `Couldn't read ${filename}`, "studio_import_failed");
+}
+
+async function removeImportFiles(files: readonly string[], recursive = false): Promise<void> {
+  await Promise.all(
+    files.map(async (file) => {
+      try {
+        await fs.rm(file, { force: true, recursive });
+      } catch (error) {
+        console.error(`[studio] couldn't remove import file ${file}`, error);
+      }
+    }),
+  );
+}
+
+async function importLibraryProject(
+  sourcePath: string,
+  dir: string,
+  source: ImportedMesh["source"],
+): Promise<ImportedFile> {
+  await fs.mkdir(dir, { recursive: true });
+  const stage = await fs.mkdtemp(path.join(dir, "import-"));
+  const destinations: string[] = [];
+  try {
+    const result = await importStudioThreeMf(sourcePath, stage);
+    if (result.status !== "project") return importFailed(source.file_name, result);
+    const plates: Extract<ImportedFile, { kind: "project" }>["plates"] = [];
+    for (const plate of result.plates) {
+      const bodies: (typeof plates)[number]["bodies"] = [];
+      for (const body of plate.bodies) {
+        const assetId = crypto.randomBytes(12).toString("hex");
+        const destination = path.join(dir, `${assetId}.tpsm`);
+        await fs.rename(path.join(stage, body.file), destination);
+        destinations.push(destination);
+        bodies.push({
+          mesh: importedMesh(assetId, body, source),
+          name: body.name,
+          color: body.color,
+          position: body.position,
+        });
+      }
+      plates.push({ name: plate.name, bodies });
+    }
+    return { kind: "project", destinations, plates, mixedColors: result.mixedColors };
+  } catch (error) {
+    await removeImportFiles(destinations);
+    throw error;
+  } finally {
+    await removeImportFiles([stage], true);
+  }
+}
+
+/** Bring each source plate in as a group while keeping its editable bodies and relative placements. */
+function addImportedProject(
+  doc: StudioDocument,
+  project: Extract<ImportedFile, { kind: "project" }>,
+  args: Parameters<typeof addMesh>[2],
+): CommandOutcome {
+  const count = project.plates.reduce((sum, plate) => sum + plate.bodies.length, 0);
+  if (doc.features.length + count > LIMITS.features)
+    throw new CommandError(
+      `A design holds up to ${LIMITS.features} features. There isn't room for all ${count} bodies.`,
+    );
+  const target = args.plate_id ?? DEFAULT_PLATE_ID;
+  if (!studioPlates(doc).some((plate) => plate.id === target))
+    throw new CommandError(`There's no plate ${target} in this design.`);
+
+  const transform = transformMatrix({
+    position: args.position ?? [0, 0, 0],
+    rotation: args.rotation ?? [0, 0, 0],
+    scale: [1, 1, 1],
+  });
+  let document = doc;
+  const created: string[] = [];
+  for (const [index, plate] of project.plates.entries()) {
+    let plateId = target;
+    const plateName = plate.name?.slice(0, 80) || `Plate ${studioPlates(document).length + 1}`;
+    if (index > 0) {
+      const added = applyCommand(document, "create_plate", { name: plateName });
+      document = added.document;
+      plateId = added.created[0];
+    } else if (!doc.features.length && !doc.plates && plate.name) {
+      document = applyCommand(document, "rename_plate", { plate_id: target, name: plateName }).document;
+    }
+    for (const body of plate.bodies) {
+      const imported = addMesh(document, body.mesh, {
+        ...args,
+        plate_id: plateId,
+        name: args.name ?? body.name?.slice(0, 80),
+        color: args.color ?? body.color,
+        position: applyMatrix(transform, body.position),
+      });
+      document = imported.document;
+      created.push(...imported.created);
+    }
+  }
+  const plates = project.plates.length;
+  const importSummary =
+    `Imported ${count} ${count === 1 ? "body" : "bodies"} from ${plates} ${plates === 1 ? "plate" : "plates"}` +
+    (project.mixedColors ? ". Bodies with multiple face colors use Studio's default body color." : "");
+  return { document, created, summary: importSummary };
+}
+
 /** Makes the design's own copy of a library model's 3D file, and says what it is. Another user's shared model too
  *  (services/socialService.ts): the design's copy is the user's own. */
-async function importLibraryFile(userId: string, designId: string, modelId: string, fileId: string | undefined) {
+async function importLibraryFile(
+  userId: string,
+  designId: string,
+  modelId: string,
+  fileId: string | undefined,
+): Promise<ImportedFile> {
   const print = await prisma.print.findFirst({
     where: { id: modelId, AND: [await readablePrintWhere(userId)] },
     include: { plates: { orderBy: { position: "asc" } } },
@@ -257,31 +417,24 @@ async function importLibraryFile(userId: string, designId: string, modelId: stri
     );
   const source = resolvePlateFilePath(plate);
   if (!source) throw new HttpError(404, `${plate.filename} is missing from storage`, "studio_file_missing");
-  const assetId = crypto.randomBytes(12).toString("hex");
-  const destination = path.join(studioAssetDir(userId, designId), `${assetId}.tpsm`);
-  const result = await importStudioMesh(source, extOf(plate.filename), destination);
-  if (result.status === "refused")
-    throw new HttpError(422, `${plate.filename}: ${result.reason}`, "studio_import_refused");
-  if (result.status !== "imported") {
-    console.error(`[studio] importing ${plate.filename} failed`, result);
-    throw new HttpError(422, `Couldn't read ${plate.filename}`, "studio_import_failed");
-  }
-  return {
-    destination,
-    mesh: {
-      asset_id: assetId,
-      solid: result.solid,
-      triangles: result.triangles,
-      size: result.size.map((n) => Number(n.toFixed(3))) as Vec3,
-      parts: result.parts,
-      source: {
-        model_id: print.id,
-        file_id: plate.id,
-        file_name: plate.filename,
-        model_title: print.title || print.name,
-      },
-    },
+  const provenance = {
+    model_id: print.id,
+    file_id: plate.id,
+    file_name: plate.filename,
+    model_title: print.title || print.name,
   };
+  const ext = extOf(plate.filename);
+  const dir = studioAssetDir(userId, designId);
+  if (ext === ".3mf") return importLibraryProject(source, dir, provenance);
+
+  const assetId = crypto.randomBytes(12).toString("hex");
+  const destination = path.join(dir, `${assetId}.tpsm`);
+  const result = await importStudioMesh(source, ext, destination);
+  if (result.status !== "imported") {
+    await fs.rm(destination, { force: true }).catch(() => undefined);
+    return importFailed(plate.filename, result);
+  }
+  return { kind: "mesh", destinations: [destination], mesh: importedMesh(assetId, result, provenance) };
 }
 
 /** trace_picture's picture, traced outside the design's lock; the command's own checks first, so nothing is traced for
@@ -332,6 +485,28 @@ async function measuredFor(
   const doc = documentOf(design);
   const assetDir = studioAssetDir(userId, id);
   const featureId = String(args.feature_id);
+  if (name === "make_fit_test") {
+    const outcome = makeFitTest(doc, args as Parameters<typeof makeFitTest>[1]);
+    const bounds = await boundsIn(outcome.document, assetDir, outcome.created);
+    const { bed = DEFAULT_PRINT_BED, outline } = doc.print_setup ?? {};
+    return {
+      version: design.version,
+      apply: () => {
+        if (outcome.created.some((createdId) => !bounds[createdId] || !boundsOnBed(bounds[createdId], bed, outline)))
+          throw new HttpError(
+            422,
+            "The samples exceed the build volume. Use a larger bed or smaller connectors.",
+            "studio_fit_outside",
+          );
+        return outcome;
+      },
+    };
+  }
+  if (name === "arrange_plate") {
+    const given = args as Parameters<typeof arrangePlate>[1];
+    const bounds = await boundsIn(doc, assetDir, arrangeMeasures(doc, given));
+    return { version: design.version, apply: (now) => arrangePlate(now, given, bounds) };
+  }
   if (name === "align") {
     const given = args as Parameters<typeof alignBody>[1];
     const bounds = await boundsIn(doc, assetDir, alignMeasures(doc, given));
@@ -419,7 +594,9 @@ export async function runStudioCommand(
         const outcome: CommandOutcome = measured
           ? measured.apply(documentOf(design))
           : imported
-            ? addMesh(documentOf(design), imported.mesh, parsed)
+            ? imported.kind === "project"
+              ? addImportedProject(documentOf(design), imported, parsed)
+              : addMesh(documentOf(design), imported.mesh, parsed)
             : traced
               ? addTrace(documentOf(design), parsed as Parameters<typeof addTrace>[1], traced)
               : applyCommand(documentOf(design), name, parsed);
@@ -454,8 +631,8 @@ export async function runStudioCommand(
     }
   } catch (error) {
     // An import that didn't make it into the design leaves no copy behind.
-    if (imported) await fs.rm(imported.destination, { force: true });
-    if (error instanceof CommandError) throw new HttpError(400, error.message, "studio_command_refused");
+    if (imported) await removeImportFiles(imported.destinations);
+    if (error instanceof CommandError) throw new HttpError(400, error.message, error.code ?? "studio_command_refused");
     throw error;
   }
 }

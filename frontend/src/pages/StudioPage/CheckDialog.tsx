@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -18,9 +18,20 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import VerticalAlignBottomIcon from "@mui/icons-material/VerticalAlignBottom";
 import HelpTip from "../../components/HelpTip";
-import { featureById, isBody, topLevel, type StudioDocument, type Vec3 } from "../../studio/document";
+import {
+  featureById,
+  isBody,
+  studioPlates,
+  plateOf,
+  topLevel,
+  type StudioDocument,
+  type StudioPrintSetup,
+  type Vec3,
+} from "../../studio/document";
+import { useUserPrinters } from "../../hooks/useUserPrinters";
 import type { checkDesign, measureBetween } from "../../studio/geometry";
 import type { BodyCheck, PrintCheckOptions } from "../../studio/printCheck";
+import { centeredPrinterOutline } from "../../studio/printLayout";
 import { NumberField } from "./fields";
 import { checkInWorker, measureBetweenInWorker } from "./geometryClient";
 import { featureLabel } from "./labels";
@@ -67,11 +78,27 @@ type Props = {
   selected: string[];
   run: RunCommand;
   onClose: () => void;
+  onLocate: (id: string, highlights?: BodyCheck["highlights"], layFlat?: boolean) => void;
 };
 
-export default function CheckDialog({ format, open, designId, doc, selected, run, onClose }: Props) {
+export default function CheckDialog({ format, open, designId, doc, selected, run, onClose, onLocate }: Props) {
   const { t } = useTranslation("app");
+  const { printers } = useUserPrinters();
+  const setup = doc?.print_setup;
   const [options, setOptions] = useState(storedOptions);
+  const [savingSetup, setSavingSetup] = useState(false);
+  const setupSave = useRef(false);
+  const saveSetup = async (next: StudioPrintSetup | null) => {
+    if (setupSave.current) return;
+    setupSave.current = true;
+    setSavingSetup(true);
+    try {
+      await run("set_print_setup", { setup: next }, { waitForSave: true });
+    } finally {
+      setupSave.current = false;
+      setSavingSetup(false);
+    }
+  };
   const change = (next: Partial<PrintCheckOptions>) =>
     setOptions((prev) => {
       const merged = { ...prev, ...next };
@@ -80,17 +107,50 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
       } catch {}
       return merged;
     });
+  const choosePrinter = (id: string) => {
+    if (!id) {
+      void saveSetup(null);
+      return;
+    }
+    const found = printers.find((entry) => entry.printer.id === id);
+    const bed = found?.printer.bed;
+    const height = found?.printer.height;
+    if (!found || !bed || !height) return;
+    const diameter = Number(found.nozzle.match(/\d+(?:\.\d+)?$/)?.[0]);
+    void saveSetup({
+      printer: id,
+      nozzle: found.nozzle,
+      bed: [bed.x, bed.y, height],
+      outline: centeredPrinterOutline(bed),
+      minWall: diameter > 0 ? 2 * diameter : 0.8,
+      overhang: options.overhang,
+    });
+  };
+  const effective = useMemo<PrintCheckOptions>(
+    () => ({
+      ...options,
+      ...(setup
+        ? { bed: setup.bed, outline: setup.outline, minWall: setup.minWall, overhang: setup.overhang ?? 45 }
+        : {}),
+      highlight: true,
+    }),
+    [options, setup],
+  );
 
-  const [report, setReport] = useState<{ doc: StudioDocument; check: ReturnType<typeof checkDesign> } | null>(null);
+  const [report, setReport] = useState<{
+    doc: StudioDocument;
+    options: PrintCheckOptions;
+    check: ReturnType<typeof checkDesign>;
+  } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   useEffect(() => {
     if (!open || !doc || !designId) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      checkInWorker(designId, doc, options).then(
+      checkInWorker(designId, doc, effective).then(
         (check) => {
           if (cancelled) return;
-          setReport({ doc, check });
+          setReport({ doc, options: effective, check });
           setFailure(null);
         },
         (error: unknown) => !cancelled && setFailure(error instanceof Error ? error.message : String(error)),
@@ -100,8 +160,8 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [open, doc, designId, options]);
-  const checking = !failure && report?.doc !== doc;
+  }, [open, doc, designId, effective]);
+  const checking = !failure && (report?.doc !== doc || report?.options !== effective);
 
   const bodies = useMemo(
     () => (doc ? topLevel(doc).filter((feature) => isBody(feature) && feature.visible) : []),
@@ -110,6 +170,11 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
   const name = (id: string) => {
     const feature = doc && featureById(doc, id);
     return feature ? featureLabel(feature, t) : id;
+  };
+  const plateName = (id: string) => {
+    if (!doc) return undefined;
+    const feature = featureById(doc, id);
+    return feature && studioPlates(doc).find((plate) => plate.id === plateOf(feature))?.name;
   };
   const [pair, setPair] = useState<[string, string]>(["", ""]);
   useEffect(() => {
@@ -142,7 +207,7 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
     const check = report!.check;
     if (!body.pieces) return [t("studio.check.empty")];
     const found: string[] = [];
-    if (body.size.some((side, axis) => side > options.bed[axis] + 0.01)) found.push(t("studio.check.tooBig"));
+    if (body.size.some((side, axis) => side > effective.bed[axis] + 0.01)) found.push(t("studio.check.tooBig"));
     else if (!body.fitsBed && !body.belowBed) found.push(t("studio.check.offBed"));
     if (body.aboveBed) found.push(t("studio.check.floating", { value: format.length(body.aboveBed) }));
     if (body.belowBed) found.push(t("studio.check.sunk", { value: format.length(body.belowBed) }));
@@ -159,6 +224,7 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
     ? [
         ...report.check.bodies.map((body) => ({ id: body.id, body, issues: issues(body) })),
         ...report.check.open.map((id) => ({ id, body: null, issues: [t("studio.check.open")] })),
+        ...(report.check.invalid ?? []).map(({ id, message }) => ({ id, body: null, issues: [message] })),
       ]
     : [];
   const clear = rows.length > 0 && rows.every((row) => !row.issues.length);
@@ -170,29 +236,63 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
         <HelpTip text={t("studio.check.help")} />
       </DialogTitle>
       <DialogContent>
+        <TextField
+          select
+          size="small"
+          fullWidth
+          label={t("studio.plates.printer")}
+          value={setup?.printer ?? ""}
+          disabled={savingSetup}
+          onChange={(event) => choosePrinter(event.target.value)}
+          sx={{ mt: 1 }}
+        >
+          <MenuItem value="">{t("studio.print.customBed")}</MenuItem>
+          {setup && !printers.some((entry) => entry.printer.id === setup.printer) && (
+            <MenuItem value={setup.printer}>
+              {setup.printer} · {setup.nozzle}
+            </MenuItem>
+          )}
+          {printers
+            .filter(({ printer }) => printer.bed && printer.height)
+            .map(({ printer, nozzle }) => (
+              <MenuItem key={printer.id} value={printer.id}>
+                {printer.model} · {nozzle}
+              </MenuItem>
+            ))}
+        </TextField>
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 1, pt: 1 }}>
           {(["x", "y", "z"] as const).map((axis, index) => (
             <NumberField
               key={axis}
               label={t(`studio.check.bed_${axis}`)}
-              value={options.bed[index]}
+              value={effective.bed[index]}
+              disabled={savingSetup || Boolean(setup)}
               unit="mm"
-              onCommit={(value) =>
-                value > 0 && change({ bed: options.bed.map((side, i) => (i === index ? value : side)) as Vec3 })
-              }
+              validate={(value) => value > 0}
+              onCommit={(value) => change({ bed: options.bed.map((side, i) => (i === index ? value : side)) as Vec3 })}
             />
           ))}
           <NumberField
             label={t("studio.check.overhangLimit")}
-            value={options.overhang}
+            value={effective.overhang}
             unit="°"
-            onCommit={(value) => value >= 0 && value <= 90 && change({ overhang: value })}
+            disabled={savingSetup}
+            validate={(value) => value >= 0 && value <= 90}
+            onCommit={(value) => {
+              if (setup) void saveSetup({ ...setup, overhang: value });
+              else change({ overhang: value });
+            }}
           />
           <NumberField
             label={t("studio.check.minWall")}
-            value={options.minWall}
+            value={effective.minWall}
             unit="mm"
-            onCommit={(value) => value >= 0 && change({ minWall: value })}
+            disabled={savingSetup}
+            validate={(value) => value >= 0 && value <= 20}
+            onCommit={(value) => {
+              if (setup) void saveSetup({ ...setup, minWall: value });
+              else change({ minWall: value });
+            }}
           />
         </Box>
 
@@ -242,6 +342,9 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
                       <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
                         {name(row.id)}
                       </Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {plateName(row.id)}
+                      </Typography>
                       {row.body && row.body.pieces > 0 && (
                         <Typography variant="caption" color="text.secondary" noWrap>
                           {format.size(row.body.size)} · {format.volume(row.body.volume)}
@@ -251,7 +354,15 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
                     {row.issues.length > 0 && (
                       <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ mt: 0.5 }}>
                         {row.issues.map((issue) => (
-                          <Chip key={issue} size="small" variant="outlined" color="warning" label={issue} />
+                          <Chip
+                            key={issue}
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            label={issue}
+                            disabled={checking}
+                            onClick={() => onLocate(row.id, row.body?.highlights)}
+                          />
                         ))}
                       </Stack>
                     )}
@@ -262,10 +373,21 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
                       size="small"
                       startIcon={<VerticalAlignBottomIcon />}
                       aria-label={t("studio.check.toBedOf", { name: name(row.id) })}
+                      disabled={checking}
                       onClick={() => void run("align", { feature_id: row.id, z: "start" })}
                       sx={{ flexShrink: 0 }}
                     >
                       {t("studio.check.toBed")}
+                    </Button>
+                  )}
+                  {row.body?.overhang && (
+                    <Button
+                      disabled={checking}
+                      size="small"
+                      sx={{ flexShrink: 0 }}
+                      onClick={() => onLocate(row.id, row.body?.highlights, true)}
+                    >
+                      {t("studio.ops.lay_flat.title")}
                     </Button>
                   )}
                 </Stack>

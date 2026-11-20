@@ -13,11 +13,13 @@ import Typography from "@mui/material/Typography";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
+import { changedSplitConnector } from "../../studio/commands";
 import { LIMITS, type PartMeasure } from "../../studio/document";
 import { isoPitch } from "../../studio/threads";
 import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
 import type { AlignMode, Combine, HoleStyle, Operation, WorldAxis } from "./operations";
 import { AlignModeIcon } from "./studioIcons";
+import SplitConnectorFields, { DEFAULT_CONNECTOR } from "./SplitConnectorFields";
 
 const rise = keyframes`from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; }`;
 
@@ -354,6 +356,37 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
               op.by === "face" &&
               (op.face ? picked(t("studio.ops.split.facePicked")) : hint(t("studio.ops.split.pickFace")))}
             {op.target && op.by === "body" && (op.tool ? picked(label(op.tool)) : hint(t("studio.ops.split.pickTool")))}
+            {op.by !== "body" && (
+              <>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      size="small"
+                      checked={Boolean(op.connector)}
+                      onChange={(_, checked) => set({ connector: checked ? DEFAULT_CONNECTOR : null })}
+                    />
+                  }
+                  label={t("studio.print.connectors")}
+                />
+                {op.connector && (
+                  <SplitConnectorFields
+                    connector={op.connector}
+                    live
+                    onChange={(changes) => set({ connector: changedSplitConnector(op.connector!, changes) })}
+                  />
+                )}
+              </>
+            )}
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={op.separatePlates}
+                  onChange={(_, separatePlates) => set({ separatePlates })}
+                />
+              }
+              label={t("studio.print.separatePlates")}
+            />
           </>
         );
       case "scale":

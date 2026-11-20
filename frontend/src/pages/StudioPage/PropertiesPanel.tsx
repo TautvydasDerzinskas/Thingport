@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -28,6 +29,8 @@ import {
   featureById,
   isBody,
   LIMITS,
+  plateOf,
+  studioPlates,
   type BodyFeature,
   type PathShape,
   type SketchFeature,
@@ -43,6 +46,7 @@ import PictureThumb from "./PictureThumb";
 import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
 import { featureLabel } from "./labels";
 import { FeatureIcon, SeparateIcon } from "./studioIcons";
+import SplitConnectorFields from "./SplitConnectorFields";
 
 type Props = {
   designId: string;
@@ -53,6 +57,7 @@ type Props = {
   onSelect: (id: string) => void;
   /** Opens the Separate tool on a body. */
   onSeparate: (id: string) => void;
+  onFitTest: (id: string) => void;
   onEditSketch: (id: string) => void;
 };
 
@@ -121,6 +126,27 @@ function Section({ title, help, children }: { title: string; help?: string; chil
 const triple = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1 } as const;
 const pair = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 1 } as const;
 
+function BodyColorControl({ color, onApply }: { color?: string; onApply: (color: string) => void }) {
+  const { t } = useTranslation("app");
+  const [value, setValue] = useState(color ?? "#b0b0b0");
+  return (
+    <>
+      <TextField
+        type="color"
+        size="small"
+        label={t("studio.plates.color")}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        slotProps={{ inputLabel: { shrink: true } }}
+        sx={{ flex: 1, minWidth: 60, "& input": { minHeight: 26, cursor: "pointer" } }}
+      />
+      <Button size="small" disabled={color === value} onClick={() => onApply(value)}>
+        {t("studio.plates.applyColor")}
+      </Button>
+    </>
+  );
+}
+
 /** The selected feature's dimensions, place and parts, each field one command. */
 export default function PropertiesPanel({
   designId,
@@ -130,10 +156,58 @@ export default function PropertiesPanel({
   run,
   onSelect,
   onSeparate,
+  onFitTest,
   onEditSketch,
 }: Props) {
   const { t } = useTranslation("app");
   const feature = selected.length === 1 ? featureById(document, selected[0]) : undefined;
+
+  const roots = selected.flatMap((id) => {
+    const candidate = featureById(document, id);
+    return candidate && !consumerOf(document, id) ? [candidate] : [];
+  });
+  const bodies = roots.filter(isBody);
+  const plates = studioPlates(document);
+  const plateId = roots[0] && roots.every((item) => plateOf(item) === plateOf(roots[0])) ? plateOf(roots[0]) : "";
+  const firstColor = bodies[0]?.color;
+  const color = bodies.every((body) => body.color === firstColor) ? firstColor : undefined;
+  const printSettings = roots.length > 0 && (
+    <Stack spacing={1} sx={{ mt: 1.5 }}>
+      {plates.length > 1 && (
+        <TextField
+          select
+          size="small"
+          label={t("studio.plates.move")}
+          value={plateId}
+          onChange={(event) =>
+            void run("move_to_plate", { plate_id: event.target.value, feature_ids: roots.map(({ id }) => id) })
+          }
+        >
+          {plates.map((plate) => (
+            <MenuItem key={plate.id} value={plate.id}>
+              {plate.name}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
+      {bodies.length > 0 && (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <BodyColorControl
+            key={JSON.stringify(bodies.map((body) => [body.id, body.color]))}
+            color={color}
+            onApply={(next) => void run("set_body_color", { feature_ids: bodies.map(({ id }) => id), color: next })}
+          />
+          <Button
+            size="small"
+            disabled={bodies.every((body) => !body.color)}
+            onClick={() => void run("set_body_color", { feature_ids: bodies.map(({ id }) => id), color: null })}
+          >
+            {t("studio.plates.clearColor")}
+          </Button>
+        </Stack>
+      )}
+    </Stack>
+  );
 
   if (!feature) {
     return (
@@ -143,6 +217,7 @@ export default function PropertiesPanel({
             ? t("studio.properties.selectedCount", { count: selected.length })
             : t("studio.properties.none")}
         </Typography>
+        {printSettings}
       </Box>
     );
   }
@@ -208,6 +283,8 @@ export default function PropertiesPanel({
           onCommit={(name) => void run("rename_feature", { feature_id: id, name })}
         />
       </Box>
+
+      {printSettings}
 
       {feature.type === "mesh" && (
         <Section title={t("studio.properties.mesh.source")}>
@@ -638,7 +715,7 @@ export default function PropertiesPanel({
           </Stack>
         </Section>
       )}
-      {feature.type === "split" && (
+      {feature.type === "split" && !feature.connector && (
         <Section title={t("studio.ops.split.title")}>
           <Segmented
             fullWidth
@@ -652,6 +729,17 @@ export default function PropertiesPanel({
             )}
             onChange={(keep) => void run("update_feature", { feature_id: id, keep })}
           />
+        </Section>
+      )}
+      {feature.type === "split" && feature.connector && !feature.fit_sample && (
+        <Section title={t("studio.print.connectors")}>
+          <SplitConnectorFields
+            connector={feature.connector}
+            onChange={(connector) => void run("update_split_connector", { feature_id: id, connector })}
+          />
+          <Button size="small" onClick={() => onFitTest(id)} sx={{ mt: 1 }}>
+            {t("studio.print.fitPlate")}
+          </Button>
         </Section>
       )}
       {feature.type === "boolean" && (
@@ -708,11 +796,6 @@ function OpenWarning() {
 function TransformFields({ feature, run }: { feature: BodyFeature; run: RunCommand }) {
   const { t } = useTranslation("app");
   const { position, rotation, scale } = feature.transform;
-  const set = (key: "position" | "rotation" | "scale", vector: Vec3, axis: number, value: number) => {
-    const next = [...vector] as Vec3;
-    next[axis] = value;
-    void run("set_transform", { feature_id: feature.id, [key]: next });
-  };
   const row = (key: "position" | "rotation" | "scale", vector: Vec3, unit: string) => (
     <Section title={t(`studio.properties.${key}`)}>
       <Box sx={triple}>
@@ -722,7 +805,9 @@ function TransformFields({ feature, run }: { feature: BodyFeature; run: RunComma
             label={axis}
             value={vector[index]}
             unit={unit}
-            onCommit={(v) => set(key, vector, index, v)}
+            onCommit={(value) =>
+              void run("set_transform", { feature_id: feature.id, [key]: { [axis.toLowerCase()]: value } })
+            }
             expression={feature.expressions?.[`${key}.${axis.toLowerCase()}`]}
             onExpression={(expression) =>
               void run("set_expression", {

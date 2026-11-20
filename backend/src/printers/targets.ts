@@ -30,3 +30,14 @@ export function printerPresetNames(
   const found = printer(printerId);
   return Object.fromEntries(slicerIds.map((id) => [id, found ? printerPresetName(id, found, nozzle) : null] as const));
 }
+
+/** Nozzles with a preset at the exact diameter. Studio uses these to hand off the nozzle used by Print Check. */
+export function exactPrinterNozzles(printerId: string, nozzles: readonly string[], slicerIds: readonly string[]) {
+  const found = printer(printerId);
+  return Object.fromEntries(
+    slicerIds.map((id) => [
+      id,
+      found ? nozzles.filter((nozzle) => printerRecipe(id, found, nozzle, null)?.choice.nozzle === nozzle) : [],
+    ]),
+  );
+}
