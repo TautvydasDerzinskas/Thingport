@@ -6444,6 +6444,7 @@
       "updateSuccess": "Modèle mis à jour",
       "updateFailed": "Impossible de mettre à jour le modèle. Veuillez réessayer.",
       "photosNotSaved": "Impossible d'enregistrer ces photos : {{names}}. Retirez-les ou réessayez.",
+      "renamesGone": "Non renommés, car ils ont été supprimés ailleurs : {{names}}.",
       "platesUnsettled": "Ces fichiers ont été envoyés, mais le modèle ne les affiche plus : {{names}}. Enregistrez à nouveau pour les renvoyer, ou retirez-les.",
       "descriptionWrite": "Rédiger",
       "descriptionPreview": "Aperçu",

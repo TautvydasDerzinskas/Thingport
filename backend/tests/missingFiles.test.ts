@@ -44,6 +44,7 @@ import { relocatePrint, relocatePrintFile } from "../src/services/printService";
 import { printOutsByIds } from "../src/services/printLoader";
 import { addPlatesToPrint, keepGeneratorScripts, removePlate, withPlateOrder } from "../src/services/printCreation";
 import { withStorageLock } from "../src/utils/storageLock";
+import { sha256OfFile } from "../src/services/fileReuse";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
 // talks to the providers, which the import suites stand up their own servers for.
@@ -349,29 +350,49 @@ describe("models whose files are gone", () => {
   it("removes at startup the rows of saves that never finished, and only those, leaving the files at their places", async () => {
     const model = await makePrint(dir, owner.id, "Cut off");
     const kept = await upload(dir, owner.id, model.print.id, "kept.txt", "stays");
-    // Cut off before claiming a place, an older version's placeholder, one cut off once its file was in, and one whose
-    // place a plate took meanwhile. A file at a place one claimed stays: nothing says it's the save's own.
-    const claimed = `cut-${randomUUID()}/cut.txt`;
-    fs.mkdirSync(path.dirname(path.join(STORAGE, claimed)), { recursive: true });
-    fs.writeFileSync(path.join(STORAGE, claimed), "half");
+    const write = (content: string) => {
+      const storagePath = `cut-${randomUUID()}/cut.gcode`;
+      fs.mkdirSync(path.dirname(path.join(STORAGE, storagePath)), { recursive: true });
+      fs.writeFileSync(path.join(STORAGE, storagePath), content);
+      return storagePath;
+    };
+    // Cut off before claiming a place, an older version's placeholder, and one cut off once its file was in. A file at
+    // a place one claimed stays: nothing says it's the save's own.
+    const claimed = write("half");
+    // And prepared prints another replaced, each whole once with its size and hash saved: its file goes with it, but
+    // not one whose bytes changed since, nor one a plate is kept at.
+    const replaced = write("G1 X0\n");
+    const changed = write("G1 X9\n");
+    const replacedSha = await sha256OfFile(path.join(STORAGE, replaced));
+    const plateSize = fs.statSync(path.join(STORAGE, model.plate.storagePath)).size;
     const left = await Promise.all(
-      [`pending:${randomUUID()}`, "pending", claimed, model.plate.storagePath].map((storagePath) =>
+      [
+        { storagePath: `pending:${randomUUID()}` },
+        { storagePath: "pending", ready: true },
+        { storagePath: claimed },
+        { storagePath: replaced, size: 6, contentSha256: replacedSha },
+        { storagePath: changed, size: 6, contentSha256: replacedSha },
+        { storagePath: model.plate.storagePath, size: plateSize },
+      ].map((row) =>
         prisma.printFile.create({
           data: {
             printId: model.print.id,
-            filename: "cut.txt",
-            mime: "text/plain",
-            role: "SUPPORTING",
-            storagePath,
-            ready: storagePath === "pending",
+            filename: "cut.gcode",
+            mime: "text/x-gcode",
+            role: row.size ? "PREPARED" : "SUPPORTING",
+            ready: false,
+            ...row,
           },
         }),
       ),
     );
     try {
-      expect(await removeAbandonedPrintFileSaves()).toBeGreaterThanOrEqual(4);
+      expect(await removeAbandonedPrintFileSaves()).toBeGreaterThanOrEqual(6);
       expect(await prisma.printFile.count({ where: { id: { in: left.map((row) => row.id) } } })).toBe(0);
       expect(fs.existsSync(path.join(STORAGE, claimed))).toBe(true);
+      expect(fs.existsSync(path.join(STORAGE, replaced))).toBe(false);
+      expect(fs.existsSync(path.dirname(path.join(STORAGE, replaced)))).toBe(false);
+      expect(fs.existsSync(path.join(STORAGE, changed))).toBe(true);
       expect(fs.existsSync(path.join(STORAGE, model.plate.storagePath))).toBe(true);
       expect(await prisma.printFile.findUnique({ where: { id: kept.id } })).not.toBeNull();
     } finally {
@@ -785,6 +806,34 @@ describe("models whose files are gone", () => {
     // The new one is still the model's, and the old one is gone all the same.
     expect((await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } })).preparedFileId).toBe(replacement);
     expect(await prisma.printFile.count({ where: { id: old.id } })).toBe(0);
+  });
+
+  it("doesn't show a prepared print that was replaced after the model was read", async () => {
+    const model = await makePrint(dir, owner.id, "Replaced while read");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "old.gcode", null);
+    const old = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "old.gcode" } });
+    // The model is read while the old print is still its own; a replacement then marks it on its way out.
+    const findFirst = prisma.print.findFirst.bind(prisma.print);
+    let replaced = false;
+    const spy = vi.spyOn(prisma.print, "findFirst").mockImplementation((async (
+      args: Parameters<typeof prisma.print.findFirst>[0],
+    ) => {
+      const row = await findFirst(args);
+      if (!replaced && row?.id === model.print.id) {
+        replaced = true;
+        await prisma.printFile.update({ where: { id: old.id }, data: { ready: false } });
+      }
+      return row;
+    }) as never);
+    try {
+      const res = await request(app).get(`/api/print/${model.print.id}?record=false`).set(auth(owner.token));
+      expect(res.status).toBe(200);
+      expect(replaced).toBe(true);
+      expect(res.body.prepared_print).toBeNull();
+    } finally {
+      spy.mockRestore();
+      await prisma.printFile.update({ where: { id: old.id }, data: { ready: true } });
+    }
   });
 
   it("leaves a file just saved where its model's rename took it, rather than move it back", async () => {

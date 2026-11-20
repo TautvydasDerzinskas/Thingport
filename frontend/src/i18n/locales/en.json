@@ -6197,6 +6197,7 @@
       "updateSuccess": "Model updated",
       "updateFailed": "Failed to update the model. Please try again.",
       "photosNotSaved": "Couldn't save these photos: {{names}}. Take them out or try again.",
+      "renamesGone": "Not renamed, as they were removed elsewhere: {{names}}.",
       "platesUnsettled": "These went up, but the model doesn't list them now: {{names}}. Save again to send them once more, or take them out.",
       "descriptionWrite": "Write",
       "descriptionPreview": "Preview",

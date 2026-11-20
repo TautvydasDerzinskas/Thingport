@@ -136,9 +136,23 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
       ),
     [model],
   );
+  // The supporting files on their way down, by model and key (a key is a place in its model's list): another click on
+  // one, on the chip or its download button, doesn't start a second, and the others stay free.
+  const supportingDownloads = useRef(new Set<string>());
+  const [supportingBusy, setSupportingBusy] = useState<ReadonlySet<string>>(() => new Set());
+  const busyKey = (key: string) => `${modelId}\n${key}`;
   const downloadSupporting = (key: string) => {
     const file = supporting.find((item) => item.key === key);
-    if (file) void download(file);
+    if (!file || !modelId) return;
+    const busy = busyKey(key);
+    if (supportingDownloads.current.has(busy)) return;
+    supportingDownloads.current.add(busy);
+    setSupportingBusy(new Set(supportingDownloads.current));
+    // Never rejects: a failure is said by downloadingFor.
+    void download(file).finally(() => {
+      supportingDownloads.current.delete(busy);
+      setSupportingBusy(new Set(supportingDownloads.current));
+    });
   };
   // What the download panel offers: the model's files, or its supporting files where those alone can be had, so the
   // ZIP of them is still there.
@@ -291,6 +305,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
               size: file.size,
               folder: file.folder,
             }))}
+            busy={new Set(supporting.flatMap((file) => (supportingBusy.has(busyKey(file.key)) ? [file.key] : [])))}
             onOpen={downloadSupporting}
             onDownload={downloadSupporting}
             withoutViewer

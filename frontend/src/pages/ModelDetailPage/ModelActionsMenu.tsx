@@ -340,14 +340,20 @@ export default function ModelActionsMenu({
     download: downloadSupportingFile,
   } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, onUpdated, onUnauthorized);
   const addSupportingFiles = onAddSupportingFiles ?? pickOwnSupporting;
-  // Busy like the picker's other downloads, so a second click doesn't start another.
-  const [downloadingSupporting, setDownloadingSupporting] = useState(false);
+  // Busy like the picker's other downloads, so a second click doesn't start another: by the model it's of, as theirs
+  // (useDownloadPrint), so one still on its way after the header's menu has moved on doesn't hold the next model's.
+  const [supportingBusy, setSupportingBusy] = useState<readonly string[]>([]);
+  const downloadingSupporting = supportingBusy.includes(print.id);
   const downloadSupporting = async (file: PrintFile) => {
-    setDownloadingSupporting(true);
+    const id = print.id;
+    setSupportingBusy((ids) => [...ids, id]);
     try {
       await downloadSupportingFile(file);
     } finally {
-      setDownloadingSupporting(false);
+      setSupportingBusy((ids) => {
+        const at = ids.indexOf(id);
+        return at < 0 ? ids : ids.toSpliced(at, 1);
+      });
     }
   };
   const adaptedMenuLabel = (slicer: string) => {

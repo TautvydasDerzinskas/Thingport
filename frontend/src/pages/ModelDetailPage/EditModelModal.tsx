@@ -52,6 +52,7 @@ import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
 import {
   batchesByName,
+  gltfFilesFromOthers,
   isPreparedName,
   sortAddedFiles,
   storedModelFileName,
@@ -69,8 +70,9 @@ type ImageItem =
 type PlateItem =
   // `wanted`: the name a file added in place of one of the same name was picked with, to be named back to.
   | { kind: "existing"; id: string; filename: string; folder: string | null; wanted?: string }
-  // `packedWith`: the .bin and textures a .gltf points at, which go up with it and are packed into its .glb.
-  | { kind: "new"; localId: string; file: File; packedWith: File[] };
+  // `packedWith`: the .bin and textures a .gltf points at, which go up with it and are packed into its .glb. `missing`:
+  // those its pick didn't have, looked for among the other picks on saving.
+  | { kind: "new"; localId: string; file: File; packedWith: File[]; missing: string[] };
 
 type SupportingItem =
   | { kind: "existing"; file: PrintFile; renamedTo: string | null }
@@ -312,7 +314,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     reading.catch(() => undefined);
     const inLists = picks.current
       .then(() => reading)
-      .then(({ model, supporting, packedWith, ambiguous }) => {
+      .then(({ model, supporting, packedWith, ambiguous, missing }) => {
         // Nothing of a pick whose .gltf names a file two picked files could be: the server couldn't tell which either.
         if (ambiguous.length) {
           setError(t("models:supporting.gltfAmbiguous", { names: ambiguous.join(", ") }));
@@ -329,6 +331,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                 localId: newLocalId(),
                 file,
                 packedWith: packedWith.get(file) ?? [],
+                missing: missing.get(file) ?? [],
               })),
           ]);
         }
@@ -401,11 +404,57 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
+    // A scene picked apart from files it points at takes them from the other picks now, as the server packs a .gltf only
+    // with what's sent with it. Two picked files one could be are said before anything is saved.
+    type Staged = Extract<PlateItem, { kind: "new" }> | Extract<SupportingItem, { kind: "new" }>;
+    const staged: Staged[] = [
+      ...plateItems.flatMap((p) => (p.kind === "new" ? [p] : [])),
+      ...supportingItems.flatMap((item) => (item.kind === "new" ? [item] : [])),
+    ];
+    const across = gltfFilesFromOthers(
+      plateItems.flatMap((p) =>
+        p.kind === "new" && p.missing.length ? [{ scene: p, file: p.file, missing: p.missing }] : [],
+      ),
+      staged,
+      (item) => item.file,
+    );
+    if (across.ambiguous.length) {
+      setError(t("models:supporting.gltfAmbiguous", { names: across.ambiguous.join(", ") }));
+      return;
+    }
+    const taken = new Set<Staged>([...across.took.values()].flat());
+    const takenIn = (list: PlateItem[]) =>
+      list.flatMap((p): PlateItem[] => {
+        if (p.kind !== "new") return [p];
+        if (taken.has(p)) return [];
+        const took = across.took.get(p);
+        return took
+          ? [
+              {
+                ...p,
+                packedWith: [...p.packedWith, ...took.map((item) => item.file)],
+                missing: across.missing.get(p) ?? [],
+              },
+            ]
+          : [p];
+      });
+    const takenOut = (list: SupportingItem[]) => list.filter((item) => item.kind !== "new" || !taken.has(item));
+    const plateList = across.took.size ? takenIn(plateItems) : plateItems;
+    const supportingList = across.took.size ? takenOut(supportingItems) : supportingItems;
+    if (across.took.size) {
+      setPlateItems(takenIn);
+      setSupportingItems(takenOut);
+    }
     setSaving(true);
     setError(null);
     // A file's menu left open would change what this save has already read.
     setSupportingMenu(null);
     let latest: Print = print;
+    // Renames of files another tab took away meanwhile: nothing to rename, said once the rest is saved, or with what
+    // stopped it.
+    const renamesGone: string[] = [];
+    const goneSaid = () =>
+      renamesGone.length ? t("models:edit.renamesGone", { names: renamesGone.join(", ") }) : null;
     try {
       const metaRes = await printsApi.updateMeta(print.id, {
         title,
@@ -437,27 +486,26 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       const newImages = images.flatMap((img) => (img.kind === "new" ? [img] : []));
       // Up now: each new picture is the stored one it became, so a retry doesn't upload it again. By the ids the upload
-      // gave back: a picture another tab added meanwhile is new to this dialog too, and isn't one of these.
+      // gave back: a picture another tab added meanwhile is new to this dialog too, and isn't one of these. One a
+      // request, each settled as it's up: a request the server failed part-way through would have kept some of its
+      // pictures without saying which, and a retry would add them again.
       const storedImages = new Map<string, { id: string; url: string }>();
       const unsavedPhotos: string[] = [];
-      if (newImages.length) {
-        const uploadRes = await printsApi.addPreviewImages(
-          print.id,
-          newImages.map((img) => img.file),
-        );
+      for (const img of newImages) {
+        const uploadRes = await printsApi.addPreviewImages(print.id, [img.file]);
         latest = uploadRes.print;
-        newImages.forEach((img, index) => {
-          const id = uploadRes.image_ids?.[index];
-          const url = id ? latest.preview_images.find((each) => each.id === id)?.url : undefined;
-          if (id && url) storedImages.set(img.localId, { id, url });
+        const id = uploadRes.image_ids?.[0];
+        const url = id ? latest.preview_images.find((each) => each.id === id)?.url : undefined;
+        if (!id || !url) {
           // One the server couldn't keep stays in the list, to be said below and tried again or taken out.
-          else unsavedPhotos.push(img.file.name);
-        });
+          unsavedPhotos.push(img.file.name);
+          continue;
+        }
+        storedImages.set(img.localId, { id, url });
         setImages((current) =>
-          current.map((img): ImageItem => {
-            const became = img.kind === "new" ? storedImages.get(img.localId) : undefined;
-            return became ? { kind: "existing", ...became } : img;
-          }),
+          current.map((each): ImageItem =>
+            each.kind === "new" && each.localId === img.localId ? { kind: "existing", id, url } : each,
+          ),
         );
       }
       if (images.length) {
@@ -485,7 +533,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
 
       // Upload before delete so a model's only file can be swapped in one save. `plates` follows each step as it's
       // done, for the steps after it, and so does the dialog's list, for a retry after a later step fails.
-      let plates = plateItems;
+      let plates = plateList;
       // One plate each: a .gltf's files are packed into it, and one two scenes share is sent once. Two files of one
       // name go in requests apart (picked with two scenes, "scene.bin" each), as the server matches a scene's by name.
       const filesOf = (p: PlateItem) => (p.kind === "new" ? [p.file, ...p.packedWith] : []);
@@ -595,10 +643,20 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           return next;
         });
       }
-      for (const item of supportingItems) {
+      for (const item of supportingList) {
         if (item.kind !== "existing" || !item.renamedTo) continue;
-        const res = await printsApi.renameFile(print.id, item.file.id, item.renamedTo);
+        // One that's gone is read to be sure, as no view of it, and leaves the list; the rest of the save goes on.
+        const res = await printsApi.renameFile(print.id, item.file.id, item.renamedTo).catch(async (err: unknown) => {
+          const now = await printsApi.get(print.id, { record: false }).catch(() => null);
+          if (!now || (now.supporting_files ?? []).some((file) => file.id === item.file.id)) throw err;
+          return { print: now, gone: true };
+        });
         latest = res.print ?? latest;
+        if ("gone" in res) {
+          renamesGone.push(item.file.filename);
+          setSupportingItems((current) => current.filter((entry) => entry !== item));
+          continue;
+        }
         // Named as the server named it now, so a later rename is measured from that, not from the name it had.
         const renamed = latest.supporting_files?.find((file) => file.id === item.file.id) ?? {
           ...item.file,
@@ -606,7 +664,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         };
         setSupportingItems((current) => current.map((entry) => (entry === item ? existingItem(renamed) : entry)));
       }
-      for (const item of supportingItems) {
+      for (const item of supportingList) {
         if (item.kind !== "new") continue;
         // Only one picked as a sliced print may take the prepared slot: renamed to one here, it's still an attachment.
         const res = await printsApi.uploadFile(print.id, item.file, {
@@ -625,11 +683,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
 
       onUpdated(latest);
+      const gone = goneSaid();
       if (unsavedPhotos.length) {
-        setError(t("models:edit.photosNotSaved", { names: unsavedPhotos.join(", ") }));
+        setError(
+          [t("models:edit.photosNotSaved", { names: unsavedPhotos.join(", ") }), gone].filter(Boolean).join(" "),
+        );
         return;
       }
-      showToast({ message: t("models:edit.updateSuccess") });
+      showToast(gone ? { message: gone, severity: "warning" } : { message: t("models:edit.updateSuccess") });
       onClose();
     } catch (err) {
       onUpdated(latest);
@@ -639,7 +700,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       console.error(err);
       // An error with nothing to say (an answer that couldn't be read) still says something.
-      setError(err instanceof Error && err.message ? err.message : t("models:edit.updateFailed"));
+      setError(
+        [err instanceof Error && err.message ? err.message : t("models:edit.updateFailed"), goneSaid()]
+          .filter(Boolean)
+          .join(" "),
+      );
     } finally {
       setSaving(false);
     }

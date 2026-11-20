@@ -651,6 +651,28 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
       } finally {
         await after.$disconnect();
       }
+      // Started, it stops on the same copy, and isn't offered again: every try would.
+      const ready = await request(app).get(`/api/admin/migrate/${prepared.body.id}`).set(auth());
+      const options = {
+        people: ready.body.plan.people.map((person: { id: string }) => person.id),
+        collections: true,
+        studio: true,
+        widgets: true,
+        tools: true,
+        syncs: true,
+        signIns: true,
+        settings: false,
+        secrets: false,
+      };
+      const start = () => request(app).post(`/api/admin/migrate/${prepared.body.id}/start`).set(auth()).send(options);
+      expect((await start()).status).toBe(202);
+      const failed = await until(prepared.body.id, (status) => status === "done" || status === "failed");
+      expect(failed.status).toBe("failed");
+      expect(failed.error.code).toBe("upgrade_interrupted");
+      expect(failed.can_resume).toBe(false);
+      const again = await start();
+      expect(again.status).toBe(409);
+      expect(again.body.code).toBe("not_ready");
     } finally {
       await removeRun(prepared.body.id);
     }

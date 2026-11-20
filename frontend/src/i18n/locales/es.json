@@ -6431,6 +6431,7 @@
       "updateSuccess": "Modelo actualizado",
       "updateFailed": "No se pudo actualizar el modelo. Inténtalo de nuevo.",
       "photosNotSaved": "No se pudieron guardar estas fotos: {{names}}. Quítalas o inténtalo de nuevo.",
+      "renamesGone": "No se renombraron porque se quitaron en otro lugar: {{names}}.",
       "platesUnsettled": "Estos se subieron, pero el modelo ya no los muestra: {{names}}. Guarda de nuevo para enviarlos otra vez o quítalos.",
       "descriptionWrite": "Escribir",
       "descriptionPreview": "Vista previa",

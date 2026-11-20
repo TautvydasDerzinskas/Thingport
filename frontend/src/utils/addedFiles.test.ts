@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   batchesByName,
+  gltfFilesFromOthers,
   holdsBackSliced,
   isModelFileName,
   isPreparedName,
@@ -141,6 +142,43 @@ describe("a .gltf added with the files it points at", () => {
     const { packedWith, ambiguous } = await withGltfFiles(sortAddedFiles(files, "model"), (each) => each);
     expect(ambiguous).toEqual([]);
     expect(names(packedWith.get(files[0]) ?? [])).toEqual(["scene.bin", "base.png"]);
+  });
+
+  it("says what a scene points at that its addition didn't have", async () => {
+    const files = [scene("scene.gltf", "mesh.bin", "textures/wood.png"), file("wood.png")];
+    const { packedWith, missing } = await withGltfFiles(sortAddedFiles(files, "model"), (each) => each);
+    expect(names(packedWith.get(files[0]) ?? [])).toEqual(["wood.png"]);
+    expect(missing.get(files[0])).toEqual(["mesh.bin"]);
+  });
+
+  it("finds what a scene's addition lacked among the files added apart from it, and only that", async () => {
+    const own = file("scene.bin", "own");
+    const sceneFile = scene("scene.gltf", "scene.bin", "wood.png");
+    const { missing } = await withGltfFiles(sortAddedFiles([sceneFile, own], "model"), (each) => each);
+    expect(missing.get(sceneFile)).toEqual(["wood.png"]);
+    // Picked after it: another scene.bin, which it has its own of, its texture, and a document.
+    const staged = [file("scene.bin", "other"), file("wood.png"), file("notes.txt")];
+    const across = gltfFilesFromOthers(
+      [{ scene: sceneFile, file: sceneFile, missing: missing.get(sceneFile) ?? [] }],
+      staged,
+      (each) => each,
+    );
+    expect(across.took.get(sceneFile)).toEqual([staged[1]]);
+    expect(across.missing.get(sceneFile)).toEqual([]);
+    expect(across.ambiguous).toEqual([]);
+  });
+
+  it("takes neither of two files added apart from a scene that its name could be, and says so", () => {
+    const sceneFile = scene("scene.gltf", "mesh.bin");
+    const staged = [file("mesh.bin", "one"), file("mesh.bin", "two")];
+    const across = gltfFilesFromOthers(
+      [{ scene: sceneFile, file: sceneFile, missing: ["mesh.bin"] }],
+      staged,
+      (each) => each,
+    );
+    expect(across.took.size).toBe(0);
+    expect(across.ambiguous).toEqual(["mesh.bin"]);
+    expect(across.missing.get(sceneFile)).toEqual(["mesh.bin"]);
   });
 
   it("is stored as a .glb", () => {

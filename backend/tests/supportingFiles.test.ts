@@ -217,11 +217,10 @@ describe("supporting files", () => {
       .set(auth(owner.token))
       .attach("file", Buffer.from("later"), "notes.txt");
     expect(added.status).toBe(200);
-    const newest = await prisma.printFile.findFirstOrThrow({
-      where: { printId: model.print.id },
-      orderBy: { createdAt: "desc" },
-    });
-    expect(added.body.file_id).toBe(newest.id);
+    // The row it names holds what was just sent, not the earlier file of its name.
+    const named = await prisma.printFile.findUniqueOrThrow({ where: { id: added.body.file_id } });
+    expect(named.printId).toBe(model.print.id);
+    expect(fs.readFileSync(path.join(STORAGE, named.storagePath), "utf8")).toBe("later");
 
     const sliced = await request(app)
       .post(route)
@@ -289,6 +288,39 @@ describe("supporting files", () => {
     expect(new Set(arcnames).size).toBe(arcnames.length);
     expect(arcnames.filter((name) => name.endsWith("/supporting/own.stl"))).toHaveLength(1);
     expect(arcnames.filter((name) => name.endsWith("/supporting/own (2).stl"))).toHaveLength(1);
+  });
+
+  it("never make a file and a folder of one path in a zip", async () => {
+    const model = await makePrint(dir, owner.id, "File or folder");
+    const guide = await upload(dir, owner.id, model.print.id, "guide.pdf", "%PDF-1.4 guide");
+    // A supporting file in a folder called as a plate in a folder named "supporting" is.
+    await prisma.printFile.update({ where: { id: guide.id }, data: { folder: "Own.STL" } });
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: model.print.id },
+      include: { plates: true, category: true },
+    });
+    const [own] = print.plates;
+    // And among plates: one in a folder called as another plate, and one called as another's folder.
+    const plates = [
+      { ...own, id: `${own.id}-1`, position: 0, folder: "supporting", filename: "own.stl" },
+      { ...own, id: `${own.id}-2`, position: 1, folder: null, filename: "lid.stl" },
+      { ...own, id: `${own.id}-3`, position: 2, folder: "lid.stl", filename: "inner.stl" },
+      { ...own, id: `${own.id}-4`, position: 3, folder: "parts", filename: "base.stl" },
+      { ...own, id: `${own.id}-5`, position: 4, folder: null, filename: "parts" },
+    ];
+    const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
+    const prefix = arcnames[0].split("/supporting/")[0];
+    expect(arcnames.map((arcname) => arcname.slice(prefix.length + 1))).toEqual([
+      "supporting/own.stl",
+      "lid.stl",
+      "lid.stl (2)/inner.stl",
+      "parts/base.stl",
+      "parts (2)",
+      "supporting/Own.STL (2)/guide.pdf",
+    ]);
+    // Each path a file, and none a folder above another's.
+    const lower = arcnames.map((arcname) => arcname.toLowerCase());
+    for (const arcname of lower) expect(lower.some((each) => each.startsWith(`${arcname}/`))).toBe(false);
   });
 
   it("keep to their own model's folder in a zip, though their categories' names differ only by which slash they hold", async () => {

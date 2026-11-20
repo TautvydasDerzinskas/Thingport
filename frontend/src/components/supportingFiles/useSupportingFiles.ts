@@ -242,8 +242,14 @@ export function useSupportingFiles(
     [failed, inTurn, onUpdated, printId],
   );
 
+  // The files on their way down, by id: another click on one doesn't start a second, and the rest stay free.
+  const downloads = useRef(new Set<string>());
+  const [downloading, setDownloading] = useState<ReadonlySet<string>>(() => new Set());
   const download = useCallback(
     async (file: PrintFile) => {
+      if (downloads.current.has(file.id)) return;
+      downloads.current.add(file.id);
+      setDownloading(new Set(downloads.current));
       try {
         const res = await fetch(printsApi.supportingFileUrl(file));
         if (res.status === 401) throw new UnauthorizedError();
@@ -251,6 +257,9 @@ export function useSupportingFiles(
         await saveResponseToDisk(res, file.filename);
       } catch (err) {
         failed(err, "models:detail.downloadFailed");
+      } finally {
+        downloads.current.delete(file.id);
+        setDownloading(new Set(downloads.current));
       }
     },
     [failed, t],
@@ -291,5 +300,17 @@ export function useSupportingFiles(
     [printId, upload],
   );
 
-  return { uploading, upload, remove, rename, download, openInTab, copyLink, pick, onPicked, bindInput: setInput };
+  return {
+    uploading,
+    upload,
+    remove,
+    rename,
+    download,
+    downloading,
+    openInTab,
+    copyLink,
+    pick,
+    onPicked,
+    bindInput: setInput,
+  };
 }

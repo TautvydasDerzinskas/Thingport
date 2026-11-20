@@ -29,6 +29,10 @@ const stage = vi.hoisted(() => ({
   beforeFormat: null as ((filePath: string) => Promise<void>) | null,
   // Runs once the next reading of a new 3MF plate's thumbnail pictures is done, once.
   afterThumbnail: null as (() => Promise<void>) | null,
+  // The next keeping of a plate's format fails, as a database that went away would.
+  keepFormatFails: false,
+  // The next look for this model's pictures folder fails.
+  assetHomeFailsFor: null as string | null,
   lockCalls: 0,
 }));
 
@@ -89,6 +93,11 @@ vi.mock("../src/services/threeMfFormat", async (original) => {
       }
       throw new Error("an unreadable 3MF");
     },
+    keepPlateFormat: async (...args: Parameters<typeof actual.keepPlateFormat>) => {
+      if (!stage.keepFormatFails) return actual.keepPlateFormat(...args);
+      stage.keepFormatFails = false;
+      throw new Error("the database went away");
+    },
   };
 });
 vi.mock("../src/services/printService", async (original) => {
@@ -101,6 +110,17 @@ vi.mock("../src/services/printService", async (original) => {
       stage.afterThumbnail = null;
       await after?.();
       return pictures;
+    },
+  };
+});
+vi.mock("../src/services/modelAssets", async (original) => {
+  const actual = await original<typeof import("../src/services/modelAssets")>();
+  return {
+    ...actual,
+    printAssetHome: (...args: Parameters<typeof actual.printAssetHome>) => {
+      if (stage.assetHomeFailsFor !== args[0]) return actual.printAssetHome(...args);
+      stage.assetHomeFailsFor = null;
+      return Promise.reject(new Error("the database went away"));
     },
   };
 });
@@ -175,8 +195,14 @@ async function model(files: { filename: string; tempFilePath: string }[]) {
 const platesOf = async (printId: string) => prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
 
 /** Another tab's removal of a plate, sent and followed until its route has read the model, after which the next thing
- *  it does is ask for the plate order. One let through is done shortly after; one kept waiting isn't. */
-async function removeMeanwhile(printId: string, plateId: string): Promise<{ removing: Promise<request.Response> }> {
+ *  it does is ask for the plate order. One let through is done shortly after; one kept waiting isn't. `sent` is given
+ *  the removal as soon as it's sent, for the test to see it done whatever happens. One that never got there throws, which
+ *  fails the request this is called from, so that one lets go of the plate order and the removal can finish. */
+async function removeMeanwhile(
+  printId: string,
+  plateId: string,
+  sent: (removing: Promise<request.Response>) => void,
+): Promise<void> {
   const findFirst = prisma.print.findFirst.bind(prisma.print);
   let reached = () => {};
   const asked = new Promise<void>((resolve) => (reached = resolve));
@@ -198,19 +224,15 @@ async function removeMeanwhile(printId: string, plateId: string): Promise<{ remo
     .delete(`/api/print/${printId}/plates/${plateId}`)
     .set(auth())
     .then((res) => res);
+  sent(removing);
   let inTime = false;
   try {
     inTime = await Promise.race([asked.then(() => true), later(4000).then(() => false)]);
   } finally {
     restore();
   }
-  // One that never got there tried nothing: the test fails, once the request is done.
-  if (!inTime) {
-    await Promise.race([removing, later(4000)]);
-    throw new Error("The other tab's removal never read the model");
-  }
+  if (!inTime) throw new Error("The other tab's removal never read the model");
   await Promise.race([removing, later(200)]);
-  return { removing };
 }
 
 beforeAll(async () => {
@@ -228,6 +250,8 @@ afterEach(() => {
   stage.formatGivesNone = false;
   stage.beforeFormat = null;
   stage.afterThumbnail = null;
+  stage.keepFormatFails = false;
+  stage.assetHomeFailsFor = null;
 });
 
 afterAll(() => {
@@ -275,15 +299,36 @@ describe("a model's plates, changed by two requests at once", () => {
     let removing: Promise<request.Response> | null = null;
     stage.readBack = async () => {
       // Another tab removes the model's own plate while this request reads its answer.
-      ({ removing } = await removeMeanwhile(print.id, plates[0].id));
+      await removeMeanwhile(print.id, plates[0].id, (sent) => (removing = sent));
+      throw new Error("the database went away");
+    };
+
+    try {
+      const res = await request(app)
+        .post(`/api/print/${print.id}/plates`)
+        .set(auth())
+        .attach("files", stl("b"), "b.stl");
+
+      expect(res.status).toBe(500);
+      // It waited for the batch to be taken back, and the plate it would remove was the only one by then.
+      expect((await removing!).status).toBe(409);
+      expect((await platesOf(print.id)).map((plate) => plate.filename)).toEqual(["a.stl"]);
+    } finally {
+      await removing;
+    }
+  });
+
+  it("takes back every plate it added when its answer can't be read, though its pictures' folder can't be either", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    stage.readBack = async () => {
+      stage.assetHomeFailsFor = print.id;
       throw new Error("the database went away");
     };
 
     const res = await request(app).post(`/api/print/${print.id}/plates`).set(auth()).attach("files", stl("b"), "b.stl");
 
     expect(res.status).toBe(500);
-    // It waited for the batch to be taken back, and the plate it would remove was the only one by then.
-    expect((await removing!).status).toBe(409);
+    expect(stage.assetHomeFailsFor).toBeNull();
     expect((await platesOf(print.id)).map((plate) => plate.filename)).toEqual(["a.stl"]);
   });
 
@@ -292,16 +337,23 @@ describe("a model's plates, changed by two requests at once", () => {
     let removing: Promise<request.Response> | null = null;
     stage.readBack = async (read) => {
       const made = (await platesOf(print.id)).at(-1)!;
-      ({ removing } = await removeMeanwhile(print.id, made.id));
+      await removeMeanwhile(print.id, made.id, (sent) => (removing = sent));
       return read();
     };
 
-    const res = await request(app).post(`/api/print/${print.id}/plates`).set(auth()).attach("files", stl("b"), "b.stl");
+    try {
+      const res = await request(app)
+        .post(`/api/print/${print.id}/plates`)
+        .set(auth())
+        .attach("files", stl("b"), "b.stl");
 
-    expect(res.status).toBe(200);
-    expect(res.body.print.plates.map((plate: { id: string }) => plate.id)).toContain(res.body.plate_ids[0]);
-    // The other tab's removal goes through once the answer is out.
-    expect((await removing!).status).toBe(200);
+      expect(res.status).toBe(200);
+      expect(res.body.print.plates.map((plate: { id: string }) => plate.id)).toContain(res.body.plate_ids[0]);
+      // The other tab's removal goes through once the answer is out.
+      expect((await removing!).status).toBe(200);
+    } finally {
+      await removing;
+    }
   });
 
   it("saves a new first plate's reading with the order, so asking again after it failed reads it again", async () => {
@@ -614,6 +666,22 @@ describe("a model's plates, changed by two requests at once", () => {
     expect(part.format).toBeNull();
   });
 
+  it("keeps a new 3MF plate and its thumbnail though its format couldn't be kept, and reads that on the next open", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    stage.keepFormatFails = true;
+    await addPlatesToPrint(owner.id, print.id, [
+      { filename: "part.3mf", tempFilePath: await threeMf(false, ONE_PIXEL_PNG) },
+    ]);
+    expect(stage.keepFormatFails).toBe(false);
+    const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
+    expect(part.format).toBeNull();
+    const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
+    expect(fs.existsSync(assetTarget(assetsPath!, plateThumbFile(part.id)))).toBe(true);
+    const opened = await request(app).get(`/api/print/${print.id}`).set(auth());
+    expect(opened.status).toBe(200);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: part.id } })).format).not.toBeNull();
+  });
+
   it("keeps no thumbnail of another file that was in a new 3MF plate's place while it was read, its own back since", async () => {
     const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
     const picture = async (background: string) =>
@@ -824,9 +892,14 @@ describe("a 3MF's thumbnail pictures", () => {
   });
 
   it("come to no more than 32 MiB in all, however large the archive says each is", async () => {
-    const big = Buffer.alloc(12 * 1024 * 1024);
-    const file = await threeMfWith({ "Metadata/thumbnail.png": big, "3D/thumbnail.png": big, "thumbnail.png": big });
-    expect(await read3mfThumbnails(file)).toHaveLength(2);
+    // Two of the largest a picture may be make 32 MiB exactly; a byte more is one too many.
+    const largest = Buffer.alloc(16 * 1024 * 1024);
+    const file = await threeMfWith({
+      "Metadata/thumbnail.png": largest,
+      "3D/thumbnail.png": largest,
+      "thumbnail.png": Buffer.from("a"),
+    });
+    expect((await read3mfThumbnails(file)).map((each) => each.length)).toEqual([largest.length, largest.length]);
   });
 
   it("pass over one that doesn't fit what's left for a smaller one after it", async () => {

@@ -88,6 +88,9 @@ export type RunOut = {
  *  migration with a new token goes on instead (what came is skipped). */
 const tokenRefused = (run: MigrationRun) =>
   run.source === "thingport-online" && (run.error as { code?: unknown } | null)?.code === "online_token";
+/** A working copy whose upgrade stopped part-way: every try would refuse it again, so it's discarded and prepared anew. */
+const upgradeInterrupted = (run: MigrationRun) =>
+  (run.error as { code?: unknown } | null)?.code === "upgrade_interrupted";
 
 function out(run: MigrationRun): RunOut {
   return {
@@ -103,7 +106,8 @@ function out(run: MigrationRun): RunOut {
       run.status === "failed" &&
       Boolean(run.startedAt) &&
       (Boolean(run.stagingDb) || run.source === "manyfold") &&
-      !tokenRefused(run),
+      !tokenRefused(run) &&
+      !upgradeInterrupted(run),
     created_at: run.createdAt.toISOString(),
     started_at: run.startedAt?.toISOString() ?? null,
     finished_at: run.finishedAt?.toISOString() ?? null,
@@ -410,7 +414,7 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
     if (!run) throw new HttpError(404, "No such migration");
     const notReady = new HttpError(409, "This migration can't be started.", "not_ready");
     if (!run.stagingDb || !(run.status === "ready" || (run.status === "failed" && run.startedAt))) throw notReady;
-    if (tokenRefused(run)) throw notReady;
+    if (tokenRefused(run) || upgradeInterrupted(run)) throw notReady;
     stagingDb = run.stagingDb;
     started = run;
     const plan = run.plan as MigratePlan;
