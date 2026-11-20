@@ -52,7 +52,8 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
       },
       (err: unknown) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-        if (active) setFailed(true);
+        // Not over a pick, or a save's answer, either: what shows then is newer than the read that failed.
+        if (active && changes.current === since && !saving.current) setFailed(true);
       },
     );
     return () => {
