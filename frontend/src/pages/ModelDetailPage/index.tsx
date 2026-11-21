@@ -63,11 +63,15 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const { t, i18n } = useTranslation(["models", "common", "library"]);
   const [print, setPrint] = useState<Print | null>(null);
   const [collectionCount, setCollectionCount] = useState<CollectionCount>("loading");
-  // The header shows the last model until the next one loads: a count its dialog reports by then is that model's.
+  // The header shows the last model until the next one loads, and a dialog's write can land after leaving: a count
+  // for another model isn't this one's. Stable, so a dialog doesn't take a new callback for a reason to report again.
   const routeId = useRef(printId);
   useLayoutEffect(() => {
     routeId.current = printId;
   });
+  const onCollectionCountChange = useCallback((count: number, id: string) => {
+    if (id === routeId.current) setCollectionCount(count);
+  }, []);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -151,9 +155,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
           onUpdated={updatePrint}
-          onCollectionCountChange={(count) => {
-            if (print.id === routeId.current) setCollectionCount(count);
-          }}
+          onCollectionCountChange={onCollectionCountChange}
           viewer={viewer}
           offerLink
         />
@@ -667,7 +669,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             <ModelSidePanel
               print={print}
               collectionCount={collectionCount}
-              onCollectionCountChange={setCollectionCount}
+              onCollectionCountChange={onCollectionCountChange}
               onSelectCategory={onSelectCategory}
               onUnauthorized={onUnauthorized}
               onUpdated={updatePrint}

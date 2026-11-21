@@ -58,7 +58,7 @@ export type ModelActionsOptions = {
   /** Only for a real collection; adds "Remove from collection". */
   collectionId?: string;
   onRemovedFromCollection?: () => void;
-  onCollectionCountChange?: (count: number) => void;
+  onCollectionCountChange?: (count: number, printId: string) => void;
   viewer?: AuthUser | null;
   /** Offers linking a model with no source to its page on a provider. */
   offerLink?: boolean;
@@ -67,6 +67,8 @@ export type ModelActionsOptions = {
 };
 
 const THUMB = 28;
+
+type DialogName = "collection" | "fillGaps" | "link";
 
 /** Where a pick has no plate of its own (the prepared print file): a glyph the thumbnail's size. */
 function printGlyph() {
@@ -112,14 +114,19 @@ export function useModelActions({
   const [improving, setImproving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
-  // The page header keeps this menu across models, so a dialog is open for the model it was opened on: going back to
-  // another one mustn't open it there.
-  const [dialog, setDialog] = useState<{ name: "collection" | "fillGaps" | "link"; printId: string } | null>(null);
-  // Closed on leaving the model, so coming back to it doesn't open it again.
+  // The page header keeps this menu across models, so a dialog is open for the model it was opened on, and closed on
+  // leaving that model so coming back to it doesn't open it again.
+  const [dialog, setDialog] = useState<{ name: DialogName; printId: string } | null>(null);
   if (dialog && dialog.printId !== print.id) setDialog(null);
-  const dialogOpen = (name: "collection" | "fillGaps" | "link") => dialog?.name === name && dialog.printId === print.id;
-  const openDialog = (name: "collection" | "fillGaps" | "link") => setDialog({ name, printId: print.id });
-  const closeDialog = () => setDialog(null);
+  const dialogOpen = (name: DialogName) => dialog?.name === name && dialog.printId === print.id;
+  // A new object per opening, which is how its own close knows it.
+  const openDialog = (name: DialogName) => setDialog({ name, printId: print.id });
+  /** Closes that dialog, if it's still the opening that's showing: one finishing after it was dismissed can't close
+   *  the next. */
+  const closeDialog = (name: DialogName) => {
+    const opening = dialogOpen(name) ? dialog : null;
+    return () => setDialog((current) => (opening && current === opening ? null : current));
+  };
   const sourceGaps = print.source_gaps ?? [];
   // Driven by ?edit=<id> so links and the back button open/close it.
   const editOpen = searchParams.get("edit") === print.id;
@@ -561,7 +568,7 @@ export function useModelActions({
       <AddToCollectionModal
         key={print.id}
         open={dialogOpen("collection")}
-        onClose={closeDialog}
+        onClose={closeDialog("collection")}
         printId={print.id}
         onUnauthorized={onUnauthorized}
         collectionId={collectionId}
@@ -585,7 +592,7 @@ export function useModelActions({
           open
           print={print}
           gaps={sourceGaps}
-          onClose={closeDialog}
+          onClose={closeDialog("fillGaps")}
           onUpdated={(updated) => onUpdated?.(updated)}
           onUnauthorized={onUnauthorized}
         />
@@ -594,7 +601,7 @@ export function useModelActions({
       {dialogOpen("link") && (
         <LinkSourceDialog
           print={print}
-          onClose={closeDialog}
+          onClose={closeDialog("link")}
           onLinked={(updated) => onUpdated?.(updated)}
           onUnauthorized={onUnauthorized}
         />

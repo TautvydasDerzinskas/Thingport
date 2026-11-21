@@ -116,7 +116,7 @@ export type CollectionCount = number | "loading" | "failed";
 type Props = {
   print: Print;
   collectionCount: CollectionCount;
-  onCollectionCountChange: (count: number) => void;
+  onCollectionCountChange: (count: number, printId: string) => void;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
   onUpdated?: (print: Print) => void;

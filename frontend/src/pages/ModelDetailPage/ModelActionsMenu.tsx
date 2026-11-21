@@ -26,7 +26,8 @@ type Props = {
   /** Only for a real collection; shows "Remove from collection". */
   collectionId?: string;
   onRemovedFromCollection?: () => void;
-  onCollectionCountChange?: (count: number) => void;
+  /** With the model it's for: the page header keeps the menu while the next model loads. */
+  onCollectionCountChange?: (count: number, printId: string) => void;
   triggerSx?: SxProps<Theme>;
   /** Glyph size in px; defaults to fontSize="small". */
   iconFontSize?: number;

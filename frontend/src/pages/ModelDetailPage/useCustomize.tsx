@@ -23,6 +23,12 @@ export function useCustomize(print: Print, onUnauthorized?: () => void) {
   const available = scripts.length > 0;
   // Which script is open; "pick" while a model with several is waiting to be asked.
   const [open, setOpen] = useState<{ scriptId: string } | "pick" | null>(null);
+  // The page header keeps this across models: leaving the model closes it, so another's print never gets its script.
+  const [openFor, setOpenFor] = useState(print.id);
+  if (openFor !== print.id) {
+    setOpenFor(print.id);
+    setOpen(null);
+  }
 
   const start = () => setOpen(scripts.length > 1 ? "pick" : { scriptId: scripts[0].id });
 
