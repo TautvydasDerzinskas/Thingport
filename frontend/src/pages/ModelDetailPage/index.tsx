@@ -142,6 +142,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         {!print.owner && <FavoriteButton print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />}
         <ModelActionsMenu
           print={print}
+          layout="tiles"
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
           onUpdated={updatePrint}

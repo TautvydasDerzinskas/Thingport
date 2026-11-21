@@ -5545,6 +5545,8 @@
     }
   },
   "common": {
+    "newTab": "(atsidaro naujame skirtuke)",
+    "backTo": "Atgal: {{name}}",
     "save": "Išsaugoti",
     "cancel": "Atšaukti",
     "close": "Uždaryti",
@@ -6241,6 +6243,16 @@
       "rejected": "Pasiūlymas atmestas.",
       "revertMessage": "Šis modelis atgaus aprašymą, kurį turėjo prieš DI pakeitimą.",
       "suggestionPending": "Pirmiausia priimkite arba atmeskite pasiūlymą"
+    },
+    "actionsMenu": {
+      "openIn": "Atverti",
+      "ai": "DI",
+      "quickActions": "Greiti veiksmai",
+      "categorize": "Kategorizuoti",
+      "recategorize": "Kategorizuoti iš naujo",
+      "improve": "Patobulinti aprašymą",
+      "adapted": "{{slicer}}, pritaikytas",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "Modelis",
