@@ -31,8 +31,9 @@ empty plates are skipped during export.
 **Download design** exports STL for one uncolored body on one plate and 3MF for designs with colors, multiple
 bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
 slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
-plate at a time, choose which plate to open. For Bambu-compatible slicers, **Filament assignments** shows which plates
-need each color. Choose the slot and material you loaded and save the assignments before opening or downloading the
+plate at a time, choose which plate to open. Studio prepares unopened plates as needed for export, subject to the
+design's export limits. For Bambu-compatible slicers, open all imported plates to see every color under **Filament
+assignments**. Choose the slot and material you loaded and save the assignments before opening or downloading the
 3MF. Studio marks unassigned colors and assigns those to free slots automatically. This handoff supports up to 16
 colors. When the slicer has a preset for the design's checked printer and nozzle, Studio selects that preset by default.
 
@@ -72,12 +73,14 @@ A design is a list of features, built in order:
   changed later in the properties panel, which traces it again.
 - **Library models**: **Open…** in the design's menu has a **Library** tab with your models' STL, 3MF, STEP, OBJ and
   GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. **Open in
-  Thingport Studio**, on a model's page and on its right-click menu in any grid of models, does the same from there,
-  asking which file when it has several. Studio keeps its own copy at the source dimensions. A 3MF imports each
-  printable object as a body, keeping its plate layout and any uniform object color. The first populated plate goes
-  into the active plate when inserting, and additional plates are added to the design. Studio uses a single color
-  per body, so face painting and slicer modifiers stay in the original file. A mesh with gaps can be moved, scaled
-  and exported. Use **Separate** to turn loose pieces within a single body into individual bodies.
+  Thingport Studio**, on a model's page and on its right-click menu in any grid of models, takes you straight to Studio
+  after you choose the file. For a new 3MF design, Studio prepares the first build plate and shows its progress. Click
+  any other plate in **Objects / Plates** to prepare its bodies. Studio keeps its own copy at the source dimensions.
+  Each printable object comes in as a body, keeping its plate placement and any uniform object color. When inserting
+  into an existing design, Studio imports all the plates, with the first populated one going into the active plate.
+  Studio uses a single color per body, so face painting and slicer modifiers stay in the original file. A mesh with
+  gaps can be moved, scaled and exported. Use **Separate** to turn loose pieces within a single body into individual
+  bodies.
 - **Combining**: select two bodies or more and pick **Union**, **Subtract** or **Intersect**. The first one you selected
   is the one the others are joined to, cut from or overlapped with. **Hull** wraps one body or more in the tightest
   convex body around them, as a rounded slot from two cylinders.
@@ -189,6 +192,7 @@ print. Pick one of your saved printers to show its bed outline in the viewport a
 for the check. You can also enter custom dimensions. Select a warning to jump to its object and plate. Overhangs
 and thin walls show markers at the affected areas. Use **Onto bed** to lower a floating body or **Lay flat** to pick
 a face to print on. **Measure** gives the gap or overlap between two bodies. Ask AI and MCP use the same printer setup.
+Open all imported 3MF plates before running the whole-design check.
 As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ridges don't count as overhang or thin walls.
 
 **Save to Thingport** adds a new library model with the design's 3MF, a picture of the view, and what you asked Ask AI

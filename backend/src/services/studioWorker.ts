@@ -36,7 +36,7 @@ import type { PrintCheck, PrintCheckOptions } from "../studio/printCheck.generat
 import { boundsOnBed, footprintOnBed } from "../studio/printLayout.generated";
 import { binaryStl } from "../studio/stl.generated";
 import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
-import { loadStudioThreeMf } from "./modelPreviewRender";
+import { loadStudioThreeMf, readThreeMfBuildPlates, type ThreeMfBuildPlate } from "./modelPreviewRender";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 import { loadFontsFor } from "./studioFonts";
 import {
@@ -76,7 +76,8 @@ export type StudioWorkerInput =
       render: { views: StudioView[]; size: number; color: string; plate?: string } | null;
     }
   | { kind: "import"; srcPath: string; ext: string; destPath: string }
-  | { kind: "import-3mf"; srcPath: string; destDir: string }
+  | { kind: "import-3mf"; srcPath: string; destDir: string; plate?: { index: number | null } }
+  | { kind: "list-3mf-plates"; srcPath: string }
   | { kind: "trace"; picturePath: string; settings: TraceSettings }
   | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string }
   | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string }
@@ -116,6 +117,7 @@ export type StudioWorkerResult =
     }
   | { status: "imported"; solid: boolean; triangles: number; size: Vec3; parts: number }
   | { status: "project"; plates: { name: string | null; bodies: StudioImportedBody[] }[]; mixedColors: boolean }
+  | { status: "source-plates"; plates: ThreeMfBuildPlate[] }
   | { status: "described"; body: BodyDescription }
   | { status: "measured"; parts: PartMeasure[] }
   | { status: "bounds"; bounds: Record<string, { min: Vec3; max: Vec3 }> }
@@ -125,7 +127,7 @@ export type StudioWorkerResult =
   | { status: "exported"; bytes: Uint8Array; format: "stl" | "3mf" }
   | { status: "empty" }
   /** A file that can't come in, and why, in words for whoever asked. */
-  | { status: "refused"; reason: string }
+  | { status: "refused"; reason: string; code?: string }
   | { status: "too-complex"; triangles: number }
   | { status: "error"; error: string };
 
@@ -152,7 +154,7 @@ function meshesIn(assetDir: string) {
 }
 
 async function describe(input: Extract<StudioWorkerInput, { kind: "describe" }>): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
+  const estimate = estimateTriangles(input.document, new Set([input.featureId]));
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
   try {
     return {
@@ -165,7 +167,7 @@ async function describe(input: Extract<StudioWorkerInput, { kind: "describe" }>)
 }
 
 async function findParts(input: Extract<StudioWorkerInput, { kind: "parts" }>): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
+  const estimate = estimateTriangles(input.document, new Set([input.featureId]));
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
   try {
     return {
@@ -207,10 +209,17 @@ function studioPngRenderer(parts: { body: EvaluatedBody; color?: string }[], siz
 }
 
 async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
-  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  const requestedPlate = input.render?.plate;
+  const ids = requestedPlate
+    ? topLevel(input.document)
+        .filter((feature) => isBody(feature) && feature.visible && plateOf(feature) === requestedPlate)
+        .map((feature) => feature.id)
+    : undefined;
+  const estimate = estimateTriangles(input.document, ids && new Set(ids));
+  if (estimate > (requestedPlate ? LIMITS.sourcePlateTriangles : MAX_TRIANGLES))
+    return { status: "too-complex", triangles: Math.round(estimate) };
   const wasm = await manifold();
-  const { bodies, errors } = evaluateDesign(wasm, input.document, undefined, meshesIn(input.assetDir));
+  const { bodies, errors } = evaluateDesign(wasm, input.document, ids, meshesIn(input.assetDir));
   const images: { view: StudioView; png: string }[] = [];
   if (input.render) {
     const renderPlate =
@@ -269,16 +278,32 @@ async function importMesh(input: Extract<StudioWorkerInput, { kind: "import" }>)
 }
 
 async function importThreeMf(input: Extract<StudioWorkerInput, { kind: "import-3mf" }>): Promise<StudioWorkerResult> {
-  const project = await loadStudioThreeMf(input.srcPath, MAX_TRIANGLES, LIMITS.features, LIMITS.meshTriangles);
+  const maxBody = input.plate ? LIMITS.sourceBodyTriangles : LIMITS.meshTriangles;
+  const project = await loadStudioThreeMf(
+    input.srcPath,
+    input.plate ? LIMITS.sourcePlateTriangles : MAX_TRIANGLES,
+    LIMITS.features,
+    maxBody,
+    input.plate,
+  );
   if (project === "too-complex")
-    return { status: "refused", reason: "The 3MF exceeds Studio's object or triangle limit" };
+    return {
+      status: "refused",
+      reason: input.plate
+        ? `This plate exceeds Studio's limits of ${LIMITS.features} objects or ${LIMITS.sourcePlateTriangles.toLocaleString("en")} triangles`
+        : "The 3MF exceeds Studio's object or triangle limit",
+      ...(input.plate && { code: "studio_import_plate_limit" }),
+    };
   if (project === "body-too-complex")
     return {
       status: "refused",
-      reason: `Each imported body can have up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles`,
+      reason: `Each imported body can have up to ${maxBody.toLocaleString("en")} triangles`,
+      ...(input.plate && { code: "studio_import_body_limit" }),
     };
-  if (project === "missing-parts") return { status: "refused", reason: "The 3MF references missing model parts" };
-  if (project === "unsupported") return { status: "refused", reason: "The 3MF has no readable printable bodies" };
+  if (project === "missing-parts")
+    return { status: "refused", reason: "The 3MF references missing model parts", code: "studio_import_missing_parts" };
+  if (project === "unsupported")
+    return { status: "refused", reason: "The 3MF has no readable printable bodies", code: "studio_import_no_bodies" };
   if (project.plates.length > MAX_PLATES)
     return { status: "refused", reason: `Studio takes up to ${MAX_PLATES} plates` };
   const wasm = await manifold();
@@ -312,8 +337,23 @@ async function importThreeMf(input: Extract<StudioWorkerInput, { kind: "import-3
   return { status: "project", plates, mixedColors: project.mixedColors };
 }
 
+async function sourcePlates(srcPath: string): Promise<StudioWorkerResult> {
+  const plates = await readThreeMfBuildPlates(srcPath, true);
+  if (typeof plates === "string")
+    return {
+      status: "refused",
+      reason:
+        plates === "too-complex" ? "The 3MF archive is too large to read" : "The 3MF has no readable build plates",
+      code: plates === "too-complex" ? "studio_import_archive_limit" : "studio_import_no_plates",
+    };
+  return { status: "source-plates", plates };
+}
+
 /** Whether the design will print as it's placed, for studio_check_print. */
 async function check(input: Extract<StudioWorkerInput, { kind: "check" }>): Promise<StudioWorkerResult> {
+  const unloaded = studioPlates(input.document).find((plate) => plate.source);
+  if (unloaded)
+    return { status: "refused", reason: `Open ${unloaded.name} before checking the whole design for printing.` };
   const estimate = estimateTriangles(input.document);
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
   return {
@@ -324,7 +364,7 @@ async function check(input: Extract<StudioWorkerInput, { kind: "check" }>): Prom
 
 /** How two bodies stand to each other, for studio_measure. */
 async function between(input: Extract<StudioWorkerInput, { kind: "between" }>): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
+  const estimate = estimateTriangles(input.document, new Set([input.a, input.b]));
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
   try {
     return {
@@ -338,8 +378,8 @@ async function between(input: Extract<StudioWorkerInput, { kind: "between" }>): 
 
 /** Bodies' extents in the world, for align and lay_flat. */
 async function findBounds(input: Extract<StudioWorkerInput, { kind: "bounds" }>): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
-  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  const estimate = estimateTriangles(input.document, new Set(input.ids));
+  if (estimate > LIMITS.sourcePlateTriangles) return { status: "too-complex", triangles: Math.round(estimate) };
   try {
     return {
       status: "bounds",
@@ -373,7 +413,13 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
   if (!visible.length) return { status: "empty" };
   const ids = visible.map((feature) => feature.id);
   const estimate = estimateTriangles(input.document, new Set(ids));
-  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  const hasOnePlate = new Set(visible.map(plateOf)).size === 1;
+  const sourceProject = input.document.features.some(
+    (feature) => feature.type === "mesh" && feature.source.build_plate !== undefined,
+  );
+  const maxBodyTriangles = sourceProject ? LIMITS.sourceBodyTriangles : LIMITS.meshTriangles;
+  if (estimate > (hasOnePlate && sourceProject ? LIMITS.sourcePlateTriangles : MAX_TRIANGLES))
+    return { status: "too-complex", triangles: Math.round(estimate) };
   const byId = new Map(visible.map((feature) => [feature.id, feature]));
   const { bodies, errors } = evaluateDesign(await manifold(), input.document, ids, meshesIn(input.assetDir));
   if (errors.length) return { status: "refused", reason: `${errors[0].id} couldn't be made: ${errors[0].message}` };
@@ -388,11 +434,11 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     const bytes = binaryStl([worldTriangles(parts[0].body)]);
     return bytes ? { status: "exported", bytes, format: "stl" } : { status: "empty" };
   }
-  const tooDetailed = parts.find(({ body }) => body.triangles > LIMITS.meshTriangles);
+  const tooDetailed = parts.find(({ body }) => body.triangles > maxBodyTriangles);
   if (tooDetailed)
     return {
       status: "refused",
-      reason: `${tooDetailed.name} exceeds Studio's limit of ${LIMITS.meshTriangles.toLocaleString("en")} triangles per 3MF body. Simplify or split it before exporting.`,
+      reason: `${tooDetailed.name} exceeds Studio's limit of ${maxBodyTriangles.toLocaleString("en")} triangles per 3MF body. Simplify or split it before exporting.`,
     };
   const recipe = input.target?.printer?.recipe;
   if (recipe) {
@@ -445,7 +491,9 @@ if (parentPort) {
   const reply = (result: StudioWorkerResult) =>
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker_threads port, not window.postMessage.
     parentPort!.postMessage(result);
-  const made = async (design: Exclude<StudioWorkerInput, { kind: "import" | "import-3mf" | "trace" }>) => {
+  const made = async (
+    design: Exclude<StudioWorkerInput, { kind: "import" | "import-3mf" | "list-3mf-plates" | "trace" }>,
+  ) => {
     // The design's text needs its fonts in this thread too.
     await loadFontsFor(design.document);
     return design.kind === "describe"
@@ -467,9 +515,11 @@ if (parentPort) {
       ? importMesh(input)
       : input.kind === "import-3mf"
         ? importThreeMf(input)
-        : input.kind === "trace"
-          ? trace(input)
-          : made(input);
+        : input.kind === "list-3mf-plates"
+          ? sourcePlates(input.srcPath)
+          : input.kind === "trace"
+            ? trace(input)
+            : made(input);
   job.then(reply, (error: unknown) =>
     reply({ status: "error", error: error instanceof Error ? (error.stack ?? error.message) : String(error) }),
   );

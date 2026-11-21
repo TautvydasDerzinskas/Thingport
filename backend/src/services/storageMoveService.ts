@@ -6,7 +6,7 @@ import { ADAPTED_3MFS, BUNDLES, DESCRIPTION_IMAGES, MODEL_PREVIEWS, PREVIEWS, TH
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { createNotification } from "./notificationService";
-import { isLegacyRender } from "./modelAssets";
+import { isBuildPlateGlb, isLegacyRender } from "./modelAssets";
 import { getStorageTemplate, reorganizeManagedPrints } from "./printService";
 import { currentStorageCleanup } from "./storageCleanup";
 
@@ -110,7 +110,7 @@ async function notifyDone(userId: string, moved: number, skipped: number): Promi
 const LEGACY_FOLDERS = [THUMBS, PREVIEWS, DESCRIPTION_IMAGES, BUNDLES];
 
 // In the shared folders that keep their failure markers: the 3D previews and renders, and the slicer copies.
-const isLegacyPreview = (name: string) => isLegacyRender(name) || name.endsWith(".glb");
+const isLegacyPreview = (name: string) => isLegacyRender(name) || (name.endsWith(".glb") && !isBuildPlateGlb(name));
 const isLegacySlicerCopy = (name: string) => name.endsWith(".3mf");
 
 /** The old shared folders, and the pictures and copies among the cache's markers, once a move has brought every

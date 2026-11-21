@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { studioApi, type StudioDesign } from "../../api/studio";
+import { studioApi, studioErrorMessage, type StudioDesign } from "../../api/studio";
 import { UnauthorizedError } from "../../api/client";
 import {
   applyCommand,
@@ -134,7 +134,7 @@ export function useStudioDesign(
         return outcome.created;
       } catch (error) {
         if (!(error instanceof CommandError)) throw error;
-        handlers.current.onError(error.message);
+        handlers.current.onError(studioErrorMessage(error.message, error.code));
         return null;
       }
     },

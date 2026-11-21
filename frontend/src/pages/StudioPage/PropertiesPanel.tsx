@@ -44,7 +44,7 @@ import type { TraceShape } from "../../studio/trace";
 import { PATH_CHARACTERS } from "../../studio/svgPath";
 import PictureThumb from "./PictureThumb";
 import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
-import { featureLabel } from "./labels";
+import { featureLabel, plateLabel } from "./labels";
 import { FeatureIcon, SeparateIcon } from "./studioIcons";
 import SplitConnectorFields from "./SplitConnectorFields";
 
@@ -185,7 +185,7 @@ export default function PropertiesPanel({
         >
           {plates.map((plate) => (
             <MenuItem key={plate.id} value={plate.id}>
-              {plate.name}
+              {plateLabel(plate, t)}
             </MenuItem>
           ))}
         </TextField>

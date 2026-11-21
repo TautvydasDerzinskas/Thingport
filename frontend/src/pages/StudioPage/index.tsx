@@ -71,6 +71,7 @@ import { StudioUnitsContext, unitFormat } from "./units";
 import { BoxIcon, ExtrudeIcon, SeparateIcon } from "./studioIcons";
 import { measureBetweenInWorker, measureBoundsInWorker, measurePartsInWorker } from "./geometryClient";
 import { openModelAsDesign, type StudioArrival } from "./openModel";
+import StudioSourcePlate, { useSourcePlate } from "./StudioSourcePlate";
 import OperationPanel from "./OperationPanel";
 import ParametersDialog from "./ParametersDialog";
 import StudioSettingsDialog from "./StudioSettingsDialog";
@@ -225,6 +226,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [pickedPlate, setPickedPlate] = useState(DEFAULT_PLATE_ID);
   const activePlate =
     doc && studioPlates(doc).some((plate) => plate.id === pickedPlate) ? pickedPlate : DEFAULT_PLATE_ID;
+  const plateInView = doc ? studioPlates(doc).find((plate) => plate.id === activePlate) : undefined;
+  const plateSource = plateInView?.source;
   const [slicerOpen, setSlicerOpen] = useState(false);
   // Edit adds the design tools and side panels.
   const [editing, setEditing] = useState(false);
@@ -293,6 +296,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   } | null>(null);
   // A model just brought in, to say so if it's in several parts.
   const [partsHint, setPartsHint] = useState<{ design: string; mesh: string } | null>(null);
+  const sourcePlate = useSourcePlate(designId, plateInView, run, setPartsHint);
 
   // Another design starts with nothing selected; a feature that's gone is let go of.
   const [shownDesign, setShownDesign] = useState(designId);
@@ -868,6 +872,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     (assistant.messages.length > 0 || assistant.running);
 
   const viewportArea = (() => {
+    if (plateInView && plateSource) return <StudioSourcePlate plate={plateInView} {...sourcePlate} />;
     if (noDesigns && !designId) {
       return (
         <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", p: 2 }}>
@@ -1066,7 +1071,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           canExtrude={Boolean(extrudable)}
           mode={mode}
           sketch={sketch && sketchFeature?.type === "sketch" ? { plane: sketchFeature.plane, tool: sketch.tool } : null}
-          busy={!doc}
+          busy={!doc || Boolean(plateSource)}
           onNewDesign={() => void newDesign()}
           onOpenDesign={() => setDesignsOpen(true)}
           onRenameDesign={() => setRenaming({ kind: "design" })}

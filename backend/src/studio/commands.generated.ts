@@ -2528,7 +2528,9 @@ export const STUDIO_COMMANDS = {
     args: { plate_id: plateId, name: z.string().trim().min(1).max(80).describe("The plate’s new name.") },
     apply(doc, { plate_id, name }) {
       doc.plates = [...studioPlates(doc)];
-      findPlate(doc, plate_id).name = name;
+      const plate = findPlate(doc, plate_id);
+      plate.name = name;
+      delete plate.default_name;
       return { document: doc, created: [], summary: `Named ${plate_id} “${name}”` };
     },
   }),
@@ -2539,8 +2541,9 @@ export const STUDIO_COMMANDS = {
     destructive: true,
     args: { plate_id: plateId },
     apply(doc, { plate_id }) {
-      findPlate(doc, plate_id);
       if (plate_id === DEFAULT_PLATE_ID) throw new CommandError("The first plate cannot be deleted.");
+      if (findPlate(doc, plate_id).source)
+        throw new CommandError("Load this build plate first.", "studio_plate_pending");
       if (doc.features.some((feature) => feature.plate_id === plate_id && !consumerOf(doc, feature.id)))
         throw new CommandError("Move the features off this plate before deleting it.");
       for (const feature of doc.features) {
@@ -2778,8 +2781,18 @@ export const STUDIO_COMMANDS = {
         .min(1)
         .optional()
         .describe("Which of its 3D files, by its id from list_model_files. Default: its first one."),
+      defer_plates: z.boolean().optional().describe("On a new design, load each source 3MF plate on demand."),
       ...placement,
     },
+  }),
+
+  load_source_plate: command({
+    title: "Load an imported build plate",
+    description:
+      "Loads the original bodies of a source 3MF plate into their Studio build plate. Find plates marked pending_import " +
+      "in studio_get_design. Calling this again on a loaded plate has no effect.",
+    kind: "import",
+    args: { plate_id: plateId },
   }),
 
   rename_design: command({
@@ -3043,7 +3056,8 @@ export function makeFitTest(source: StudioDocument, args: StudioCommandArgs<"mak
 }
 
 export function arrangeMeasures(doc: StudioDocument, args: { plate_id: string }): string[] {
-  findPlate(doc, args.plate_id);
+  if (findPlate(doc, args.plate_id).source)
+    throw new CommandError("Load this build plate first.", "studio_plate_pending");
   const ids = topLevel(doc)
     .filter((feature) => isBody(feature) && feature.visible && plateOf(feature) === args.plate_id)
     .map((feature) => feature.id);

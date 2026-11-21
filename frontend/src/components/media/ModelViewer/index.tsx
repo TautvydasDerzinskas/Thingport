@@ -20,6 +20,7 @@ import type { Mesh as SdkMesh } from "../../../sdk/threeMf";
 import {
   buildBambuModelGroup,
   loadCachedBambuGlb,
+  type CachedBambuGlb,
   type Parsed3MFData,
   type PlateSummary,
 } from "../../../utils/bambuThreeMf";
@@ -30,6 +31,8 @@ import BrandMark from "../../BrandMark";
 
 export type RenderStyle = "solid" | "wire" | "xray";
 export type CameraView = "top" | "front" | "side" | "bottom" | "topFront";
+
+type BuildPlateManifest = { version: string; plates: (PlateSummary & { thumbnail: boolean })[] };
 
 /** A camera preset is a one-off action (clicking "Top" twice re-frames twice), not state. */
 export type ModelViewerHandle = {
@@ -164,7 +167,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
     setCameraView: (view: CameraView) => void;
     zoom: (factor: number) => void;
   } | null>(null);
-  // Lets plate switches rebuild the already-parsed group instead of refetching the file.
+  // Switch the active build plate without rebuilding the viewer.
   const rebuildBambuPlateRef = useRef<((plateId: number | null) => void) | null>(null);
   const [viewError, setViewError] = useState<ViewErrorKey | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,6 +175,8 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
 
   useEffect(() => {
     let disposed = false;
+    const lifetime = new AbortController();
+    let buildPlateRequest: AbortController | null = null;
     let activeObject: THREE.Object3D | null = null;
     const mount = mountRef.current;
     if (!mount) return;
@@ -350,6 +355,8 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
     let currentPlateId: number | null = selectedPlateId;
     // A cached GLB already contains every plate, so switching plates is a visibility toggle.
     let cachedGlbRoot: THREE.Group | null = null;
+    let manifest: BuildPlateManifest | null = null;
+    const cachedUrl = previewGlbUrl ? new URL(previewGlbUrl, window.location.href) : null;
 
     // Box3.setFromObject ignores visibility, which would measure every plate of a cached GLB.
     const visibleBox = (root: THREE.Object3D): THREE.Box3 => {
@@ -427,6 +434,83 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
       finalizeGroupPlacement(cachedGlbRoot, centerOnBuildPlate, refitCamera);
     };
 
+    const waitForGlb = async (preview: URL, signal: AbortSignal) => {
+      const deadline = Date.now() + SERVER_PREVIEW_WAIT_MS;
+      while (!signal.aborted) {
+        const outcome = await loadCachedBambuGlb(preview.toString(), signal);
+        if (disposed || signal.aborted) {
+          if (outcome.status === "ready") disposeObject3D(outcome.glb.rootGroup);
+          return null;
+        }
+        if (outcome.status !== "generating") {
+          setWaitingForServer(false);
+          return outcome;
+        }
+        if (Date.now() > deadline) {
+          reportError("failed");
+          return null;
+        }
+        setWaitingForServer(true);
+        await new Promise((resolve) => setTimeout(resolve, SERVER_PREVIEW_POLL_MS));
+      }
+      return null;
+    };
+
+    const showGlb = (cached: CachedBambuGlb, refitCamera: boolean) => {
+      if (activeObject) {
+        scene.remove(activeObject);
+        disposeObject3D(activeObject);
+      }
+      cachedGlbRoot = cached.rootGroup;
+      buildVolume = cached.buildVolume;
+      layoutBuildPlate();
+      applyAppearance(cachedGlbRoot);
+      onOwnColorRef.current?.(objectHasOwnColor(cachedGlbRoot));
+      activeObject = cachedGlbRoot;
+      scene.add(cachedGlbRoot);
+      showCachedGlbPlate(currentPlateId, true, refitCamera);
+    };
+
+    const loadBuildPlate = async (plateId: number, refitCamera: boolean) => {
+      if (!cachedUrl || !manifest) return;
+      buildPlateRequest?.abort();
+      const request = new AbortController();
+      buildPlateRequest = request;
+      setViewError(null);
+      setIsLoading(true);
+      setWaitingForServer(false);
+      // The last plate remains cached in the browser, and its GPU buffers can be released now.
+      if (activeObject) {
+        scene.remove(activeObject);
+        disposeObject3D(activeObject);
+        activeObject = null;
+        cachedGlbRoot = null;
+      }
+      const plateUrl = new URL(cachedUrl);
+      plateUrl.searchParams.delete("v");
+      plateUrl.searchParams.set("buildPlate", String(plateId));
+      plateUrl.searchParams.set("projectVersion", manifest.version);
+      const outcome = await waitForGlb(plateUrl, request.signal);
+      if (disposed || request.signal.aborted || !outcome) return;
+      if (outcome.status === "ready") showGlb(outcome.glb, refitCamera);
+      else reportError(outcome.status === "failed" ? "tooComplex" : "failed");
+    };
+
+    const switchPlate = (plateId: number | null) => {
+      if (manifest) {
+        const next = manifest.plates.find(({ index }) => index === plateId)?.index ?? manifest.plates[0].index;
+        if (next === currentPlateId) return;
+        currentPlateId = next;
+        void loadBuildPlate(next, true);
+        return;
+      }
+      if (plateId === currentPlateId) return;
+      currentPlateId = plateId;
+      if (cachedGlbRoot) showCachedGlbPlate(plateId, true, true);
+      else renderBambuGroup(true, true);
+    };
+    rebuildBambuPlateRef.current = switchPlate;
+
     (async () => {
       try {
         const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js");
@@ -465,38 +549,45 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
 
         // Returns false when the caller should parse the raw file in the browser instead.
         const tryLoadCachedGlb = async (): Promise<boolean> => {
-          if (!previewGlbUrl) return false;
-          const deadline = Date.now() + SERVER_PREVIEW_WAIT_MS;
-          let outcome = await loadCachedBambuGlb(previewGlbUrl);
-          while (outcome.status === "generating") {
+          if (!cachedUrl) return false;
+          if (onPlatesDetected) {
+            const listUrl = new URL(cachedUrl);
+            listUrl.searchParams.delete("v");
+            listUrl.searchParams.set("plates", "1");
+            const list = await fetch(listUrl, { signal: lifetime.signal })
+              .then((response) => {
+                if (response.ok && response.headers.get("Content-Type")?.includes("application/json"))
+                  return response.json() as Promise<BuildPlateManifest>;
+                void response.body?.cancel();
+                return null;
+              })
+              .catch(() => null);
             if (disposed) return true;
-            if (Date.now() > deadline) {
-              reportError("failed");
+            if (list?.plates?.length) {
+              manifest = list;
+              currentPlateId = list.plates.find(({ index }) => index === currentPlateId)?.index ?? list.plates[0].index;
+              onPlatesDetected(list.plates, async (index) => {
+                if (!list.plates.find((plate) => plate.index === index)?.thumbnail) return null;
+                const thumbnail = new URL(cachedUrl);
+                thumbnail.pathname = thumbnail.pathname.replace(/preview\.glb$/, `profile-plate/${index}.png`);
+                thumbnail.searchParams.delete("v");
+                return thumbnail.toString();
+              });
+              await loadBuildPlate(currentPlateId, false);
               return true;
             }
-            setWaitingForServer(true);
-            await new Promise((resolve) => setTimeout(resolve, SERVER_PREVIEW_POLL_MS));
-            if (disposed) return true;
-            outcome = await loadCachedBambuGlb(previewGlbUrl);
           }
-          if (disposed) return true;
-          setWaitingForServer(false);
+          const outcome = await waitForGlb(cachedUrl, lifetime.signal);
+          if (!outcome) return true;
           if (outcome.status === "failed") {
             reportError("tooComplex");
             return true;
           }
           if (outcome.status !== "ready") return false;
           const cached = outcome.glb;
-          cachedGlbRoot = cached.rootGroup;
-          buildVolume = cached.buildVolume;
-          layoutBuildPlate();
-          applyAppearance(cachedGlbRoot);
-          onOwnColorRef.current?.(objectHasOwnColor(cachedGlbRoot));
-          activeObject = cachedGlbRoot;
-          scene.add(cachedGlbRoot);
           if (currentPlateId == null && cached.plates.length > 0) currentPlateId = cached.plates[0].index;
           onPlatesDetected?.(cached.plates, cached.getPlateThumbnail);
-          showCachedGlbPlate(currentPlateId, true);
+          showGlb(cached, false);
           return true;
         };
 
@@ -637,17 +728,12 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
           }
         },
       };
-
-      rebuildBambuPlateRef.current = (plateId) => {
-        if (plateId === currentPlateId) return;
-        currentPlateId = plateId;
-        if (cachedGlbRoot) showCachedGlbPlate(plateId, true, true);
-        else renderBambuGroup(true, true);
-      };
     })();
 
     return () => {
       disposed = true;
+      lifetime.abort();
+      buildPlateRequest?.abort();
       try {
         teardown?.();
         mount.removeChild(renderer.domElement);

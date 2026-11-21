@@ -189,7 +189,7 @@ export type MeshFeature = Body & {
   /** How many loose parts it came in as, which separate_parts makes bodies of their own. Not known for older imports. */
   parts?: number;
   /** Where it came from, as it was then. */
-  source: { model_id: string; file_id: string; file_name: string; model_title: string };
+  source: { model_id: string; file_id: string; file_name: string; model_title: string; build_plate?: number | null };
 };
 /** One of the loose parts of a body, which separate_parts makes all of. */
 export type PartFeature = Body & {
@@ -291,7 +291,19 @@ export const STUDIO_FILAMENT_MATERIALS = ["PLA", "PETG", "ABS", "ASA", "TPU", "P
 export const STUDIO_FILAMENT_SLOT_LIMIT = 16;
 export type StudioFilamentSlot = { color: string; slot: number; material: (typeof STUDIO_FILAMENT_MATERIALS)[number] };
 
-export type StudioPlate = { id: string; name: string };
+export type StudioPlateSource = {
+  archive_id: string;
+  index: number | null;
+  model: MeshFeature["source"];
+};
+
+export type StudioPlate = {
+  id: string;
+  name: string;
+  /** The ordinal for a generated label, translated by the viewer until the plate is named. */
+  default_name?: number;
+  source?: StudioPlateSource;
+};
 export const DEFAULT_PLATE_ID = "plate-1";
 export const MAX_PLATES = 32;
 
@@ -316,6 +328,9 @@ export const LIMITS = {
   segmentsMax: 256,
   /** An imported mesh's triangles. */
   meshTriangles: 1_000_000,
+  /** A dense source plate opened on demand can hold larger exact meshes. */
+  sourceBodyTriangles: 2_000_000,
+  sourcePlateTriangles: 4_000_000,
   /** The edges one fillet or chamfer rounds. */
   edgesPerFeature: 100,
   /** A shell builds walls under every face, which takes time with every triangle: past this it's refused. */

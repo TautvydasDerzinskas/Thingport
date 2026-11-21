@@ -16,8 +16,9 @@ import { featureById, MAX_PLATES, studioPlates, type StudioDocument } from "../.
 import { bedOutline, DEFAULT_PRINT_BED } from "../../studio/printLayout";
 import { NumberField } from "./fields";
 import { measureBoundsInWorker } from "./geometryClient";
-import { featureLabel } from "./labels";
+import { featureLabel, plateLabel } from "./labels";
 import type { RunCommand } from "./useStudioDesign";
+import { studioErrorMessage } from "../../api/studio";
 
 export default function ArrangeDialog({
   designId,
@@ -67,6 +68,7 @@ export default function ArrangeDialog({
   const label = (id: string) => featureLabel(featureById(doc, id)!, t);
   const n = preview?.planes.length ?? 0;
   const room = n + studioPlates(doc).length - 1 <= MAX_PLATES;
+  const plate = studioPlates(doc).find((entry) => entry.id === plateId);
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{t("studio.print.arrange")}</DialogTitle>
@@ -88,9 +90,7 @@ export default function ArrangeDialog({
           </Stack>
           {error && (
             <Alert severity="error">
-              {error instanceof CommandError && error.code === "studio_arrange_empty"
-                ? t("studio.print.arrangeEmpty")
-                : error.message}
+              {studioErrorMessage(error.message, error instanceof CommandError ? error.code : undefined)}
             </Alert>
           )}
           {preview?.overflow.length ? (
@@ -106,9 +106,7 @@ export default function ArrangeDialog({
               {preview.planes.map((placements, i) => (
                 <Box key={i === 0 ? plateId : placements.map((part) => part.id).join("/")}>
                   <Typography variant="caption">
-                    {i === 0
-                      ? studioPlates(doc).find((plate) => plate.id === plateId)?.name
-                      : t("studio.print.previewPlate", { number: i + 1 })}
+                    {i === 0 && plate ? plateLabel(plate, t) : t("studio.print.previewPlate", { number: i + 1 })}
                   </Typography>
                   <Box
                     sx={{

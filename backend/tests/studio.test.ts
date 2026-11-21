@@ -915,6 +915,101 @@ describe("Studio", () => {
       return { modelId: res.body.prints[0].id as string, fileId: res.body.prints[0].plates[0].id as string };
     }
 
+    it("loads one 3MF build plate at a time from the design's own source snapshot", async () => {
+      const zip = new JSZip();
+      zip.file(
+        "3D/3dmodel.model",
+        `<model unit="millimeter"><resources><object id="1" type="model"><mesh>
+          <vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices>
+          <triangles><triangle v1="0" v2="1" v3="2"/></triangles>
+        </mesh></object></resources>
+          <build><item objectid="1" plate_id="1"/><item objectid="1" plate_id="2"/></build>
+        </model>`,
+      );
+      const { modelId, fileId } = await upload(
+        alice,
+        "Lazy plates.3mf",
+        await zip.generateAsync({ type: "nodebuffer" }),
+      );
+      const previewUrl = `/api/plate/${fileId}/preview.glb`;
+      const manifest = await request(app).get(previewUrl).query({ plates: 1 }).set(auth(alice));
+      expect(manifest.status).toBe(200);
+      expect(manifest.body.plates.map((plate: { index: number }) => plate.index)).toEqual([1, 2]);
+      expect((await request(app).get(previewUrl).query({ plates: 1 }).set(auth(bob))).status).toBe(404);
+      const query = { buildPlate: 2, projectVersion: manifest.body.version };
+      const ready = async () => {
+        const preview = await request(app).get(previewUrl).query(query).set(auth(alice)).buffer(true).parse(readBinary);
+        expect(preview.status).toBe(200);
+        const metadata = JSON.parse(preview.body.toString("utf8", 20, 20 + preview.body.readUInt32LE(12)));
+        const plateNodes = metadata.nodes
+          .map((node: { name?: string }) => node.name)
+          .filter((name?: string) => name?.startsWith("plate-"));
+        expect(plateNodes).toEqual(["plate-2"]);
+      };
+      await expect.poll(ready, { timeout: 10_000 }).toBeUndefined();
+
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const opened = await command(alice, design.id, "import_model", {
+        model_id: modelId,
+        file_id: fileId,
+        defer_plates: true,
+      });
+      expect(opened.status).toBe(200);
+      expect(opened.body.design.document.features).toEqual([]);
+      expect(
+        opened.body.design.document.plates.map((plate: { source: { index: number } }) => plate.source.index),
+      ).toEqual([1, 2]);
+      expect(opened.body.design.document.plates).toMatchObject([{ default_name: 1 }, { default_name: 2 }]);
+      const token = await mcpToken(alice);
+      const listed = await callTool(token, "studio_get_design", { design_id: design.id });
+      expect(listed.data.pending_plate_ids).toEqual(["plate-1", "plate-2"]);
+      expect(listed.data.plates).toMatchObject([
+        { id: "plate-1", pending_import: true },
+        { id: "plate-2", pending_import: true },
+      ]);
+      const viewPending = await callTool(token, "studio_view_design", { design_id: design.id, plate_id: "plate-2" });
+      expect(viewPending.isError).toBe(true);
+      expect(viewPending.text).toContain("studio_load_source_plate");
+      const deletePending = await command(alice, design.id, "delete_plate", { plate_id: "plate-2" });
+      expect(deletePending.status).toBe(400);
+      expect(deletePending.body.code).toBe("studio_plate_pending");
+      const exported = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/auto/-/-/-/-/Lazy.3mf`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse(readBinary);
+      expect(exported.status).toBe(200);
+      const archive = await JSZip.loadAsync(exported.body);
+      const settings = await archive.file("Metadata/model_settings.config")!.async("string");
+      expect(settings.match(/<plate>/g)).toHaveLength(2);
+      const afterExport = await request(app).get(`/api/studio/designs/${design.id}`).set(auth(alice));
+      expect(afterExport.body.document.features).toEqual([]);
+      expect(afterExport.body.version).toBe(opened.body.design.version);
+      const stored = await prisma.plate.findUniqueOrThrow({ where: { id: fileId } });
+      fs.unlinkSync(resolvePlateFilePath(stored)!);
+      const loaded = await Promise.all([
+        command(alice, design.id, "load_source_plate", { plate_id: "plate-2" }),
+        command(alice, design.id, "load_source_plate", { plate_id: "plate-2" }),
+      ]);
+      expect(loaded.map((response) => response.status)).toEqual([200, 200]);
+      expect(loaded.flatMap((response) => response.body.created)).toEqual(["mesh-1"]);
+      expect(loaded[0].body.design.document.features).toMatchObject([{ plate_id: "plate-2", triangles: 1 }]);
+      expect(loaded[0].body.design.document.plates[0].source.index).toBe(1);
+      expect(loaded[0].body.design.document.plates[1].source).toBeUndefined();
+      const mcpLoad = await callTool(token, "studio_load_source_plate", { design_id: design.id, plate_id: "plate-1" });
+      expect(mcpLoad.data.created).toEqual(["mesh-2"]);
+      expect(mcpLoad.data.pending_plate_ids).toEqual([]);
+      const viewedDefault = await callTool(token, "studio_view_design", { design_id: design.id, size: 128 });
+      expect(viewedDefault.data.bodies).toBe(1);
+      const viewed = await callTool(token, "studio_view_design", {
+        design_id: design.id,
+        plate_id: "plate-2",
+        size: 128,
+      });
+      expect(viewed.data.bodies).toBe(1);
+      expect(viewed.content.some((entry) => entry.type === "image")).toBe(true);
+    });
+
     it.each([
       { stage: "moving a mesh", failRename: true, status: 422, detail: "Couldn't move the third mesh", count: 2 },
       {
