@@ -21,7 +21,9 @@ import {
   noteValue,
   readNotes,
   readView,
+  rebaseEdit,
   saveNote,
+  storedNote,
 } from "./notes.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -237,6 +239,34 @@ test("an edit of a field changed somewhere else too isn't saved over it, and say
     (error) => error instanceof NoteChanged && error.stored.text === "Revised elsewhere",
   );
   assert.equal(storage.data.get(key).text, "Revised elsewhere");
+});
+
+test("after a conflict, saving again keeps both changes: the edit's own and the other one's", async () => {
+  const key = "note:m1:image:a:1";
+  const original = { ...value, text: "Original", color: "yellow" };
+  const storage = fakeStorage({ [key]: { ...original, text: "Revised elsewhere", color: "pink" } });
+  const thingport = { storage, shared: fakeShared() };
+  const edited = { ...original, color: "blue" };
+  const conflict = await saveNote(thingport, { key, existing: true, original }, edited, "m1").catch((error) => error);
+  assert.ok(conflict instanceof NoteChanged);
+  // What the editor shows next: its own colour, the text as it's stored.
+  const rebased = rebaseEdit(edited, original, conflict.stored);
+  assert.deepEqual(rebased, { ...original, text: "Revised elsewhere", color: "blue" });
+  await saveNote(thingport, { key, existing: true, original: conflict.stored }, rebased, "m1");
+  assert.equal(storage.data.get(key).text, "Revised elsewhere");
+  assert.equal(storage.data.get(key).color, "blue");
+});
+
+test("a note missing from a picture is only taken for deleted once where it's kept says so", async () => {
+  const key = "note:m9:image:x:4";
+  const shared = fakeShared([{ key, value, mine: true }]);
+  assert.deepEqual(await storedNote({ storage: fakeStorage(), shared }, { key, public: true }), value);
+  assert.deepEqual(shared.calls, [{ prefix: key }]);
+  const someoneElses = fakeShared([{ key, value, mine: false }]);
+  assert.equal(await storedNote({ storage: fakeStorage(), shared: someoneElses }, { key, public: true }), null);
+  assert.equal(await storedNote({ storage: fakeStorage(), shared: fakeShared() }, { key, public: false }), null);
+  const failing = { ...fakeStorage(), get: async () => Promise.reject(new Error("offline")) };
+  await assert.rejects(storedNote({ storage: failing, shared: fakeShared() }, { key, public: false }), /offline/);
 });
 
 test("a failed save on a model its writer can still open is reported, not moved", async () => {

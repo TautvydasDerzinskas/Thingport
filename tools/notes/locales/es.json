@@ -40,6 +40,7 @@
   "editor.personal": "Solo yo: solo tú puedes verla",
   "editor.public": "Todos: cualquiera que pueda usar Notas puede verla",
   "editor.visibilityFixed": "Quién puede ver una nota no se puede cambiar una vez guardada",
+  "editor.visibilitySent": "Puede que la nota ya se haya guardado, así que no se puede cambiar quién puede verla",
   "editor.color": "Color: {color}",
   "editor.cancel": "Cancelar",
   "editor.save": "Guardar",

@@ -40,6 +40,7 @@
   "editor.personal": "Nur ich: nur du siehst sie",
   "editor.public": "Alle: alle, die Notizen nutzen können, sehen sie",
   "editor.visibilityFixed": "Wer eine Notiz sieht, lässt sich nach dem Speichern nicht mehr ändern",
+  "editor.visibilitySent": "Die Notiz ist vielleicht schon gespeichert, deshalb lässt sich nicht mehr ändern, wer sie sieht",
   "editor.color": "Farbe: {color}",
   "editor.cancel": "Abbrechen",
   "editor.save": "Speichern",

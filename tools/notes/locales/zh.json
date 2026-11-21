@@ -40,6 +40,7 @@
   "editor.personal": "仅自己：只有你能看到",
   "editor.public": "所有人：能使用便签工具的人都能看到",
   "editor.visibilityFixed": "便签保存后，就不能再更改谁能看到它",
+  "editor.visibilitySent": "便签可能已经保存，因此不能再更改谁能看到它",
   "editor.color": "颜色：{color}",
   "editor.cancel": "取消",
   "editor.save": "保存",

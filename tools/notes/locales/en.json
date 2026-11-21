@@ -40,6 +40,7 @@
   "editor.personal": "Only me: only you can see it",
   "editor.public": "Everyone: anyone who can use Notes can see it",
   "editor.visibilityFixed": "Who can see a note can't be changed once it's saved",
+  "editor.visibilitySent": "The note may already be saved, so who can see it can't be changed",
   "editor.color": "Colour: {color}",
   "editor.cancel": "Cancel",
   "editor.save": "Save",

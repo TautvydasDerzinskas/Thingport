@@ -91,10 +91,19 @@ export class NoteChanged extends Error {
 
 const FIELDS = ["x", "y", "text", "look", "color"];
 
-async function storedValue({ shared, storage }, note) {
-  if (!note.public) return storage.get(note.key);
-  return (await shared.list({ prefix: note.key })).find((entry) => entry.mine && entry.key === note.key)?.value;
+/**
+ * The viewer's note as it's kept under its key now, or null when it's gone; a failed read throws. Not the same as
+ * missing from a picture's notes: one from another copy shows there only while the pictures can be compared.
+ */
+export async function storedNote({ shared, storage }, note) {
+  if (!note.public) return noteValue(await storage.get(note.key));
+  const entries = await shared.list({ prefix: note.key });
+  return noteValue(entries.find((entry) => entry.mine && entry.key === note.key)?.value);
 }
+
+/** An edit re-based after a `NoteChanged`: the fields it changed stay as it has them, the rest take the stored ones. */
+export const rebaseEdit = (edit, original, stored) =>
+  Object.fromEntries(FIELDS.map((field) => [field, edit[field] !== original[field] ? edit[field] : stored[field]]));
 
 /**
  * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one.
@@ -109,7 +118,7 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
   let contents = Object.fromEntries(FIELDS.map((field) => [field, value[field]]));
   if (note.existing) {
-    const stored = noteValue(await storedValue(thingport, note));
+    const stored = await storedNote(thingport, note);
     if (!stored) throw new NoteGone();
     const changed = FIELDS.filter((field) => value[field] !== note.original[field]);
     // A field already as this edit asks, as after a save whose answer was lost, isn't a conflict.

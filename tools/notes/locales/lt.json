@@ -40,6 +40,7 @@
   "editor.personal": "Tik aš: matote tik jūs",
   "editor.public": "Visi: mato visi, kas gali naudotis pastabomis",
   "editor.visibilityFixed": "Išsaugotos pastabos matomumo pakeisti nebegalima",
+  "editor.visibilitySent": "Pastaba jau galėjo būti išsaugota, todėl jos matomumo pakeisti nebegalima",
   "editor.color": "Spalva: {color}",
   "editor.cancel": "Atšaukti",
   "editor.save": "Išsaugoti",
