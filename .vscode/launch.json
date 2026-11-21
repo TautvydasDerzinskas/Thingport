@@ -19,7 +19,8 @@
       "request": "launch",
       "cwd": "${workspaceFolder}/frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      // Stops when :5173 is taken rather than moving to a port the Chrome entry wouldn't open.
+      "runtimeArgs": ["run", "dev", "--", "--strictPort"],
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
       "presentation": { "group": "1 servers", "order": 2 }
