@@ -1,152 +1,283 @@
 <style>
-  .tp-notes-board {
+  .tpn-board {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     min-height: 100%;
-    padding: 18px;
-    color: var(--tp-text);
+    padding: 16px 18px 20px;
     background: var(--tp-background);
-    font: 14px/1.45 var(--tp-font);
+    font-size: 14px;
   }
-  .tp-notes-board [hidden] {
-    display: none;
-  }
-  .tp-notes-board header {
+  .tpn-board header {
     display: flex;
-    align-items: center;
     flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
-  .tp-notes-board h2,
-  .tp-notes-board p {
+  .tpn-board h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
+    font-size: 18px;
+    font-weight: 600;
   }
-  .tp-notes-board h2 {
-    font-size: 20px;
+  .tpn-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--tp-text) 10%, transparent);
+    color: var(--tp-text-muted);
+    font-size: 12px;
+    font-weight: 700;
   }
-  .tp-notes-board :is(input, button) {
-    color: inherit;
-    font: inherit;
-  }
-  .tp-notes-board input {
-    width: min(100%, 310px);
-    padding: 8px 10px;
-    border: 1px solid var(--tp-divider);
+  .tpn-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: min(100%, 300px);
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--tp-text) 22%, transparent);
     border-radius: 8px;
     background: var(--tp-paper);
+    color: var(--tp-text-muted);
+    transition:
+      border-color 150ms,
+      box-shadow 150ms;
   }
-  .tp-notes-board :is(input, button):focus-visible {
-    outline: 2px solid var(--tp-accent);
-    outline-offset: 3px;
+  .tpn-search:focus-within {
+    border-color: var(--tp-accent);
+    box-shadow: 0 0 0 1px var(--tp-accent);
   }
-  .tp-notes-board button {
-    cursor: pointer;
+  .tpn-search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--tp-text);
+    font: inherit;
   }
-  .tp-notes-board .notes-cards {
+  .tpn-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--tp-warning) 14%, transparent);
+    font-size: 13px;
+  }
+  .tpn-notice[hidden] {
+    display: none;
+  }
+  .tpn-notice .tpn-btn {
+    height: 28px;
+  }
+  .tpn-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
     align-items: start;
     gap: 14px;
   }
-  .tp-notes-board .note-card {
+  .tpn-card {
+    position: relative;
     display: grid;
-    gap: 12px;
+    gap: 8px;
     min-width: 0;
-    border-radius: 10px;
-    border: 1px solid var(--tp-divider);
-    padding: 12px;
-    background: color-mix(in srgb, #efb345 20%, var(--tp-paper));
+    padding: 10px 10px 12px 12px;
+    background: var(--tpn-paper);
+    color: var(--tpn-ink);
+    box-shadow:
+      0 4px 10px rgba(0, 0, 0, 0.14),
+      0 1px 2px rgba(0, 0, 0, 0.12);
+    transition:
+      translate 150ms ease,
+      box-shadow 150ms ease;
   }
-  .tp-notes-board .note-card[data-public="true"] {
-    background: color-mix(in srgb, #36a88e 16%, var(--tp-paper));
+  .tpn-card:hover {
+    translate: 0 -2px;
+    box-shadow:
+      0 8px 18px rgba(0, 0, 0, 0.18),
+      0 1px 2px rgba(0, 0, 0, 0.12);
   }
-  .tp-notes-board .note-model {
+  /* The folded corner. */
+  .tpn-card::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.2) 50%, var(--tp-background) 50%);
+  }
+  .tpn-cards.tpn-entering .tpn-card {
+    animation: tpn-pop 200ms ease-out backwards;
+  }
+  .tpn-cards.tpn-entering .tpn-card:nth-child(2) {
+    animation-delay: 30ms;
+  }
+  .tpn-cards.tpn-entering .tpn-card:nth-child(3) {
+    animation-delay: 60ms;
+  }
+  .tpn-cards.tpn-entering .tpn-card:nth-child(n + 4) {
+    animation-delay: 90ms;
+  }
+  .tpn-card-head {
     display: flex;
     align-items: center;
-    gap: 10px;
-    justify-self: start;
+    gap: 6px;
     min-width: 0;
-    max-width: 100%;
-    border: 0;
-    padding: 0;
-    background: transparent;
-    text-align: left;
-    font-weight: 700;
-    overflow-wrap: anywhere;
   }
-  .tp-notes-board .note-model:hover {
+  .tpn-model {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin-right: auto;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .tpn-model:disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+  .tpn-model:hover:not(:disabled) .tpn-model-name {
     text-decoration: underline;
   }
-  .tp-notes-board .note-thumbnail {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 42px;
-    flex: none;
+  .tpn-model-name {
     overflow: hidden;
-    border-radius: 5px;
-    background: var(--tp-paper);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .tp-notes-board .note-thumbnail img {
+  .tpn-thumb {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 40px;
+    height: 30px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.55);
+    font-weight: 700;
+  }
+  .tpn-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
-  .tp-notes-board .note-text {
+  .tpn-card .tpn-icon-btn {
+    color: inherit;
+    opacity: 0.7;
+  }
+  .tpn-card .tpn-icon-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+    opacity: 1;
+  }
+  .tpn-card-text {
+    margin: 0;
+    font-size: 13px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
-  .tp-notes-board .note-footer {
+  .tpn-card-foot {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    font-size: 12px;
-    color: var(--tp-text-muted);
+    gap: 5px;
+    font-size: 11.5px;
+    opacity: 0.75;
   }
-  .tp-notes-board .note-footer button,
-  .tp-notes-board .notes-more,
-  .tp-notes-board .notes-retry {
-    border: 1px solid var(--tp-divider);
-    border-radius: 6px;
-    background: var(--tp-paper);
-    padding: 4px 8px;
+  .tpn-card-foot svg {
+    width: 13px;
+    height: 13px;
   }
-  .tp-notes-board .notes-status {
+  .tpn-skeleton {
+    height: 116px;
+    background: linear-gradient(
+        90deg,
+        var(--tp-paper) 0,
+        color-mix(in srgb, var(--tp-text) 7%, var(--tp-paper)) 50%,
+        var(--tp-paper) 100%
+      )
+      0 0 / 200% 100%;
+    box-shadow: none;
+    animation: tpn-shimmer 1.2s linear infinite;
+  }
+  .tpn-skeleton::after {
+    display: none;
+  }
+  .tpn-state {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 40px 16px;
     color: var(--tp-text-muted);
+    text-align: center;
+  }
+  .tpn-state p {
+    max-width: 340px;
+    margin: 0;
+  }
+  .tpn-state-picture svg {
+    width: 56px;
+    height: 56px;
+    rotate: -6deg;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.2));
+  }
+  .tpn-board .tpn-btn {
+    justify-self: center;
+    align-self: center;
+    height: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--tp-accent);
+    border-radius: 8px;
+    color: var(--tp-accent);
+    font-weight: 600;
+    transition: background-color 150ms;
+  }
+  .tpn-board .tpn-btn:hover {
+    background: color-mix(in srgb, var(--tp-accent) 8%, transparent);
+  }
+  .tpn-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   @media (pointer: coarse) {
-    .tp-notes-board input {
+    .tpn-search input {
       font-size: 16px;
     }
-    .tp-notes-board button {
-      min-height: 44px;
+    .tpn-board .tpn-btn {
+      height: 44px;
     }
   }
 </style>
-<section class="tp-notes-board">
+<section class="tpn-board">
   <header>
-    <h2 data-t="board.title"></h2>
-    <input type="search" data-t-aria="board.search" data-t-placeholder="board.search" maxlength="200" />
+    <h2><span data-t="board.title"></span><span class="tpn-count" hidden></span></h2>
+    <label class="tpn-search">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+        />
+      </svg>
+      <input type="search" data-t-aria="board.search" data-t-placeholder="board.search" maxlength="200" />
+    </label>
   </header>
-  <p class="notes-status" role="status"></p>
-  <div class="notes-cards"></div>
-  <div>
-    <button class="notes-more" type="button" data-t="board.more" hidden></button>
-    <button class="notes-retry" type="button" data-t="board.retry" hidden></button>
-  </div>
-  <template class="note-template">
-    <article class="note-card">
-      <button type="button" class="note-model">
-        <span class="note-thumbnail" aria-hidden="true"></span><span></span>
-      </button>
-      <p class="note-text"></p>
-      <footer class="note-footer">
-        <span class="note-visibility"></span>
-        <button type="button" class="note-delete" data-t="board.delete"></button>
-      </footer>
-    </article>
-  </template>
+  <div class="tpn-cards"></div>
+  <div class="tpn-state" role="status" hidden></div>
+  <button class="tpn-btn tpn-more" type="button" data-t="board.more" hidden></button>
 </section>

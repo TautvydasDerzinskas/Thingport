@@ -1,12 +1,53 @@
 {
   "name": "Notes",
-  "description": "Pin personal or public notes to model preview images and find all the notes you wrote on your sticky board.",
-  "version": "1.0.0",
+  "description": "Pin personal or public notes to model preview images, as bubbles or sticky notes, and find all the notes you wrote on your sticky board.",
+  "version": "1.1.0",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
-  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cpath%20fill%3D%22%23f6d77b%22%20d%3D%22M8%205h32a3%203%200%200%201%203%203v22L30%2043H8a3%203%200%200%201-3-3V8a3%203%200%200%201%203-3z%22%2F%3E%3Cpath%20fill%3D%22%23c69132%22%20d%3D%22M30%2043V33a3%203%200%200%201%203-3h10z%22%2F%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%235a471f%22%20stroke-linecap%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M13%2016h22m-22%207h16%22%2F%3E%3C%2Fsvg%3E",
   "category": "library",
-  "window": { "width": 980, "height": 660 },
-  "locales": ["en"],
-  "modelPage": { "image": true }
+  "window": {
+    "width": 980,
+    "height": 660
+  },
+  "locales": [
+    "en",
+    "lt",
+    "de",
+    "es",
+    "fr",
+    "ru",
+    "uk",
+    "be",
+    "zh"
+  ],
+  "modelPage": {
+    "image": true
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/notes.webp",
+      "caption": "A model's picture with notes on it: taped sticky notes and bubble pins, yours and a housemate's, and the count on the sticky note in the corner."
+    },
+    {
+      "file": "screenshots/edit.webp",
+      "caption": "Writing a new note on the picture itself: drag it by its grip, and pick bubble or sticky, its colour and who sees it in the toolbar under it."
+    },
+    {
+      "file": "screenshots/read-dark.webp",
+      "caption": "In the dark theme, a housemate's public note opened in place, with who wrote it, when and who can see it."
+    },
+    {
+      "file": "screenshots/menu.webp",
+      "caption": "The menu on the corner's sticky note adds a note, opens the Notes window, or hides every note on pictures while you look at the model."
+    },
+    {
+      "file": "screenshots/board.webp",
+      "caption": "The Notes window: every note you wrote, in its own colour, with the model it's on, to filter by model title or note text."
+    },
+    {
+      "file": "screenshots/board-dark.webp",
+      "caption": "In the dark theme, a note's menu in the window opens its model or deletes the note."
+    }
+  ],
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cpath%20fill%3D%22%23f6d77b%22%20d%3D%22M8%205h32a3%203%200%200%201%203%203v22L30%2043H8a3%203%200%200%201-3-3V8a3%203%200%200%201%203-3z%22%2F%3E%3Cpath%20fill%3D%22%23c69132%22%20d%3D%22M30%2043V33a3%203%200%200%201%203-3h10z%22%2F%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%235a471f%22%20stroke-linecap%3D%22round%22%20stroke-width%3D%222.5%22%20d%3D%22M13%2016h22m-22%207h16%22%2F%3E%3C%2Fsvg%3E"
 }
