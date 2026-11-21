@@ -78,31 +78,53 @@ export async function readNotes({ shared, storage }, { model, preview } = {}) {
 /** Thrown by `saveNote` for an edit of a note deleted since it was opened: it isn't written back. */
 export class NoteGone extends Error {}
 
-async function stillThere({ shared, storage }, note) {
-  if (!note.public) return (await storage.get(note.key)) != null;
-  return (await shared.list({ prefix: note.key })).some((entry) => entry.mine && entry.key === note.key);
+/**
+ * Thrown by `saveNote` for an edit whose changed fields were also changed somewhere else since it was opened. `stored`
+ * is the note as it is now, for the editor to start from; saving again replaces those changes.
+ */
+export class NoteChanged extends Error {
+  constructor(stored) {
+    super("The note changed somewhere else");
+    this.stored = stored;
+  }
+}
+
+const FIELDS = ["x", "y", "text", "look", "color"];
+
+async function storedValue({ shared, storage }, note) {
+  if (!note.public) return storage.get(note.key);
+  return (await shared.list({ prefix: note.key })).find((entry) => entry.mine && entry.key === note.key)?.value;
 }
 
 /**
- * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one; an
- * edit (`existing`) of a note deleted meanwhile, as in another tab, throws `NoteGone` instead of writing it back.
+ * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one.
+ * An edit (`existing`, with the `original` it was opened from) writes only the fields it changed onto the note as
+ * stored now, so a change made somewhere else to the others, as in another tab, stays. It throws `NoteGone` for a
+ * note deleted meanwhile, and `NoteChanged` when a field it changed was changed there too.
  * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
- * pass the same one to a retry of the move. Returns the key it's kept under, and whether an older copy was left.
+ * pass the same one to a retry of the move. Returns the key it's kept under, the value written, and whether an older
+ * copy was left.
  */
 export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
-  const contents = { x: value.x, y: value.y, text: value.text, look: value.look, color: value.color };
-  if (note.existing && !(await stillThere(thingport, note))) throw new NoteGone();
+  let contents = Object.fromEntries(FIELDS.map((field) => [field, value[field]]));
+  if (note.existing) {
+    const stored = noteValue(await storedValue(thingport, note));
+    if (!stored) throw new NoteGone();
+    const changed = FIELDS.filter((field) => value[field] !== note.original[field]);
+    if (changed.some((field) => stored[field] !== note.original[field])) throw new NoteChanged(stored);
+    contents = { ...Object.fromEntries(FIELDS.map((field) => [field, stored[field]])), ...pick(value, changed) };
+  }
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
-    return { key: note.key, leftover: false };
+    return { key: note.key, value: contents, leftover: false };
   }
   // A public note stays tied to the model its key names, which is how copies of that model find it.
   const written = note.modelId ?? modelId;
   try {
     await shared.set(note.key, contents, { model: written });
-    return { key: note.key, leftover: false };
+    return { key: note.key, value: contents, leftover: false };
   } catch (error) {
     if (written === modelId || !moveKey) throw error;
     // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry. The
@@ -115,9 +137,11 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
       () => false,
       () => true,
     );
-    return { key: moveKey, leftover };
+    return { key: moveKey, value: contents, leftover };
   }
 }
+
+const pick = (value, fields) => Object.fromEntries(fields.map((field) => [field, value[field]]));
 
 export function onNotesChange(thingport, listener) {
   personalChanges.addEventListener("change", listener);

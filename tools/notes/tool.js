@@ -82,31 +82,53 @@ export async function readNotes({ shared, storage }, { model, preview } = {}) {
 /** Thrown by `saveNote` for an edit of a note deleted since it was opened: it isn't written back. */
 export class NoteGone extends Error {}
 
-async function stillThere({ shared, storage }, note) {
-  if (!note.public) return (await storage.get(note.key)) != null;
-  return (await shared.list({ prefix: note.key })).some((entry) => entry.mine && entry.key === note.key);
+/**
+ * Thrown by `saveNote` for an edit whose changed fields were also changed somewhere else since it was opened. `stored`
+ * is the note as it is now, for the editor to start from; saving again replaces those changes.
+ */
+export class NoteChanged extends Error {
+  constructor(stored) {
+    super("The note changed somewhere else");
+    this.stored = stored;
+  }
+}
+
+const FIELDS = ["x", "y", "text", "look", "color"];
+
+async function storedValue({ shared, storage }, note) {
+  if (!note.public) return storage.get(note.key);
+  return (await shared.list({ prefix: note.key })).find((entry) => entry.mine && entry.key === note.key)?.value;
 }
 
 /**
- * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one; an
- * edit (`existing`) of a note deleted meanwhile, as in another tab, throws `NoteGone` instead of writing it back.
+ * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one.
+ * An edit (`existing`, with the `original` it was opened from) writes only the fields it changed onto the note as
+ * stored now, so a change made somewhere else to the others, as in another tab, stays. It throws `NoteGone` for a
+ * note deleted meanwhile, and `NoteChanged` when a field it changed was changed there too.
  * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
- * pass the same one to a retry of the move. Returns the key it's kept under, and whether an older copy was left.
+ * pass the same one to a retry of the move. Returns the key it's kept under, the value written, and whether an older
+ * copy was left.
  */
 export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
-  const contents = { x: value.x, y: value.y, text: value.text, look: value.look, color: value.color };
-  if (note.existing && !(await stillThere(thingport, note))) throw new NoteGone();
+  let contents = Object.fromEntries(FIELDS.map((field) => [field, value[field]]));
+  if (note.existing) {
+    const stored = noteValue(await storedValue(thingport, note));
+    if (!stored) throw new NoteGone();
+    const changed = FIELDS.filter((field) => value[field] !== note.original[field]);
+    if (changed.some((field) => stored[field] !== note.original[field])) throw new NoteChanged(stored);
+    contents = { ...Object.fromEntries(FIELDS.map((field) => [field, stored[field]])), ...pick(value, changed) };
+  }
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
-    return { key: note.key, leftover: false };
+    return { key: note.key, value: contents, leftover: false };
   }
   // A public note stays tied to the model its key names, which is how copies of that model find it.
   const written = note.modelId ?? modelId;
   try {
     await shared.set(note.key, contents, { model: written });
-    return { key: note.key, leftover: false };
+    return { key: note.key, value: contents, leftover: false };
   } catch (error) {
     if (written === modelId || !moveKey) throw error;
     // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry. The
@@ -119,9 +141,11 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
       () => false,
       () => true,
     );
-    return { key: moveKey, leftover };
+    return { key: moveKey, value: contents, leftover };
   }
 }
+
+const pick = (value, fields) => Object.fromEntries(fields.map((field) => [field, value[field]]));
 
 export function onNotesChange(thingport, listener) {
   personalChanges.addEventListener("change", listener);
@@ -473,9 +497,11 @@ function readSettings(settings, { storage, api }) {
 }
 
 function settingsFor(thingport) {
-  const { user } = thingport;
+  const { user, tool } = thingport;
   const userId = user?.id ?? "";
-  let settings = settingsByUser.get(userId);
+  // By tool too: two tools with the same code share this module, but not their settings.
+  const owner = (tool?.id ?? "") + "|" + userId;
+  let settings = settingsByUser.get(owner);
   if (!settings) {
     settings = {
       userId,
@@ -484,7 +510,7 @@ function settingsFor(thingport) {
       early: {},
       listeners: new Set(),
     };
-    settingsByUser.set(userId, settings);
+    settingsByUser.set(owner, settings);
     settings.writing = Promise.resolve();
   }
   if (!settings.read) loadSettings(settings, thingport);
@@ -751,7 +777,7 @@ export function modelImage(thingport) {
   const visibility = (isPublic) => t(isPublic ? "visibility.public" : "visibility.personal");
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
-  const draftKey = (user?.id ?? "") + "|" + modelId + "|" + (preview?.key ?? "");
+  const draftKey = [thingport.tool?.id ?? "", user?.id ?? "", modelId, preview?.key ?? ""].join("|");
 
   const settings = settingsFor(thingport);
   // The menu while it's open, so its switch follows a change made elsewhere or the settings arriving.
@@ -1056,6 +1082,8 @@ export function modelImage(thingport) {
       key: draft.key,
       isPublic: draft.isPublic,
       moveKey: draft.moveKey,
+      // A new note's starting look and colour, as they were: what it inherited isn't taken for a choice later.
+      base: note ? undefined : draft.base,
     });
     // Changed here and somewhere else since: saving would replace the other change, so say so.
     if (note && Object.keys(draft.changes).some((field) => latest[field] !== draft.base[field]))
@@ -1066,13 +1094,14 @@ export function modelImage(thingport) {
     if (!layer || editing) return;
     closeRead(false);
     if (settings.view.hidden) setView({ hidden: false });
-    const original = note?.value ?? {
-      x: 0.5,
-      y: settings.view.look === "sticky" ? 0.3 : 0.55,
-      text: "",
-      look: settings.view.look,
-      color: settings.view.color,
-    };
+    const original = note?.value ??
+      draft?.base ?? {
+        x: 0.5,
+        y: settings.view.look === "sticky" ? 0.3 : 0.55,
+        text: "",
+        look: settings.view.look,
+        color: settings.view.color,
+      };
     const value = draft ?? original;
     const parts = buildEditor();
     editing = {
@@ -1236,7 +1265,9 @@ export function modelImage(thingport) {
       if (!step) return;
       event.preventDefault();
       const distance = event.shiftKey ? 0.1 : 0.02;
-      moveTo(editing.x + step[0] * distance, editing.y + step[1] * distance);
+      const { width, height } = size();
+      const shown = shownSpot(editing, width, height);
+      moveTo(shown.x / width + step[0] * distance, shown.y / height + step[1] * distance);
     });
     for (const handle of [grip, pin, surface]) dragFrom(handle);
     return {
@@ -1448,36 +1479,56 @@ export function modelImage(thingport) {
     e.saving = true;
     applyEditor();
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
+    // Only what was picked in this edit becomes the next note's, look and colour each on its own: defaults that stood
+    // in for unread settings aren't saved alongside it. Taken now, as the save may finish after the picture changes.
+    const picked = Object.fromEntries(
+      ["look", "color"].filter((field) => e[field] !== e.original[field]).map((field) => [field, e[field]]),
+    );
     if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId)
       e.moveKey ??= newNoteKey(modelId, preview.key);
     try {
-      const draft = { key: e.key, public: e.isPublic, modelId: e.note?.modelId, existing: Boolean(e.note) };
-      const { key, leftover } = await saveNote(thingport, draft, value, modelId, e.moveKey);
-      // Saved, even if the picture changed meanwhile: a draft kept for it is spent.
+      const draft = {
+        key: e.key,
+        public: e.isPublic,
+        modelId: e.note?.modelId,
+        existing: Boolean(e.note),
+        original: e.original,
+      };
+      const saved = await saveNote(thingport, draft, value, modelId, e.moveKey);
+      // Saved, even if the picture changed meanwhile: a draft kept for it is spent, and what was picked is remembered.
       dropDraft(e);
-      if (leftover) ui.toast(t("editor.oldCopy"), "warning");
+      if (saved.leftover) ui.toast(t("editor.oldCopy"), "warning");
+      if (Object.entries(picked).some(([field, chosen]) => settings.view[field] !== chosen)) setView(picked);
       if (!alive || editing !== e) return;
-      const moved = key !== e.key;
-      const saved = {
+      const moved = saved.key !== e.key;
+      const note = {
         ...(e.note ?? { key: e.key, mine: true, modelId, ...(e.isPublic ? { public: true, user } : {}) }),
-        ...(moved ? { key, modelId } : {}),
-        value: noteValue(value),
+        ...(moved ? { key: saved.key, modelId } : {}),
+        value: noteValue(saved.value),
         updatedAt: new Date().toISOString(),
       };
-      const replaced = [noteId(saved), ...(e.note ? [noteId(e.note)] : [])];
-      notes = [saved, ...notes.filter((note) => !replaced.includes(noteId(note)))];
-      // Only what was picked in this edit becomes the next note's, look and colour each on its own: defaults that
-      // stood in for unread settings aren't saved alongside it.
-      const picked = Object.fromEntries(
-        ["look", "color"].filter((field) => e[field] !== e.original[field]).map((field) => [field, e[field]]),
-      );
-      if (Object.entries(picked).some(([field, value]) => settings.view[field] !== value)) setView(picked);
-      endEdit(saved);
+      const replaced = [noteId(note), ...(e.note ? [noteId(e.note)] : [])];
+      notes = [note, ...notes.filter((other) => !replaced.includes(noteId(other)))];
+      endEdit(note);
     } catch (error) {
       if (error instanceof NoteGone) {
         dropDraft(e);
         ui.toast(t("editor.deleted"), "warning");
         if (alive && editing === e) endEdit(null);
+        return;
+      }
+      if (error instanceof NoteChanged) {
+        // Changed here and somewhere else since it was opened: the editor stays, now measured against the note as
+        // it is, so saving again replaces the other change.
+        e.original = error.stored;
+        if (e.note) e.note = { ...e.note, value: error.stored };
+        const kept = drafts.get(draftKey)?.get(e.token);
+        if (kept) kept.base = error.stored;
+        ui.toast(t("editor.conflict"), "warning");
+        if (kept) {
+          kept.saving = false;
+          draftsFreed.dispatchEvent(new CustomEvent("freed", { detail: draftKey }));
+        }
         return;
       }
       // Said even when the picture has changed meanwhile: the edit waits there, kept as a draft.
@@ -1734,7 +1785,9 @@ export default function mount(thingport) {
         await Promise.all(
           missing.slice(i, i + 8).map(async (id) => {
             try {
-              modelsById.set(id, await models.get(id));
+              const model = await models.get(id);
+              // An answer to a load since overtaken by another could bring back a name that's changed.
+              if (alive && revision === run) modelsById.set(id, model);
             } catch {
               // Left uncached so a later load tries again. A model that's gone or no longer shared stays "Model
               // unavailable"; any other failure may pass, so the board offers a retry.
@@ -1769,8 +1822,12 @@ export default function mount(thingport) {
     render();
   });
   more.addEventListener("click", () => {
+    const first = shown;
+    const hadFocus = document.activeElement === more;
     shown += PAGE;
     render();
+    // The last page hides Load more: focus moves on to the first card it brought rather than being lost.
+    if (hadFocus && more.hidden) cards.children[first]?.querySelector("button:not(:disabled)")?.focus();
   });
   const stop = onNotesChange(thingport, load);
   void load();

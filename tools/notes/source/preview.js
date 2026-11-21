@@ -1,6 +1,7 @@
 import {
   COLORS,
   LIMIT,
+  NoteChanged,
   NoteGone,
   ago,
   confirmRemove,
@@ -46,9 +47,11 @@ function readSettings(settings, { storage, api }) {
 }
 
 function settingsFor(thingport) {
-  const { user } = thingport;
+  const { user, tool } = thingport;
   const userId = user?.id ?? "";
-  let settings = settingsByUser.get(userId);
+  // By tool too: two tools with the same code share this module, but not their settings.
+  const owner = (tool?.id ?? "") + "|" + userId;
+  let settings = settingsByUser.get(owner);
   if (!settings) {
     settings = {
       userId,
@@ -57,7 +60,7 @@ function settingsFor(thingport) {
       early: {},
       listeners: new Set(),
     };
-    settingsByUser.set(userId, settings);
+    settingsByUser.set(owner, settings);
     settings.writing = Promise.resolve();
   }
   if (!settings.read) loadSettings(settings, thingport);
@@ -324,7 +327,7 @@ export function modelImage(thingport) {
   const visibility = (isPublic) => t(isPublic ? "visibility.public" : "visibility.personal");
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
-  const draftKey = (user?.id ?? "") + "|" + modelId + "|" + (preview?.key ?? "");
+  const draftKey = [thingport.tool?.id ?? "", user?.id ?? "", modelId, preview?.key ?? ""].join("|");
 
   const settings = settingsFor(thingport);
   // The menu while it's open, so its switch follows a change made elsewhere or the settings arriving.
@@ -629,6 +632,8 @@ export function modelImage(thingport) {
       key: draft.key,
       isPublic: draft.isPublic,
       moveKey: draft.moveKey,
+      // A new note's starting look and colour, as they were: what it inherited isn't taken for a choice later.
+      base: note ? undefined : draft.base,
     });
     // Changed here and somewhere else since: saving would replace the other change, so say so.
     if (note && Object.keys(draft.changes).some((field) => latest[field] !== draft.base[field]))
@@ -639,13 +644,14 @@ export function modelImage(thingport) {
     if (!layer || editing) return;
     closeRead(false);
     if (settings.view.hidden) setView({ hidden: false });
-    const original = note?.value ?? {
-      x: 0.5,
-      y: settings.view.look === "sticky" ? 0.3 : 0.55,
-      text: "",
-      look: settings.view.look,
-      color: settings.view.color,
-    };
+    const original = note?.value ??
+      draft?.base ?? {
+        x: 0.5,
+        y: settings.view.look === "sticky" ? 0.3 : 0.55,
+        text: "",
+        look: settings.view.look,
+        color: settings.view.color,
+      };
     const value = draft ?? original;
     const parts = buildEditor();
     editing = {
@@ -809,7 +815,9 @@ export function modelImage(thingport) {
       if (!step) return;
       event.preventDefault();
       const distance = event.shiftKey ? 0.1 : 0.02;
-      moveTo(editing.x + step[0] * distance, editing.y + step[1] * distance);
+      const { width, height } = size();
+      const shown = shownSpot(editing, width, height);
+      moveTo(shown.x / width + step[0] * distance, shown.y / height + step[1] * distance);
     });
     for (const handle of [grip, pin, surface]) dragFrom(handle);
     return {
@@ -1021,36 +1029,56 @@ export function modelImage(thingport) {
     e.saving = true;
     applyEditor();
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
+    // Only what was picked in this edit becomes the next note's, look and colour each on its own: defaults that stood
+    // in for unread settings aren't saved alongside it. Taken now, as the save may finish after the picture changes.
+    const picked = Object.fromEntries(
+      ["look", "color"].filter((field) => e[field] !== e.original[field]).map((field) => [field, e[field]]),
+    );
     if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId)
       e.moveKey ??= newNoteKey(modelId, preview.key);
     try {
-      const draft = { key: e.key, public: e.isPublic, modelId: e.note?.modelId, existing: Boolean(e.note) };
-      const { key, leftover } = await saveNote(thingport, draft, value, modelId, e.moveKey);
-      // Saved, even if the picture changed meanwhile: a draft kept for it is spent.
+      const draft = {
+        key: e.key,
+        public: e.isPublic,
+        modelId: e.note?.modelId,
+        existing: Boolean(e.note),
+        original: e.original,
+      };
+      const saved = await saveNote(thingport, draft, value, modelId, e.moveKey);
+      // Saved, even if the picture changed meanwhile: a draft kept for it is spent, and what was picked is remembered.
       dropDraft(e);
-      if (leftover) ui.toast(t("editor.oldCopy"), "warning");
+      if (saved.leftover) ui.toast(t("editor.oldCopy"), "warning");
+      if (Object.entries(picked).some(([field, chosen]) => settings.view[field] !== chosen)) setView(picked);
       if (!alive || editing !== e) return;
-      const moved = key !== e.key;
-      const saved = {
+      const moved = saved.key !== e.key;
+      const note = {
         ...(e.note ?? { key: e.key, mine: true, modelId, ...(e.isPublic ? { public: true, user } : {}) }),
-        ...(moved ? { key, modelId } : {}),
-        value: noteValue(value),
+        ...(moved ? { key: saved.key, modelId } : {}),
+        value: noteValue(saved.value),
         updatedAt: new Date().toISOString(),
       };
-      const replaced = [noteId(saved), ...(e.note ? [noteId(e.note)] : [])];
-      notes = [saved, ...notes.filter((note) => !replaced.includes(noteId(note)))];
-      // Only what was picked in this edit becomes the next note's, look and colour each on its own: defaults that
-      // stood in for unread settings aren't saved alongside it.
-      const picked = Object.fromEntries(
-        ["look", "color"].filter((field) => e[field] !== e.original[field]).map((field) => [field, e[field]]),
-      );
-      if (Object.entries(picked).some(([field, value]) => settings.view[field] !== value)) setView(picked);
-      endEdit(saved);
+      const replaced = [noteId(note), ...(e.note ? [noteId(e.note)] : [])];
+      notes = [note, ...notes.filter((other) => !replaced.includes(noteId(other)))];
+      endEdit(note);
     } catch (error) {
       if (error instanceof NoteGone) {
         dropDraft(e);
         ui.toast(t("editor.deleted"), "warning");
         if (alive && editing === e) endEdit(null);
+        return;
+      }
+      if (error instanceof NoteChanged) {
+        // Changed here and somewhere else since it was opened: the editor stays, now measured against the note as
+        // it is, so saving again replaces the other change.
+        e.original = error.stored;
+        if (e.note) e.note = { ...e.note, value: error.stored };
+        const kept = drafts.get(draftKey)?.get(e.token);
+        if (kept) kept.base = error.stored;
+        ui.toast(t("editor.conflict"), "warning");
+        if (kept) {
+          kept.saving = false;
+          draftsFreed.dispatchEvent(new CustomEvent("freed", { detail: draftKey }));
+        }
         return;
       }
       // Said even when the picture has changed meanwhile: the edit waits there, kept as a draft.

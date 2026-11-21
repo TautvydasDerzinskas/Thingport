@@ -180,7 +180,9 @@ export default function mount(thingport) {
         await Promise.all(
           missing.slice(i, i + 8).map(async (id) => {
             try {
-              modelsById.set(id, await models.get(id));
+              const model = await models.get(id);
+              // An answer to a load since overtaken by another could bring back a name that's changed.
+              if (alive && revision === run) modelsById.set(id, model);
             } catch {
               // Left uncached so a later load tries again. A model that's gone or no longer shared stays "Model
               // unavailable"; any other failure may pass, so the board offers a retry.
@@ -215,8 +217,12 @@ export default function mount(thingport) {
     render();
   });
   more.addEventListener("click", () => {
+    const first = shown;
+    const hadFocus = document.activeElement === more;
     shown += PAGE;
     render();
+    // The last page hides Load more: focus moves on to the first card it brought rather than being lost.
+    if (hadFocus && more.hidden) cards.children[first]?.querySelector("button:not(:disabled)")?.focus();
   });
   const stop = onNotesChange(thingport, load);
   void load();
