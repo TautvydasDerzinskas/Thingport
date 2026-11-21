@@ -27,6 +27,10 @@ const drafts = new Map();
 // Told a picture's key when its draft is free to come back, as after a save that failed once the picture had changed.
 const draftsFreed = new EventTarget();
 
+// Each save's look and colour picks, numbered as saves start: one finishing after a newer save that set the same field
+// doesn't put back the older choice.
+let picks = 0;
+
 // The viewer's settings, one copy for every picture on the page, so switching pictures neither reads them again nor
 // races another picture's writes: read once, then written one change at a time, each write the settings as they are
 // when it starts, so the last change is the one kept. A change made before the read arrives wins over it. A failed
@@ -643,7 +647,8 @@ export function modelImage(thingport) {
   function startEdit(note, menuGone, draft) {
     if (!layer || editing) return;
     closeRead(false);
-    if (settings.view.hidden) setView({ hidden: false });
+    // Adding or editing shows the notes again; a draft coming back doesn't, as its editor shows apart from them.
+    if (settings.view.hidden && !draft) setView({ hidden: false });
     const original = note?.value ??
       draft?.base ?? {
         x: 0.5,
@@ -867,7 +872,7 @@ export function modelImage(thingport) {
     e.swatches.hidden = e.colorSep.hidden = !sticky;
     for (const [color, swatch] of Object.entries(e.colors))
       swatch.setAttribute("aria-pressed", String(color === e.color));
-    for (const control of [...Object.values(e.looks), ...Object.values(e.colors), e.cancel])
+    for (const control of [...Object.values(e.looks), ...Object.values(e.colors), e.cancel, e.grip])
       control.disabled = e.saving;
     e.field.disabled = e.saving;
     e.save.disabled = e.saving || !e.field.value.trim();
@@ -949,7 +954,8 @@ export function modelImage(thingport) {
   function moveTo(fx, fy) {
     const e = editing;
     const { width, height } = size();
-    if (!e || !width) return;
+    // While saving, the spot sent is the one kept.
+    if (!e || !width || e.saving) return;
     const { range } = shownSpot(e, width, height);
     e.x = clamp(clamp(fx * width, ...range.x) / width, 0, 1);
     e.y = clamp(clamp(fy * height, ...range.y) / height, 0, 1);
@@ -1034,6 +1040,7 @@ export function modelImage(thingport) {
     const picked = Object.fromEntries(
       ["look", "color"].filter((field) => e[field] !== e.original[field]).map((field) => [field, e[field]]),
     );
+    const pickedAt = ++picks;
     if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId)
       e.moveKey ??= newNoteKey(modelId, preview.key);
     try {
@@ -1048,7 +1055,12 @@ export function modelImage(thingport) {
       // Saved, even if the picture changed meanwhile: a draft kept for it is spent, and what was picked is remembered.
       dropDraft(e);
       if (saved.leftover) ui.toast(t("editor.oldCopy"), "warning");
-      if (Object.entries(picked).some(([field, chosen]) => settings.view[field] !== chosen)) setView(picked);
+      settings.pickedAt ??= {};
+      const newest = Object.fromEntries(
+        Object.entries(picked).filter(([field]) => (settings.pickedAt[field] ?? 0) < pickedAt),
+      );
+      for (const field of Object.keys(newest)) settings.pickedAt[field] = pickedAt;
+      if (Object.entries(newest).some(([field, chosen]) => settings.view[field] !== chosen)) setView(newest);
       if (!alive || editing !== e) return;
       const moved = saved.key !== e.key;
       const note = {
@@ -1064,12 +1076,19 @@ export function modelImage(thingport) {
       if (error instanceof NoteGone) {
         dropDraft(e);
         ui.toast(t("editor.deleted"), "warning");
-        if (alive && editing === e) endEdit(null);
+        if (alive && editing === e) {
+          // Not drawn again once the editor closes.
+          if (e.note) notes = notes.filter((note) => noteId(note) !== noteId(e.note));
+          endEdit(null);
+        }
         return;
       }
       if (error instanceof NoteChanged) {
         // Changed here and somewhere else since it was opened: the editor stays, now measured against the note as
-        // it is, so saving again replaces the other change.
+        // it is, so saving again replaces the other change. What this edit didn't change takes the stored value.
+        const mine = changedFields(e);
+        for (const field of EDITABLE) if (!mine.includes(field)) e[field] = error.stored[field];
+        if (!mine.includes("text")) e.field.value = e.text;
         e.original = error.stored;
         if (e.note) e.note = { ...e.note, value: error.stored };
         const kept = drafts.get(draftKey)?.get(e.token);

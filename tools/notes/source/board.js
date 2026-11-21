@@ -20,7 +20,8 @@ export default function mount(thingport) {
   const notice = el("div", "tpn-notice");
   const noticeRetry = el("button", "tpn-btn", t("board.retry"));
   noticeRetry.addEventListener("click", () => load());
-  notice.append(el("span", "", t("board.lookupFailed")), noticeRetry);
+  const noticeText = el("span");
+  notice.append(noticeText, noticeRetry);
   notice.setAttribute("role", "status");
   notice.hidden = true;
   cards.before(notice);
@@ -32,6 +33,8 @@ export default function mount(thingport) {
   let loading = true;
   let failed = false;
   let lookupFailed = false;
+  // A refresh that failed with cards already shown: they stay, with the notice offering to try again.
+  let refreshFailed = false;
 
   labels();
 
@@ -144,7 +147,8 @@ export default function mount(thingport) {
       cards.replaceChildren();
       return showState("error");
     }
-    notice.hidden = !lookupFailed;
+    notice.hidden = !lookupFailed && !refreshFailed;
+    noticeText.textContent = t(refreshFailed ? "board.error" : "board.lookupFailed");
     const query = search.value.trim().toLocaleLowerCase(language);
     const filtered = notes.filter((note) =>
       [note.value.text, modelsById.get(note.modelId)?.name].some((text) =>
@@ -195,6 +199,7 @@ export default function mount(thingport) {
       }
       if (!alive || revision !== run) return;
       lookupFailed = unsure;
+      refreshFailed = false;
       notes = incoming;
       loading = false;
       // Cards rise in on the first fill only, not on every keystroke of a search.
@@ -207,8 +212,8 @@ export default function mount(thingport) {
       if (!alive || revision !== run) return;
       loading = false;
       failed = !notes.length;
-      if (failed) render();
-      else ui.toast(t("board.error"), "error");
+      refreshFailed = !failed;
+      render();
     }
   }
 

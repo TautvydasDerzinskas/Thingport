@@ -112,7 +112,9 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     const stored = noteValue(await storedValue(thingport, note));
     if (!stored) throw new NoteGone();
     const changed = FIELDS.filter((field) => value[field] !== note.original[field]);
-    if (changed.some((field) => stored[field] !== note.original[field])) throw new NoteChanged(stored);
+    // A field already as this edit asks, as after a save whose answer was lost, isn't a conflict.
+    if (changed.some((field) => stored[field] !== note.original[field] && stored[field] !== value[field]))
+      throw new NoteChanged(stored);
     contents = { ...Object.fromEntries(FIELDS.map((field) => [field, stored[field]])), ...pick(value, changed) };
   }
   if (!note.public) {

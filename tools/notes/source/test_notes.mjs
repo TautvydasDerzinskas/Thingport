@@ -213,6 +213,20 @@ test("an edit writes only the fields it changed onto the note as stored now", as
   assert.equal(storage.data.get(key).color, "blue");
 });
 
+test("a field already stored as the edit asks, as after a lost answer, isn't a conflict", async () => {
+  const key = "note:m1:image:a:1";
+  const original = { ...value, color: "yellow" };
+  const storage = fakeStorage({ [key]: { ...original, color: "blue" } });
+  const edited = { ...original, color: "blue" };
+  const saved = await saveNote({ storage, shared: fakeShared() }, { key, existing: true, original }, edited, "m1");
+  assert.equal(saved.value.color, "blue");
+  const pink = fakeStorage({ [key]: { ...original, color: "pink" } });
+  await assert.rejects(
+    saveNote({ storage: pink, shared: fakeShared() }, { key, existing: true, original }, edited, "m1"),
+    NoteChanged,
+  );
+});
+
 test("an edit of a field changed somewhere else too isn't saved over it, and says what the note is now", async () => {
   const key = "note:m1:image:a:1";
   const original = { ...value, text: "Original" };
