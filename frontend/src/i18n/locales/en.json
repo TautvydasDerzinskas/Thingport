@@ -4660,6 +4660,11 @@
           "closed": "Closed"
         }
       },
+      "importModel": {
+        "loadingStudio": "Loading Thingport Studio…",
+        "preparing": "Preparing {{filename}} for Thingport Studio…",
+        "failed": "Couldn’t open {{filename}} in Thingport Studio"
+      },
       "imported": {
         "parts_one": "The model came in as one body of {{count}} part",
         "parts_other": "The model came in as one body of {{count}} separate parts",

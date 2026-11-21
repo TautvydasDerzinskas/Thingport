@@ -160,7 +160,7 @@ export default function ModelActionsMenu({
   };
 
   const customize = useCustomize(print, closeMenu, onUnauthorized);
-  const studio = useOpenInStudio(print, onUnauthorized);
+  const studio = useOpenInStudio(print);
   const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
   const libraryCopyId = print.library_copy_id ?? null;
 
@@ -469,7 +469,6 @@ export default function ModelActionsMenu({
         {studio.files.length > 0 && (
           // One file opens straight away; several hand over to a picker, as the slicer's do.
           <MenuItem
-            disabled={studio.opening}
             onClick={() => {
               if (studio.files.length > 1) {
                 setStudioMenuAnchor(menuAnchor);
@@ -477,11 +476,11 @@ export default function ModelActionsMenu({
                 return;
               }
               closeMenu();
-              void studio.open(studio.files[0]);
+              studio.open(studio.files[0]);
             }}
           >
             <ListItemIcon>
-              {studio.opening ? <CircularProgress size={18} /> : <DesignServicesOutlinedIcon fontSize="small" />}
+              <DesignServicesOutlinedIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>{t("models:detail.openInStudio")}</ListItemText>
           </MenuItem>
@@ -561,7 +560,7 @@ export default function ModelActionsMenu({
         anchorEl={studioMenuAnchor}
         onClose={() => setStudioMenuAnchor(null)}
         files={studio.files}
-        onOpen={(plate) => void studio.open(plate)}
+        onOpen={studio.open}
       />
 
       {customize.window}

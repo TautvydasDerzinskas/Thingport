@@ -223,7 +223,7 @@ export default function ModelSidePanel({
   }, [onPickedPlate, pickedPlateId]);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
-  const studio = useOpenInStudio(print, onUnauthorized);
+  const studio = useOpenInStudio(print);
   const studioPlate = studio.files.find((plate) => plate.id === selectedFile?.plate?.id) ?? null;
   const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized, recordDownload);
   // Opened from the button below rather than a menu, so there is no menu to close.
@@ -627,8 +627,7 @@ export default function ModelSidePanel({
               zipCount={files.filter((file) => file.plate).length}
               onDownloadZip={() => void downloadAllZip()}
               onCustomize={customize.available ? customize.start : undefined}
-              onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}
-              openingInStudio={studio.opening}
+              onOpenInStudio={studioPlate ? () => studio.open(studioPlate) : undefined}
               toolCommands={toolCommands.commands}
               onToolCommand={toolCommands.run}
               sendTargets={sendTo.menu}
