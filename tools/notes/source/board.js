@@ -184,7 +184,8 @@ export default function mount(thingport) {
             } catch {
               // Left uncached so a later load tries again. A model that's gone or no longer shared stays "Model
               // unavailable"; any other failure may pass, so the board offers a retry.
-              const res = await api("/print/" + encodeURIComponent(id)).catch(() => null);
+              // The licence answers without counting as a visit to the model.
+              const res = await api("/print/" + encodeURIComponent(id) + "/license").catch(() => null);
               if (!res || ![403, 404].includes(res.status)) unsure = true;
             }
           }),

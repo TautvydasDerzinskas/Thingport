@@ -105,8 +105,9 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     return { key: note.key, leftover: false };
   } catch (error) {
     if (written === modelId || !moveKey) throw error;
-    // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry.
-    const res = await api("/print/" + encodeURIComponent(written)).catch(() => null);
+    // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry. The
+    // model's licence answers that the way the write does, without counting as a visit to the model.
+    const res = await api("/print/" + encodeURIComponent(written) + "/license").catch(() => null);
     if (!res || ![403, 404].includes(res.status)) throw error;
     // The new copy is written first, so a failure along the way leaves two copies rather than none.
     await shared.set(moveKey, contents, { model: modelId });
@@ -143,9 +144,12 @@ export async function confirmRemove({ ui, shared, storage, t }, note) {
   return true;
 }
 
-/** Whether notes are hidden on pictures, and the look and colour a new note starts with: the last ones saved. */
+/**
+ * Whether notes are hidden on pictures, and the look and colour a new note starts with: the last ones saved, or the
+ * defaults for a viewer who never saved any. A failed read throws, so it isn't taken for having none.
+ */
 export async function readView(storage) {
-  const view = await storage.get(VIEW_KEY).catch(() => null);
+  const view = await storage.get(VIEW_KEY);
   return {
     hidden: view?.hidden === true,
     look: LOOKS.includes(view?.look) ? view.look : "sticky",

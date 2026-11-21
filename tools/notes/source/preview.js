@@ -20,40 +20,68 @@ import { NOTE_SVG, UI_CSS, avatar, el, icon, menuButton, openMenu, themed } from
 // bubbles or sticky notes, a note opened in place, and the editor, which is the note itself and can be dragged.
 
 const EDGE = 4;
-// Unsaved edits by model and picture: switching pictures draws the part afresh, and coming back brings the edit back.
+// Unsaved edits by viewer, model and picture, several to a picture, each by the edit it came from: switching pictures
+// draws the part afresh, and coming back brings the edit back. Another account signed in on the page sees none.
 const drafts = new Map();
 // Told a picture's key when its draft is free to come back, as after a save that failed once the picture had changed.
 const draftsFreed = new EventTarget();
 
 // The viewer's settings, one copy for every picture on the page, so switching pictures neither reads them again nor
 // races another picture's writes: read once, then written one change at a time, each write the settings as they are
-// when it starts, so the last change is the one kept. A change made before the read arrives wins over it.
+// when it starts, so the last change is the one kept. A change made before the read arrives wins over it. A failed
+// read is tried again, by the next picture and before any write, so the defaults never go over saved settings.
 const settingsByUser = new Map();
 
+function readSettings(settings, storage) {
+  settings.reading ??= readView(storage)
+    .then((stored) => {
+      settings.view = { ...stored, ...settings.early };
+      settings.read = true;
+      for (const listener of settings.listeners) listener();
+    })
+    .finally(() => (settings.reading = null));
+  return settings.reading;
+}
+
 function settingsFor({ storage, user }) {
-  const id = user?.id ?? "";
-  let settings = settingsByUser.get(id);
-  if (settings) return settings;
-  settings = { view: { hidden: false, look: "sticky", color: "yellow" }, read: false, early: {}, listeners: new Set() };
-  settings.ready = readView(storage).then((stored) => {
-    settings.view = { ...stored, ...settings.early };
-    settings.read = true;
-    for (const listener of settings.listeners) listener();
-  });
-  settings.writing = settings.ready;
-  settingsByUser.set(id, settings);
+  const userId = user?.id ?? "";
+  let settings = settingsByUser.get(userId);
+  if (!settings) {
+    settings = {
+      userId,
+      view: { hidden: false, look: "sticky", color: "yellow" },
+      read: false,
+      early: {},
+      listeners: new Set(),
+    };
+    settingsByUser.set(userId, settings);
+    settings.writing = Promise.resolve();
+  }
+  if (!settings.read) settings.ready = readSettings(settings, storage).catch(() => undefined);
   return settings;
 }
 
-function changeSettings(settings, storage, change) {
+/** Whether the page is still signed in as `userId`: a write waiting in line mustn't land in another account's. */
+async function stillSignedIn(api, userId) {
+  const res = await api("/me").catch(() => null);
+  const body = res?.ok ? await res.json().catch(() => null) : null;
+  return Boolean(userId) && body?.user?.id === userId;
+}
+
+function changeSettings(settings, { storage, api }, change) {
   settings.view = { ...settings.view, ...change };
   if (!settings.read) Object.assign(settings.early, change);
   for (const listener of settings.listeners) listener();
-  const write = settings.writing.then(() => writeView(storage, settings.view));
+  const write = settings.writing.then(async () => {
+    if (!settings.read) await readSettings(settings, storage);
+    if (!(await stillSignedIn(api, settings.userId))) throw new Error("Signed in as someone else");
+    await writeView(storage, settings.view);
+  });
   // A failed write doesn't hold up the next.
   settings.writing = write.catch(() => undefined);
   return write;
 }
+
 const TILTS = [-3, -1.5, 1, 2.5, -2, 1.8];
 const clamp = (value, low, high) => Math.min(Math.max(value, low), Math.max(low, high));
 
@@ -247,7 +275,6 @@ export function modelImage(thingport) {
     root,
     preview,
     context: { modelId },
-    storage,
     t,
     ui,
     user,
@@ -278,8 +305,6 @@ export function modelImage(thingport) {
   let alive = true;
   let revision = 0;
   let notes = [];
-  // Whether the picture's notes have been read once, which a draft's note is looked for among.
-  let loaded = false;
   // The note opened in place, and the one being edited: never both.
   let reading = null;
   let editing = null;
@@ -289,7 +314,7 @@ export function modelImage(thingport) {
   const visibility = (isPublic) => t(isPublic ? "visibility.public" : "visibility.personal");
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
-  const draftKey = modelId + "|" + (preview?.key ?? "");
+  const draftKey = (user?.id ?? "") + "|" + modelId + "|" + (preview?.key ?? "");
 
   const settings = settingsFor(thingport);
   // The menu while it's open, so its switch follows a change made elsewhere or the settings arriving.
@@ -300,11 +325,11 @@ export function modelImage(thingport) {
     menu?.refresh();
   };
   settings.listeners.add(onSettings);
-  const onDraftFreed = (event) => alive && loaded && event.detail === draftKey && restoreDraft();
+  const onDraftFreed = (event) => alive && event.detail === draftKey && load();
   draftsFreed.addEventListener("freed", onDraftFreed);
 
   function setView(change) {
-    changeSettings(settings, storage, change).catch(() => {
+    changeSettings(settings, thingport, change).catch(() => {
       // The switch keeps what was chosen here; the next page would show the saved choice, so say so.
       if ("hidden" in change) ui.toast(t("menu.showFailed"), "error");
     });
@@ -550,9 +575,10 @@ export function modelImage(thingport) {
 
   // An edit kept for the picture: what it started from and only the fields changed, so coming back applies those to
   // the note as it is then, rather than writing back fields someone else has changed since.
-  function keepDraft(e) {
+  function keepDraft(e, saving) {
     const changes = Object.fromEntries(changedFields(e).map((field) => [field, e[field]]));
-    drafts.set(draftKey, {
+    if (!drafts.has(draftKey)) drafts.set(draftKey, new Map());
+    drafts.get(draftKey).set(e.token, {
       noteId: e.note && noteId(e.note),
       key: e.key,
       isPublic: e.isPublic,
@@ -560,17 +586,21 @@ export function modelImage(thingport) {
       base: e.original,
       changes,
       token: e.token,
+      saving,
     });
   }
 
   function dropDraft(e) {
-    if (drafts.get(draftKey)?.token === e.token) drafts.delete(draftKey);
+    const kept = drafts.get(draftKey);
+    kept?.delete(e.token);
+    if (kept && !kept.size) drafts.delete(draftKey);
   }
 
+  // One at a time, and none whose save is still out: it comes back only if that save fails.
   function restoreDraft() {
-    const draft = drafts.get(draftKey);
-    if (!draft || editing || draft.saving) return;
-    drafts.delete(draftKey);
+    const draft = editing ? null : [...(drafts.get(draftKey)?.values() ?? [])].find((kept) => !kept.saving);
+    if (!draft) return;
+    dropDraft(draft);
     const note = draft.noteId ? notes.find((candidate) => noteId(candidate) === draft.noteId) : null;
     if (draft.noteId && !note) return ui.toast(t("editor.deleted"), "warning");
     const latest = note?.value ?? draft.base;
@@ -1000,8 +1030,8 @@ export function modelImage(thingport) {
       }
       // Said even when the picture has changed meanwhile: the edit waits there, kept as a draft.
       ui.toast(t("editor.saveFailed"), "error");
-      const kept = drafts.get(draftKey);
-      if (kept?.token === e.token) {
+      const kept = drafts.get(draftKey)?.get(e.token);
+      if (kept) {
         kept.saving = false;
         draftsFreed.dispatchEvent(new CustomEvent("freed", { detail: draftKey }));
       }
@@ -1032,7 +1062,6 @@ export function modelImage(thingport) {
       const next = await readNotes(thingport, { model: modelId, preview: preview.key });
       if (!alive || run !== revision) return;
       notes = next;
-      loaded = true;
       // An edit of a note deleted on this page, as in the Notes window, ends and says so. One deleted in another tab
       // isn't heard here: saving it then finds it gone instead of writing it back.
       if (editing?.note && !editing.saving && !notes.some((note) => noteId(note) === noteId(editing.note))) {
@@ -1064,10 +1093,7 @@ export function modelImage(thingport) {
     settings.listeners.delete(onSettings);
     draftsFreed.removeEventListener("freed", onDraftFreed);
     // An unsaved edit waits for the picture to come back; one still saving waits too, in case the save fails.
-    if (editing && (editing.saving || changedFields(editing).length)) {
-      keepDraft(editing);
-      if (editing.saving) drafts.get(draftKey).saving = true;
-    }
+    if (editing && (editing.saving || changedFields(editing).length)) keepDraft(editing, editing.saving);
     stop();
     observer?.disconnect();
     document.removeEventListener("pointerdown", onPointerDown, true);

@@ -159,8 +159,11 @@ test("a note is kept where its visibility says, with its look and colour", async
 });
 
 const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-// The server's answer for a model: gone for the writer, or there.
-const fakeApi = (gone) => async (path) => ({ status: gone.some((id) => path.endsWith("/" + id)) ? 404 : 200 });
+// The server's answer for a model's licence, which is how a note asks after a model: gone for the writer, or there.
+const fakeApi = (gone) => async (path) => {
+  assert.match(path, /^\/print\/[^/]+\/license$/);
+  return { status: gone.some((id) => path === `/print/${id}/license`) ? 404 : 200 };
+};
 
 test("a public note edited on another copy stays tied to the model its key names", async () => {
   const shared = fakeShared([], { readable: ["m1", "m2"] });
@@ -244,6 +247,11 @@ test("the view starts with notes shown and a yellow sticky, and keeps what was s
     look: "sticky",
     color: "yellow",
   });
+});
+
+test("a failed read of the view throws, rather than passing for a viewer who saved none", async () => {
+  const storage = { ...fakeStorage(), get: async () => Promise.reject(new Error("offline")) };
+  await assert.rejects(readView(storage), /offline/);
 });
 
 test("every label the code asks for exists in English", () => {
