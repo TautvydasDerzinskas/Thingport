@@ -17,6 +17,7 @@ export type StudioDesign = StudioDesignSummary & {
   document: StudioDocument;
   can_undo: boolean;
   can_redo: boolean;
+  undone_source_plate_ids?: string[];
   created_at: string;
 };
 
@@ -188,7 +189,7 @@ export const studioApi = {
   create: (name: string) => request<StudioDesign>("/studio/designs", "POST", { name }),
   get: (id: string) => request<StudioDesign>(design(id)),
   version: (id: string) => request<{ version: number }>(`${design(id)}/version`),
-  remove: (id: string) => request<void>(design(id), "DELETE"),
+  remove: (id: string, options?: { expected_version: number }) => request<void>(design(id), "DELETE", options),
   assistant: (id: string) => request<StudioAssistantThread>(`${design(id)}/assistant`),
   /** Starts the assistant on a prompt; it works in the background, which `assistant` follows. */
   ask: (

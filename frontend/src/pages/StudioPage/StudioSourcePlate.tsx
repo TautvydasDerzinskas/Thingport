@@ -14,6 +14,7 @@ type LoadStatus = "loading" | "failed" | "loaded";
 export function useSourcePlate(
   designId: string | null,
   plate: StudioPlate | undefined,
+  loadWasUndone: boolean,
   run: RunCommand,
   onSingleBody: (hint: { design: string; mesh: string }) => void,
 ) {
@@ -22,7 +23,7 @@ export function useSourcePlate(
   const key = designId && plateId && archiveId ? `${designId}/${plateId}/${archiveId}` : null;
   const loading = useRef(new Set<string>());
   const [loads, setLoads] = useState<Record<string, LoadStatus>>({});
-  const status = key ? loads[key] : undefined;
+  const status = key ? (loads[key] ?? (loadWasUndone ? "loaded" : undefined)) : undefined;
   const prepare = useCallback(() => {
     if (!designId || !plateId || !key || loading.current.has(key)) return;
     loading.current.add(key);

@@ -471,6 +471,32 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
       showCachedGlbPlate(currentPlateId, true, refitCamera);
     };
 
+    const readManifest = async (preview: URL, signal: AbortSignal): Promise<BuildPlateManifest | null> => {
+      const listUrl = new URL(preview);
+      listUrl.searchParams.delete("v");
+      listUrl.searchParams.set("plates", "1");
+      try {
+        const response = await fetch(listUrl, { signal, cache: "no-cache" });
+        if (response.ok && response.headers.get("Content-Type")?.includes("application/json")) {
+          const list = (await response.json()) as BuildPlateManifest;
+          return list?.plates?.length ? list : null;
+        }
+        void response.body?.cancel();
+      } catch {}
+      return null;
+    };
+
+    const showManifest = (list: BuildPlateManifest, preview: URL) => {
+      manifest = list;
+      onPlatesDetected?.(list.plates, async (index) => {
+        if (!list.plates.find((plate) => plate.index === index)?.thumbnail) return null;
+        const thumbnail = new URL(preview);
+        thumbnail.pathname = thumbnail.pathname.replace(/preview\.glb$/, `profile-plate/${index}.png`);
+        thumbnail.searchParams.delete("v");
+        return thumbnail.toString();
+      });
+    };
+
     const loadBuildPlate = async (plateId: number, refitCamera: boolean) => {
       if (!cachedUrl || !manifest) return;
       buildPlateRequest?.abort();
@@ -489,8 +515,21 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
       const plateUrl = new URL(cachedUrl);
       plateUrl.searchParams.delete("v");
       plateUrl.searchParams.set("buildPlate", String(plateId));
-      plateUrl.searchParams.set("projectVersion", manifest.version);
-      const outcome = await waitForGlb(plateUrl, request.signal);
+      const version = manifest.version;
+      plateUrl.searchParams.set("projectVersion", version);
+      let outcome = await waitForGlb(plateUrl, request.signal);
+      if (disposed || request.signal.aborted || !outcome) return;
+      if (outcome.status !== "ready") {
+        const latest = await readManifest(cachedUrl, request.signal);
+        if (disposed || request.signal.aborted) return;
+        if (latest && latest.version !== version) {
+          showManifest(latest, cachedUrl);
+          if (latest.plates.some(({ index }) => index === plateId)) {
+            plateUrl.searchParams.set("projectVersion", latest.version);
+            outcome = await waitForGlb(plateUrl, request.signal);
+          }
+        }
+      }
       if (disposed || request.signal.aborted || !outcome) return;
       if (outcome.status === "ready") showGlb(outcome.glb, refitCamera);
       else reportError(outcome.status === "failed" ? "tooComplex" : "failed");
@@ -551,28 +590,11 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
         const tryLoadCachedGlb = async (): Promise<boolean> => {
           if (!cachedUrl) return false;
           if (onPlatesDetected) {
-            const listUrl = new URL(cachedUrl);
-            listUrl.searchParams.delete("v");
-            listUrl.searchParams.set("plates", "1");
-            const list = await fetch(listUrl, { signal: lifetime.signal })
-              .then((response) => {
-                if (response.ok && response.headers.get("Content-Type")?.includes("application/json"))
-                  return response.json() as Promise<BuildPlateManifest>;
-                void response.body?.cancel();
-                return null;
-              })
-              .catch(() => null);
+            const list = await readManifest(cachedUrl, lifetime.signal);
             if (disposed) return true;
-            if (list?.plates?.length) {
-              manifest = list;
+            if (list) {
               currentPlateId = list.plates.find(({ index }) => index === currentPlateId)?.index ?? list.plates[0].index;
-              onPlatesDetected(list.plates, async (index) => {
-                if (!list.plates.find((plate) => plate.index === index)?.thumbnail) return null;
-                const thumbnail = new URL(cachedUrl);
-                thumbnail.pathname = thumbnail.pathname.replace(/preview\.glb$/, `profile-plate/${index}.png`);
-                thumbnail.searchParams.delete("v");
-                return thumbnail.toString();
-              });
+              showManifest(list, cachedUrl);
               await loadBuildPlate(currentPlateId, false);
               return true;
             }

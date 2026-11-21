@@ -84,6 +84,7 @@ export type StudioDesignOut = StudioDesignSummary & {
   document: StudioDocument;
   can_undo: boolean;
   can_redo: boolean;
+  undone_source_plate_ids?: string[];
   created_at: Date;
 };
 
@@ -108,21 +109,30 @@ function summary(design: StudioDesign): StudioDesignSummary {
 }
 
 async function out(tx: Prisma.TransactionClient, design: StudioDesign): Promise<StudioDesignOut> {
-  const [before, after] = await Promise.all([
+  const document = documentOf(design);
+  const pending = studioPlates(document).filter((plate) => plate.source);
+  const future = { designId: design.id, position: { gt: design.position } };
+  const [before, after, undoneLoads] = await Promise.all([
     tx.studioRevision.findFirst({
       where: { designId: design.id, position: { lt: design.position } },
       select: { id: true },
     }),
     tx.studioRevision.findFirst({
-      where: { designId: design.id, position: { gt: design.position } },
+      where: future,
       select: { id: true },
     }),
+    pending.length
+      ? tx.studioRevision.findMany({ where: { ...future, command: "load_source_plate" }, select: { args: true } })
+      : [],
   ]);
+  const undoneIds = new Set(undoneLoads.map(({ args }) => (args as { plate_id?: string } | null)?.plate_id));
+  const undonePlates = pending.filter(({ id }) => undoneIds.has(id)).map(({ id }) => id);
   return {
     ...summary(design),
-    document: documentOf(design),
+    document,
     can_undo: Boolean(before),
     can_redo: Boolean(after),
+    ...(undonePlates.length && { undone_source_plate_ids: undonePlates }),
     created_at: design.createdAt,
   };
 }
@@ -181,9 +191,18 @@ export async function createStudioDesign(
   return out(prisma, design);
 }
 
-export async function deleteStudioDesign(userId: string, id: string): Promise<void> {
+export async function deleteStudioDesign(userId: string, id: string, expectedVersion?: number): Promise<void> {
   await owned(prisma, userId, id);
-  await prisma.studioDesign.delete({ where: { id } });
+  if (expectedVersion === undefined) {
+    await prisma.studioDesign.delete({ where: { id } });
+  } else {
+    // A failed import may clean up its initial design only if nobody worked on it meanwhile.
+    const removed = await prisma.studioDesign.deleteMany({
+      where: { id, userId, version: expectedVersion, messages: { none: {} } },
+    });
+    if (!removed.count)
+      throw new HttpError(409, "The design has changed since it was created", "studio_design_changed");
+  }
   await fs.rm(studioAssetDir(userId, id), { recursive: true, force: true });
 }
 

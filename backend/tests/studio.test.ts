@@ -915,6 +915,31 @@ describe("Studio", () => {
       return { modelId: res.body.prints[0].id as string, fileId: res.body.prints[0].plates[0].id as string };
     }
 
+    it("cleans up a failed import only while the new design is untouched", async () => {
+      const create = async () => (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const unused = await create();
+      const edited = await create();
+      const discard = (design: { id: string; version: number }, session = alice) =>
+        request(app)
+          .delete(`/api/studio/designs/${design.id}`)
+          .set(auth(session))
+          .send({ expected_version: design.version });
+      expect((await discard(unused, bob)).status).toBe(404);
+      expect((await discard(unused)).status).toBe(204);
+      expect((await command(alice, edited.id, "add_box", { width: 10, depth: 10, height: 10 })).status).toBe(200);
+      const refused = await discard(edited);
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe("studio_design_changed");
+      const kept = await request(app).get(`/api/studio/designs/${edited.id}`).set(auth(alice));
+      expect(kept.body.document.features).toMatchObject([{ id: "box-1" }]);
+      expect((await command(alice, edited.id, "undo")).status).toBe(200);
+      expect((await discard(edited)).status).toBe(409);
+
+      const withConversation = await create();
+      await prisma.studioMessage.create({ data: { designId: withConversation.id, role: "user", text: "A bracket" } });
+      expect((await discard(withConversation)).status).toBe(409);
+    });
+
     it("loads one 3MF build plate at a time from the design's own source snapshot", async () => {
       const zip = new JSZip();
       zip.file(
@@ -996,6 +1021,16 @@ describe("Studio", () => {
       expect(loaded[0].body.design.document.features).toMatchObject([{ plate_id: "plate-2", triangles: 1 }]);
       expect(loaded[0].body.design.document.plates[0].source.index).toBe(1);
       expect(loaded[0].body.design.document.plates[1].source).toBeUndefined();
+      expect((await command(alice, design.id, "rename_plate", { plate_id: "plate-2", name: "Tray" })).status).toBe(200);
+      expect((await command(alice, design.id, "undo")).status).toBe(200);
+      const undoneLoad = await command(alice, design.id, "undo");
+      expect(undoneLoad.body.design).toMatchObject({ can_redo: true, undone_source_plate_ids: ["plate-2"] });
+      const reopened = await request(app).get(`/api/studio/designs/${design.id}`).set(auth(alice));
+      expect(reopened.body).toMatchObject({ can_redo: true, undone_source_plate_ids: ["plate-2"] });
+      const redone = await command(alice, design.id, "redo");
+      expect(redone.body.design.undone_source_plate_ids).toBeUndefined();
+      const redoneEdit = await command(alice, design.id, "redo");
+      expect(redoneEdit.body.design.document.plates[1].name).toBe("Tray");
       const mcpLoad = await callTool(token, "studio_load_source_plate", { design_id: design.id, plate_id: "plate-1" });
       expect(mcpLoad.data.created).toEqual(["mesh-2"]);
       expect(mcpLoad.data.pending_plate_ids).toEqual([]);

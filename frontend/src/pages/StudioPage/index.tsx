@@ -296,7 +296,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   } | null>(null);
   // A model just brought in, to say so if it's in several parts.
   const [partsHint, setPartsHint] = useState<{ design: string; mesh: string } | null>(null);
-  const sourcePlate = useSourcePlate(designId, plateInView, run, setPartsHint);
+  const sourcePlate = useSourcePlate(
+    designId,
+    plateInView,
+    design?.undone_source_plate_ids?.includes(activePlate) ?? false,
+    run,
+    setPartsHint,
+  );
 
   // Another design starts with nothing selected; a feature that's gone is let go of.
   const [shownDesign, setShownDesign] = useState(designId);

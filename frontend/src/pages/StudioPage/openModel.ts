@@ -12,7 +12,7 @@ export type StudioModelRequest = {
 /** Navigation state for a new import, followed by the mesh ID for the editor's multipart hint. */
 export type StudioArrival = { openModel?: StudioModelRequest; imported?: string };
 
-/** The new design's id, and its mesh's. A design that couldn't take the file isn't left behind, empty. */
+/** The new design's id and mesh's. A failed import can clean up the original empty design. */
 export async function openModelAsDesign(model: { id: string; title: string }, fileId: string, untitled: string) {
   const design = await studioApi.create(model.title.slice(0, 120) || untitled);
   try {
@@ -23,7 +23,7 @@ export async function openModelAsDesign(model: { id: string; title: string }, fi
     });
     return { id: design.id, mesh: result.created.length === 1 ? result.created[0] : null };
   } catch (error) {
-    await studioApi.remove(design.id).catch(() => undefined);
+    await studioApi.remove(design.id, { expected_version: design.version }).catch(() => undefined);
     throw error;
   }
 }
