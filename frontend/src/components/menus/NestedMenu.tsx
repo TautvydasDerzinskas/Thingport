@@ -11,6 +11,7 @@ import {
   type MutableRefObject,
   type MouseEvent,
   type PointerEvent,
+  type ReactElement,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -88,6 +89,7 @@ type Branch = {
   children: Node[];
   inert: boolean;
   busy: boolean;
+  tooltip?: ReactNode;
   /** Its rows are an action's picks: counted on the row, and scrolled when there are many. */
   picks: boolean;
 };
@@ -119,6 +121,7 @@ function toNodes(nodes: NestedMenuNode[], parent = ""): Node[] {
         icon: action.icon,
         inert: Boolean(action.disabled || action.busy),
         busy: Boolean(action.busy),
+        tooltip: action.tooltip,
         picks: true,
         children: (action.picks ?? []).map((pick) => ({
           kind: "leaf",
@@ -168,7 +171,7 @@ type MenuApi = {
   claimFocus: (depth: number) => void;
   levelKeyDown: (depth: number, event: KeyboardEvent<HTMLElement>) => void;
   rowPointerMove: (depth: number, node: Leaf | Branch, event: PointerEvent<HTMLElement>) => void;
-  subPointerLeave: (depth: number, key: string, event: PointerEvent<HTMLElement>) => void;
+  rowPointerLeave: (depth: number, key: string, event: PointerEvent<HTMLElement>) => void;
   enterSubmenu: () => void;
   registerSurface: (depth: number, element: HTMLElement | null) => void;
 };
@@ -223,6 +226,26 @@ const toneSx = (tone: MenuAction["tone"]) => (theme: Theme) => {
   return {};
 };
 
+function RowTooltip({ node, children }: { node: Leaf | Branch; children: ReactElement }) {
+  const { panels } = useMenu();
+  if (!node.tooltip) return children;
+  // Keep the same row mounted while it is preparing, so keyboard focus stays on it.
+  return (
+    <Tooltip
+      title={node.inert ? "" : node.tooltip}
+      placement={panels ? "bottom" : "right"}
+      enterDelay={400}
+      arrow
+      describeChild
+      disableHoverListener={node.inert}
+      disableFocusListener={node.inert}
+      disableTouchListener={node.inert}
+    >
+      {children}
+    </Tooltip>
+  );
+}
+
 function LeafRow({ node, depth }: { node: Leaf; depth: number }) {
   const menu = useMenu();
   const { t } = useTranslation("common");
@@ -242,6 +265,7 @@ function LeafRow({ node, depth }: { node: Leaf; depth: number }) {
       title={node.title}
       onClick={() => menu.run(node)}
       onPointerMove={(event) => menu.rowPointerMove(depth, node, event)}
+      onPointerLeave={(event) => menu.rowPointerLeave(depth, node.key, event)}
       sx={[rowSx, toneSx(node.tone), Boolean(node.media) && { py: 0.5 }]}
     >
       {glyph && <ListItemIcon sx={node.media ? { minWidth: "40px !important" } : undefined}>{glyph}</ListItemIcon>}
@@ -264,19 +288,13 @@ function LeafRow({ node, depth }: { node: Leaf; depth: number }) {
       )}
     </MenuItem>
   );
-  // A disabled row can't hold a tooltip: it gets no pointer events.
-  if (!node.tooltip || node.inert) return row;
-  return (
-    <Tooltip title={node.tooltip} placement={menu.panels ? "bottom" : "right"} enterDelay={400} arrow describeChild>
-      {row}
-    </Tooltip>
-  );
+  return <RowTooltip node={node}>{row}</RowTooltip>;
 }
 
 function SubRow({ node, depth }: { node: Branch; depth: number }) {
   const menu = useMenu();
   const expanded = menu.path[depth] === node.key;
-  return (
+  const row = (
     <MenuItem
       data-menu-key={menu.keyAttr(node.key)}
       disabled={node.inert}
@@ -286,12 +304,12 @@ function SubRow({ node, depth }: { node: Branch; depth: number }) {
       // A keyboard press (detail 0) moves focus into the submenu; a click leaves it here.
       onClick={(event) => menu.openSub(depth, node.key, menu.panels || event.detail === 0)}
       onKeyDown={(event) => {
-        if (event.key !== "ArrowRight") return;
+        if (node.inert || event.key !== "ArrowRight") return;
         event.preventDefault();
         menu.openSub(depth, node.key, true);
       }}
       onPointerMove={(event) => menu.rowPointerMove(depth, node, event)}
-      onPointerLeave={(event) => menu.subPointerLeave(depth, node.key, event)}
+      onPointerLeave={(event) => menu.rowPointerLeave(depth, node.key, event)}
       sx={[rowSx, expanded && !menu.panels && expandedSx]}
     >
       <ListItemIcon>{node.busy ? <CircularProgress size={18} color="inherit" /> : node.icon}</ListItemIcon>
@@ -308,6 +326,7 @@ function SubRow({ node, depth }: { node: Branch; depth: number }) {
       />
     </MenuItem>
   );
+  return <RowTooltip node={node}>{row}</RowTooltip>;
 }
 
 /** A submenu beside its row, on the side with room. */
@@ -328,20 +347,36 @@ function Submenu({
   const surface = useRef<HTMLDivElement | null>(null);
   const [place, setPlace] = useState<{ side: "right" | "left"; top: number } | null>(null);
 
-  // Placed once, as it opens: moving it under the pointer afterwards would be worse than a rare overlap.
+  // Reposition for viewport changes and after the parent paper moves. Hovering alone keeps the position stable.
   useLayoutEffect(() => {
     const parent = container.current;
     const element = surface.current;
     const row = parent?.querySelector(rowSelector);
     if (!parent || !element || !row) return;
-    setPlace(
-      placeSubmenu(
+    const measure = () => {
+      const next = placeSubmenu(
         row.getBoundingClientRect(),
         parent.getBoundingClientRect(),
         { width: element.offsetWidth, height: element.offsetHeight },
         { width: window.innerWidth, height: window.innerHeight },
-      ),
-    );
+      );
+      setPlace((current) => (current?.side === next.side && current.top === next.top ? current : next));
+    };
+    let frame = 0;
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    const paper = parent.closest(".MuiPaper-root");
+    const observer = new MutationObserver(scheduleMeasure);
+    if (paper) observer.observe(paper, { attributes: true, attributeFilter: ["style", "class"] });
+    window.addEventListener("resize", scheduleMeasure);
+    measure();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", scheduleMeasure);
+      cancelAnimationFrame(frame);
+    };
   }, [container, rowSelector]);
 
   return (
@@ -367,8 +402,6 @@ function Submenu({
           ...NO_MOTION,
         },
         place?.side === "left" ? { right: "calc(100% + 4px)" } : { left: "calc(100% + 4px)" },
-        // Many plates scroll; a level that opens further submenus can't, or they'd be cut off.
-        branch.picks && { maxHeight: "calc(100vh - 16px)", overflowY: "auto" },
       ]}
     >
       <Level depth={depth + 1} nodes={branch.children} label={branch.label} id={menu.menuId(branch.key)} />
@@ -407,7 +440,13 @@ function Level({
         variant="menu"
         data-menu-level={menu.levelAttr(depth)}
         onKeyDown={(event) => menu.levelKeyDown(depth, event)}
-        sx={{ py: 0.75, outline: 0 }}
+        onScroll={openBranch ? () => menu.closeBelow(depth, false) : undefined}
+        sx={{
+          py: 0.75,
+          outline: 0,
+          // The submenu is a sibling of the list so scrolling the list does not clip it.
+          ...(!menu.panels && { maxHeight: "calc(100dvh - 34px)", overflowY: "auto" }),
+        }}
       >
         {back && [
           <MenuItem
@@ -504,6 +543,7 @@ export default function NestedMenu({
     live.current = { path, panels };
   });
   const focusWanted = useRef<{ depth: number; key?: string } | null>(null);
+  const paper = useRef<HTMLDivElement>(null);
   const pending = useRef<Pending | null>(null);
   const grace = useRef<{ depth: number; area: Point[]; until: number } | null>(null);
   const surfaces = useRef<(HTMLElement | null)[]>([]);
@@ -531,7 +571,9 @@ export default function NestedMenu({
   const levelAttr = (depth: number) => `${id}:${depth}`;
   const focusRow = useCallback(
     (key: string) =>
-      document.querySelector<HTMLElement>(`[data-menu-key="${id}:${key}"]`)?.focus({ preventScroll: true }),
+      document
+        .querySelector<HTMLElement>(`[data-menu-key="${id}:${key}"]`)
+        ?.focus({ preventScroll: !live.current.panels }),
     [id],
   );
   const focusFirst = useCallback(
@@ -580,7 +622,10 @@ export default function NestedMenu({
       if (wanted && wanted.depth === depth) {
         focusWanted.current = null;
         if (wanted.key) focusRow(wanted.key);
-        else focusFirst(depth);
+        else {
+          if (live.current.panels && paper.current) paper.current.scrollTop = 0;
+          focusFirst(depth);
+        }
       } else if (depth === 0 && !wanted) {
         focusFirst(0);
       }
@@ -600,29 +645,41 @@ export default function NestedMenu({
     }
   };
 
-  const rowPointerMove = (depth: number, node: Leaf | Branch, event: PointerEvent<HTMLElement>) => {
-    if (live.current.panels || event.pointerType === "touch") return;
-    // Crossing other rows on the way to an open submenu doesn't switch it.
-    const area = grace.current;
-    if (area && area.depth === depth) {
-      if (Date.now() < area.until && insidePolygon({ x: event.clientX, y: event.clientY }, area.area)) return;
-      grace.current = null;
-    }
-    const row = event.currentTarget;
+  const hoverRow = (depth: number, node: Leaf | Branch, row: HTMLElement, delay?: number) => {
     if (document.activeElement !== row) row.focus({ preventScroll: true });
     const openHere = live.current.path[depth];
     if (node.kind === "branch") {
       if (openHere === node.key) cancelPending();
-      else if (!node.inert) schedule(node.key, HOVER_OPEN_MS, () => openSub(depth, node.key, false));
+      else if (!node.inert) schedule(node.key, delay ?? HOVER_OPEN_MS, () => openSub(depth, node.key, false));
     } else if (openHere) {
-      schedule(`close@${depth}`, HOVER_CLOSE_MS, () => closeBelow(depth, false));
+      schedule(`close@${node.key}`, delay ?? HOVER_CLOSE_MS, () => closeBelow(depth, false));
     } else {
       cancelPending();
     }
   };
 
-  const subPointerLeave = (depth: number, key: string, event: PointerEvent<HTMLElement>) => {
-    if (pending.current?.key === key) cancelPending();
+  const rowPointerMove = (depth: number, node: Leaf | Branch, event: PointerEvent<HTMLElement>) => {
+    if (live.current.panels || event.pointerType === "touch") return;
+    const row = event.currentTarget;
+    // Give the pointer time to reach the submenu. A stationary pointer is rechecked when that time runs out.
+    const area = grace.current;
+    if (area && area.depth === depth) {
+      const remaining = area.until - Date.now();
+      if (remaining > 0 && insidePolygon({ x: event.clientX, y: event.clientY }, area.area)) {
+        schedule(`grace@${node.key}`, remaining, () => {
+          if (grace.current !== area || !row.isConnected || live.current.panels) return;
+          grace.current = null;
+          hoverRow(depth, node, row, 0);
+        });
+        return;
+      }
+      grace.current = null;
+    }
+    hoverRow(depth, node, row);
+  };
+
+  const rowPointerLeave = (depth: number, key: string, event: PointerEvent<HTMLElement>) => {
+    if ([key, `grace@${key}`, `close@${key}`].includes(pending.current?.key ?? "")) cancelPending();
     const submenu = surfaces.current[depth + 1];
     if (live.current.panels || event.pointerType === "touch" || !submenu || live.current.path[depth] !== key) return;
     grace.current = {
@@ -656,7 +713,7 @@ export default function NestedMenu({
     claimFocus,
     levelKeyDown,
     rowPointerMove,
-    subPointerLeave,
+    rowPointerLeave,
     enterSubmenu,
     registerSurface: (depth, element) => {
       surfaces.current[depth] = element;
@@ -677,6 +734,7 @@ export default function NestedMenu({
         transitionDuration={reducedMotion ? 0 : { enter: 200, exit: 140 }}
         slotProps={{
           paper: {
+            ref: paper,
             elevation: 8,
             sx: [
               surfaceSx,

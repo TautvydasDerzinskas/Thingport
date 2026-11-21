@@ -105,7 +105,7 @@ export default function TileMenu({
   onContextMenu,
 }: Props) {
   const menu = useRef<HTMLDivElement>(null);
-  const lastTile = useRef<number | null>(null);
+  const lastTile = useRef<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", { noSsr: true });
   const trayAction = tiles.find((tile) => tile.key === expanded && hasPicks(tile));
@@ -163,9 +163,10 @@ export default function TileMenu({
       }
     }
     if (index >= 0 && nodes[index].dataset.nav === "tile" && (event.key === "ArrowDown" || event.key === "ArrowUp"))
-      lastTile.current = index;
+      lastTile.current = itemKey ?? null;
     const zones = nodes.map((node) => (node.dataset.nav === "tile" ? "tile" : "row") as TileZone);
-    const target = tileMenuMove(zones, index, event.key, lastTile.current);
+    const returnTile = nodes.findIndex((node) => node.dataset.nav === "tile" && node.dataset.key === lastTile.current);
+    const target = tileMenuMove(zones, index, event.key, returnTile);
     if (target === null) return;
     event.preventDefault();
     nodes[target]?.focus();
@@ -297,7 +298,7 @@ function Tile({
       tabIndex={-1}
       data-nav="tile"
       data-key={action.key}
-      data-expandable={picks || undefined}
+      data-expandable={(picks && !isInert(action)) || undefined}
       aria-disabled={isInert(action) || undefined}
       aria-expanded={picks ? expanded : undefined}
       aria-controls={picks && expanded ? controls : undefined}
@@ -505,7 +506,7 @@ const Row = forwardRef<HTMLElement, RowProps>(function Row(
       tabIndex={-1}
       data-nav="row"
       data-key={action.key}
-      data-expandable={picks || undefined}
+      data-expandable={(picks && !isInert(action)) || undefined}
       aria-disabled={isInert(action) || undefined}
       aria-expanded={picks ? expanded : undefined}
       aria-controls={picks && expanded ? controls : undefined}
