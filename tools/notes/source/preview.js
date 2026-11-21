@@ -1039,10 +1039,12 @@ export function modelImage(thingport) {
       };
       const replaced = [noteId(saved), ...(e.note ? [noteId(e.note)] : [])];
       notes = [saved, ...notes.filter((note) => !replaced.includes(noteId(note)))];
-      // A look or colour picked in this edit becomes the next note's; defaults that stood in for unread settings don't.
-      const picked = e.look !== e.original.look || e.color !== e.original.color;
-      if (picked && (e.look !== settings.view.look || e.color !== settings.view.color))
-        setView({ look: e.look, color: e.color });
+      // Only what was picked in this edit becomes the next note's, look and colour each on its own: defaults that
+      // stood in for unread settings aren't saved alongside it.
+      const picked = Object.fromEntries(
+        ["look", "color"].filter((field) => e[field] !== e.original[field]).map((field) => [field, e[field]]),
+      );
+      if (Object.entries(picked).some(([field, value]) => settings.view[field] !== value)) setView(picked);
       endEdit(saved);
     } catch (error) {
       if (error instanceof NoteGone) {
