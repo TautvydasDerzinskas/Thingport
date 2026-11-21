@@ -52,7 +52,11 @@ export default function SortTabs<T extends string>({
         const reversed = chosen && direction !== (option.defaultDirection ?? defaultSortDirection(option.value));
         const click = () => {
           const next = sortClick(value, direction, option.value);
-          if ("value" in next) return onChange(next.value);
+          if ("value" in next) {
+            // The option left behind returns to its default label, which isn't a flip, so it mustn't animate.
+            setFlipped(null);
+            return onChange(next.value);
+          }
           setFlipped(option.value);
           onDirectionChange(next.direction);
         };
