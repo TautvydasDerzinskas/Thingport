@@ -5801,9 +5801,7 @@
       "fewestDownloads": "Wenigste Downloads",
       "leastRelevant": "Am wenigsten relevant",
       "fewestModels": "Wenigste Modelle",
-      "reverseAlphabetical": "{{label}} (Z–A)",
-      "reverseAscending": "Aufsteigende Reihenfolge. Sortierrichtung umkehren",
-      "reverseDescending": "Absteigende Reihenfolge. Sortierrichtung umkehren"
+      "reverseAlphabetical": "{{label}} (Z–A)"
     },
     "card": {
       "unknownAuthor": "Unbekannt",

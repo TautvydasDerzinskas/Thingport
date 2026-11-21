@@ -7665,9 +7665,7 @@
       "fewestDownloads": "Меньше всего скачиваний",
       "leastRelevant": "Наименее релевантные",
       "fewestModels": "Меньше всего моделей",
-      "reverseAlphabetical": "{{label}} (Я–А)",
-      "reverseAscending": "По возрастанию. Изменить направление сортировки",
-      "reverseDescending": "По убыванию. Изменить направление сортировки"
+      "reverseAlphabetical": "{{label}} (Я–А)"
     },
     "view": {
       "label": "Показать категории или папки",

@@ -7671,9 +7671,7 @@
       "fewestDownloads": "Найменш спампоўванняў",
       "leastRelevant": "Найменш рэлевантныя",
       "fewestModels": "Найменш мадэляў",
-      "reverseAlphabetical": "{{label}} (Я–А)",
-      "reverseAscending": "Па ўзрастанні. Змяніць кірунак сартавання",
-      "reverseDescending": "Па змяншэнні. Змяніць кірунак сартавання"
+      "reverseAlphabetical": "{{label}} (Я–А)"
     },
     "view": {
       "label": "Паказаць катэгорыі або папкі",

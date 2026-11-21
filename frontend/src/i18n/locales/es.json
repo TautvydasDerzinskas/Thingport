@@ -6017,9 +6017,7 @@
       "fewestDownloads": "Menos descargas",
       "leastRelevant": "Menos relevantes",
       "fewestModels": "Menos modelos",
-      "reverseAlphabetical": "{{label}} (Z–A)",
-      "reverseAscending": "Orden ascendente. Invertir el orden",
-      "reverseDescending": "Orden descendente. Invertir el orden"
+      "reverseAlphabetical": "{{label}} (Z–A)"
     },
     "card": {
       "unknownAuthor": "Desconocido",

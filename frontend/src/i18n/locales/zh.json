@@ -5581,9 +5581,7 @@
       "fewestDownloads": "下载最少",
       "leastRelevant": "相关性最低",
       "fewestModels": "模型最少",
-      "reverseAlphabetical": "{{label}}（倒序）",
-      "reverseAscending": "升序。反转排序方向",
-      "reverseDescending": "降序。反转排序方向"
+      "reverseAlphabetical": "{{label}}（倒序）"
     },
     "card": {
       "unknownAuthor": "未知",
