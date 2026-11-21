@@ -224,7 +224,7 @@ export function avatar(person, fallback) {
   return element;
 }
 
-const MENU_WIDTH = 220;
+const MENU_WIDTH = 264;
 
 /**
  * A button that opens a menu lined up under its right edge, as Thingport's ⋮ menus are: the popover opens under its

@@ -179,3 +179,22 @@ test("every label the code asks for exists in English", () => {
   const unused = Object.keys(english).filter((key) => !asked.has(key) && !(code + html).includes(`"${key}"`));
   assert.deepEqual(unused, []);
 });
+
+test("every language the metadata lists has every English label, with the same placeholders", () => {
+  const read = (code) => JSON.parse(fs.readFileSync(path.join(here, "..", "locales", code + ".json"), "utf8"));
+  const english = read("en");
+  const { locales } = JSON.parse(fs.readFileSync(path.join(here, "tool.base.json"), "utf8"));
+  const placeholders = (text) => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
+  assert.deepEqual(
+    fs.readdirSync(path.join(here, "..", "locales")).sort(),
+    locales.map((code) => code + ".json").sort(),
+  );
+  for (const code of locales) {
+    const labels = read(code);
+    assert.deepEqual(Object.keys(labels).sort(), Object.keys(english).sort(), code);
+    for (const [key, text] of Object.entries(english)) {
+      assert.ok(labels[key].trim(), `${code} ${key} is empty`);
+      assert.deepEqual(placeholders(labels[key]), placeholders(text), `${code} ${key}`);
+    }
+  }
+});
