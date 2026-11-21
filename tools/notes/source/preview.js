@@ -610,6 +610,7 @@ export function modelImage(thingport) {
       tried: e.tried,
       chosen: e.chosen,
       moveKey: e.moveKey,
+      oldCopy: e.oldCopy,
       base: e.original,
       changes,
       token: e.token,
@@ -682,6 +683,7 @@ export function modelImage(thingport) {
         tried: note ? restoredTried(draft.tried, latest, Object.keys(draft.changes)) : draft.tried,
         chosen: draft.chosen,
         moveKey: movedOn ? null : draft.moveKey,
+        oldCopy: draft.oldCopy,
         // What a new note started as, which its changes are measured against.
         base: note ? undefined : draft.base,
       });
@@ -721,6 +723,9 @@ export function modelImage(thingport) {
       chosen: { ...draft?.chosen },
       // One key for a public note moving to this copy, however often the move is retried.
       moveKey: draft?.moveKey ?? null,
+      // The old copy such a move leaves to clean up, with the values this edit knew it to hold: kept apart from the
+      // original, which a draft coming back moves.
+      oldCopy: draft?.oldCopy ?? null,
       // Which edit a kept draft belongs to.
       token: {},
       original,
@@ -1100,8 +1105,10 @@ export function modelImage(thingport) {
     // Taken now, as the save may finish after the picture changes.
     const chosen = { ...e.chosen };
     const pickedAt = ++picks;
-    if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId)
+    if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId) {
       e.moveKey ??= newNoteKey(modelId, preview.key);
+      e.oldCopy ??= { key: e.note.key, values: [e.original, ...e.tried] };
+    }
     try {
       const draft = {
         key: e.key,
@@ -1110,10 +1117,13 @@ export function modelImage(thingport) {
         existing: Boolean(e.note),
         original: e.original,
         tried,
+        oldCopy: e.oldCopy,
         // Once it's written, this save joins the ones before it until it's known to have gone through, or not to have:
         // a read failing first sends nothing.
-        onSend: () => {
+        onSend: (key) => {
           e.tried = [...tried, value];
+          // Written to the old copy, it may be what that copy holds.
+          if (e.oldCopy?.key === key) e.oldCopy.values.push(value);
           const kept = drafts.get(draftKey)?.get(e.token);
           if (kept) kept.tried = e.tried;
         },
@@ -1177,6 +1187,8 @@ export function modelImage(thingport) {
           e.key = error.key;
           e.moveKey = null;
         }
+        // Cleaned up already, at the new copy.
+        if (e.oldCopy && e.oldCopy.key !== e.key) e.oldCopy = null;
         // Said first, so the conflict stays up longer.
         if (error.leftover) ui.toast(t("editor.oldCopy"), "warning");
         ui.toast(t("editor.conflict"), "warning");

@@ -132,12 +132,13 @@ export const restoredTried = (tried, stored, fields) => tried.map((sent) => ({ .
  * throws `NoteGone` for a note deleted meanwhile.
  * `tried` lists what the editor's earlier saves sent, each of which may have gone through with its answer lost: a
  * stored value one of them sent isn't a change made somewhere else. A new note with any is looked for under its key
- * and taken as an edit of the first; one not found is written afresh. `onSend` is called as this save starts writing,
- * when its value joins those.
+ * and taken as an edit of the first; one not found is written afresh. `onSend` is called with the key this save
+ * writes first, as it starts writing, when its value joins those.
  * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
- * pass the same one to a retry of the move. A move whose new copy turns out written is finished there, and its old copy
- * removed only if it's as this editor left it: one changed since, or that can't be read, is left. Returns the key it's
- * kept under, the value written, and whether an older copy was left.
+ * pass the same one to a retry of the move. A move whose new copy turns out written is finished there. `oldCopy`, the
+ * old key and the values this editor knew it to hold, is what's left to clean up once the move is done, however the
+ * editor came to be at the new copy: it's removed only as this editor left it, and one changed since, or that can't be
+ * read, is left. Returns the key it's kept under, the value written, and whether an older copy was left.
  */
 export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
@@ -145,6 +146,10 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
   // A move sent before may have written the new copy with its answer lost: then that copy is the note now.
   const movable = note.public && note.existing && moveKey && moveKey !== note.key;
   const moved = movable && tried.length ? await storedNote(thingport, { public: true, key: moveKey }) : null;
+  // The old copy a finished move leaves to clean up: this save's own once it's at the new copy.
+  const oldCopy = moved ? (note.oldCopy ?? { key: note.key, values: [note.original, ...tried] }) : note.oldCopy;
+  const cleanUp = () =>
+    oldCopy && oldCopy.key !== (moved ? moveKey : note.key) ? dropOldCopy(thingport, oldCopy) : false;
   let contents = pick(value, FIELDS);
   const stored = moved ?? (note.existing || tried.length ? await storedNote(thingport, note) : null);
   if (note.existing && !stored) throw new NoteGone();
@@ -154,16 +159,15 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     const theirs = FIELDS.filter((field) => ![original, value, ...tried].some((sent) => sent[field] === stored[field]));
     const touched = touchedFields(value, original, tried);
     if (theirs.some((field) => touched.includes(field))) {
-      // The move itself is done, so its old copy goes as it would have.
-      if (moved) throw new NoteChanged(stored, moveKey, await dropOldCopy(thingport, note, tried));
-      throw new NoteChanged(stored, note.key);
+      // A move that's done leaves its old copy to clean up either way.
+      throw new NoteChanged(stored, moved ? moveKey : note.key, await cleanUp());
     }
     contents = { ...contents, ...pick(stored, theirs) };
   }
-  note.onSend?.();
+  note.onSend?.(moved ? moveKey : note.key);
   if (moved) {
     await shared.set(moveKey, contents, { model: modelId });
-    return { key: moveKey, value: contents, leftover: await dropOldCopy(thingport, note, tried) };
+    return { key: moveKey, value: contents, leftover: await cleanUp() };
   }
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
@@ -174,7 +178,7 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
   const written = note.modelId ?? modelId;
   try {
     await shared.set(note.key, contents, { model: written });
-    return { key: note.key, value: contents, leftover: false };
+    return { key: note.key, value: contents, leftover: await cleanUp() };
   } catch (error) {
     if (written === modelId || !moveKey) throw error;
     // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry. The
@@ -192,16 +196,15 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
 }
 
 /**
- * Removes the old copy of a note whose move turned out done on a retry, but only as this editor left it: saved to
- * since, as once its model can be opened again, or unreadable, it stays. Says whether a copy is left.
+ * Removes the old copy of a note whose move turned out done on a retry, but only as this editor left it, holding one of
+ * `values`: saved to since, as once its model can be opened again, or unreadable, it stays. Says whether one is left.
  */
-async function dropOldCopy(thingport, note, tried) {
-  const old = await storedNote(thingport, note).catch(() => undefined);
+async function dropOldCopy(thingport, { key, values }) {
+  const old = await storedNote(thingport, { public: true, key }).catch(() => undefined);
   if (old === null) return false;
-  const untouched =
-    old && FIELDS.every((field) => [note.original, ...tried].some((sent) => sent[field] === old[field]));
+  const untouched = old && FIELDS.every((field) => values.some((sent) => sent[field] === old[field]));
   if (!untouched) return true;
-  return thingport.shared.remove(note.key).then(
+  return thingport.shared.remove(key).then(
     () => false,
     () => true,
   );

@@ -491,6 +491,90 @@ test("a retried move that meets a change to its new copy says so from there, and
   assert.equal(stuckConflict.leftover, true);
 });
 
+test("a retried move cleans up against what the old copy held before it, not a draft's restored original", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:9";
+  const before = { ...value, text: "Old", color: "yellow" };
+  const edited = { ...before, text: "Moved" };
+  const api = fakeApi(["m1"]);
+  // Another tab made the old copy green before the draft came back onto it, so green is now the editor's original.
+  const green = { ...before, color: "green" };
+  const restored = { key: from, public: true, modelId: "m1", existing: true, original: green, tried: [edited] };
+  const oldCopy = { key: from, values: [before, edited] };
+  const changed = fakeShared([
+    { key: from, value: green, mine: true },
+    { key: to, value: edited, mine: true },
+  ]);
+  const kept = await saveNote(
+    { storage: fakeStorage(), shared: changed, api },
+    { ...restored, oldCopy },
+    edited,
+    "m2",
+    to,
+  );
+  assert.equal(kept.leftover, true);
+  assert.ok(!changed.calls.some((call) => call.remove));
+  // One still as it was before the move goes, whatever the editor's original became.
+  const unchanged = fakeShared([
+    { key: from, value: before, mine: true },
+    { key: to, value: edited, mine: true },
+  ]);
+  const note = { ...restored, oldCopy: { key: from, values: [before, edited] } };
+  assert.equal(
+    (await saveNote({ storage: fakeStorage(), shared: unchanged, api }, note, edited, "m2", to)).leftover,
+    false,
+  );
+  assert.ok(unchanged.calls.some((call) => call.remove === from));
+});
+
+test("an edit that came back on a move's new copy finishes cleaning up the old one", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:9";
+  const before = { ...value, text: "Old" };
+  const moved = { ...before, text: "Moved" };
+  const note = { key: to, public: true, modelId: "m2", existing: true, original: moved, oldCopy: null };
+  const save = (shared) =>
+    saveNote(
+      { storage: fakeStorage(), shared, api: fakeApi([]) },
+      { ...note, oldCopy: { key: from, values: [before] } },
+      { ...moved, color: "blue" },
+      "m2",
+    );
+  const still = fakeShared([
+    { key: from, value: before, mine: true },
+    { key: to, value: moved, mine: true },
+  ]);
+  assert.equal((await save(still)).leftover, false);
+  assert.ok(still.calls.some((call) => call.remove === from));
+  const gone = fakeShared([{ key: to, value: moved, mine: true }]);
+  assert.equal((await save(gone)).leftover, false);
+  assert.ok(!gone.calls.some((call) => call.remove));
+  const changed = fakeShared([
+    { key: from, value: { ...before, color: "pink" }, mine: true },
+    { key: to, value: moved, mine: true },
+  ]);
+  assert.equal((await save(changed)).leftover, true);
+  assert.ok(!changed.calls.some((call) => call.remove));
+});
+
+test("a save tells where it writes: a done move's new copy, not the old key", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:9";
+  const original = { ...value, text: "Old" };
+  const edited = { ...original, text: "Moved" };
+  const keys = [];
+  const onSend = (key) => keys.push(key);
+  const shared = fakeShared([
+    { key: from, value: original, mine: true },
+    { key: to, value: edited, mine: true },
+  ]);
+  const note = { key: from, public: true, modelId: "m1", existing: true, original, tried: [edited], onSend };
+  await saveNote({ storage: fakeStorage(), shared, api: fakeApi(["m1"]) }, note, edited, "m2", to);
+  const personal = { key: from, public: false, existing: true, original, onSend };
+  await saveNote({ storage: fakeStorage({ [from]: original }), shared: fakeShared() }, personal, edited, "m1");
+  assert.deepEqual(keys, [to, from]);
+});
+
 test("a draft coming back onto a note changed since keeps its earlier saves to the fields it changed", async () => {
   const key = "note:m1:image:a:1";
   // A yellow note that was A: B saved with its answer lost, then the edit went back to A and the picture changed.
