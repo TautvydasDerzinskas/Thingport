@@ -114,6 +114,8 @@ export const rebaseEdit = (edit, original, stored) =>
  * An edit (`existing`, with the `original` it was opened from) writes only the fields it changed onto the note as
  * stored now, so a change made somewhere else to the others, as in another tab, stays. It throws `NoteGone` for a
  * note deleted meanwhile, and `NoteChanged` when a field it changed was changed there too.
+ * A new note's retry passes `sent`, the value its first save sent: that save may have gone through with its answer
+ * lost, so a note found under the key is taken as an edit of `sent`, and one not found is written afresh.
  * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
  * pass the same one to a retry of the move. Returns the key it's kept under, the value written, and whether an older
  * copy was left.
@@ -121,14 +123,15 @@ export const rebaseEdit = (edit, original, stored) =>
 export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
   let contents = Object.fromEntries(FIELDS.map((field) => [field, value[field]]));
-  if (note.existing) {
-    const stored = await storedNote(thingport, note);
-    if (!stored) throw new NoteGone();
-    const changed = FIELDS.filter((field) => value[field] !== note.original[field]);
+  const stored = note.existing || note.sent ? await storedNote(thingport, note) : null;
+  if (note.existing && !stored) throw new NoteGone();
+  if (stored) {
+    const original = note.existing ? note.original : note.sent;
+    const changed = FIELDS.filter((field) => value[field] !== original[field]);
     // A field already as this edit asks, as after a save whose answer was lost, isn't a conflict.
-    if (changed.some((field) => stored[field] !== note.original[field] && stored[field] !== value[field]))
+    if (changed.some((field) => stored[field] !== original[field] && stored[field] !== value[field]))
       throw new NoteChanged(stored);
-    contents = { ...Object.fromEntries(FIELDS.map((field) => [field, stored[field]])), ...pick(value, changed) };
+    contents = { ...pick(stored, FIELDS), ...pick(value, changed) };
   }
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
@@ -793,6 +796,8 @@ export function modelImage(thingport) {
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
   const draftKey = [thingport.tool?.id ?? "", user?.id ?? "", modelId, preview?.key ?? ""].join("|");
+  // A new note of the viewer's on this picture, as it's kept once saved.
+  const ownNote = (e) => ({ key: e.key, mine: true, modelId, ...(e.isPublic ? { public: true, user } : {}) });
 
   const settings = settingsFor(thingport);
   // The menu while it's open, so its switch follows a change made elsewhere or the settings arriving.
@@ -1077,14 +1082,18 @@ export function modelImage(thingport) {
   }
 
   // One at a time, and none whose save is still out: it comes back only if that save fails.
-  const readyDraft = () => [...(drafts.get(draftKey)?.values() ?? [])].find((kept) => !kept.saving);
+  const readyDraft = (skip) =>
+    [...(drafts.get(draftKey)?.values() ?? [])].find((kept) => !kept.saving && !skip?.has(kept));
   const stillKept = (draft) => drafts.get(draftKey)?.get(draft.token) === draft && !draft.saving;
 
   async function restoreDraft() {
-    // Past any whose note has been deleted since, to the first that can open.
+    // Past any whose note has been deleted since, or can't be checked now, to the first that can open: each once.
+    const tried = new Set();
+    let failed = false;
     for (;;) {
-      const draft = !editing && readyDraft();
+      const draft = !editing && readyDraft(tried);
       if (!draft) return;
+      tried.add(draft);
       let note = draft.note && notes.find((candidate) => noteId(candidate) === noteId(draft.note));
       if (draft.note && !note) {
         // Not among this picture's notes isn't deleted: one from another copy shows only while the pictures can be
@@ -1093,9 +1102,11 @@ export function modelImage(thingport) {
         try {
           stored = await storedNote(thingport, draft.note);
         } catch {
-          // Can't tell: the draft waits for the next load.
-          if (alive) ui.toast(t("board.error"), "error");
-          return;
+          // Can't tell: this draft waits for the next load, said once however many fail.
+          if (!alive) return;
+          if (!failed) ui.toast(t("board.error"), "error");
+          failed = true;
+          continue;
         }
         if (!alive || editing || !stillKept(draft)) return;
         if (!stored) {
@@ -1144,8 +1155,9 @@ export function modelImage(thingport) {
       note,
       key: draft?.key ?? note?.key ?? newNoteKey(modelId, preview.key),
       isPublic: draft ? draft.isPublic : Boolean(note?.public),
-      // A save of a new note was sent: it may be stored even if the answer said otherwise, so retries go where it went.
-      sent: Boolean(draft?.sent),
+      // What the first save of a new note sent: it may be stored even if the answer said otherwise, so retries go where
+      // it went and change only what's been changed since.
+      sent: draft?.sent ?? null,
       // One key for a public note moving to this copy, however often the move is retried.
       moveKey: draft?.moveKey ?? null,
       // Which edit a kept draft belongs to.
@@ -1348,7 +1360,7 @@ export function modelImage(thingport) {
       control.setAttribute("aria-pressed", String(look === e.look));
     for (const [name, control] of Object.entries(e.audience)) {
       control.setAttribute("aria-pressed", String((name === "public") === e.isPublic));
-      control.disabled = e.saving || Boolean(e.note) || e.sent;
+      control.disabled = e.saving || Boolean(e.note || e.sent);
       if (e.note || e.sent) control.title = t(e.note ? "editor.visibilityFixed" : "editor.visibilitySent");
     }
     e.swatches.hidden = e.colorSep.hidden = !sticky;
@@ -1515,9 +1527,10 @@ export function modelImage(thingport) {
     const text = e?.text.trim();
     if (!text || e.saving) return;
     e.saving = true;
-    e.sent = true;
-    applyEditor();
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
+    const sentBefore = e.note ? null : e.sent;
+    e.sent ??= value;
+    applyEditor();
     // Only what was picked in this edit becomes the next note's, look and colour each on its own: defaults that stood
     // in for unread settings aren't saved alongside it. Taken now, as the save may finish after the picture changes.
     const picked = Object.fromEntries(
@@ -1533,6 +1546,7 @@ export function modelImage(thingport) {
         modelId: e.note?.modelId,
         existing: Boolean(e.note),
         original: e.original,
+        sent: sentBefore,
       };
       const saved = await saveNote(thingport, draft, value, modelId, e.moveKey);
       // Saved, even if the picture changed meanwhile: a draft kept for it is spent, and what was picked is remembered.
@@ -1543,20 +1557,25 @@ export function modelImage(thingport) {
         Object.entries(picked).filter(([field]) => (settings.pickedAt[field] ?? 0) < pickedAt),
       );
       for (const field of Object.keys(newest)) settings.pickedAt[field] = pickedAt;
-      // Before the settings are read, the view holds defaults: a pick equal to one may still differ from what's saved.
-      const unread = !settings.read && Object.keys(newest).length;
-      if (unread || Object.entries(newest).some(([field, chosen]) => settings.view[field] !== chosen)) setView(newest);
+      // Written even when the view already says so: that may be a default standing in for unread settings, or a pick
+      // whose write failed.
+      if (Object.keys(newest).length) setView(newest);
       if (!alive || editing !== e) return;
       const moved = saved.key !== e.key;
       const note = {
-        ...(e.note ?? { key: e.key, mine: true, modelId, ...(e.isPublic ? { public: true, user } : {}) }),
+        ...(e.note ?? ownNote(e)),
         ...(moved ? { key: saved.key, modelId } : {}),
         value: noteValue(saved.value),
         updatedAt: new Date().toISOString(),
       };
-      const replaced = [noteId(note), ...(e.note ? [noteId(e.note)] : [])];
-      notes = [note, ...notes.filter((other) => !replaced.includes(noteId(other)))];
-      endEdit(note);
+      // An edit that came back for a note this picture doesn't list, as one from another copy while the pictures can't
+      // be compared, isn't drawn here: the reload its save set off has the say.
+      const listed = !e.note || moved || notes.some((other) => noteId(other) === noteId(e.note));
+      if (listed) {
+        const replaced = [noteId(note), ...(e.note ? [noteId(e.note)] : [])];
+        notes = [note, ...notes.filter((other) => !replaced.includes(noteId(other)))];
+      }
+      endEdit(listed ? note : null);
     } catch (error) {
       if (error instanceof NoteGone) {
         dropDraft(e);
@@ -1569,18 +1588,19 @@ export function modelImage(thingport) {
         return;
       }
       if (error instanceof NoteChanged) {
-        // Changed here and somewhere else since it was opened: the editor stays, now measured against the note as
-        // it is, so saving again replaces the other change. What this edit didn't change takes the stored value.
-        const textKept = e.text === e.original.text;
-        Object.assign(e, rebaseEdit(e, e.original, error.stored));
+        // Changed here and somewhere else since it was opened, or for a new note since it was sent: the editor stays,
+        // now measured against the note as it is, so saving again replaces the other change. What this edit didn't
+        // change takes the stored value. A new note found stored is from now on an edit of it.
+        const base = e.note ? e.original : e.sent;
+        const textKept = value.text === base.text;
+        Object.assign(e, rebaseEdit(value, base, error.stored));
         if (textKept) e.field.value = e.text;
         e.original = error.stored;
-        if (e.note) e.note = { ...e.note, value: error.stored };
-        const kept = drafts.get(draftKey)?.get(e.token);
-        if (kept) kept.base = error.stored;
+        e.note = { ...(e.note ?? ownNote(e)), value: error.stored };
         ui.toast(t("editor.conflict"), "warning");
-        if (kept) {
-          kept.saving = false;
+        // A draft kept for the picture, if it changed meanwhile, is now this edit as it stands.
+        if (drafts.get(draftKey)?.has(e.token)) {
+          keepDraft(e, false);
           draftsFreed.dispatchEvent(new CustomEvent("freed", { detail: draftKey }));
         }
         return;
