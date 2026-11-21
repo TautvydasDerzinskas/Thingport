@@ -168,7 +168,7 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     }
     contents = { ...contents, ...pick(stored, theirs) };
   }
-  note.onSend?.(moved ? moveKey : note.key);
+  note.onSend?.(moved ? moveKey : note.key, contents);
   if (moved) {
     await shared.set(moveKey, contents, { model: modelId });
     return { key: moveKey, value: contents, leftover: await cleanUp() };
@@ -189,24 +189,22 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     // model's licence answers that the way the write does, without counting as a visit to the model.
     const res = await api("/print/" + encodeURIComponent(written) + "/license").catch(() => null);
     if (!res || ![403, 404].includes(res.status)) throw error;
-    // The new copy is written first, so a failure along the way leaves two copies rather than none.
+    // The new copy is written first, so a failure along the way leaves two copies rather than none. The old one then
+    // goes only as this save found it, as it was written, or as this editor knew it.
     await shared.set(moveKey, contents, { model: modelId });
-    const leftover = await shared.remove(note.key).then(
-      () => false,
-      () => true,
-    );
-    return { key: moveKey, value: contents, leftover };
+    const known = [...(note.oldCopy?.values ?? []), stored, contents];
+    return { key: moveKey, value: contents, leftover: await dropOldCopy(thingport, { key: note.key, values: known }) };
   }
 }
 
 /**
- * Removes the old copy of a note whose move turned out done on a retry, but only as this editor left it, holding one of
- * `values`: saved to since, as once its model can be opened again, or unreadable, it stays. Says whether one is left.
+ * Removes the old copy of a moved note, but only as this editor left it, holding the whole of one of `values`: saved to
+ * since, as once its model can be opened again, or unreadable, it stays. Says whether one is left.
  */
 async function dropOldCopy(thingport, { key, values }) {
   const old = await storedNote(thingport, { public: true, key }).catch(() => undefined);
   if (old === null) return false;
-  const untouched = old && FIELDS.every((field) => values.some((sent) => sent[field] === old[field]));
+  const untouched = old && values.some((known) => known && FIELDS.every((field) => known[field] === old[field]));
   if (!untouched) return true;
   return thingport.shared.remove(key).then(
     () => false,
@@ -1636,10 +1634,10 @@ export function modelImage(thingport) {
         oldCopy: e.oldCopy,
         // Once it's written, this save joins the ones before it until it's known to have gone through, or not to have:
         // a read failing first sends nothing.
-        onSend: (key) => {
+        onSend: (key, written) => {
           e.tried = [...tried, value];
-          // Written to the old copy, it may be what that copy holds.
-          if (e.oldCopy?.key === key) e.oldCopy.values.push(value);
+          // Written to the old copy, it may be what that copy holds, as merged with the note there.
+          if (e.oldCopy?.key === key) e.oldCopy.values.push(written);
           const kept = drafts.get(draftKey)?.get(e.token);
           if (kept) kept.tried = e.tried;
         },
@@ -1703,8 +1701,9 @@ export function modelImage(thingport) {
           e.key = error.key;
           e.moveKey = null;
         }
-        // Cleaned up already, at the new copy.
+        // Cleaned up already, at the new copy; or, met at the old copy, what's stored there is now known to be there.
         if (e.oldCopy && e.oldCopy.key !== e.key) e.oldCopy = null;
+        else if (e.oldCopy) e.oldCopy.values.push(error.stored);
         // Said first, so the conflict stays up longer.
         if (error.leftover) ui.toast(t("editor.oldCopy"), "warning");
         ui.toast(t("editor.conflict"), "warning");
@@ -1792,9 +1791,11 @@ export function modelImage(thingport) {
     alive = false;
     settings.listeners.delete(onSettings);
     draftsFreed.removeEventListener("freed", onDraftFreed);
-    // An unsaved edit waits for the picture to come back, as does one a lost answer left unsure of; one still saving
-    // waits too, in case the save fails.
-    if (editing && (editing.saving || editing.tried.length || changedFields(editing).length))
+    // An unsaved edit waits for the picture to come back, as does one a lost answer left unsure of: a save that may not
+    // have gone through, of something other than the note as it now starts from. One still saving waits too, in case
+    // the save fails.
+    const unsure = (e) => e.tried.some((sent) => EDITABLE.some((field) => sent[field] !== e.original[field]));
+    if (editing && (editing.saving || unsure(editing) || changedFields(editing).length))
       keepDraft(editing, editing.saving);
     stop();
     observer?.disconnect();

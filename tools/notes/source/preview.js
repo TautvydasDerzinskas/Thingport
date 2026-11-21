@@ -1120,10 +1120,10 @@ export function modelImage(thingport) {
         oldCopy: e.oldCopy,
         // Once it's written, this save joins the ones before it until it's known to have gone through, or not to have:
         // a read failing first sends nothing.
-        onSend: (key) => {
+        onSend: (key, written) => {
           e.tried = [...tried, value];
-          // Written to the old copy, it may be what that copy holds.
-          if (e.oldCopy?.key === key) e.oldCopy.values.push(value);
+          // Written to the old copy, it may be what that copy holds, as merged with the note there.
+          if (e.oldCopy?.key === key) e.oldCopy.values.push(written);
           const kept = drafts.get(draftKey)?.get(e.token);
           if (kept) kept.tried = e.tried;
         },
@@ -1187,8 +1187,9 @@ export function modelImage(thingport) {
           e.key = error.key;
           e.moveKey = null;
         }
-        // Cleaned up already, at the new copy.
+        // Cleaned up already, at the new copy; or, met at the old copy, what's stored there is now known to be there.
         if (e.oldCopy && e.oldCopy.key !== e.key) e.oldCopy = null;
+        else if (e.oldCopy) e.oldCopy.values.push(error.stored);
         // Said first, so the conflict stays up longer.
         if (error.leftover) ui.toast(t("editor.oldCopy"), "warning");
         ui.toast(t("editor.conflict"), "warning");
@@ -1276,9 +1277,11 @@ export function modelImage(thingport) {
     alive = false;
     settings.listeners.delete(onSettings);
     draftsFreed.removeEventListener("freed", onDraftFreed);
-    // An unsaved edit waits for the picture to come back, as does one a lost answer left unsure of; one still saving
-    // waits too, in case the save fails.
-    if (editing && (editing.saving || editing.tried.length || changedFields(editing).length))
+    // An unsaved edit waits for the picture to come back, as does one a lost answer left unsure of: a save that may not
+    // have gone through, of something other than the note as it now starts from. One still saving waits too, in case
+    // the save fails.
+    const unsure = (e) => e.tried.some((sent) => EDITABLE.some((field) => sent[field] !== e.original[field]));
+    if (editing && (editing.saving || unsure(editing) || changedFields(editing).length))
       keepDraft(editing, editing.saving);
     stop();
     observer?.disconnect();

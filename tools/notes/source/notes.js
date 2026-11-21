@@ -164,7 +164,7 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     }
     contents = { ...contents, ...pick(stored, theirs) };
   }
-  note.onSend?.(moved ? moveKey : note.key);
+  note.onSend?.(moved ? moveKey : note.key, contents);
   if (moved) {
     await shared.set(moveKey, contents, { model: modelId });
     return { key: moveKey, value: contents, leftover: await cleanUp() };
@@ -185,24 +185,22 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     // model's licence answers that the way the write does, without counting as a visit to the model.
     const res = await api("/print/" + encodeURIComponent(written) + "/license").catch(() => null);
     if (!res || ![403, 404].includes(res.status)) throw error;
-    // The new copy is written first, so a failure along the way leaves two copies rather than none.
+    // The new copy is written first, so a failure along the way leaves two copies rather than none. The old one then
+    // goes only as this save found it, as it was written, or as this editor knew it.
     await shared.set(moveKey, contents, { model: modelId });
-    const leftover = await shared.remove(note.key).then(
-      () => false,
-      () => true,
-    );
-    return { key: moveKey, value: contents, leftover };
+    const known = [...(note.oldCopy?.values ?? []), stored, contents];
+    return { key: moveKey, value: contents, leftover: await dropOldCopy(thingport, { key: note.key, values: known }) };
   }
 }
 
 /**
- * Removes the old copy of a note whose move turned out done on a retry, but only as this editor left it, holding one of
- * `values`: saved to since, as once its model can be opened again, or unreadable, it stays. Says whether one is left.
+ * Removes the old copy of a moved note, but only as this editor left it, holding the whole of one of `values`: saved to
+ * since, as once its model can be opened again, or unreadable, it stays. Says whether one is left.
  */
 async function dropOldCopy(thingport, { key, values }) {
   const old = await storedNote(thingport, { public: true, key }).catch(() => undefined);
   if (old === null) return false;
-  const untouched = old && FIELDS.every((field) => values.some((sent) => sent[field] === old[field]));
+  const untouched = old && values.some((known) => known && FIELDS.every((field) => known[field] === old[field]));
   if (!untouched) return true;
   return thingport.shared.remove(key).then(
     () => false,
