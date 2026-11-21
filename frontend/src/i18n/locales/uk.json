@@ -7673,9 +7673,7 @@
       "fewestDownloads": "Найменше завантажень",
       "leastRelevant": "Найменш релевантні",
       "fewestModels": "Найменше моделей",
-      "reverseAlphabetical": "{{label}} (Я–А)",
-      "reverseAscending": "За зростанням. Змінити напрямок сортування",
-      "reverseDescending": "За спаданням. Змінити напрямок сортування"
+      "reverseAlphabetical": "{{label}} (Я–А)"
     },
     "view": {
       "label": "Показати категорії або папки",

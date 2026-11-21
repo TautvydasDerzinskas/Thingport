@@ -1,9 +1,7 @@
-import { useTranslation } from "react-i18next";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import IconButton from "@mui/material/IconButton";
+import { useState } from "react";
+import { keyframes } from "@emotion/react";
+import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { defaultSortDirection, type SortDirection } from "../../utils/sortDirection";
 
@@ -22,6 +20,22 @@ type Props<T extends string> = {
   onDirectionChange: (direction: SortDirection) => void;
 };
 
+/** A click on the chosen option reverses its order; any other option is chosen in its own default order. */
+export function sortClick<T extends string>(
+  value: T,
+  direction: SortDirection,
+  clicked: T,
+): { direction: SortDirection } | { value: T } {
+  if (clicked !== value) return { value: clicked };
+  return { direction: direction === "asc" ? "desc" : "asc" };
+}
+
+// The label is all that shows the order, so a new one settles in rather than just swapping.
+const relabel = keyframes`
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+`;
+
 export default function SortTabs<T extends string>({
   value,
   options,
@@ -29,14 +43,19 @@ export default function SortTabs<T extends string>({
   direction,
   onDirectionChange,
 }: Props<T>) {
-  const { t } = useTranslation("models");
-  const ascending = direction === "asc";
-  const directionLabel = t(ascending ? "sort.reverseAscending" : "sort.reverseDescending");
+  // Only a flip animates, so the labels don't all fade in whenever the page draws them.
+  const [flipped, setFlipped] = useState<T | null>(null);
   return (
     <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={{ xs: 1.25, sm: 2 }} rowGap={0.5}>
       {options.map((option) => {
         const chosen = option.value === value;
         const reversed = chosen && direction !== (option.defaultDirection ?? defaultSortDirection(option.value));
+        const click = () => {
+          const next = sortClick(value, direction, option.value);
+          if ("value" in next) return onChange(next.value);
+          setFlipped(option.value);
+          onDirectionChange(next.direction);
+        };
         return (
           <Typography
             key={option.value}
@@ -44,7 +63,7 @@ export default function SortTabs<T extends string>({
             type="button"
             variant="body2"
             aria-pressed={chosen}
-            onClick={() => onChange(option.value)}
+            onClick={click}
             sx={{
               p: 0,
               border: 0,
@@ -67,26 +86,23 @@ export default function SortTabs<T extends string>({
               "@media (prefers-reduced-motion: reduce)": { transition: "none" },
             }}
           >
-            {reversed ? option.reverseLabel : option.label}
+            {/* Keyed by the order, so a flip replays the animation without replacing the focused button. */}
+            <Box
+              component="span"
+              key={reversed ? "reversed" : "default"}
+              sx={{
+                display: "inline-block",
+                ...(flipped === option.value && {
+                  animation: `${relabel} 180ms ease-out`,
+                  "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                }),
+              }}
+            >
+              {reversed ? option.reverseLabel : option.label}
+            </Box>
           </Typography>
         );
       })}
-      <Tooltip title={directionLabel}>
-        <IconButton
-          size="small"
-          aria-label={directionLabel}
-          onClick={() => onDirectionChange(ascending ? "desc" : "asc")}
-          sx={{
-            flexShrink: 0,
-            gap: 0.125,
-            "@media (pointer: coarse)": { minWidth: 44, minHeight: 44 },
-            "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main" },
-          }}
-        >
-          <ArrowUpwardIcon sx={{ fontSize: 16, color: ascending ? "success.main" : "text.secondary" }} />
-          <ArrowDownwardIcon sx={{ fontSize: 16, color: ascending ? "text.secondary" : "success.main" }} />
-        </IconButton>
-      </Tooltip>
     </Stack>
   );
 }

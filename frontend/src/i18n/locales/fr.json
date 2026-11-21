@@ -6030,9 +6030,7 @@
       "fewestDownloads": "Moins de téléchargements",
       "leastRelevant": "Moins pertinents",
       "fewestModels": "Moins de modèles",
-      "reverseAlphabetical": "{{label}} (Z–A)",
-      "reverseAscending": "Ordre croissant. Inverser l’ordre de tri",
-      "reverseDescending": "Ordre décroissant. Inverser l’ordre de tri"
+      "reverseAlphabetical": "{{label}} (Z–A)"
     },
     "card": {
       "unknownAuthor": "Inconnu",
