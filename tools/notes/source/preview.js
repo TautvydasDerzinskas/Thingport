@@ -32,9 +32,11 @@ const draftsFreed = new EventTarget();
 // read is tried again, by the next picture and before any write, so the defaults never go over saved settings.
 const settingsByUser = new Map();
 
-function readSettings(settings, storage) {
-  settings.reading ??= readView(storage)
-    .then((stored) => {
+function readSettings(settings, { storage, api }) {
+  settings.reading ??= Promise.all([readView(storage), stillSignedIn(api, settings.userId)])
+    .then(([stored, owner]) => {
+      // Read under someone else's session, as after signing in as another account: not theirs to keep.
+      if (!owner) throw new Error("Signed in as someone else");
       settings.view = { ...stored, ...settings.early };
       settings.read = true;
       for (const listener of settings.listeners) listener();
@@ -43,7 +45,8 @@ function readSettings(settings, storage) {
   return settings.reading;
 }
 
-function settingsFor({ storage, user }) {
+function settingsFor(thingport) {
+  const { user } = thingport;
   const userId = user?.id ?? "";
   let settings = settingsByUser.get(userId);
   if (!settings) {
@@ -57,8 +60,13 @@ function settingsFor({ storage, user }) {
     settingsByUser.set(userId, settings);
     settings.writing = Promise.resolve();
   }
-  if (!settings.read) settings.ready = readSettings(settings, storage).catch(() => undefined);
+  if (!settings.read) loadSettings(settings, thingport);
   return settings;
+}
+
+/** The settings as saved, read now if they haven't been: resolves either way, as the defaults stand in meanwhile. */
+function loadSettings(settings, thingport) {
+  return settings.read ? Promise.resolve() : readSettings(settings, thingport).catch(() => undefined);
 }
 
 /** Whether the page is still signed in as `userId`: a write waiting in line mustn't land in another account's. */
@@ -68,13 +76,15 @@ async function stillSignedIn(api, userId) {
   return Boolean(userId) && body?.user?.id === userId;
 }
 
-function changeSettings(settings, { storage, api }, change) {
+function changeSettings(settings, thingport, change) {
+  const { storage, api } = thingport;
   settings.view = { ...settings.view, ...change };
   if (!settings.read) Object.assign(settings.early, change);
   for (const listener of settings.listeners) listener();
   const write = settings.writing.then(async () => {
-    if (!settings.read) await readSettings(settings, storage);
+    // Checked before reading too, so a read under another account's session is never taken for the owner's.
     if (!(await stillSignedIn(api, settings.userId))) throw new Error("Signed in as someone else");
+    if (!settings.read) await readSettings(settings, thingport);
     await writeView(storage, settings.view);
   });
   // A failed write doesn't hold up the next.
@@ -355,7 +365,7 @@ export function modelImage(thingport) {
           icon: "add",
           label: t("menu.add"),
           // A new note starts with the saved look and colour, on this picture if it's still the one shown.
-          action: (gone) => settings.ready.then(() => alive && startEdit(null, gone)),
+          action: (gone) => loadSettings(settings, thingport).then(() => alive && startEdit(null, gone)),
           disabled: !layer || Boolean(editing),
           title: layer ? undefined : t("menu.noPicture"),
         },
@@ -597,12 +607,21 @@ export function modelImage(thingport) {
   }
 
   // One at a time, and none whose save is still out: it comes back only if that save fails.
+  const readyDraft = () => [...(drafts.get(draftKey)?.values() ?? [])].find((kept) => !kept.saving);
+
   function restoreDraft() {
-    const draft = editing ? null : [...(drafts.get(draftKey)?.values() ?? [])].find((kept) => !kept.saving);
-    if (!draft) return;
-    dropDraft(draft);
-    const note = draft.noteId ? notes.find((candidate) => noteId(candidate) === draft.noteId) : null;
-    if (draft.noteId && !note) return ui.toast(t("editor.deleted"), "warning");
+    if (editing) return;
+    let draft;
+    let note = null;
+    // Past any whose note has been deleted since, to the first that can open.
+    for (;;) {
+      draft = readyDraft();
+      if (!draft) return;
+      dropDraft(draft);
+      note = draft.noteId ? notes.find((candidate) => noteId(candidate) === draft.noteId) : null;
+      if (!draft.noteId || note) break;
+      ui.toast(t("editor.deleted"), "warning");
+    }
     const latest = note?.value ?? draft.base;
     startEdit(note, null, {
       ...latest,
@@ -992,6 +1011,7 @@ export function modelImage(thingport) {
     renderPins();
     const target = focusNote && [...pins.children].find((element) => element.dataset.id === noteId(focusNote));
     (target ?? button).focus({ preventScroll: true });
+    if (readyDraft()) void load();
   }
 
   async function saveEdit() {
@@ -1019,7 +1039,10 @@ export function modelImage(thingport) {
       };
       const replaced = [noteId(saved), ...(e.note ? [noteId(e.note)] : [])];
       notes = [saved, ...notes.filter((note) => !replaced.includes(noteId(note)))];
-      if (e.look !== settings.view.look || e.color !== settings.view.color) setView({ look: e.look, color: e.color });
+      // A look or colour picked in this edit becomes the next note's; defaults that stood in for unread settings don't.
+      const picked = e.look !== e.original.look || e.color !== e.original.color;
+      if (picked && (e.look !== settings.view.look || e.color !== settings.view.color))
+        setView({ look: e.look, color: e.color });
       endEdit(saved);
     } catch (error) {
       if (error instanceof NoteGone) {
