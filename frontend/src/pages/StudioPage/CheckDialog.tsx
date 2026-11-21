@@ -34,7 +34,7 @@ import type { BodyCheck, PrintCheckOptions } from "../../studio/printCheck";
 import { centeredPrinterOutline } from "../../studio/printLayout";
 import { NumberField } from "./fields";
 import { checkInWorker, measureBetweenInWorker } from "./geometryClient";
-import { featureLabel } from "./labels";
+import { featureLabel, plateLabel } from "./labels";
 import type { UnitFormat } from "./units";
 import type { RunCommand } from "./useStudioDesign";
 
@@ -143,8 +143,9 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
     check: ReturnType<typeof checkDesign>;
   } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  const unloaded = doc ? studioPlates(doc).find((plate) => plate.source) : undefined;
   useEffect(() => {
-    if (!open || !doc || !designId) return;
+    if (!open || !doc || !designId || unloaded) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       checkInWorker(designId, doc, effective).then(
@@ -160,8 +161,8 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [open, doc, designId, effective]);
-  const checking = !failure && (report?.doc !== doc || report?.options !== effective);
+  }, [open, doc, designId, effective, unloaded]);
+  const checking = !unloaded && !failure && (report?.doc !== doc || report?.options !== effective);
 
   const bodies = useMemo(
     () => (doc ? topLevel(doc).filter((feature) => isBody(feature) && feature.visible) : []),
@@ -174,7 +175,8 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
   const plateName = (id: string) => {
     if (!doc) return undefined;
     const feature = featureById(doc, id);
-    return feature && studioPlates(doc).find((plate) => plate.id === plateOf(feature))?.name;
+    const plate = feature && studioPlates(doc).find((entry) => entry.id === plateOf(feature));
+    return plate && plateLabel(plate, t);
   };
   const [pair, setPair] = useState<[string, string]>(["", ""]);
   useEffect(() => {
@@ -297,7 +299,9 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
         </Box>
 
         <Box sx={{ mt: 2 }} aria-live="polite" aria-busy={checking}>
-          {failure ? (
+          {unloaded ? (
+            <Alert severity="info">{t("studio.importModel.checkUnloaded", { name: plateLabel(unloaded, t) })}</Alert>
+          ) : failure ? (
             <Alert severity="error">{failure}</Alert>
           ) : !report ? (
             <Stack spacing={1}>

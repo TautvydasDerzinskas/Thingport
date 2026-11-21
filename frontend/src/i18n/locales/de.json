@@ -4664,6 +4664,28 @@
           "closed": "Geschlossen"
         }
       },
+      "importModel": {
+        "loadingStudio": "Thingport Studio wird geladen …",
+        "preparing": "„{{filename}}“ wird für Thingport Studio vorbereitet …",
+        "failed": "„{{filename}}“ konnte in Thingport Studio nicht geöffnet werden",
+        "platePreparing": "„{{name}}“ wird vorbereitet …",
+        "plateFailed": "„{{name}}“ konnte nicht vorbereitet werden",
+        "loadPlate": "Druckplatte laden",
+        "checkUnloaded": "Öffne „{{name}}“, bevor du das gesamte Design auf Druckbarkeit prüfst.",
+        "archiveLimit": "Dieses 3MF-Archiv ist zu groß für Studio.",
+        "noPlates": "Studio konnte aus dieser 3MF-Datei keine Druckplatten lesen.",
+        "plateLimit": "Eine Druckplatte kann bis zu {{objects}} Objekte und {{plateTriangles}} Dreiecke enthalten.",
+        "bodyLimit": "Jeder importierte Körper kann bis zu {{bodyTriangles}} Dreiecke enthalten.",
+        "missingParts": "Diese 3MF-Datei verweist auf fehlende Modellteile.",
+        "noBodies": "Studio konnte keine druckbaren Körper lesen.",
+        "readFailed": "Studio konnte die Modelldatei nicht lesen.",
+        "tooManyPlates": "Ein Studio-Design kann bis zu {{plates}} Druckplatten enthalten.",
+        "tooManyObjects": "Ein Studio-Design kann bis zu {{objects}} Körper und Features enthalten.",
+        "loadPlateFirst": "Lade zuerst diese Druckplatte.",
+        "platePending": "Die Körper werden geladen, wenn du diese Platte öffnest.",
+        "filamentsPending": "Öffne die übrigen Druckplatten, um alle Filamentfarben zu sehen.",
+        "geometryFailed": "Studio konnte diese Geometrie nicht verarbeiten."
+      },
       "imported": {
         "parts_one": "Das Modell wurde als ein Körper aus {{count}} Teil eingefügt",
         "parts_other": "Das Modell wurde als ein Körper aus {{count}} getrennten Teilen eingefügt",
@@ -5803,9 +5825,7 @@
       "fewestDownloads": "Wenigste Downloads",
       "leastRelevant": "Am wenigsten relevant",
       "fewestModels": "Wenigste Modelle",
-      "reverseAlphabetical": "{{label}} (Z–A)",
-      "reverseAscending": "Aufsteigende Reihenfolge. Sortierrichtung umkehren",
-      "reverseDescending": "Absteigende Reihenfolge. Sortierrichtung umkehren"
+      "reverseAlphabetical": "{{label}} (Z–A)"
     },
     "card": {
       "unknownAuthor": "Unbekannt",

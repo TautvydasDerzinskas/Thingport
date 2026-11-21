@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import type { MeshData, PartMeasure, StudioDocument, Vec3 } from "../../studio/document";
 import type { Bounds } from "../../studio/commands";
 import type { EvaluatedBody, checkDesign, measureBetween } from "../../studio/geometry";
@@ -8,6 +9,7 @@ import { designMeshes } from "./meshAssets";
 // or a body's loose parts, for separating them.
 
 export type WorkerBody = EvaluatedBody & {
+  dense: boolean;
   picking: {
     /** Each triangle's flat face. */
     faceOf: Int32Array;
@@ -21,6 +23,8 @@ export type GeometryQuestion = {
   id: number;
   document: StudioDocument;
   ids?: string[];
+  /** Dense bodies that need face or edge data for the current tool. */
+  detailedIds?: string[];
   /** Imported meshes the worker hasn't had yet, by asset id. */
   assets: Record<string, MeshData>;
   /** A body to find the loose parts of, instead of making bodies. */
@@ -57,12 +61,30 @@ function hire(): Worker {
     waiting.get(event.data.id)?.(event.data);
     waiting.delete(event.data.id);
   });
+  worker.addEventListener("error", (event) => {
+    worker?.terminate();
+    worker = null;
+    sent.clear();
+    for (const [id, resolve] of waiting)
+      resolve({
+        id,
+        bodies: [],
+        errors: [],
+        failure: event.message || i18next.t("studio.importModel.geometryFailed", { ns: "app" }),
+      });
+    waiting.clear();
+  });
   return worker;
 }
 
 /** The design's bodies (or only `ids`), made in the worker. */
-export function evaluateInWorker(designId: string, document: StudioDocument, ids?: string[]): Promise<GeometryAnswer> {
-  return ask(designId, document, { ids });
+export function evaluateInWorker(
+  designId: string,
+  document: StudioDocument,
+  ids: string[],
+  detailedIds: string[],
+): Promise<GeometryAnswer> {
+  return ask(designId, document, { ids, detailedIds });
 }
 
 /** A body's loose parts, as separate_parts would make them: what the server finds too, from the same code. */
@@ -96,22 +118,22 @@ export async function measureBetweenInWorker(designId: string, document: StudioD
 async function ask(
   designId: string,
   document: StudioDocument,
-  question: Pick<GeometryQuestion, "ids" | "parts" | "bounds" | "check" | "between">,
+  question: Pick<GeometryQuestion, "ids" | "detailedIds" | "parts" | "bounds" | "check" | "between">,
 ): Promise<GeometryAnswer> {
-  const lookup = await designMeshes(designId, document);
+  const ids = question.ids ?? question.bounds ?? question.between ?? (question.parts ? [question.parts] : undefined);
+  const meshes = await designMeshes(designId, document, ids);
   const assets: Record<string, MeshData> = {};
-  for (const feature of document.features) {
-    if (feature.type !== "mesh" || sent.has(feature.asset_id)) continue;
-    const mesh = lookup(feature.asset_id);
-    if (!mesh) continue;
+  for (const [assetId, mesh] of meshes) {
+    if (sent.has(assetId)) continue;
     // A copy goes over; the page keeps its own for exports.
-    assets[feature.asset_id] = { positions: mesh.positions.slice(), indices: mesh.indices.slice() };
-    sent.add(feature.asset_id);
+    assets[assetId] = { positions: mesh.positions.slice(), indices: mesh.indices.slice() };
+    sent.add(assetId);
   }
   const id = next++;
   return new Promise((resolve) => {
     waiting.set(id, resolve);
+    const buffers = Object.values(assets).flatMap((mesh) => [mesh.positions.buffer, mesh.indices.buffer]);
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker, not a window.
-    hire().postMessage({ id, document, assets, ...question } satisfies GeometryQuestion);
+    hire().postMessage({ id, document, assets, ...question } satisfies GeometryQuestion, buffers);
   });
 }

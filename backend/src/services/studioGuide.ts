@@ -35,6 +35,9 @@ read it again (studio_get_design) before building on something.
   you pass plate_id. studio_create_plate adds a named plate and returns its ID.
 - Use studio_move_to_plate for existing bodies or sketches. Their local positions stay the same. Two different
   plates can have bodies at the same coordinates. Use studio_set_body_color with an RGB hex color on each body.
+- studio_import_model accepts defer_plates: true for a 3MF in a new design. The result lists pending_plate_ids,
+  and studio_get_design marks those plates with pending_import. Use studio_load_source_plate with the plate_id
+  to bring in its bodies before editing or viewing that plate. Load all pending plates before studio_check_print.
 - studio_view_design can show an individual plate by plate_id. Saving to the library preserves plates and colors in 3MF.
 
 ## Naming faces and edges

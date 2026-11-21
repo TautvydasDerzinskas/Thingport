@@ -554,6 +554,28 @@
           "closed": "Замкнути"
         }
       },
+      "importModel": {
+        "loadingStudio": "Завантаження Thingport Studio…",
+        "preparing": "Підготовка файлу «{{filename}}» для Thingport Studio…",
+        "failed": "Не вдалося відкрити файл «{{filename}}» у Thingport Studio",
+        "platePreparing": "Підготовка пластини «{{name}}»…",
+        "plateFailed": "Не вдалося підготувати пластину «{{name}}»",
+        "loadPlate": "Завантажити друкарську пластину",
+        "checkUnloaded": "Відкрийте пластину «{{name}}», перш ніж перевіряти весь проєкт на придатність до друку.",
+        "archiveLimit": "Цей архів 3MF завеликий для читання в Studio.",
+        "noPlates": "Studio не вдалося прочитати жодної друкарської пластини з цього файлу 3MF.",
+        "plateLimit": "На друкарській пластині може бути до {{objects}} об’єктів і {{plateTriangles}} трикутників.",
+        "bodyLimit": "Кожне імпортоване тіло може містити до {{bodyTriangles}} трикутників.",
+        "missingParts": "Цей файл 3MF посилається на відсутні частини моделі.",
+        "noBodies": "Studio не вдалося прочитати жодного тіла для друку.",
+        "readFailed": "Studio не вдалося прочитати файл моделі.",
+        "tooManyPlates": "У проєкті Studio може бути до {{plates}} друкарських пластин.",
+        "tooManyObjects": "У проєкті Studio може бути до {{objects}} тіл та елементів.",
+        "loadPlateFirst": "Спочатку завантажте цю друкарську пластину.",
+        "platePending": "Тіла завантажаться, коли ви відкриєте цю пластину.",
+        "filamentsPending": "Відкрийте решту друкарських пластин, щоб побачити всі кольори філаментів.",
+        "geometryFailed": "Studio не вдалося обробити цю геометрію."
+      },
       "imported": {
         "parts_one": "Модель імпортовано як одне тіло з {{count}} частини",
         "parts_few": "Модель імпортовано як одне тіло з {{count}} окремих частин",
@@ -7685,9 +7707,7 @@
       "fewestDownloads": "Найменше завантажень",
       "leastRelevant": "Найменш релевантні",
       "fewestModels": "Найменше моделей",
-      "reverseAlphabetical": "{{label}} (Я–А)",
-      "reverseAscending": "За зростанням. Змінити напрямок сортування",
-      "reverseDescending": "За спаданням. Змінити напрямок сортування"
+      "reverseAlphabetical": "{{label}} (Я–А)"
     },
     "view": {
       "label": "Показати категорії або папки",

@@ -61,6 +61,11 @@ export type PickRequest = {
   /** A dashed line between two points, as the measure tool shows a distance. */
   line?: [Vec3, Vec3] | null;
 };
+
+function showsEdgeGuides(request: PickRequest | null, id: string): boolean {
+  return request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
+}
+
 export type Picked = { body: string } &
   /** `region` is the face's triangles in the world, for measuring it. */
   (
@@ -534,6 +539,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   }, [props.grid, props.document.units]);
 
   // --- Bodies: made again only when their shape changed; moving one only moves it ---
+  const topologyRequest = props.pick && props.pick.kind !== "body" ? (props.pick.bodies?.join(",") ?? "*") : "";
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
@@ -543,9 +549,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       .filter((feature) => plateOf(feature) === props.activePlate)
       .filter(isBody);
     const wanted = new Map(bodies.map((feature) => [feature.id, shapeKey(doc, feature)]));
+    const detailed = topologyRequest === "*" ? [...wanted.keys()] : topologyRequest.split(",");
+    const needDetails = new Set(detailed);
     // Gone, or changed shape: made again below if it's still there. What's on screen stays until what replaces it is
     // ready, so the view doesn't blink, and a tool can still be pointed at it meanwhile.
-    const outgoing = [...s.bodies].filter(([id, body]) => wanted.get(id) !== body.key);
+    const outgoing = [...s.bodies].filter(
+      ([id, body]) => wanted.get(id) !== body.key || (needDetails.has(id) && !body.picking.faceOf.length),
+    );
     for (const [id, body] of outgoing) {
       if (featureById(doc, id) && !wanted.has(id)) body.group.visible = false;
     }
@@ -599,7 +609,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       return;
     }
     latest.current.onBusy(true);
-    void evaluateInWorker(props.designId, doc, stale).then((answer) => {
+    void evaluateInWorker(props.designId, doc, stale, detailed).then((answer) => {
       if (generation !== s.generation || !stage.current) return;
       latest.current.onBusy(false);
       drop();
@@ -610,8 +620,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         const indexed = new THREE.BufferGeometry();
         indexed.setAttribute("position", new THREE.BufferAttribute(body.mesh.positions, 3));
         indexed.setIndex(new THREE.BufferAttribute(body.mesh.indices, 1));
-        const geometry = toCreasedNormals(indexed, CREASE);
-        indexed.dispose();
+        const { dense } = body;
+        const geometry = dense ? indexed : toCreasedNormals(indexed, CREASE);
+        if (dense) indexed.computeVertexNormals();
+        else indexed.dispose();
         const mesh = new THREE.Mesh(
           geometry,
           new THREE.MeshStandardMaterial({
@@ -625,7 +637,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           }),
         );
         const edges = new THREE.LineSegments(
-          new THREE.EdgesGeometry(geometry, 30),
+          dense ? new THREE.BufferGeometry() : new THREE.EdgesGeometry(geometry, 30),
           new THREE.LineBasicMaterial({ transparent: true }),
         );
         const edgeLines = new THREE.LineSegments(
@@ -634,7 +646,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           ),
           new THREE.LineBasicMaterial({ color: colors.accent, transparent: true, opacity: 0.55, depthTest: false }),
         );
-        edgeLines.visible = false;
+        edgeLines.visible = showsEdgeGuides(latest.current.pick, body.id);
         edgeLines.renderOrder = 2;
         edgeLines.userData.featureId = body.id;
         const group = new THREE.Group();
@@ -661,7 +673,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         frame(s.camera.position.clone().sub(s.orbit.target).normalize(), new THREE.Box3().setFromObject(located.group));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.document, props.activePlate]);
+  }, [props.document, props.activePlate, topologyRequest]);
 
   // --- Sketches: their outlines on their planes ---
   const activeSketch = props.sketch?.id ?? null;
@@ -764,8 +776,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const s = stage.current;
     if (!s) return;
     const request = latest.current.pick;
-    for (const [id, body] of s.bodies)
-      body.edgeLines.visible = request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
+    for (const [id, body] of s.bodies) body.edgeLines.visible = showsEdgeGuides(request, id);
     clear(s.chosenLayer);
     if (!request) clear(s.hoverLayer);
     attachGizmo();
@@ -1294,6 +1305,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const body = s.bodies.get(id)!;
       if (request.kind === "body") return { picked: { kind: "body", body: id }, show: null };
       const faceIndex = body.picking.faceOf[hit.faceIndex as number];
+      if (faceIndex === undefined) return null;
       const normal = new THREE.Vector3(...body.picking.faces[faceIndex].normal)
         .applyMatrix3(new THREE.Matrix3().getNormalMatrix(body.group.matrixWorld))
         .normalize();

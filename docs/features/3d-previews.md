@@ -5,7 +5,9 @@ browser, so there's nothing to install.
 
 - **Formats:** STL, 3MF, OBJ, STEP and glTF (`.glb`, or a `.gltf` with its files), glTF with its own materials and
   textures. LightBurn projects get a picture of their design.
-- **Multi-plate 3MF projects** show a thumbnail for every plate, with how many objects each one holds.
+- **Multi-plate 3MF projects** show a thumbnail for every plate, with how many objects each one holds. For 3MF files
+  that store their build plate layout, the model viewer loads each plate as you select it. The server may take time
+  to prepare a plate when first selected and caches the result for later views.
 - **Models with print profiles** list the profiles, the designer's first, and the picked one's plates with each
   plate's print time, filament and colours, rather than each profile as a file.
 - **Model colour:** pick the colour the preview is shown in. It's greyed out for a file that carries colours of its
@@ -33,9 +35,9 @@ missing thumbnails are made:
 ## Very detailed models
 
 Models with more than a million triangles can be slow to download and rotate, especially on phones and older
-computers. With **Simplify previews** on, under **Administration → Rendering**, their preview is reduced to about a
-million triangles, keeping the shape to within 1% of the model's size. Only the preview changes: model files, downloads
-and anything sent to a slicer are never touched.
+computers. With **Simplify previews** on, under **Administration → Rendering**, the server can reduce the preview mesh
+to about a million triangles, keeping the shape to within 1% of the model's size. For previews loaded by build plate,
+the server applies this target to each plate's preview mesh.
 
 The first preview of a very large model can take a minute to prepare, and uses the most memory on the server. If
 previews fail, check memory in [System Health](../guides/system-health.md).

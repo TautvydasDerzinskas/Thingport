@@ -558,6 +558,28 @@
           "closed": "Замкнуть"
         }
       },
+      "importModel": {
+        "loadingStudio": "Загрузка Thingport Studio…",
+        "preparing": "Подготовка файла «{{filename}}» для Thingport Studio…",
+        "failed": "Не удалось открыть файл «{{filename}}» в Thingport Studio",
+        "platePreparing": "Подготовка пластины «{{name}}»…",
+        "plateFailed": "Не удалось подготовить пластину «{{name}}»",
+        "loadPlate": "Загрузить печатную пластину",
+        "checkUnloaded": "Откройте пластину «{{name}}», прежде чем проверять весь проект на пригодность к печати.",
+        "archiveLimit": "Этот архив 3MF слишком велик для чтения в Studio.",
+        "noPlates": "Studio не удалось прочитать ни одной печатной пластины из этого файла 3MF.",
+        "plateLimit": "На печатной пластине может быть до {{objects}} объектов и {{plateTriangles}} треугольников.",
+        "bodyLimit": "В каждом импортированном теле может быть до {{bodyTriangles}} треугольников.",
+        "missingParts": "Этот файл 3MF ссылается на отсутствующие части модели.",
+        "noBodies": "Studio не удалось прочитать ни одного тела для печати.",
+        "readFailed": "Studio не удалось прочитать файл модели.",
+        "tooManyPlates": "В проекте Studio может быть до {{plates}} печатных пластин.",
+        "tooManyObjects": "В проекте Studio может быть до {{objects}} тел и элементов.",
+        "loadPlateFirst": "Сначала загрузите эту печатную пластину.",
+        "platePending": "Тела загрузятся при открытии этой пластины.",
+        "filamentsPending": "Откройте остальные печатные пластины, чтобы увидеть все цвета филаментов.",
+        "geometryFailed": "Studio не удалось обработать эту геометрию."
+      },
       "imported": {
         "parts_one": "Модель импортирована как одно тело из {{count}} части",
         "parts_few": "Модель импортирована как одно тело из {{count}} отдельных частей",
@@ -7677,9 +7699,7 @@
       "fewestDownloads": "Меньше всего скачиваний",
       "leastRelevant": "Наименее релевантные",
       "fewestModels": "Меньше всего моделей",
-      "reverseAlphabetical": "{{label}} (Я–А)",
-      "reverseAscending": "По возрастанию. Изменить направление сортировки",
-      "reverseDescending": "По убыванию. Изменить направление сортировки"
+      "reverseAlphabetical": "{{label}} (Я–А)"
     },
     "view": {
       "label": "Показать категории или папки",

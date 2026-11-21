@@ -100,6 +100,11 @@ them, `studio_create_design` and `studio_delete_design`, and one tool for each s
 piece of a model of several its own body. It's off for a new token. They change only your Studio designs,
 never your models.
 
+To open a large 3MF one plate at a time, set `defer_plates: true` in `studio_import_model` on a new design.
+The result includes `pending_plate_ids`, and `studio_get_design` marks those plates with `pending_import`.
+Call `studio_load_source_plate` with the `plate_id` before viewing or editing that plate's bodies. Load all pending
+plates before running `studio_check_print`.
+
 An import runs the same checks as **Add > Import** (a provider an admin turned off stays off, and a model already in
 your library isn't imported twice) and shows up in your notifications and the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
 assistant has nowhere to show one. Most imports finish within the call; a long one carries on in the background, and the

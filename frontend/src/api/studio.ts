@@ -3,7 +3,7 @@ import { requestAchievementCheck } from "../components/achievements/achievementE
 import { authHeaders } from "../utils/auth";
 import { apiBase, UnauthorizedError } from "./client";
 import type { StudioCommandArgs, StudioCommandName } from "../studio/commands";
-import type { StudioDocument } from "../studio/document";
+import { LIMITS, MAX_PLATES, type StudioDocument } from "../studio/document";
 
 export type StudioDesignSummary = {
   id: string;
@@ -17,6 +17,7 @@ export type StudioDesign = StudioDesignSummary & {
   document: StudioDocument;
   can_undo: boolean;
   can_redo: boolean;
+  undone_source_plate_ids?: string[];
   created_at: string;
 };
 
@@ -75,6 +76,33 @@ export class StudioError extends Error {
   }
 }
 
+const importErrors = new Map([
+  ["studio_import_archive_limit", "archiveLimit"],
+  ["studio_import_no_plates", "noPlates"],
+  ["studio_import_plate_limit", "plateLimit"],
+  ["studio_import_body_limit", "bodyLimit"],
+  ["studio_import_missing_parts", "missingParts"],
+  ["studio_import_no_bodies", "noBodies"],
+  ["studio_import_failed", "readFailed"],
+  ["studio_import_too_many_plates", "tooManyPlates"],
+  ["studio_import_too_many_objects", "tooManyObjects"],
+  ["studio_plate_pending", "loadPlateFirst"],
+]);
+
+export function studioErrorMessage(message: string, code: string | null | undefined): string {
+  if (code === "studio_arrange_empty") return i18next.t("studio.print.arrangeEmpty", { ns: "app" });
+  const key = code && importErrors.get(code);
+  if (!key) return message;
+  const { format } = new Intl.NumberFormat(i18next.resolvedLanguage);
+  return i18next.t(`studio.importModel.${key}`, {
+    ns: "app",
+    objects: format(LIMITS.features),
+    plates: format(MAX_PLATES),
+    plateTriangles: format(LIMITS.sourcePlateTriangles),
+    bodyTriangles: format(LIMITS.sourceBodyTriangles),
+  });
+}
+
 async function requestResponse(path: string, method = "GET", payload?: unknown): Promise<Response> {
   const res = await fetch(`${apiBase()}${path}`, {
     method,
@@ -90,8 +118,7 @@ async function requestResponse(path: string, method = "GET", payload?: unknown):
       if (typeof body.detail === "string") message = body.detail;
       if (typeof body.code === "string") code = body.code;
     } catch {}
-    if (code === "studio_arrange_empty") message = i18next.t("studio.print.arrangeEmpty", { ns: "app" });
-    throw new StudioError(message, res.status, code);
+    throw new StudioError(studioErrorMessage(message, code), res.status, code);
   }
   return res;
 }
@@ -162,7 +189,7 @@ export const studioApi = {
   create: (name: string) => request<StudioDesign>("/studio/designs", "POST", { name }),
   get: (id: string) => request<StudioDesign>(design(id)),
   version: (id: string) => request<{ version: number }>(`${design(id)}/version`),
-  remove: (id: string) => request<void>(design(id), "DELETE"),
+  remove: (id: string, options?: { expected_version: number }) => request<void>(design(id), "DELETE", options),
   assistant: (id: string) => request<StudioAssistantThread>(`${design(id)}/assistant`),
   /** Starts the assistant on a prompt; it works in the background, which `assistant` follows. */
   ask: (

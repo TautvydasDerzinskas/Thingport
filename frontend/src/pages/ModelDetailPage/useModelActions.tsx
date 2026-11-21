@@ -151,7 +151,7 @@ export function useModelActions({
     recordUse,
   } = useDownloadPrint(print, onUnauthorized, onUpdated);
   const customize = useCustomize(print, onUnauthorized);
-  const studio = useOpenInStudio(print, onUnauthorized);
+  const studio = useOpenInStudio(print);
   const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
   const libraryCopyId = print.library_copy_id ?? null;
   const providerInfo = importProviderInfo(print.source_provider);
@@ -462,8 +462,7 @@ export function useModelActions({
       label: t("models:detail.openInStudio"),
       shortLabel: t("models:actionsMenu.studio"),
       icon: <DesignServicesOutlinedIcon />,
-      busy: studio.opening,
-      onSelect: () => void studio.open(studio.files[0]),
+      onSelect: () => studio.open(studio.files[0]),
       picks:
         studio.files.length > 1
           ? studio.files.map((plate) => {
@@ -474,7 +473,7 @@ export function useModelActions({
                 secondary: text.secondary,
                 title: plate.filename,
                 media: <PlateThumbnail plate={plate} size={THUMB} />,
-                onSelect: () => void studio.open(plate),
+                onSelect: () => studio.open(plate),
               };
             })
           : undefined,

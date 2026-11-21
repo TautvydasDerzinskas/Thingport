@@ -31,6 +31,7 @@ import {
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import type { RunCommand } from "./useStudioDesign";
+import { plateLabel } from "./labels";
 
 export function studioExportName(name: string) {
   return `${name.replace(/[\\/:*?"<>|]+/g, "-") || "design"}.3mf`;
@@ -95,7 +96,7 @@ export default function StudioSlicerDialog({
     .filter(isBody)
     .filter((body) => body.visible);
   const used = new Set(bodies.map(plateOf));
-  const plates = studioPlates(design.document).filter((plate) => used.has(plate.id));
+  const plates = studioPlates(design.document).filter((plate) => plate.source || used.has(plate.id));
   const plate = plates.find((entry) => entry.id === chosenPlate) ?? plates[0];
   const onePlate = profile?.reads !== "bambu" && plates.length > 1;
   const canAssignSlots = profile?.reads === "bambu";
@@ -125,12 +126,13 @@ export default function StudioSlicerDialog({
     }
   };
   const unsaved = canAssignSlots && slotDraft !== null;
+  const canExport = Boolean(plates.length && !unsaved && !tooManyColors);
   const target: StudioExport = {
     slicer,
     ...(printer ? { printer: { id: printer.printer.id, nozzle: printer.nozzle } } : {}),
     ...(onePlate && plate ? { plate: plate.id } : {}),
   };
-  const filename = studioExportName(onePlate ? `${design.name} - ${plate?.name ?? ""}` : design.name);
+  const filename = studioExportName(onePlate && plate ? `${design.name} - ${plateLabel(plate, t)}` : design.name);
   const href = slicerLaunchUrl(
     slicer,
     printsApi.slicerFileUrl(studioExportPath(design.id, filename, target)),
@@ -200,12 +202,15 @@ export default function StudioSlicerDialog({
             >
               {plates.map((entry) => (
                 <MenuItem key={entry.id} value={entry.id}>
-                  {entry.name}
+                  {plateLabel(entry, t)}
                 </MenuItem>
               ))}
             </TextField>
           )}
-          {!bodies.length && <Typography variant="body2">{t("studio.design.nothingToExport")}</Typography>}
+          {!plates.length && <Typography variant="body2">{t("studio.design.nothingToExport")}</Typography>}
+          {canAssignSlots && plates.some((entry) => entry.source) && (
+            <Alert severity="info">{t("studio.importModel.filamentsPending")}</Alert>
+          )}
           {!canAssignSlots && colorsByPlate.size > 1 && (
             <Typography variant="body2" color="text.secondary">
               {t("studio.plates.matchFilaments")}
@@ -238,7 +243,7 @@ export default function StudioSlicerDialog({
                         <Typography variant="caption" color="text.secondary">
                           {plates
                             .filter((entry) => required.has(entry.id))
-                            .map((entry) => entry.name)
+                            .map((entry) => plateLabel(entry, t))
                             .join(", ")}
                         </Typography>
                       </Box>
@@ -301,15 +306,10 @@ export default function StudioSlicerDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{common("cancel")}</Button>
-        <Button disabled={downloading || !bodies.length || unsaved || tooManyColors} onClick={() => void download()}>
+        <Button disabled={downloading || !canExport} onClick={() => void download()}>
           {t("studio.plates.download3mf")}
         </Button>
-        <Button
-          variant="contained"
-          disableElevation
-          disabled={!bodies.length || unsaved || tooManyColors}
-          href={unsaved || !bodies.length || tooManyColors ? undefined : href}
-        >
+        <Button variant="contained" disableElevation disabled={!canExport} href={canExport ? href : undefined}>
           {t("studio.plates.open")}
         </Button>
       </DialogActions>

@@ -1,7 +1,12 @@
 import fs from "node:fs/promises";
 import { parentPort, workerData } from "node:worker_threads";
 import { compressGlb } from "./glbCompression";
-import { renderModelPreviewGlb, type RenderOptions } from "./modelPreviewRender";
+import {
+  readThreeMfBuildPlates,
+  renderModelPreviewGlb,
+  type RenderOptions,
+  type ThreeMfBuildPlate,
+} from "./modelPreviewRender";
 import { renderModelImage, type ModelImageOptions } from "./modelImageRender";
 import { checkModelQuality } from "./modelQualityCheck";
 import type { QualityReport } from "./meshQuality";
@@ -11,6 +16,7 @@ import type { QualityReport } from "./meshQuality";
 
 export type ModelPreviewWorkerInput =
   | { kind: "glb"; srcPath: string; destPath: string; options: RenderOptions }
+  | { kind: "plates"; srcPath: string }
   | {
       kind: "image";
       srcPath: string;
@@ -26,6 +32,7 @@ export type ModelPreviewWorkerInput =
 export type ModelPreviewWorkerResult =
   | { status: "ok"; colored?: boolean }
   | { status: "checked"; report: QualityReport }
+  | { status: "plates"; plates: ThreeMfBuildPlate[] }
   | { status: "too-complex" }
   | { status: "unsupported" }
   | { status: "error"; error: string };
@@ -40,6 +47,9 @@ async function run(): Promise<void> {
     } else if (input.kind === "compress") {
       await fs.writeFile(input.destPath, await compressGlb(await fs.readFile(input.srcPath)));
       result = { status: "ok" };
+    } else if (input.kind === "plates") {
+      const plates = await readThreeMfBuildPlates(input.srcPath);
+      result = typeof plates === "string" ? { status: plates } : { status: "plates", plates };
     } else if (input.kind === "glb") {
       result = { status: await renderModelPreviewGlb(input.srcPath, input.destPath, input.options) };
     } else {

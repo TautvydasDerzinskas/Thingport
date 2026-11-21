@@ -36,6 +36,10 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   every size in the document and in every command stays in mm.
 - **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
   fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
+- **Deferred 3MF imports** keep an archive snapshot alongside the mesh assets. A plate holds a source reference until
+  `load_source_plate` prepares its bodies and records the result as a revision. The same command serves Studio, Ask AI
+  and MCP. Exports can prepare pending plates with temporary mesh assets. The viewport evaluates the active plate's
+  bodies and any features they depend on.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly in a web worker
   (`StudioPage/geometry.worker.ts`) and the backend from its package (`services/studioWorker.ts`, in a worker thread
   with a timeout). Each body is made once per evaluation, failures included. `prepareMesh` turns an imported file's

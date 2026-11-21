@@ -4660,6 +4660,28 @@
           "closed": "Closed"
         }
       },
+      "importModel": {
+        "loadingStudio": "Loading Thingport Studio…",
+        "preparing": "Preparing {{filename}} for Thingport Studio…",
+        "failed": "Couldn’t open {{filename}} in Thingport Studio",
+        "platePreparing": "Preparing {{name}}…",
+        "plateFailed": "Couldn’t prepare {{name}}",
+        "loadPlate": "Load build plate",
+        "checkUnloaded": "Open {{name}} before checking the whole design for printing.",
+        "archiveLimit": "This 3MF archive exceeds Studio’s reading limit.",
+        "noPlates": "Studio couldn’t find any readable build plates in this 3MF.",
+        "plateLimit": "A build plate can contain up to {{objects}} objects and {{plateTriangles}} triangles.",
+        "bodyLimit": "Each imported body can contain up to {{bodyTriangles}} triangles.",
+        "missingParts": "This 3MF references model parts that are missing from the file.",
+        "noBodies": "Studio couldn’t read any printable bodies.",
+        "readFailed": "Studio couldn’t read the model file.",
+        "tooManyPlates": "A Studio design can contain up to {{plates}} build plates.",
+        "tooManyObjects": "A Studio design can contain up to {{objects}} bodies and features.",
+        "loadPlateFirst": "Load this build plate first.",
+        "platePending": "Bodies load when you open this plate.",
+        "filamentsPending": "Open the remaining build plates to see all filament colors.",
+        "geometryFailed": "Studio couldn’t process this geometry."
+      },
       "imported": {
         "parts_one": "The model came in as one body of {{count}} part",
         "parts_other": "The model came in as one body of {{count}} separate parts",
@@ -5800,9 +5822,7 @@
       "fewestDownloads": "Fewest downloads",
       "leastRelevant": "Least relevant",
       "fewestModels": "Fewest models",
-      "reverseAlphabetical": "{{label}} (Z–A)",
-      "reverseAscending": "Ascending order. Reverse sort direction",
-      "reverseDescending": "Descending order. Reverse sort direction"
+      "reverseAlphabetical": "{{label}} (Z–A)"
     },
     "card": {
       "unknownAuthor": "Unknown",

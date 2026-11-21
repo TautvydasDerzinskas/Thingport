@@ -5,7 +5,7 @@ import { isBody, plateOf, studioPlates, topLevel } from "../studio/document.gene
 import { centeredPrinterOutline } from "../studio/printLayout.generated";
 import { HttpError } from "../utils/fileUtils";
 import { exportStudioGeometry } from "./studioInspect";
-import { studioAssetDir, type StudioDesignOut } from "./studioService";
+import { studioAssetDir, withStudioSourcePlates, type StudioDesignOut } from "./studioService";
 import type { StudioExportTarget } from "./studioThreeMf";
 
 export type StudioExportOptions = {
@@ -17,17 +17,19 @@ export type StudioExportOptions = {
 
 export async function exportStudioDesign(userId: string, design: StudioDesignOut, options: StudioExportOptions) {
   const { document } = design;
-  if (options.plate && !studioPlates(document).some((plate) => plate.id === options.plate))
+  const plates = studioPlates(document);
+  if (options.plate && !plates.some((plate) => plate.id === options.plate))
     throw new HttpError(400, "That plate doesn't belong to this design.");
   const profile = options.slicer ? slicerProfile(options.slicer) : null;
   if (options.slicer && !profile) throw new HttpError(400, "That slicer isn't supported.");
   if (profile && profile.reads !== "bambu" && !options.plate) {
-    const plates = new Set(
+    const occupiedPlates = new Set(
       topLevel(document)
         .filter((feature) => isBody(feature) && feature.visible)
         .map(plateOf),
     );
-    if (plates.size > 1) throw new HttpError(400, "Choose a plate to open with this slicer.");
+    for (const plate of plates) if (plate.source) occupiedPlates.add(plate.id);
+    if (occupiedPlates.size > 1) throw new HttpError(400, "Choose a plate to open with this slicer.");
   }
   let target: StudioExportTarget | undefined;
   if (profile) {
@@ -44,14 +46,16 @@ export async function exportStudioDesign(userId: string, design: StudioDesignOut
       ...(profile.reads === "bambu" ? { filamentSlots: document.filament_slots } : {}),
     };
   }
-  const made = await exportStudioGeometry({
-    document,
-    assetDir: studioAssetDir(userId, design.id),
-    name: design.name,
-    format: target ? "3mf" : options.format,
-    plate: options.plate,
-    target,
-  });
+  const made = await withStudioSourcePlates(userId, design, options.plate, (ready) =>
+    exportStudioGeometry({
+      document: ready,
+      assetDir: studioAssetDir(userId, design.id),
+      name: design.name,
+      format: target ? "3mf" : options.format,
+      plate: options.plate,
+      target,
+    }),
+  );
   if (made.status === "too-complex")
     throw new HttpError(
       422,

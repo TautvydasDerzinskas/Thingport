@@ -81,6 +81,15 @@ export function plateGlbFile(plateId: string, version = PREVIEW_FORMAT_VERSION):
   return { kind: "preview", name: `${plateId}.v${version}.glb` };
 }
 
+export function buildPlateGlbName(plateId: string, index: number, sourceVersion: string): string {
+  return `${plateId}.build-${index}.${sourceVersion}.v${PREVIEW_FORMAT_VERSION}.glb`;
+}
+
+/** Derived previews stay in the shared cache and are regenerated when their source version changes. */
+export function isBuildPlateGlb(name: string): boolean {
+  return new RegExp(`\\.build-\\d+\\.[a-f0-9]{24}\\.v${PREVIEW_FORMAT_VERSION}\\.glb$`).test(name);
+}
+
 /** `name` is the copy's file name: the plate's id, what it was adapted for, and the adapter's version. */
 export function slicerCopyFile(name: string): AssetFile {
   return { kind: "slicer", name };

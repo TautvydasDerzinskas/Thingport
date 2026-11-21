@@ -4472,6 +4472,28 @@
           "closed": "闭合"
         }
       },
+      "importModel": {
+        "loadingStudio": "正在加载 Thingport Studio…",
+        "preparing": "正在为 Thingport Studio 准备“{{filename}}”…",
+        "failed": "无法在 Thingport Studio 中打开“{{filename}}”",
+        "platePreparing": "正在准备打印板“{{name}}”…",
+        "plateFailed": "无法准备打印板“{{name}}”",
+        "loadPlate": "加载打印板",
+        "checkUnloaded": "检查整个设计是否适合打印前，请先打开打印板“{{name}}”。",
+        "archiveLimit": "此 3MF 存档过大，Studio 无法读取。",
+        "noPlates": "Studio 未能从此 3MF 文件中读取任何打印板。",
+        "plateLimit": "每块打印板最多可包含 {{objects}} 个对象和 {{plateTriangles}} 个三角面。",
+        "bodyLimit": "每个导入的实体最多可包含 {{bodyTriangles}} 个三角面。",
+        "missingParts": "此 3MF 文件引用了文件中缺失的模型部件。",
+        "noBodies": "Studio 未能读取任何可打印的实体。",
+        "readFailed": "Studio 无法读取模型文件。",
+        "tooManyPlates": "一个 Studio 设计最多可包含 {{plates}} 块打印板。",
+        "tooManyObjects": "一个 Studio 设计最多可包含 {{objects}} 个实体和特征。",
+        "loadPlateFirst": "请先加载此打印板。",
+        "platePending": "打开此打印板时会加载其中的实体。",
+        "filamentsPending": "打开其余打印板即可查看所有耗材颜色。",
+        "geometryFailed": "Studio 无法处理此几何体。"
+      },
       "imported": {
         "parts_other": "该模型作为一个实体导入，包含 {{count}} 个独立零件",
         "separate": "分离"
@@ -5583,9 +5605,7 @@
       "fewestDownloads": "下载最少",
       "leastRelevant": "相关性最低",
       "fewestModels": "模型最少",
-      "reverseAlphabetical": "{{label}}（倒序）",
-      "reverseAscending": "升序。反转排序方向",
-      "reverseDescending": "降序。反转排序方向"
+      "reverseAlphabetical": "{{label}}（倒序）"
     },
     "card": {
       "unknownAuthor": "未知",

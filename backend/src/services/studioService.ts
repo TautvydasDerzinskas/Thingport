@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Prisma, StudioDesign } from "@prisma/client";
@@ -32,11 +33,13 @@ import {
   ASSET_ID,
   DEFAULT_PLATE_ID,
   LIMITS,
+  MAX_PLATES,
   emptyDocument,
   studioPlates,
   topLevel,
   transformMatrix,
   type StudioDocument,
+  type StudioPlateSource,
   type Vec3,
 } from "../studio/document.generated";
 import { applyMatrix } from "../studio/vec.generated";
@@ -48,6 +51,7 @@ import { loadFontsFor } from "./studioFonts";
 import {
   importStudioMesh,
   importStudioThreeMf,
+  listStudioSourcePlates,
   measureStudioBounds,
   measureStudioParts,
   traceStudioPicture,
@@ -80,6 +84,7 @@ export type StudioDesignOut = StudioDesignSummary & {
   document: StudioDocument;
   can_undo: boolean;
   can_redo: boolean;
+  undone_source_plate_ids?: string[];
   created_at: Date;
 };
 
@@ -104,21 +109,30 @@ function summary(design: StudioDesign): StudioDesignSummary {
 }
 
 async function out(tx: Prisma.TransactionClient, design: StudioDesign): Promise<StudioDesignOut> {
-  const [before, after] = await Promise.all([
+  const document = documentOf(design);
+  const pending = studioPlates(document).filter((plate) => plate.source);
+  const future = { designId: design.id, position: { gt: design.position } };
+  const [before, after, undoneLoads] = await Promise.all([
     tx.studioRevision.findFirst({
       where: { designId: design.id, position: { lt: design.position } },
       select: { id: true },
     }),
     tx.studioRevision.findFirst({
-      where: { designId: design.id, position: { gt: design.position } },
+      where: future,
       select: { id: true },
     }),
+    pending.length
+      ? tx.studioRevision.findMany({ where: { ...future, command: "load_source_plate" }, select: { args: true } })
+      : [],
   ]);
+  const undoneIds = new Set(undoneLoads.map(({ args }) => (args as { plate_id?: string } | null)?.plate_id));
+  const undonePlates = pending.filter(({ id }) => undoneIds.has(id)).map(({ id }) => id);
   return {
     ...summary(design),
-    document: documentOf(design),
+    document,
     can_undo: Boolean(before),
     can_redo: Boolean(after),
+    ...(undonePlates.length && { undone_source_plate_ids: undonePlates }),
     created_at: design.createdAt,
   };
 }
@@ -177,9 +191,18 @@ export async function createStudioDesign(
   return out(prisma, design);
 }
 
-export async function deleteStudioDesign(userId: string, id: string): Promise<void> {
+export async function deleteStudioDesign(userId: string, id: string, expectedVersion?: number): Promise<void> {
   await owned(prisma, userId, id);
-  await prisma.studioDesign.delete({ where: { id } });
+  if (expectedVersion === undefined) {
+    await prisma.studioDesign.delete({ where: { id } });
+  } else {
+    // A failed import may clean up its initial design only if nobody worked on it meanwhile.
+    const removed = await prisma.studioDesign.deleteMany({
+      where: { id, userId, version: expectedVersion, messages: { none: {} } },
+    });
+    if (!removed.count)
+      throw new HttpError(409, "The design has changed since it was created", "studio_design_changed");
+  }
   await fs.rm(studioAssetDir(userId, id), { recursive: true, force: true });
 }
 
@@ -261,6 +284,7 @@ export async function listStudioLibrary(userId: string, q: string | undefined, o
 type ImportedMesh = Parameters<typeof addMesh>[1];
 type ImportedFile =
   | { kind: "mesh"; destinations: string[]; mesh: ImportedMesh }
+  | { kind: "deferred"; destinations: string[]; plates: { name: string | null; source: StudioPlateSource }[] }
   | {
       kind: "project";
       destinations: string[];
@@ -287,7 +311,8 @@ function importedMesh(
 }
 
 function importFailed(filename: string, result: StudioWorkerResult): never {
-  if (result.status === "refused") throw new HttpError(422, `${filename}: ${result.reason}`, "studio_import_refused");
+  if (result.status === "refused")
+    throw new HttpError(422, `${filename}: ${result.reason}`, result.code ?? "studio_import_refused");
   console.error(`[studio] importing ${filename} failed`, result);
   throw new HttpError(422, `Couldn't read ${filename}`, "studio_import_failed");
 }
@@ -308,12 +333,13 @@ async function importLibraryProject(
   sourcePath: string,
   dir: string,
   source: ImportedMesh["source"],
-): Promise<ImportedFile> {
+  selectedPlate?: { index: number | null },
+): Promise<Extract<ImportedFile, { kind: "project" }>> {
   await fs.mkdir(dir, { recursive: true });
   const stage = await fs.mkdtemp(path.join(dir, "import-"));
   const destinations: string[] = [];
   try {
-    const result = await importStudioThreeMf(sourcePath, stage);
+    const result = await importStudioThreeMf(sourcePath, stage, selectedPlate);
     if (result.status !== "project") return importFailed(source.file_name, result);
     const plates: Extract<ImportedFile, { kind: "project" }>["plates"] = [];
     for (const plate of result.plates) {
@@ -324,7 +350,7 @@ async function importLibraryProject(
         await fs.rename(path.join(stage, body.file), destination);
         destinations.push(destination);
         bodies.push({
-          mesh: importedMesh(assetId, body, source),
+          mesh: importedMesh(assetId, body, selectedPlate ? { ...source, build_plate: selectedPlate.index } : source),
           name: body.name,
           color: body.color,
           position: body.position,
@@ -339,6 +365,57 @@ async function importLibraryProject(
   } finally {
     await removeImportFiles([stage], true);
   }
+}
+
+/** Snapshot the source so unvisited plates still belong to the design after a library file is moved or replaced. */
+async function deferLibraryProject(
+  sourcePath: string,
+  dir: string,
+  model: ImportedMesh["source"],
+): Promise<ImportedFile> {
+  const archiveId = crypto.randomBytes(12).toString("hex");
+  const snapshot = path.join(dir, `${archiveId}.3mf`);
+  await fs.mkdir(dir, { recursive: true });
+  try {
+    await fs
+      .copyFile(sourcePath, snapshot, fsConstants.COPYFILE_FICLONE)
+      .catch((error: unknown) => importFailed(model.file_name, { status: "error", error: String(error) }));
+    const result = await listStudioSourcePlates(snapshot);
+    if (result.status !== "source-plates") return importFailed(model.file_name, result);
+    if (result.plates.length > MAX_PLATES)
+      throw new CommandError(`Studio takes up to ${MAX_PLATES} plates.`, "studio_import_too_many_plates");
+    if (result.plates.reduce((sum, plate) => sum + plate.objectCount, 0) > LIMITS.features)
+      throw new CommandError(
+        `A design holds up to ${LIMITS.features} bodies and features.`,
+        "studio_import_too_many_objects",
+      );
+    return {
+      kind: "deferred",
+      destinations: [snapshot],
+      plates: result.plates.map(({ name, index }) => ({ name, source: { archive_id: archiveId, index, model } })),
+    };
+  } catch (error) {
+    await removeImportFiles([snapshot]);
+    throw error;
+  }
+}
+
+function addDeferredProject(doc: StudioDocument, project: Extract<ImportedFile, { kind: "deferred" }>): CommandOutcome {
+  if (doc.features.length || doc.plates) throw new CommandError("Open a new design to load a 3MF plate by plate.");
+  const plates = project.plates.map(({ name, source }, index) => {
+    const label = name?.slice(0, 80).trim();
+    return {
+      id: `plate-${index + 1}`,
+      name: label || `Plate ${index + 1}`,
+      ...(!label && { default_name: index + 1 }),
+      source,
+    };
+  });
+  return {
+    document: { ...doc, plates, next_plate_id: plates.length + 1 },
+    created: [],
+    summary: `Opened a 3MF with ${plates.length} build ${plates.length === 1 ? "plate" : "plates"}`,
+  };
 }
 
 /** Bring each source plate in as a group while keeping its editable bodies and relative placements. */
@@ -392,6 +469,33 @@ function addImportedProject(
   return { document, created, summary: importSummary };
 }
 
+/** An export can ask for unopened plates without changing the design or its history. */
+export async function withStudioSourcePlates<T>(
+  userId: string,
+  design: StudioDesignOut,
+  plateId: string | undefined,
+  use: (document: StudioDocument) => Promise<T>,
+): Promise<T> {
+  let { document } = design;
+  const dir = studioAssetDir(userId, design.id);
+  const files: string[] = [];
+  try {
+    for (const plate of studioPlates(document)) {
+      if (!plate.source || (plateId && plate.id !== plateId)) continue;
+      const source = plate.source;
+      const project = await importLibraryProject(path.join(dir, `${source.archive_id}.3mf`), dir, source.model, source);
+      files.push(...project.destinations);
+      document = addImportedProject(document, project, { plate_id: plate.id }).document;
+    }
+    return await use(document);
+  } catch (error) {
+    if (error instanceof CommandError) throw new HttpError(400, error.message, error.code ?? "studio_command_refused");
+    throw error;
+  } finally {
+    await removeImportFiles(files);
+  }
+}
+
 /** Makes the design's own copy of a library model's 3D file, and says what it is. Another user's shared model too
  *  (services/socialService.ts): the design's copy is the user's own. */
 async function importLibraryFile(
@@ -399,6 +503,7 @@ async function importLibraryFile(
   designId: string,
   modelId: string,
   fileId: string | undefined,
+  deferPlates: boolean,
 ): Promise<ImportedFile> {
   const print = await prisma.print.findFirst({
     where: { id: modelId, AND: [await readablePrintWhere(userId)] },
@@ -425,7 +530,8 @@ async function importLibraryFile(
   };
   const ext = extOf(plate.filename);
   const dir = studioAssetDir(userId, designId);
-  if (ext === ".3mf") return importLibraryProject(source, dir, provenance);
+  if (ext === ".3mf")
+    return deferPlates ? deferLibraryProject(source, dir, provenance) : importLibraryProject(source, dir, provenance);
 
   const assetId = crypto.randomBytes(12).toString("hex");
   const destination = path.join(dir, `${assetId}.tpsm`);
@@ -539,6 +645,7 @@ export async function runStudioCommand(
   // An import reads the file first, outside the design's lock: a big one takes a while, and the design may change
   // meanwhile. Its mesh is then added to the design as it is by then.
   let imported: Awaited<ReturnType<typeof importLibraryFile>> | null = null;
+  let loadingPlate: StudioPlateSource | undefined;
   let traced: Traced | null = null;
   try {
     // A text is checked against its font as it's drawn: the font is read first.
@@ -546,9 +653,31 @@ export async function runStudioCommand(
     if (definition.kind === "import") {
       const parsed = parseCommandArgs(definition, args);
       if (name === "trace_picture") traced = await traceFor(userId, id, parsed);
-      else {
+      else if (name === "load_source_plate") {
+        const design = await owned(prisma, userId, id);
+        const plate = studioPlates(documentOf(design)).find((item) => item.id === parsed.plate_id);
+        if (!plate) throw new CommandError("That plate doesn't belong to this design.");
+        loadingPlate = plate.source;
+        if (!loadingPlate) return { design: await out(prisma, design), summary: "Plate already loaded", created: [] };
+        const dir = studioAssetDir(userId, id);
+        imported = await importLibraryProject(
+          path.join(dir, `${loadingPlate.archive_id}.3mf`),
+          dir,
+          loadingPlate.model,
+          loadingPlate,
+        );
+      } else {
         await owned(prisma, userId, id);
-        imported = await importLibraryFile(userId, id, String(parsed.model_id), parsed.file_id as string | undefined);
+        const defer = parsed.defer_plates === true;
+        if (defer && (parsed.plate_id || parsed.position || parsed.rotation || parsed.name || parsed.color))
+          throw new CommandError("A deferred 3MF opens in its original layout.");
+        imported = await importLibraryFile(
+          userId,
+          id,
+          String(parsed.model_id),
+          parsed.file_id as string | undefined,
+          defer,
+        );
       }
     }
     // A measuring command measures outside the lock too, and again if the design changed before the lock was had.
@@ -591,15 +720,30 @@ export async function runStudioCommand(
           };
         }
 
-        const outcome: CommandOutcome = measured
-          ? measured.apply(documentOf(design))
-          : imported
-            ? imported.kind === "project"
-              ? addImportedProject(documentOf(design), imported, parsed)
-              : addMesh(documentOf(design), imported.mesh, parsed)
-            : traced
-              ? addTrace(documentOf(design), parsed as Parameters<typeof addTrace>[1], traced)
-              : applyCommand(documentOf(design), name, parsed);
+        const doc = documentOf(design);
+        let outcome: CommandOutcome;
+        if (loadingPlate && imported?.kind === "project") {
+          const plates = studioPlates(doc).map((plate) => ({ ...plate }));
+          const plate = plates.find((item) => item.id === parsed.plate_id);
+          if (!plate) throw new CommandError("That plate was removed while it was loading.");
+          if (!plate.source) return { design: await out(tx, design), summary: "Plate already loaded", created: [] };
+          if (plate.source.archive_id !== loadingPlate.archive_id || plate.source.index !== loadingPlate.index)
+            throw new CommandError("That plate changed while it was loading. Try again.");
+          delete plate.source;
+          outcome = addImportedProject({ ...doc, plates }, imported, { plate_id: plate.id });
+        } else if (imported?.kind === "deferred") {
+          outcome = addDeferredProject(doc, imported);
+        } else if (imported?.kind === "project") {
+          outcome = addImportedProject(doc, imported, parsed);
+        } else if (imported?.kind === "mesh") {
+          outcome = addMesh(doc, imported.mesh, parsed);
+        } else if (measured) {
+          outcome = measured.apply(doc);
+        } else if (traced) {
+          outcome = addTrace(doc, parsed as Parameters<typeof addTrace>[1], traced);
+        } else {
+          outcome = applyCommand(doc, name, parsed);
+        }
         const position = design.position + 1;
         // A change after an undo leaves nothing to redo; past the limit, the oldest are let go.
         await tx.studioRevision.deleteMany({
@@ -625,7 +769,10 @@ export async function runStudioCommand(
         });
         return { design: await out(tx, updated), summary: outcome.summary, created: outcome.created };
       });
-      if (done) return done;
+      if (done) {
+        if (loadingPlate && imported && !done.created.length) await removeImportFiles(imported.destinations);
+        return done;
+      }
       if (tries >= MEASURE_TRIES)
         throw new HttpError(409, "The design kept changing while it was being measured: try again", "studio_busy");
     }

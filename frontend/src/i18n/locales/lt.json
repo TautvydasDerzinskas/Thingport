@@ -4961,6 +4961,28 @@
           "closed": "Uždaras"
         }
       },
+      "importModel": {
+        "loadingStudio": "Kraunama „Thingport Studio“…",
+        "preparing": "Failas „{{filename}}“ ruošiamas atidaryti programoje „Thingport Studio“…",
+        "failed": "Nepavyko atidaryti failo „{{filename}}“ programoje „Thingport Studio“",
+        "platePreparing": "Ruošiama plokštė „{{name}}“…",
+        "plateFailed": "Nepavyko paruošti plokštės „{{name}}“",
+        "loadPlate": "Įkelti spausdinimo plokštę",
+        "checkUnloaded": "Prieš tikrindami, ar visas projektas tinkamas spausdinti, atidarykite plokštę „{{name}}“.",
+        "archiveLimit": "Šis 3MF archyvas per didelis, kad „Thingport Studio“ galėtų jį nuskaityti.",
+        "noPlates": "„Thingport Studio“ nepavyko nuskaityti nė vienos šio 3MF failo spausdinimo plokštės.",
+        "plateLimit": "Spausdinimo plokštėje gali būti iki {{objects}} objektų ir {{plateTriangles}} trikampių.",
+        "bodyLimit": "Kiekvienas importuotas kūnas gali turėti iki {{bodyTriangles}} trikampių.",
+        "missingParts": "Šiame 3MF faile yra nuorodų į trūkstamas modelio dalis.",
+        "noBodies": "„Thingport Studio“ nepavyko nuskaityti nė vieno spausdinamo kūno.",
+        "readFailed": "„Thingport Studio“ nepavyko nuskaityti modelio failo.",
+        "tooManyPlates": "„Thingport Studio“ projekte gali būti iki {{plates}} spausdinimo plokščių.",
+        "tooManyObjects": "„Thingport Studio“ projekte gali būti iki {{objects}} kūnų ir elementų.",
+        "loadPlateFirst": "Pirmiausia įkelkite šią spausdinimo plokštę.",
+        "platePending": "Kūnai įkeliami atidarius šią plokštę.",
+        "filamentsPending": "Atidarykite likusias spausdinimo plokštes, kad matytumėte visas filamentų spalvas.",
+        "geometryFailed": "„Thingport Studio“ nepavyko apdoroti šios geometrijos."
+      },
       "imported": {
         "parts_one": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskiros dalies",
         "parts_few": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
@@ -6145,9 +6167,7 @@
       "fewestDownloads": "Mažiausiai atsisiuntimų",
       "leastRelevant": "Mažiausias atitikimas",
       "fewestModels": "Mažiausiai modelių",
-      "reverseAlphabetical": "{{label}} (Ž–A)",
-      "reverseAscending": "Didėjimo tvarka. Apversti rikiavimo tvarką",
-      "reverseDescending": "Mažėjimo tvarka. Apversti rikiavimo tvarką"
+      "reverseAlphabetical": "{{label}} (Ž–A)"
     },
     "card": {
       "unknownAuthor": "Nežinomas",

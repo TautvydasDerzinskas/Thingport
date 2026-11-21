@@ -43,7 +43,6 @@ type Props = {
   onCustomize?: () => void;
   /** Set when the file can open in Studio as a new design. */
   onOpenInStudio?: () => void;
-  openingInStudio?: boolean;
   /** What the installed tools offer to do with the model, last in the menu; none leaves the menu as it was. */
   toolCommands?: OfferedCommand[];
   onToolCommand?: (offered: OfferedCommand) => void;
@@ -98,7 +97,6 @@ export default function OpenInSlicerButton({
   onDownloadZip,
   onCustomize,
   onOpenInStudio,
-  openingInStudio,
   toolCommands = NO_COMMANDS,
   onToolCommand,
   sendTargets = NO_TARGETS,
@@ -224,18 +222,13 @@ export default function OpenInSlicerButton({
           ))}
         {onOpenInStudio && (
           <MenuItem
-            disabled={openingInStudio}
             onClick={() => {
               onOpenInStudio();
               close();
             }}
           >
             <ListItemIcon>
-              {openingInStudio ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <DesignServicesOutlinedIcon fontSize="small" />
-              )}
+              <DesignServicesOutlinedIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primaryTypographyProps={{ variant: "body2" }}>{t("models:detail.openInStudio")}</ListItemText>
           </MenuItem>

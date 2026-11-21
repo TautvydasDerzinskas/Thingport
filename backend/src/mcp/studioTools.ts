@@ -44,6 +44,9 @@ function brief(ctx: McpToolContext, design: StudioDesignOut) {
     version: design.version,
     can_undo: design.can_undo,
     can_redo: design.can_redo,
+    pending_plate_ids: studioPlates(design.document)
+      .filter((plate) => plate.source)
+      .map((plate) => plate.id),
     url: designUrl(ctx, design.id),
   };
 }
@@ -91,7 +94,7 @@ const getDesign: McpToolDefinition = {
     "of each body, problems such as a boolean that came out empty, and the latest changes and who made them, the user " +
     "included. Units are mm and Z is up; the bed is the XY plane at z=0. Features listed under top_level show on their " +
     "own; the rest are part of another (a boolean, an extrude, a fillet, a split or separated part...). Read it " +
-    "before changing a design the user has been working on.",
+    "before changing a design the user has been working on. Load plates marked pending_import with studio_load_source_plate.",
   readOnly: true,
   group: "studio",
   inputSchema: { design_id: designId },
@@ -123,6 +126,7 @@ const getDesign: McpToolDefinition = {
       plates: studioPlates(design.document).map((plate) => ({
         id: plate.id,
         name: plate.name,
+        pending_import: plate.source ? true : undefined,
         feature_ids: roots.filter((feature) => plateOf(feature) === plate.id).map((feature) => feature.id),
       })),
       bodies:
@@ -165,7 +169,7 @@ const viewDesign: McpToolDefinition = {
     plate_id: z
       .string()
       .optional()
-      .describe("Plate ID from studio_get_design. Defaults to the first plate with bodies."),
+      .describe("A loaded plate ID from studio_get_design. Defaults to the first plate with bodies."),
     views: z.array(z.enum(STUDIO_VIEWS)).min(1).max(4).optional().describe('Up to 4. Default ["iso"].'),
     size: z
       .number()
@@ -178,8 +182,23 @@ const viewDesign: McpToolDefinition = {
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
     const plate = args.plate_id as string | undefined;
-    if (plate !== undefined && !studioPlates(design.document).some((entry) => entry.id === plate))
-      throw new HttpError(400, "That plate doesn't belong to this design.");
+    const plates = studioPlates(design.document);
+    const selected = plates.find((entry) => entry.id === plate);
+    if (plate !== undefined && !selected) throw new HttpError(400, "That plate doesn't belong to this design.");
+    const firstUnopened = plates.find((entry) => entry.source);
+    const sourceProject =
+      firstUnopened ||
+      design.document.features.some((feature) => feature.type === "mesh" && feature.source.build_plate !== undefined);
+    const visiblePlates = new Set(
+      sourceProject
+        ? topLevel(design.document)
+            .filter((feature) => isBody(feature) && feature.visible)
+            .map(plateOf)
+        : [],
+    );
+    const defaultPlate = plates.find((entry) => visiblePlates.has(entry.id));
+    const pending = selected ?? (defaultPlate ? undefined : firstUnopened);
+    if (pending?.source) throw new HttpError(422, `Call studio_load_source_plate on ${pending.id} before viewing it.`);
     const views = (args.views as (typeof STUDIO_VIEWS)[number][] | undefined) ?? ["iso"];
     const size = (args.size as number | undefined) ?? 512;
     const inspected = await inspectStudioDesign(
@@ -190,7 +209,7 @@ const viewDesign: McpToolDefinition = {
         views,
         size,
         color: RENDER_COLOR,
-        plate,
+        plate: plate ?? defaultPlate?.id,
       },
     );
     if (inspected.status === "too-complex")
@@ -339,6 +358,7 @@ const checkPrintTool: McpToolDefinition = {
     );
     if (outcome.status === "too-complex")
       throw new HttpError(422, `The design is too heavy to check here (about ${outcome.triangles} triangles).`);
+    if (outcome.status === "refused") throw new HttpError(422, outcome.reason);
     if (outcome.status !== "checked") throw new Error(`studio_check_print failed: ${JSON.stringify(outcome)}`);
     const { problems, bodies, overlaps } = outcome.check;
     const plates = new Map(design.document.features.map((feature) => [feature.id, plateOf(feature)]));
