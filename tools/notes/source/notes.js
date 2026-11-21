@@ -101,33 +101,44 @@ export async function storedNote({ shared, storage }, note) {
   return noteValue(entries.find((entry) => entry.mine && entry.key === note.key)?.value);
 }
 
-/** An edit re-based after a `NoteChanged`: the fields it changed stay as it has them, the rest take the stored ones. */
-export const rebaseEdit = (edit, original, stored) =>
-  Object.fromEntries(FIELDS.map((field) => [field, edit[field] !== original[field] ? edit[field] : stored[field]]));
+/** The fields an edit changes from `original`, now or in a save it sent before (`tried`). */
+const touchedFields = (edit, original, tried = []) =>
+  FIELDS.filter((field) => [edit, ...tried].some((sent) => sent[field] !== original[field]));
+
+/**
+ * An edit re-based after a `NoteChanged`: the fields it changed, now or in a save it sent before, stay as it has them;
+ * the rest take the stored ones.
+ */
+export const rebaseEdit = (edit, original, stored, tried = []) => {
+  const touched = touchedFields(edit, original, tried);
+  return Object.fromEntries(FIELDS.map((field) => [field, touched.includes(field) ? edit[field] : stored[field]]));
+};
 
 /**
  * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one.
- * An edit (`existing`, with the `original` it was opened from) writes only the fields it changed onto the note as
- * stored now, so a change made somewhere else to the others, as in another tab, stays. It throws `NoteGone` for a
- * note deleted meanwhile, and `NoteChanged` when a field it changed was changed there too.
- * A new note's retry passes `sent`, the value its first save sent: that save may have gone through with its answer
- * lost, so a note found under the key is taken as an edit of `sent`, and one not found is written afresh.
+ * An edit (`existing`, with the `original` it was opened from) is written onto the note as stored now: a field changed
+ * somewhere else, as in another tab, stays when the edit never changed it, and is a `NoteChanged` when it did. It
+ * throws `NoteGone` for a note deleted meanwhile.
+ * `tried` lists what the editor's earlier saves sent, each of which may have gone through with its answer lost: a
+ * stored value one of them sent isn't a change made somewhere else. A new note with any is looked for under its key
+ * and taken as an edit of the first; one not found is written afresh.
  * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
  * pass the same one to a retry of the move. Returns the key it's kept under, the value written, and whether an older
  * copy was left.
  */
 export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
-  let contents = Object.fromEntries(FIELDS.map((field) => [field, value[field]]));
-  const stored = note.existing || note.sent ? await storedNote(thingport, note) : null;
+  const tried = note.tried ?? [];
+  let contents = pick(value, FIELDS);
+  const stored = note.existing || tried.length ? await storedNote(thingport, note) : null;
   if (note.existing && !stored) throw new NoteGone();
   if (stored) {
-    const original = note.existing ? note.original : note.sent;
-    const changed = FIELDS.filter((field) => value[field] !== original[field]);
-    // A field already as this edit asks, as after a save whose answer was lost, isn't a conflict.
-    if (changed.some((field) => stored[field] !== original[field] && stored[field] !== value[field]))
-      throw new NoteChanged(stored);
-    contents = { ...pick(stored, FIELDS), ...pick(value, changed) };
+    const original = note.existing ? note.original : tried[0];
+    // Changed somewhere else: neither what it was, nor what this editor sent, nor already as this edit asks.
+    const theirs = FIELDS.filter((field) => ![original, value, ...tried].some((sent) => sent[field] === stored[field]));
+    const touched = touchedFields(value, original, tried);
+    if (theirs.some((field) => touched.includes(field))) throw new NoteChanged(stored);
+    contents = { ...contents, ...pick(stored, theirs) };
   }
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });

@@ -330,7 +330,7 @@ test("a new note's retry after a lost answer is an edit of what was sent, so a c
   // The first save went through, its answer lost, and the note was revised in another tab.
   const storage = fakeStorage({ [key]: { ...sent, text: "Revised elsewhere" } });
   const thingport = { storage, shared: fakeShared() };
-  const note = { key, public: false, sent };
+  const note = { key, public: false, tried: [sent] };
   assert.equal((await saveNote(thingport, note, sent, "m1")).value.text, "Revised elsewhere");
   // A change only the retry makes goes onto it.
   await saveNote(thingport, note, { ...sent, color: "blue" }, "m1");
@@ -349,12 +349,56 @@ test("a new note's retry whose first save didn't go through is written afresh", 
   const key = "note:m1:image:a:1";
   const sent = { ...value, text: "Sent" };
   const storage = fakeStorage();
-  await saveNote({ storage, shared: fakeShared() }, { key, public: false, sent }, { ...sent, text: "Retried" }, "m1");
+  await saveNote(
+    { storage, shared: fakeShared() },
+    { key, public: false, tried: [sent] },
+    { ...sent, text: "Retried" },
+    "m1",
+  );
   assert.equal(storage.data.get(key).text, "Retried");
   // Someone else's public note under the same key isn't the viewer's.
   const shared = fakeShared([{ key, value: { ...sent, text: "Theirs" }, mine: false }]);
-  await saveNote({ storage, shared }, { key, public: true, sent }, sent, "m1");
+  await saveNote({ storage, shared }, { key, public: true, tried: [sent] }, sent, "m1");
   assert.deepEqual(shared.calls, [{ prefix: key }, { set: key, value: sent, options: { model: "m1" } }]);
+});
+
+test("after several lost answers, a retry keeps the latest edit, even one back to how the note was", async () => {
+  const key = "note:m1:image:a:1";
+  const a = { ...value, text: "A" };
+  const b = { ...value, text: "B" };
+  // An edit of a note that was A: B went through with its answer lost, then the edit went back to A.
+  const storage = fakeStorage({ [key]: b });
+  const thingport = { storage, shared: fakeShared() };
+  await saveNote(thingport, { key, public: false, existing: true, original: a, tried: [b] }, a, "m1");
+  assert.equal(storage.data.get(key).text, "A");
+  // A new note whose saves of A and then B both went through, both answers lost.
+  storage.data.set(key, b);
+  await saveNote(thingport, { key, public: false, tried: [a, b] }, a, "m1");
+  assert.equal(storage.data.get(key).text, "A");
+});
+
+test("a retry keeps its own lost change and what another tab changed in a field the edit never did", async () => {
+  const key = "note:m1:image:a:1";
+  const original = { ...value, text: "A", color: "yellow" };
+  const b = { ...original, text: "B" };
+  // B went through with its answer lost, then another tab made the note pink.
+  const storage = fakeStorage({ [key]: { ...b, color: "pink" } });
+  const note = { key, public: false, existing: true, original, tried: [b] };
+  await saveNote({ storage, shared: fakeShared() }, note, b, "m1");
+  assert.deepEqual([storage.data.get(key).text, storage.data.get(key).color], ["B", "pink"]);
+});
+
+test("a field an earlier save changed counts as the edit's, even once it's back as it was", async () => {
+  const key = "note:m1:image:a:1";
+  const original = { ...value, text: "A" };
+  const b = { ...original, text: "B" };
+  // B didn't go through, the edit went back to A, and another tab wrote C meanwhile.
+  const storage = fakeStorage({ [key]: { ...original, text: "C" } });
+  const note = { key, public: false, existing: true, original, tried: [b] };
+  const conflict = await saveNote({ storage, shared: fakeShared() }, note, original, "m1").catch((error) => error);
+  assert.ok(conflict instanceof NoteChanged);
+  assert.equal(storage.data.get(key).text, "C");
+  assert.equal(rebaseEdit(original, original, conflict.stored, [b]).text, "A");
 });
 
 test("the view starts with notes shown and a yellow sticky, and keeps what was saved", async () => {

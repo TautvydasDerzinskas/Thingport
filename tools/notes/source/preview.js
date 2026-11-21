@@ -604,7 +604,8 @@ export function modelImage(thingport) {
       note: e.note,
       key: e.key,
       isPublic: e.isPublic,
-      sent: e.sent,
+      tried: e.tried,
+      chosen: e.chosen,
       moveKey: e.moveKey,
       base: e.original,
       changes,
@@ -626,12 +627,12 @@ export function modelImage(thingport) {
 
   async function restoreDraft() {
     // Past any whose note has been deleted since, or can't be checked now, to the first that can open: each once.
-    const tried = new Set();
+    const seen = new Set();
     let failed = false;
     for (;;) {
-      const draft = !editing && readyDraft(tried);
+      const draft = !editing && readyDraft(seen);
       if (!draft) return;
-      tried.add(draft);
+      seen.add(draft);
       let note = draft.note && notes.find((candidate) => noteId(candidate) === noteId(draft.note));
       if (draft.note && !note) {
         // Not among this picture's notes isn't deleted: one from another copy shows only while the pictures can be
@@ -661,9 +662,10 @@ export function modelImage(thingport) {
         ...draft.changes,
         key: draft.key,
         isPublic: draft.isPublic,
-        sent: draft.sent,
+        tried: draft.tried,
+        chosen: draft.chosen,
         moveKey: draft.moveKey,
-        // A new note's starting look and colour, as they were: what it inherited isn't taken for a choice later.
+        // What a new note started as, which its changes are measured against.
         base: note ? undefined : draft.base,
       });
       // Changed here and somewhere else since: saving would replace the other change, so say so.
@@ -693,9 +695,11 @@ export function modelImage(thingport) {
       note,
       key: draft?.key ?? note?.key ?? newNoteKey(modelId, preview.key),
       isPublic: draft ? draft.isPublic : Boolean(note?.public),
-      // What the first save of a new note sent: it may be stored even if the answer said otherwise, so retries go where
-      // it went and change only what's been changed since.
-      sent: draft?.sent ?? null,
+      // What this edit's saves sent that may be stored even though the answer said otherwise: retries go where they
+      // went, and a stored value one of them sent isn't taken for a change made somewhere else.
+      tried: draft?.tried ?? [],
+      // The look and colour picked in this edit, which new notes start with once it's saved with them.
+      chosen: { ...draft?.chosen },
       // One key for a public note moving to this copy, however often the move is retried.
       moveKey: draft?.moveKey ?? null,
       // Which edit a kept draft belongs to.
@@ -802,7 +806,7 @@ export function modelImage(thingport) {
         swatch.title = label;
         swatch.addEventListener("click", () => {
           const next = COLORS[(COLORS.indexOf(color) + 1) % COLORS.length];
-          editing.color = pick(color, editing.color, next);
+          choose("color", pick(color, editing.color, next));
           applyEditor();
           keepFocus(colors);
         });
@@ -875,14 +879,20 @@ export function modelImage(thingport) {
     };
   }
 
+  /** A look or colour picked on the toolbar: one that changes the note counts as a choice. */
+  function choose(field, value) {
+    if (editing[field] !== value) editing.chosen[field] = value;
+    editing[field] = value;
+  }
+
   function setLook(look) {
-    editing.look = look;
+    choose("look", look);
     applyEditor();
     moveTo(editing.x, editing.y);
   }
 
   function setAudience(isPublic) {
-    if (editing.note || editing.sent) return;
+    if (editing.note || editing.tried.length) return;
     editing.isPublic = isPublic;
     applyEditor();
   }
@@ -898,8 +908,8 @@ export function modelImage(thingport) {
       control.setAttribute("aria-pressed", String(look === e.look));
     for (const [name, control] of Object.entries(e.audience)) {
       control.setAttribute("aria-pressed", String((name === "public") === e.isPublic));
-      control.disabled = e.saving || Boolean(e.note || e.sent);
-      if (e.note || e.sent) control.title = t(e.note ? "editor.visibilityFixed" : "editor.visibilitySent");
+      control.disabled = e.saving || Boolean(e.note || e.tried.length);
+      if (e.note || e.tried.length) control.title = t(e.note ? "editor.visibilityFixed" : "editor.visibilitySent");
     }
     e.swatches.hidden = e.colorSep.hidden = !sticky;
     for (const [color, swatch] of Object.entries(e.colors))
@@ -1066,14 +1076,12 @@ export function modelImage(thingport) {
     if (!text || e.saving) return;
     e.saving = true;
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
-    const sentBefore = e.note ? null : e.sent;
-    e.sent ??= value;
+    // This save joins the ones before it until it's known to have gone through, or not to have.
+    const tried = e.tried;
+    e.tried = [...tried, value];
     applyEditor();
-    // Only what was picked in this edit becomes the next note's, look and colour each on its own: defaults that stood
-    // in for unread settings aren't saved alongside it. Taken now, as the save may finish after the picture changes.
-    const picked = Object.fromEntries(
-      ["look", "color"].filter((field) => e[field] !== e.original[field]).map((field) => [field, e[field]]),
-    );
+    // Taken now, as the save may finish after the picture changes.
+    const chosen = { ...e.chosen };
     const pickedAt = ++picks;
     if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId)
       e.moveKey ??= newNoteKey(modelId, preview.key);
@@ -1084,12 +1092,17 @@ export function modelImage(thingport) {
         modelId: e.note?.modelId,
         existing: Boolean(e.note),
         original: e.original,
-        sent: sentBefore,
+        tried,
       };
       const saved = await saveNote(thingport, draft, value, modelId, e.moveKey);
       // Saved, even if the picture changed meanwhile: a draft kept for it is spent, and what was picked is remembered.
       dropDraft(e);
       if (saved.leftover) ui.toast(t("editor.oldCopy"), "warning");
+      // Only a look or colour picked in this edit becomes the next note's, each on its own, and only as the note was
+      // saved with it: neither a default standing in for unread settings nor a change made somewhere else counts.
+      const picked = Object.fromEntries(
+        Object.entries(chosen).filter(([field, choice]) => saved.value[field] === choice),
+      );
       settings.pickedAt ??= {};
       const newest = Object.fromEntries(
         Object.entries(picked).filter(([field]) => (settings.pickedAt[field] ?? 0) < pickedAt),
@@ -1129,13 +1142,14 @@ export function modelImage(thingport) {
         // Changed here and somewhere else since it was opened, or for a new note since it was sent: the editor stays,
         // now measured against the note as it is, so saving again replaces the other change. What this edit didn't
         // change takes the stored value. A new note found stored is from now on an edit of it.
-        const base = e.note ? e.original : e.sent;
-        const textKept = value.text === base.text;
-        Object.assign(e, rebaseEdit(value, base, error.stored));
-        if (textKept) e.field.value = e.text;
+        Object.assign(e, rebaseEdit(value, e.note ? e.original : tried[0], error.stored, tried));
+        if (e.field.value.trim() !== e.text) e.field.value = e.text;
         e.original = error.stored;
+        e.tried = [];
         e.note = { ...(e.note ?? ownNote(e)), value: error.stored };
         ui.toast(t("editor.conflict"), "warning");
+        // The picture shows the note as it's stored, and a new one its lost answer never drew.
+        if (alive) void load();
         // A draft kept for the picture, if it changed meanwhile, is now this edit as it stands.
         if (drafts.get(draftKey)?.has(e.token)) {
           keepDraft(e, false);
