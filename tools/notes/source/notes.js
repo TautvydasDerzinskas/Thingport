@@ -75,12 +75,24 @@ export async function readNotes({ shared, storage }, { model, preview } = {}) {
     .sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")));
 }
 
+/** Thrown by `saveNote` for an edit of a note deleted since it was opened: it isn't written back. */
+export class NoteGone extends Error {}
+
+async function stillThere({ shared, storage }, note) {
+  if (!note.public) return (await storage.get(note.key)) != null;
+  return (await shared.list({ prefix: note.key })).some((entry) => entry.mine && entry.key === note.key);
+}
+
 /**
- * Keeps a note where its visibility says, under its key: a retry overwrites rather than adding a second one. Returns
- * the key it's kept under, and whether an older copy of it was left shared.
+ * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one; an
+ * edit (`existing`) of a note deleted meanwhile, as in another tab, throws `NoteGone` instead of writing it back.
+ * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
+ * pass the same one to a retry of the move. Returns the key it's kept under, and whether an older copy was left.
  */
-export async function saveNote({ shared, storage }, note, value, modelId, previewKey) {
+export async function saveNote(thingport, note, value, modelId, moveKey) {
+  const { shared, storage, api } = thingport;
   const contents = { x: value.x, y: value.y, text: value.text, look: value.look, color: value.color };
+  if (note.existing && !(await stillThere(thingport, note))) throw new NoteGone();
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
@@ -92,16 +104,17 @@ export async function saveNote({ shared, storage }, note, value, modelId, previe
     await shared.set(note.key, contents, { model: written });
     return { key: note.key, leftover: false };
   } catch (error) {
-    // Edited on another copy after its writer lost the model it was on: it moves to this copy, under a key naming it.
-    // The new one is written first, so a failure along the way leaves a second copy rather than none.
-    if (written === modelId || !previewKey) throw error;
-    const key = newNoteKey(modelId, previewKey);
-    await shared.set(key, contents, { model: modelId });
+    if (written === modelId || !moveKey) throw error;
+    // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry.
+    const res = await api("/print/" + encodeURIComponent(written)).catch(() => null);
+    if (!res || ![403, 404].includes(res.status)) throw error;
+    // The new copy is written first, so a failure along the way leaves two copies rather than none.
+    await shared.set(moveKey, contents, { model: modelId });
     const leftover = await shared.remove(note.key).then(
       () => false,
       () => true,
     );
-    return { key, leftover };
+    return { key: moveKey, leftover };
   }
 }
 

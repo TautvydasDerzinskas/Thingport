@@ -83,12 +83,14 @@ export function menuButton(button) {
 
 /**
  * Opens a menu of `items`: `{ icon, label, action, danger, disabled, title }`, `{ divider: true }`, or a switch with
- * `checked`, whose action gets the new state and which leaves the menu open. An item's action gets a promise of the
- * menu being gone, for focusing what it opens.
+ * `checked`, a function saying whether it's on, whose action gets the new state and which leaves the menu open. An
+ * item's action gets a promise of the menu being gone, for focusing what it opens. Returns `close()`, and `refresh()`
+ * to show switches as they are now.
  */
 export function openMenu(thingport, button, anchor, items, onClose) {
   let handle = null;
   let shown = null;
+  const switches = [];
   // The popover gives focus back to its button as it goes, so an action that focuses something waits for this.
   const gone = () =>
     new Promise((resolve) => {
@@ -114,10 +116,13 @@ export function openMenu(thingport, button, anchor, items, onClose) {
           menu.append(line);
           continue;
         }
-        const toggle = item.checked !== undefined;
+        const toggle = typeof item.checked === "function";
         const entry = el("button", item.danger ? "tpn-danger" : "");
         entry.setAttribute("role", toggle ? "menuitemcheckbox" : "menuitem");
-        if (toggle) entry.setAttribute("aria-checked", String(item.checked));
+        if (toggle) {
+          entry.setAttribute("aria-checked", String(item.checked()));
+          switches.push(() => entry.setAttribute("aria-checked", String(item.checked())));
+        }
         // Still focusable when it can't be used, so its title says why.
         if (item.disabled) entry.setAttribute("aria-disabled", "true");
         if (item.title) entry.title = item.title;
@@ -126,9 +131,8 @@ export function openMenu(thingport, button, anchor, items, onClose) {
         entry.addEventListener("click", () => {
           if (item.disabled) return;
           if (toggle) {
-            item.checked = !item.checked;
-            entry.setAttribute("aria-checked", String(item.checked));
-            item.action(item.checked);
+            item.action(!item.checked());
+            entry.setAttribute("aria-checked", String(item.checked()));
             return;
           }
           handle?.close();
@@ -166,7 +170,7 @@ export function openMenu(thingport, button, anchor, items, onClose) {
     },
     { placement: "bottom", width: MENU_WIDTH },
   );
-  return handle;
+  return { close: () => handle.close(), refresh: () => switches.forEach((update) => update()) };
 }
 
 export const UI_CSS = `

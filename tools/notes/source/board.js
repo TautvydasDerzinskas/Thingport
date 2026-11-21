@@ -118,6 +118,13 @@ export default function mount(thingport) {
   }
 
   function render() {
+    // Retry goes as the notice does: focus on it moves to the search field rather than being lost.
+    const retryHadFocus = notice.contains(document.activeElement);
+    draw();
+    if (retryHadFocus && notice.hidden) search.focus();
+  }
+
+  function draw() {
     more.hidden = true;
     notice.hidden = true;
     count.hidden = loading || failed;

@@ -46,6 +46,7 @@
   "editor.saveFailed": "Impossible d’enregistrer la note. Réessayez.",
   "editor.oldCopy": "Enregistrée, mais une ancienne copie de cette note est toujours partagée.",
   "editor.deleted": "Cette note a été supprimée ailleurs.",
+  "editor.conflict": "Cette note a été modifiée ailleurs depuis votre modification non enregistrée. L’enregistrer remplace ce changement.",
   "editor.discardTitle": "Abandonner les modifications ?",
   "editor.discardMessage": "Vos modifications de cette note seront perdues.",
   "editor.discard": "Abandonner",

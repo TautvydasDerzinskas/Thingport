@@ -79,12 +79,24 @@ export async function readNotes({ shared, storage }, { model, preview } = {}) {
     .sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")));
 }
 
+/** Thrown by `saveNote` for an edit of a note deleted since it was opened: it isn't written back. */
+export class NoteGone extends Error {}
+
+async function stillThere({ shared, storage }, note) {
+  if (!note.public) return (await storage.get(note.key)) != null;
+  return (await shared.list({ prefix: note.key })).some((entry) => entry.mine && entry.key === note.key);
+}
+
 /**
- * Keeps a note where its visibility says, under its key: a retry overwrites rather than adding a second one. Returns
- * the key it's kept under, and whether an older copy of it was left shared.
+ * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one; an
+ * edit (`existing`) of a note deleted meanwhile, as in another tab, throws `NoteGone` instead of writing it back.
+ * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
+ * pass the same one to a retry of the move. Returns the key it's kept under, and whether an older copy was left.
  */
-export async function saveNote({ shared, storage }, note, value, modelId, previewKey) {
+export async function saveNote(thingport, note, value, modelId, moveKey) {
+  const { shared, storage, api } = thingport;
   const contents = { x: value.x, y: value.y, text: value.text, look: value.look, color: value.color };
+  if (note.existing && !(await stillThere(thingport, note))) throw new NoteGone();
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
@@ -96,16 +108,17 @@ export async function saveNote({ shared, storage }, note, value, modelId, previe
     await shared.set(note.key, contents, { model: written });
     return { key: note.key, leftover: false };
   } catch (error) {
-    // Edited on another copy after its writer lost the model it was on: it moves to this copy, under a key naming it.
-    // The new one is written first, so a failure along the way leaves a second copy rather than none.
-    if (written === modelId || !previewKey) throw error;
-    const key = newNoteKey(modelId, previewKey);
-    await shared.set(key, contents, { model: modelId });
+    if (written === modelId || !moveKey) throw error;
+    // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry.
+    const res = await api("/print/" + encodeURIComponent(written)).catch(() => null);
+    if (!res || ![403, 404].includes(res.status)) throw error;
+    // The new copy is written first, so a failure along the way leaves two copies rather than none.
+    await shared.set(moveKey, contents, { model: modelId });
     const leftover = await shared.remove(note.key).then(
       () => false,
       () => true,
     );
-    return { key, leftover };
+    return { key: moveKey, leftover };
   }
 }
 
@@ -263,12 +276,14 @@ export function menuButton(button) {
 
 /**
  * Opens a menu of `items`: `{ icon, label, action, danger, disabled, title }`, `{ divider: true }`, or a switch with
- * `checked`, whose action gets the new state and which leaves the menu open. An item's action gets a promise of the
- * menu being gone, for focusing what it opens.
+ * `checked`, a function saying whether it's on, whose action gets the new state and which leaves the menu open. An
+ * item's action gets a promise of the menu being gone, for focusing what it opens. Returns `close()`, and `refresh()`
+ * to show switches as they are now.
  */
 export function openMenu(thingport, button, anchor, items, onClose) {
   let handle = null;
   let shown = null;
+  const switches = [];
   // The popover gives focus back to its button as it goes, so an action that focuses something waits for this.
   const gone = () =>
     new Promise((resolve) => {
@@ -294,10 +309,13 @@ export function openMenu(thingport, button, anchor, items, onClose) {
           menu.append(line);
           continue;
         }
-        const toggle = item.checked !== undefined;
+        const toggle = typeof item.checked === "function";
         const entry = el("button", item.danger ? "tpn-danger" : "");
         entry.setAttribute("role", toggle ? "menuitemcheckbox" : "menuitem");
-        if (toggle) entry.setAttribute("aria-checked", String(item.checked));
+        if (toggle) {
+          entry.setAttribute("aria-checked", String(item.checked()));
+          switches.push(() => entry.setAttribute("aria-checked", String(item.checked())));
+        }
         // Still focusable when it can't be used, so its title says why.
         if (item.disabled) entry.setAttribute("aria-disabled", "true");
         if (item.title) entry.title = item.title;
@@ -306,9 +324,8 @@ export function openMenu(thingport, button, anchor, items, onClose) {
         entry.addEventListener("click", () => {
           if (item.disabled) return;
           if (toggle) {
-            item.checked = !item.checked;
-            entry.setAttribute("aria-checked", String(item.checked));
-            item.action(item.checked);
+            item.action(!item.checked());
+            entry.setAttribute("aria-checked", String(item.checked()));
             return;
           }
           handle?.close();
@@ -346,7 +363,7 @@ export function openMenu(thingport, button, anchor, items, onClose) {
     },
     { placement: "bottom", width: MENU_WIDTH },
   );
-  return handle;
+  return { close: () => handle.close(), refresh: () => switches.forEach((update) => update()) };
 }
 
 export const UI_CSS = `
@@ -428,6 +445,38 @@ export const UI_CSS = `
 const EDGE = 4;
 // Unsaved edits by model and picture: switching pictures draws the part afresh, and coming back brings the edit back.
 const drafts = new Map();
+// Told a picture's key when its draft is free to come back, as after a save that failed once the picture had changed.
+const draftsFreed = new EventTarget();
+
+// The viewer's settings, one copy for every picture on the page, so switching pictures neither reads them again nor
+// races another picture's writes: read once, then written one change at a time, each write the settings as they are
+// when it starts, so the last change is the one kept. A change made before the read arrives wins over it.
+const settingsByUser = new Map();
+
+function settingsFor({ storage, user }) {
+  const id = user?.id ?? "";
+  let settings = settingsByUser.get(id);
+  if (settings) return settings;
+  settings = { view: { hidden: false, look: "sticky", color: "yellow" }, read: false, early: {}, listeners: new Set() };
+  settings.ready = readView(storage).then((stored) => {
+    settings.view = { ...stored, ...settings.early };
+    settings.read = true;
+    for (const listener of settings.listeners) listener();
+  });
+  settings.writing = settings.ready;
+  settingsByUser.set(id, settings);
+  return settings;
+}
+
+function changeSettings(settings, storage, change) {
+  settings.view = { ...settings.view, ...change };
+  if (!settings.read) Object.assign(settings.early, change);
+  for (const listener of settings.listeners) listener();
+  const write = settings.writing.then(() => writeView(storage, settings.view));
+  // A failed write doesn't hold up the next.
+  settings.writing = write.catch(() => undefined);
+  return write;
+}
 const TILTS = [-3, -1.5, 1, 2.5, -2, 1.8];
 const clamp = (value, low, high) => Math.min(Math.max(value, low), Math.max(low, high));
 
@@ -652,7 +701,8 @@ export function modelImage(thingport) {
   let alive = true;
   let revision = 0;
   let notes = [];
-  let view = { hidden: false, look: "sticky", color: "yellow" };
+  // Whether the picture's notes have been read once, which a draft's note is looked for among.
+  let loaded = false;
   // The note opened in place, and the one being edited: never both.
   let reading = null;
   let editing = null;
@@ -664,55 +714,61 @@ export function modelImage(thingport) {
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
   const draftKey = modelId + "|" + (preview?.key ?? "");
 
-  // The saved settings, read once. A change made before they arrive wins over them, and is written after them, so
-  // it neither gets undone nor writes the defaults over the saved look and colour.
-  const early = {};
-  let viewRead = false;
-  const viewReady = readView(storage).then((stored) => {
-    viewRead = true;
-    // Merged even when the part has gone, as for another picture: a write still queued then keeps the saved look.
-    view = { ...stored, ...early };
-    if (alive) render();
-  });
-
-  // One write at a time, each of the settings as they are when it starts, so the last change is the one kept. A
-  // failed write doesn't hold up the next.
-  let writing = viewReady;
+  const settings = settingsFor(thingport);
+  // The menu while it's open, so its switch follows a change made elsewhere or the settings arriving.
+  let menu = null;
+  const onSettings = () => {
+    if (!alive) return;
+    render();
+    menu?.refresh();
+  };
+  settings.listeners.add(onSettings);
+  const onDraftFreed = (event) => alive && loaded && event.detail === draftKey && restoreDraft();
+  draftsFreed.addEventListener("freed", onDraftFreed);
 
   function setView(change) {
-    view = { ...view, ...change };
-    if (!viewRead) Object.assign(early, change);
-    render();
-    const write = writing.then(() => writeView(storage, view));
-    writing = write.catch(() => undefined);
-    write.catch(() => {
-      // The switch keeps what was chosen here; the next picture would show the saved choice, so say so.
-      if (alive && "hidden" in change) ui.toast(t("menu.showFailed"), "error");
+    changeSettings(settings, storage, change).catch(() => {
+      // The switch keeps what was chosen here; the next page would show the saved choice, so say so.
+      if ("hidden" in change) ui.toast(t("menu.showFailed"), "error");
     });
   }
 
   function renderButton() {
     const count = notes.length;
-    button.dataset.hidden = String(view.hidden);
-    badge.hidden = !view.hidden && !count;
-    badge.replaceChildren(view.hidden ? icon("eyeOff") : document.createTextNode(count > 99 ? "99+" : String(count)));
-    button.setAttribute("aria-label", view.hidden ? t("menu.labelHidden") : t("menu.label", { count }));
+    button.dataset.hidden = String(settings.view.hidden);
+    badge.hidden = !settings.view.hidden && !count;
+    badge.replaceChildren(
+      settings.view.hidden ? icon("eyeOff") : document.createTextNode(count > 99 ? "99+" : String(count)),
+    );
+    button.setAttribute("aria-label", settings.view.hidden ? t("menu.labelHidden") : t("menu.label", { count }));
   }
 
-  button.addEventListener("click", () =>
-    openMenu(thingport, button, anchor, [
-      {
-        icon: "add",
-        label: t("menu.add"),
-        action: (gone) => viewReady.then(() => startEdit(null, gone)),
-        disabled: !layer || Boolean(editing),
-        title: layer ? undefined : t("menu.noPicture"),
-      },
-      { icon: "open", label: t("menu.open"), action: () => ui.openWindow() },
-      { divider: true },
-      { icon: "eye", label: t("menu.show"), checked: !view.hidden, action: (shown) => setView({ hidden: !shown }) },
-    ]),
-  );
+  button.addEventListener("click", () => {
+    menu = openMenu(
+      thingport,
+      button,
+      anchor,
+      [
+        {
+          icon: "add",
+          label: t("menu.add"),
+          // A new note starts with the saved look and colour, on this picture if it's still the one shown.
+          action: (gone) => settings.ready.then(() => alive && startEdit(null, gone)),
+          disabled: !layer || Boolean(editing),
+          title: layer ? undefined : t("menu.noPicture"),
+        },
+        { icon: "open", label: t("menu.open"), action: () => ui.openWindow() },
+        { divider: true },
+        {
+          icon: "eye",
+          label: t("menu.show"),
+          checked: () => !settings.view.hidden,
+          action: (shown) => setView({ hidden: !shown }),
+        },
+      ],
+      () => (menu = null),
+    );
+  });
 
   function noteElement(note) {
     const element = el("button", "tpn-note " + (note.value.look === "sticky" ? "tpn-sticky" : "tpn-bubble"));
@@ -746,7 +802,7 @@ export function modelImage(thingport) {
 
   function renderPins() {
     if (!layer) return;
-    pins.hidden = view.hidden;
+    pins.hidden = settings.view.hidden;
     const old = new Map([...pins.children].map((element) => [element.dataset.id, element]));
     const keep = new Set();
     // Newest on top. A note already drawn stays where it is in the page, so it doesn't play its entrance again.
@@ -912,16 +968,57 @@ export function modelImage(thingport) {
 
   // ---- The editor: the note itself, with a toolbar under it ----
 
+  const EDITABLE = ["text", "look", "color", "x", "y"];
+  const changedFields = (e) => EDITABLE.filter((field) => e[field] !== e.original[field]);
+
+  // An edit kept for the picture: what it started from and only the fields changed, so coming back applies those to
+  // the note as it is then, rather than writing back fields someone else has changed since.
+  function keepDraft(e) {
+    const changes = Object.fromEntries(changedFields(e).map((field) => [field, e[field]]));
+    drafts.set(draftKey, {
+      noteId: e.note && noteId(e.note),
+      key: e.key,
+      isPublic: e.isPublic,
+      moveKey: e.moveKey,
+      base: e.original,
+      changes,
+      token: e.token,
+    });
+  }
+
+  function dropDraft(e) {
+    if (drafts.get(draftKey)?.token === e.token) drafts.delete(draftKey);
+  }
+
+  function restoreDraft() {
+    const draft = drafts.get(draftKey);
+    if (!draft || editing || draft.saving) return;
+    drafts.delete(draftKey);
+    const note = draft.noteId ? notes.find((candidate) => noteId(candidate) === draft.noteId) : null;
+    if (draft.noteId && !note) return ui.toast(t("editor.deleted"), "warning");
+    const latest = note?.value ?? draft.base;
+    startEdit(note, null, {
+      ...latest,
+      ...draft.changes,
+      key: draft.key,
+      isPublic: draft.isPublic,
+      moveKey: draft.moveKey,
+    });
+    // Changed here and somewhere else since: saving would replace the other change, so say so.
+    if (note && Object.keys(draft.changes).some((field) => latest[field] !== draft.base[field]))
+      ui.toast(t("editor.conflict"), "warning");
+  }
+
   function startEdit(note, menuGone, draft) {
     if (!layer || editing) return;
     closeRead(false);
-    if (view.hidden) setView({ hidden: false });
+    if (settings.view.hidden) setView({ hidden: false });
     const original = note?.value ?? {
       x: 0.5,
-      y: view.look === "sticky" ? 0.3 : 0.55,
+      y: settings.view.look === "sticky" ? 0.3 : 0.55,
       text: "",
-      look: view.look,
-      color: view.color,
+      look: settings.view.look,
+      color: settings.view.color,
     };
     const value = draft ?? original;
     const parts = buildEditor();
@@ -930,6 +1027,10 @@ export function modelImage(thingport) {
       note,
       key: draft?.key ?? note?.key ?? newNoteKey(modelId, preview.key),
       isPublic: draft ? draft.isPublic : Boolean(note?.public),
+      // One key for a public note moving to this copy, however often the move is retried.
+      moveKey: draft?.moveKey ?? null,
+      // Which edit a kept draft belongs to.
+      token: {},
       original,
       x: value.x,
       y: value.y,
@@ -1188,6 +1289,14 @@ export function modelImage(thingport) {
     if (!fitsBelow && above < EDGE) {
       const text = e.field.offsetHeight;
       if (text > MIN_TEXT && !(textLimit <= MIN_TEXT)) return layoutEditor(Math.max(MIN_TEXT, text - 16));
+      // Still no room on either side: the note sits just above the toolbar at the foot of the picture, which overlaps
+      // only on a picture shorter than the two of them at their smallest.
+      const foot = height - EDGE - bar.height;
+      const sits = Math.max(EDGE, foot - 8 - e.surface.offsetHeight);
+      Object.assign(e.surface.style, { top: sits + "px" });
+      e.surface.dataset.side = "over";
+      Object.assign(e.toolbar.style, { left: left + "px", top: foot + "px" });
+      return;
     }
     const top = fitsBelow ? below : above >= EDGE ? above : height - bar.height - EDGE;
     Object.assign(e.toolbar.style, { left: left + "px", top: top + "px" });
@@ -1250,10 +1359,8 @@ export function modelImage(thingport) {
   async function cancelEdit() {
     const e = editing;
     if (!e || e.saving) return;
-    const o = e.original;
-    const changed = ["text", "look", "color", "x", "y"].some((field) => e[field] !== o[field]);
     // A new note with nothing written couldn't be saved anyway.
-    if (changed && (e.note || e.text.trim())) {
+    if (changedFields(e).length && (e.note || e.text.trim())) {
       const discard = await ui.confirm({
         title: t("editor.discardTitle"),
         message: t("editor.discardMessage"),
@@ -1287,10 +1394,14 @@ export function modelImage(thingport) {
     e.saving = true;
     applyEditor();
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
+    if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId)
+      e.moveKey ??= newNoteKey(modelId, preview.key);
     try {
-      const draft = { key: e.key, public: e.isPublic, modelId: e.note?.modelId };
-      const { key, leftover } = await saveNote(thingport, draft, value, modelId, preview.key);
-      if (leftover && alive) ui.toast(t("editor.oldCopy"), "warning");
+      const draft = { key: e.key, public: e.isPublic, modelId: e.note?.modelId, existing: Boolean(e.note) };
+      const { key, leftover } = await saveNote(thingport, draft, value, modelId, e.moveKey);
+      // Saved, even if the picture changed meanwhile: a draft kept for it is spent.
+      dropDraft(e);
+      if (leftover) ui.toast(t("editor.oldCopy"), "warning");
       if (!alive || editing !== e) return;
       const moved = key !== e.key;
       const saved = {
@@ -1301,10 +1412,22 @@ export function modelImage(thingport) {
       };
       const replaced = [noteId(saved), ...(e.note ? [noteId(e.note)] : [])];
       notes = [saved, ...notes.filter((note) => !replaced.includes(noteId(note)))];
-      if (e.look !== view.look || e.color !== view.color) setView({ look: e.look, color: e.color });
+      if (e.look !== settings.view.look || e.color !== settings.view.color) setView({ look: e.look, color: e.color });
       endEdit(saved);
-    } catch {
-      if (alive) ui.toast(t("editor.saveFailed"), "error");
+    } catch (error) {
+      if (error instanceof NoteGone) {
+        dropDraft(e);
+        ui.toast(t("editor.deleted"), "warning");
+        if (alive && editing === e) endEdit(null);
+        return;
+      }
+      // Said even when the picture has changed meanwhile: the edit waits there, kept as a draft.
+      ui.toast(t("editor.saveFailed"), "error");
+      const kept = drafts.get(draftKey);
+      if (kept?.token === e.token) {
+        kept.saving = false;
+        draftsFreed.dispatchEvent(new CustomEvent("freed", { detail: draftKey }));
+      }
     } finally {
       if (editing === e) {
         e.saving = false;
@@ -1318,7 +1441,7 @@ export function modelImage(thingport) {
     renderPins();
     if (!reading) return;
     const current = notes.find((note) => noteId(note) === reading.element.dataset.id);
-    if (!current || view.hidden || !reading.element.isConnected) closeRead(false);
+    if (!current || settings.view.hidden || !reading.element.isConnected) closeRead(false);
     else {
       fillRead(current);
       layoutRead();
@@ -1332,18 +1455,16 @@ export function modelImage(thingport) {
       const next = await readNotes(thingport, { model: modelId, preview: preview.key });
       if (!alive || run !== revision) return;
       notes = next;
-      // Saving would write it back, so an edit of a note deleted elsewhere (the window, another tab) ends, and says so.
+      loaded = true;
+      // An edit of a note deleted on this page, as in the Notes window, ends and says so. One deleted in another tab
+      // isn't heard here: saving it then finds it gone instead of writing it back.
       if (editing?.note && !editing.saving && !notes.some((note) => noteId(note) === noteId(editing.note))) {
+        dropDraft(editing);
         endEdit(null);
         ui.toast(t("editor.deleted"), "warning");
       }
       render();
-      const draft = drafts.get(draftKey);
-      if (draft && !editing) {
-        drafts.delete(draftKey);
-        const note = draft.noteId && notes.find((candidate) => noteId(candidate) === draft.noteId);
-        if (!draft.noteId || note) startEdit(note || null, null, draft);
-      }
+      restoreDraft();
     } catch {
       if (alive && run === revision) ui.toast(t("board.error"), "error");
     }
@@ -1363,11 +1484,12 @@ export function modelImage(thingport) {
   void load();
   return () => {
     alive = false;
-    const e = editing;
-    const o = e?.original;
-    if (e && !e.saving && ["text", "look", "color", "x", "y"].some((field) => e[field] !== o[field])) {
-      const { key, isPublic, x, y, text, look, color } = e;
-      drafts.set(draftKey, { noteId: e.note && noteId(e.note), key, isPublic, x, y, text, look, color });
+    settings.listeners.delete(onSettings);
+    draftsFreed.removeEventListener("freed", onDraftFreed);
+    // An unsaved edit waits for the picture to come back; one still saving waits too, in case the save fails.
+    if (editing && (editing.saving || changedFields(editing).length)) {
+      keepDraft(editing);
+      if (editing.saving) drafts.get(draftKey).saving = true;
     }
     stop();
     observer?.disconnect();
@@ -1495,6 +1617,13 @@ export default function mount(thingport) {
   }
 
   function render() {
+    // Retry goes as the notice does: focus on it moves to the search field rather than being lost.
+    const retryHadFocus = notice.contains(document.activeElement);
+    draw();
+    if (retryHadFocus && notice.hidden) search.focus();
+  }
+
+  function draw() {
     more.hidden = true;
     notice.hidden = true;
     count.hidden = loading || failed;

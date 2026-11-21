@@ -11,7 +11,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { COLORS, LOOKS, PREFIX, newNoteKey, noteValue, readNotes, readView, saveNote } from "./notes.js";
+import { COLORS, LOOKS, NoteGone, PREFIX, newNoteKey, noteValue, readNotes, readView, saveNote } from "./notes.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -158,50 +158,78 @@ test("a note is kept where its visibility says, with its look and colour", async
   });
 });
 
+const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
+// The server's answer for a model: gone for the writer, or there.
+const fakeApi = (gone) => async (path) => ({ status: gone.some((id) => path.endsWith("/" + id)) ? 404 : 200 });
+
 test("a public note edited on another copy stays tied to the model its key names", async () => {
   const shared = fakeShared([], { readable: ["m1", "m2"] });
   const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
-  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-  assert.deepEqual(await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b"), {
-    key: note.key,
-    leftover: false,
-  });
+  const saved = await saveNote({ storage: fakeStorage(), shared, api: fakeApi([]) }, note, value, "m2", "note:m2:b:9");
+  assert.deepEqual(saved, { key: note.key, leftover: false });
   assert.deepEqual(shared.calls, [{ set: note.key, value, options: { model: "m1" } }]);
 });
 
 test("a public note whose writer can't open its model any more moves to the copy it's edited on", async () => {
   const shared = fakeShared([], { readable: ["m2"] });
   const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
-  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-  const { key, leftover } = await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b");
-  assert.match(key, /^note:m2:image:b:/);
-  assert.equal(leftover, false);
-  assert.deepEqual(shared.calls.slice(1), [{ set: key, value, options: { model: "m2" } }, { remove: note.key }]);
+  const moveKey = "note:m2:image:b:9";
+  const saved = await saveNote({ storage: fakeStorage(), shared, api: fakeApi(["m1"]) }, note, value, "m2", moveKey);
+  assert.deepEqual(saved, { key: moveKey, leftover: false });
+  assert.deepEqual(shared.calls.slice(1), [{ set: moveKey, value, options: { model: "m2" } }, { remove: note.key }]);
 });
 
-test("a moved note whose old copy can't be removed says so, and is kept", async () => {
-  const shared = fakeShared([], { readable: ["m2"], stuck: true });
+test("a failed save on a model its writer can still open is reported, not moved", async () => {
+  const shared = fakeShared([], { full: true });
   const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
-  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-  const { key, leftover } = await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b");
-  assert.match(key, /^note:m2:image:b:/);
-  assert.equal(leftover, true);
-});
-
-test("a note that can't move for want of room fails as a whole, leaving the old copy alone", async () => {
-  const shared = fakeShared([], { readable: ["m2"], full: true });
-  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
-  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-  await assert.rejects(saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b"), /5000 entries/);
-  assert.ok(!shared.calls.some((call) => call.remove));
+  const thingport = { storage: fakeStorage(), shared, api: fakeApi([]) };
+  await assert.rejects(saveNote(thingport, note, value, "m2", "note:m2:image:b:9"), /5000 entries/);
+  assert.equal(shared.calls.length, 1);
 });
 
 test("a public note that can't be saved on the model it's edited on isn't moved", async () => {
   const shared = fakeShared([], { readable: [] });
   const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
-  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-  await assert.rejects(saveNote({ storage: fakeStorage(), shared }, note, value, "m1", "image:a"), /No such model/);
+  const thingport = { storage: fakeStorage(), shared, api: fakeApi(["m1"]) };
+  await assert.rejects(saveNote(thingport, note, value, "m1", "note:m1:image:a:9"), /No such model/);
   assert.equal(shared.calls.length, 1);
+});
+
+test("a moved note whose old copy can't be removed says so, and is kept", async () => {
+  const shared = fakeShared([], { readable: ["m2"], stuck: true });
+  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
+  const thingport = { storage: fakeStorage(), shared, api: fakeApi(["m1"]) };
+  assert.deepEqual(await saveNote(thingport, note, value, "m2", "note:m2:image:b:9"), {
+    key: "note:m2:image:b:9",
+    leftover: true,
+  });
+});
+
+test("a note that can't move for want of room fails as a whole, leaving the old copy alone", async () => {
+  const shared = fakeShared([], { readable: ["m2"], full: true });
+  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
+  const thingport = { storage: fakeStorage(), shared, api: fakeApi(["m1"]) };
+  await assert.rejects(saveNote(thingport, note, value, "m2", "note:m2:image:b:9"), /5000 entries/);
+  assert.ok(!shared.calls.some((call) => call.remove));
+});
+
+test("an edit of a note deleted meanwhile isn't written back", async () => {
+  const storage = fakeStorage();
+  const personal = { key: "note:m1:image:a:1", public: false, existing: true };
+  await assert.rejects(saveNote({ storage, shared: fakeShared() }, personal, value, "m1"), NoteGone);
+  assert.equal(storage.data.size, 0);
+  const shared = fakeShared([{ key: "note:m1:image:a:2", mine: true }]);
+  const publicNote = { key: "note:m1:image:a:1", public: true, modelId: "m1", existing: true };
+  await assert.rejects(saveNote({ storage, shared }, publicNote, value, "m1"), NoteGone);
+  assert.ok(!shared.calls.some((call) => call.set));
+});
+
+test("an edit of a note still there is saved over it", async () => {
+  const key = "note:m1:image:a:1";
+  const storage = fakeStorage({ [key]: { ...value, text: "Old" } });
+  const saved = await saveNote({ storage, shared: fakeShared() }, { key, public: false, existing: true }, value, "m1");
+  assert.deepEqual(saved, { key, leftover: false });
+  assert.equal(storage.data.get(key).text, "Hi");
 });
 
 test("the view starts with notes shown and a yellow sticky, and keeps what was saved", async () => {

@@ -46,6 +46,7 @@
   "editor.saveFailed": "无法保存便签，请重试。",
   "editor.oldCopy": "已保存，但这张便签的旧副本仍在共享中。",
   "editor.deleted": "这张便签已在别处被删除。",
+  "editor.conflict": "在你未保存的修改之后，这张便签已在别处被更改。保存将覆盖那次更改。",
   "editor.discardTitle": "放弃更改？",
   "editor.discardMessage": "你对这张便签的更改将会丢失。",
   "editor.discard": "放弃",

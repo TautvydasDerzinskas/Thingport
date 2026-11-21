@@ -46,6 +46,7 @@
   "editor.saveFailed": "Die Notiz konnte nicht gespeichert werden. Versuch es noch einmal.",
   "editor.oldCopy": "Gespeichert, aber eine ältere Kopie dieser Notiz wird noch geteilt.",
   "editor.deleted": "Diese Notiz wurde an anderer Stelle gelöscht.",
+  "editor.conflict": "Diese Notiz wurde seit deiner ungespeicherten Änderung an anderer Stelle geändert. Speichern ersetzt diese Änderung.",
   "editor.discardTitle": "Änderungen verwerfen?",
   "editor.discardMessage": "Deine Änderungen an dieser Notiz gehen verloren.",
   "editor.discard": "Verwerfen",

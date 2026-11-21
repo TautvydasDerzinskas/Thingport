@@ -46,6 +46,7 @@
   "editor.saveFailed": "Nepavyko išsaugoti pastabos. Bandykite dar kartą.",
   "editor.oldCopy": "Išsaugota, bet senesnė šios pastabos kopija vis dar bendrinama.",
   "editor.deleted": "Ši pastaba buvo ištrinta kitur.",
+  "editor.conflict": "Po jūsų neišsaugoto pakeitimo ši pastaba buvo pakeista kitur. Išsaugojus tas pakeitimas bus pakeistas.",
   "editor.discardTitle": "Atmesti pakeitimus?",
   "editor.discardMessage": "Šios pastabos pakeitimai bus prarasti.",
   "editor.discard": "Atmesti",

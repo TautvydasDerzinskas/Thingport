@@ -46,6 +46,7 @@
   "editor.saveFailed": "Couldn't save the note. Try again.",
   "editor.oldCopy": "Saved, but an older copy of this note is still shared.",
   "editor.deleted": "This note was deleted somewhere else.",
+  "editor.conflict": "This note changed somewhere else since your unsaved edit. Saving replaces that change.",
   "editor.discardTitle": "Discard changes?",
   "editor.discardMessage": "Your changes to this note will be lost.",
   "editor.discard": "Discard",
