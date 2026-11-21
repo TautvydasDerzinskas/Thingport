@@ -359,6 +359,10 @@ type MainComponent = { attrs: string; objectId: string | null; path: string | nu
 type MainObject = { attrs: string; inner: string; components: MainComponent[] };
 type MainPlacement = BuildItem & { attrs: string; instance: number };
 
+function readObjectName(structural: StructuralData, objectId: string, attrs = ""): string | null {
+  return structural.objectNameById.get(objectId) ?? (decodeXml(getAttr(attrs, "name") ?? "") || null);
+}
+
 function readMainObjects(xml: string, nonModelParts?: Set<string>): Map<string, MainObject> {
   const objects = new Map<string, MainObject>();
   for (const [, attrs, inner] of xml.matchAll(OBJECT_RE)) {
@@ -656,8 +660,7 @@ async function parseMainModel(
 
     // Keep pure wrapper objects too: they need an entry for the resolution pass.
     if (meshes.length > 0 || internalRefsByObjectId.has(objectId)) {
-      const name = structural.objectNameById.get(objectId) ?? decodeXml(getAttr(attrs, "name") ?? "");
-      objects.set(objectId, { id: objectId, name: name || null, meshes });
+      objects.set(objectId, { id: objectId, name: readObjectName(structural, objectId, attrs), meshes });
     }
   }
 
@@ -795,7 +798,7 @@ async function readThreeMfStructure(srcPath: string, forStudio: boolean, include
   const placements = readMainPlacements(mainModelXml, forStudio);
   for (const item of placements) {
     const objectAttrs = allObjects.get(item.objectId)?.attrs;
-    const objectName = structural.objectNameById.get(item.objectId);
+    const objectName = readObjectName(structural, item.objectId, objectAttrs);
     item.plateId =
       findPlateIdAttr(item.attrs) ??
       structural.plateAssignmentsByInstance.get(`${item.objectId}:${item.instance}`) ??

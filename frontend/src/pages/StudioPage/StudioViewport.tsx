@@ -61,6 +61,11 @@ export type PickRequest = {
   /** A dashed line between two points, as the measure tool shows a distance. */
   line?: [Vec3, Vec3] | null;
 };
+
+function showsEdgeGuides(request: PickRequest | null, id: string): boolean {
+  return request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
+}
+
 export type Picked = { body: string } &
   /** `region` is the face's triangles in the world, for measuring it. */
   (
@@ -641,7 +646,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           ),
           new THREE.LineBasicMaterial({ color: colors.accent, transparent: true, opacity: 0.55, depthTest: false }),
         );
-        edgeLines.visible = false;
+        edgeLines.visible = showsEdgeGuides(latest.current.pick, body.id);
         edgeLines.renderOrder = 2;
         edgeLines.userData.featureId = body.id;
         const group = new THREE.Group();
@@ -771,8 +776,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const s = stage.current;
     if (!s) return;
     const request = latest.current.pick;
-    for (const [id, body] of s.bodies)
-      body.edgeLines.visible = request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
+    for (const [id, body] of s.bodies) body.edgeLines.visible = showsEdgeGuides(request, id);
     clear(s.chosenLayer);
     if (!request) clear(s.hoverLayer);
     attachGizmo();
