@@ -1,0 +1,45 @@
+{
+  // Postgres isn't started from here: run it as docs/DEVELOPMENT.md describes.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend (API on :8000)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "presentation": { "group": "1 servers", "order": 1 }
+    },
+    {
+      "name": "Frontend (Vite on :5173)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "presentation": { "group": "1 servers", "order": 2 }
+    },
+    {
+      // Needs the frontend running. Chrome opens with a profile of its own, so Grab and other extensions aren't in it.
+      "name": "Web app in Chrome (debugger)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend",
+      "presentation": { "group": "2 browser", "order": 1 }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Backend + Frontend",
+      "configurations": ["Backend (API on :8000)", "Frontend (Vite on :5173)"],
+      "stopAll": true,
+      "presentation": { "group": "0 full stack", "order": 1 }
+    }
+  ]
+}
