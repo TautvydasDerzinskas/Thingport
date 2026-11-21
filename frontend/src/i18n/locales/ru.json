@@ -1,5 +1,7 @@
 {
   "common": {
+    "newTab": "(откроется в новой вкладке)",
+    "backTo": "Назад: {{name}}",
     "save": "Сохранить",
     "cancel": "Отмена",
     "close": "Закрыть",
@@ -5792,6 +5794,16 @@
     }
   },
   "models": {
+    "actionsMenu": {
+      "openIn": "Открыть в",
+      "ai": "ИИ",
+      "quickActions": "Быстрые действия",
+      "categorize": "Классифицировать",
+      "recategorize": "Изменить категорию",
+      "improve": "Улучшить описание",
+      "adapted": "{{slicer}}, адаптированная версия",
+      "studio": "Thingport Studio"
+    },
     "detail": {
       "subtitle": "Модель",
       "preview3d": "3D-предпросмотр",

@@ -1,5 +1,7 @@
 {
   "common": {
+    "newTab": "(адкрыецца ў новай укладцы)",
+    "backTo": "Назад: {{name}}",
     "save": "Захаваць",
     "cancel": "Скасаваць",
     "close": "Закрыць",
@@ -5798,6 +5800,16 @@
     }
   },
   "models": {
+    "actionsMenu": {
+      "openIn": "Адкрыць у",
+      "ai": "ШІ",
+      "quickActions": "Хуткія дзеянні",
+      "categorize": "Катэгарызаваць",
+      "recategorize": "Змяніць катэгорыю",
+      "improve": "Палепшыць апісанне",
+      "adapted": "{{slicer}}, адаптаваная версія",
+      "studio": "Thingport Studio"
+    },
     "detail": {
       "subtitle": "Мадэль",
       "preview3d": "3D-папярэдні прагляд",

@@ -5007,6 +5007,8 @@
     }
   },
   "common": {
+    "newTab": "（在新标签页中打开）",
+    "backTo": "返回：{{name}}",
     "save": "保存",
     "cancel": "取消",
     "close": "关闭",
@@ -5695,6 +5697,16 @@
       "rejected": "已拒绝建议。",
       "revertMessage": "此模型将恢复 AI 修改之前的描述。",
       "suggestionPending": "请先接受或拒绝该建议"
+    },
+    "actionsMenu": {
+      "openIn": "打开方式",
+      "ai": "AI",
+      "quickActions": "快捷操作",
+      "categorize": "分类",
+      "recategorize": "重新分类",
+      "improve": "改进描述",
+      "adapted": "{{slicer}}（适配版）",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "模型",

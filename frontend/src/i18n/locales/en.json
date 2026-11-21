@@ -5222,6 +5222,8 @@
     }
   },
   "common": {
+    "newTab": "(opens in a new tab)",
+    "backTo": "Back: {{name}}",
     "save": "Save",
     "cancel": "Cancel",
     "close": "Close",
@@ -5914,6 +5916,16 @@
       "rejected": "Suggestion rejected.",
       "revertMessage": "This model gets back the description it had before the AI changed it.",
       "suggestionPending": "Accept or reject the suggestion first"
+    },
+    "actionsMenu": {
+      "openIn": "Open in",
+      "ai": "AI",
+      "quickActions": "Quick actions",
+      "categorize": "Categorize",
+      "recategorize": "Recategorize",
+      "improve": "Improve description",
+      "adapted": "{{slicer}}, adapted",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "Model",

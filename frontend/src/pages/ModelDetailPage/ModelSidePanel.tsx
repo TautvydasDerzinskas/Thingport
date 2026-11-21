@@ -116,7 +116,7 @@ export type CollectionCount = number | "loading" | "failed";
 type Props = {
   print: Print;
   collectionCount: CollectionCount;
-  onCollectionCountChange: (count: number) => void;
+  onCollectionCountChange: (count: number, printId: string) => void;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
   onUpdated?: (print: Print) => void;
@@ -227,7 +227,7 @@ export default function ModelSidePanel({
   const studioPlate = studio.files.find((plate) => plate.id === selectedFile?.plate?.id) ?? null;
   const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized, recordDownload);
   // Opened from the button below rather than a menu, so there is no menu to close.
-  const customize = useCustomize(print, () => {}, onUnauthorized);
+  const customize = useCustomize(print, onUnauthorized);
   // Another user's model, from one of their public collections.
   const owner = print.owner ?? null;
   const library = useCopyToLibrary(print, onUnauthorized, onUpdated);

@@ -5226,6 +5226,8 @@
     }
   },
   "common": {
+    "newTab": "(öffnet in neuem Tab)",
+    "backTo": "Zurück: {{name}}",
     "save": "Speichern",
     "cancel": "Abbrechen",
     "close": "Schließen",
@@ -5919,6 +5921,16 @@
       "rejected": "Vorschlag abgelehnt.",
       "revertMessage": "Dieses Modell bekommt die Beschreibung zurück, die es vor der Änderung durch die KI hatte.",
       "suggestionPending": "Nimm den Vorschlag zuerst an oder lehne ihn ab"
+    },
+    "actionsMenu": {
+      "openIn": "Öffnen in",
+      "ai": "KI",
+      "quickActions": "Schnellaktionen",
+      "categorize": "Kategorisieren",
+      "recategorize": "Neu kategorisieren",
+      "improve": "Beschreibung verbessern",
+      "adapted": "{{slicer}}, angepasst",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "Modell",

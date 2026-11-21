@@ -5440,6 +5440,8 @@
     }
   },
   "common": {
+    "newTab": "(se abre en una pestaña nueva)",
+    "backTo": "Volver: {{name}}",
     "save": "Guardar",
     "cancel": "Cancelar",
     "close": "Cerrar",
@@ -6135,6 +6137,16 @@
       "rejected": "Sugerencia rechazada.",
       "revertMessage": "Este modelo recupera la descripción que tenía antes de que la IA la cambiara.",
       "suggestionPending": "Acepta o rechaza primero la sugerencia"
+    },
+    "actionsMenu": {
+      "openIn": "Abrir en",
+      "ai": "IA",
+      "quickActions": "Acciones rápidas",
+      "categorize": "Categorizar",
+      "recategorize": "Recategorizar",
+      "improve": "Mejorar descripción",
+      "adapted": "{{slicer}}, adaptado",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "Modelo",

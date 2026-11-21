@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -63,6 +63,15 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const { t, i18n } = useTranslation(["models", "common", "library"]);
   const [print, setPrint] = useState<Print | null>(null);
   const [collectionCount, setCollectionCount] = useState<CollectionCount>("loading");
+  // The header shows the last model until the next one loads, and a dialog's write can land after leaving: a count
+  // for another model isn't this one's. Stable, so a dialog doesn't take a new callback for a reason to report again.
+  const routeId = useRef(printId);
+  useLayoutEffect(() => {
+    routeId.current = printId;
+  });
+  const onCollectionCountChange = useCallback((count: number, id: string) => {
+    if (id === routeId.current) setCollectionCount(count);
+  }, []);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -142,10 +151,11 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         {!print.owner && <FavoriteButton print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />}
         <ModelActionsMenu
           print={print}
+          layout="tiles"
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
           onUpdated={updatePrint}
-          onCollectionCountChange={setCollectionCount}
+          onCollectionCountChange={onCollectionCountChange}
           viewer={viewer}
           offerLink
         />
@@ -659,7 +669,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             <ModelSidePanel
               print={print}
               collectionCount={collectionCount}
-              onCollectionCountChange={setCollectionCount}
+              onCollectionCountChange={onCollectionCountChange}
               onSelectCategory={onSelectCategory}
               onUnauthorized={onUnauthorized}
               onUpdated={updatePrint}

@@ -8,7 +8,13 @@ import { saveResponseToDisk } from "../../utils/downloadResponse";
  *  Open in {Slicer}. */
 export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRecorded?: (print: Print) => void) {
   const { t } = useTranslation(["models"]);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // The page header keeps this across models: the picker is open for the model it was opened on, leaving that model
+  // closes it, and a download of that model finishing later closes only its own.
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  if (pickerFor !== null && pickerFor !== print.id) setPickerFor(null);
+  const pickerOpen = pickerFor === print.id;
+  const setPickerOpen = (open: boolean) =>
+    setPickerFor((current) => (open ? print.id : current === print.id ? null : current));
   const [downloading, setDownloading] = useState(false);
 
   const handleDownloadError = (err: unknown) => {
