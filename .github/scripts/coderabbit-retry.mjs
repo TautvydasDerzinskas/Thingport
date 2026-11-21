@@ -4,15 +4,18 @@
 // if something is still to come. A waiting run stops, with success, once a newer one has started: a cancelled run
 // would leave a failed check on its commit.
 //
-// For each open pull request (drafts, paused ones and ones whose description says `@coderabbitai ignore` aside), the
-// newest thing since its head commit decides:
-//   - the commit itself, with no CodeRabbit review of it: `full review` if CodeRabbit never reviewed the pull request,
-//     else `review`. A head CodeRabbit reviewed without a word (its check "Finished", no review posted) gets a
-//     `full review`, as a plain one would be declined as "Already reviewed the last commit";
+// Pushes aren't reviewed on their own (.coderabbit.yaml turns auto_incremental_review off): a review comes when someone
+// asks, and this only makes sure an ask, or a pull request's first review, isn't lost to CodeRabbit's rate limit. It
+// never asks for a full review by itself. For each open pull request (drafts, paused ones and ones whose description
+// says `@coderabbitai ignore` aside), the newest thing since its head commit decides:
 //   - CodeRabbit refusing an ask under its rate limit: the same ask again once the wait it gave is over;
-//   - CodeRabbit declining as "Already reviewed the last commit", or finishing a plain review without a word:
-//     `full review`;
-//   - a review of the head, a full review taken, or an ask still unanswered: nothing.
+//   - an ask CodeRabbit took that never finished: `review`;
+//   - a pull request CodeRabbit never reviewed, whose first review was rate limited, got stuck or never started:
+//     `review`;
+//   - anything else (a review of the head, an answer that found nothing to say, "Already reviewed the last commit", a
+//     push since the last review, an ask still unanswered): nothing.
+// A CodeRabbit "review" with no body and no top-level comment is its answer to a thread reply, not a review of the
+// commit, so it doesn't count.
 // Every notice and refusal, on any pull request, says when the allowance is back, and the latest holds back every ask,
 // so at most one is refused per window. Asks go one at a time, the longest-waiting pull request first.
 //
@@ -75,6 +78,9 @@ const ASK_LINE = /^\s*@coderabbitai\s+(full\s+)?review[ \t]*(?:\r?\n|$)/i;
 const isAsk = (comment) => !byCodeRabbit(comment) && ASK_LINE.test(comment.body ?? "");
 const isFullAsk = (comment) => isAsk(comment) && Boolean(ASK_LINE.exec(comment.body)[1]);
 const rateLimited = (check) => /rate\s*limit/i.test(check.output?.title ?? "");
+// CodeRabbit's answer to a thread reply is filed as a review with no body, which says nothing about the commit.
+const isReview = (review, topLevel) =>
+  review.user?.login === CODERABBIT && (Boolean(review.body?.trim()) || topLevel.has(review.id));
 const stuck = (check, now) => check.status !== "completed" && now - time(check.started_at) >= STUCK_REVIEW_MS;
 
 /** How long a CodeRabbit notice says to wait, in ms, or null when it names no time. */
@@ -148,7 +154,7 @@ export function noticesFrom(comments, now) {
  * limited, so its summary's notice holds back every ask. recheck is when a pull request not waiting may be, with
  * nothing new happening: a check that should have started, an answer that should have come, a review settling.
  */
-export function pullState({ pull, checkRuns, headDate, comments, reviews = [], now, asker }) {
+export function pullState({ pull, checkRuns, headDate, comments, reviews = [], reviewComments = [], now, asker }) {
   const no = (reason, recheck) => (recheck ? { waiting: false, reason, recheck } : { waiting: false, reason });
   const wait = ({ since, notBefore = since, why, ask, limited = false }) => ({
     waiting: true,
@@ -179,8 +185,9 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
     if (isAsk(c)) events.push({ kind: "ask", at: time(c.created_at), comment: c });
     else if (isReply(c)) events.push({ kind: "reply", at: time(c.created_at), comment: c });
   }
+  const topLevel = new Set(reviewComments.filter((c) => !c.in_reply_to_id).map((c) => c.pull_request_review_id));
   for (const r of reviews) {
-    if (r.user?.login === CODERABBIT && r.commit_id === pull.head?.sha) {
+    if (isReview(r, topLevel) && r.commit_id === pull.head?.sha) {
       events.push({ kind: "review", at: time(r.submitted_at) });
     }
   }
@@ -216,12 +223,7 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
         limited: true,
       });
     }
-    if (outcome === "declined") {
-      if (/already\s+reviewed/i.test(plain(reply.body))) {
-        return wait({ since: last.at, why: "CodeRabbit had already reviewed the last commit", ask: FULL_ASK });
-      }
-      return no(`CodeRabbit declined: ${declineReason(reply.body)}`);
-    }
+    if (outcome === "declined") return no(`CodeRabbit declined: ${declineReason(reply.body)}`);
     if (outcome !== "accepted") return no(`CodeRabbit's answer at ${reply.created_at} isn't one this knows`);
     if (full) return no(`CodeRabbit took the full review asked for at ${ask.created_at}`);
     // A plain review it finished: with a review posted that would be the newest thing, so this one found nothing.
@@ -233,37 +235,37 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
     }
     const done = time(reply.updated_at);
     if (now - done < SETTLE_MS) return no("CodeRabbit only just finished", done + SETTLE_MS);
-    return wait({ since: done, why: "the review asked for found nothing to say", ask: FULL_ASK });
+    return no(`the review asked for at ${ask?.created_at ?? reply.created_at} found nothing to say`);
   }
 
-  // Nothing since the push.
+  // Nothing since the push. Only an ask brings a review of a push, so all a pull request can be owed here is its first
+  // review: one that was rate limited, got stuck or never started.
+  const reviewedBefore =
+    reviews.some((r) => isReview(r, topLevel)) ||
+    comments.some((c) => isSummary(c) && c.body.includes(WALKTHROUGH_MARKER));
+  if (reviewedBefore) return no("pushed to since CodeRabbit's last review; a push is reviewed when someone asks");
   if (!check && now - headDate < MISSED_HEAD_MS) {
     return no("no CodeRabbit check on its head yet", headDate + MISSED_HEAD_MS);
   }
   if (check?.status === "completed" && now - time(check.completed_at) < SETTLE_MS) {
     return no("CodeRabbit only just finished", time(check.completed_at) + SETTLE_MS);
   }
-  if (check?.conclusion === "success") {
-    const since = time(check.completed_at);
-    return wait({ since, why: "CodeRabbit reviewed the push without a word", ask: FULL_ASK });
-  }
-  const reviewedBefore =
-    reviews.some((r) => r.user?.login === CODERABBIT) ||
-    comments.some((c) => isSummary(c) && c.body.includes(WALKTHROUGH_MARKER));
   const summary = comments.find(isSummary);
   const limited = check ? rateLimited(check) : Boolean(summary?.body.includes(RATE_LIMIT_MARKER));
+  const said = check ? `CodeRabbit's check on the push says "${check.output?.title ?? check.conclusion}"` : "";
+  // Finished or skipped without a review, and not for its limit: asking again would get the same.
+  if (check?.status === "completed" && !limited) return no(said);
   const own = limited ? noticesFrom(comments, now).filter((n) => n.kind === "summary" && n.at >= headDate) : [];
   const notBefore = own.length
     ? Math.max(...own.map((n) => n.until))
     : limited
       ? headDate + UNKNOWN_WAIT_MS + MARGIN_MS
       : headDate;
-  const said = check ? `CodeRabbit's check on the push says "${check.output?.title ?? check.conclusion}"` : "";
   return wait({
     since: headDate,
     notBefore,
     why: said || `CodeRabbit never picked up the push of ${iso(headDate)}`,
-    ask: reviewedBefore ? ASK : FULL_ASK,
+    ask: ASK,
     limited,
   });
 }
@@ -321,8 +323,12 @@ async function survey(github, { asker, now }) {
     const commit = await github.request(`commits/${pull.head.sha}`);
     const comments = await github.all(`issues/${pull.number}/comments`);
     const reviews = await github.all(`pulls/${pull.number}/reviews`);
+    const reviewComments = await github.all(`pulls/${pull.number}/comments`);
     const headDate = time(commit.commit.committer.date);
-    states.push({ number: pull.number, ...pullState({ pull, checkRuns, headDate, comments, reviews, now, asker }) });
+    states.push({
+      number: pull.number,
+      ...pullState({ pull, checkRuns, headDate, comments, reviews, reviewComments, now, asker }),
+    });
   }
   const waiting = states.filter((state) => state.waiting);
   let hold = 0;

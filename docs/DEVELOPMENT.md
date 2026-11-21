@@ -191,7 +191,9 @@ npx playwright install chromium
 ```
 
 CI runs it every Saturday at 00:00 UTC (`.github/workflows/regression.yml`). You can also start it
-from the Actions tab. When it fails, the HTML report, traces and container logs are uploaded as the
+from the Actions tab. A pull request that changes how files come in or go out (uploads, zips, imports, the consume
+folder, downloads) runs it locally before it's marked ready for review and again before it merges; the Saturday run on
+`develop` catches the rest. When it fails, the HTML report, traces and container logs are uploaded as the
 `regression-report` artifact.
 
 > [!IMPORTANT]

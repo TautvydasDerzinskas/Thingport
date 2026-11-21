@@ -5,8 +5,9 @@ Thingport's interface is translated with one JSON file per language in
 **Configuration → Appearance** and in the <kbd>!language</kbd> search command, named in its own language. There's
 nothing to register or wire up.
 
-A translation doesn't have to be finished to be useful: any text not translated yet shows in English, so you can
-send a partial translation and fill it in later.
+A translation doesn't have to be finished to be useful: keep every key, and leave any text you haven't translated
+yet in English, where it shows in English, so you can send a partial translation and fill it in later. A language
+file needs every key `en.json` has, and no others: every pull request is checked for that.
 
 ## Add a language
 
@@ -56,7 +57,9 @@ npm --prefix frontend run i18n:check es
 ```
 
 It prints how much of the language is done, each key that's still missing, and any key that English no longer
-uses (which you can delete). Without a code, it checks every language.
+uses (which you can delete). Without a code, it checks every language. With `--strict`
+(`npm --prefix frontend run i18n:check -- --strict`) it also fails when there's any, as the Format check on every pull
+request does.
 
 ## Tools and shared widgets
 
@@ -78,5 +81,5 @@ there yet also needs a flag and an entry in Grab's language menu, so ask for it 
 
 ## Keeping up
 
-New features add English text first. Translations catch up whenever someone has time, and until then the new text
-shows in English. If you'd like to look after a language, say so in your pull request, so we know who to ask.
+New features add their text to every language file. Where a translation can't be made yet, the English text stands
+in until someone improves it. If you'd like to look after a language, say so in your pull request, so we know who to ask.
