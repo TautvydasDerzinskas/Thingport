@@ -743,9 +743,9 @@ async function previewErrorCode(res: Response): Promise<string | null> {
   }
 }
 
-export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome> {
+export async function loadCachedBambuGlb(url: string, signal?: AbortSignal): Promise<CachedGlbOutcome> {
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal });
     if (!res.ok) {
       const code = res.status === 404 ? await previewErrorCode(res) : null;
       if (code === "PREVIEW_GENERATING") return { status: "generating" };
@@ -789,7 +789,7 @@ export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome>
       },
     };
   } catch (err) {
-    console.warn("Cached GLB preview load failed, falling back to live 3MF parse", err);
+    if (!signal?.aborted) console.warn("Cached GLB preview load failed", err);
     return { status: "fallback" };
   }
 }

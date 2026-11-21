@@ -19,6 +19,7 @@ import {
 import { plateThumbPath, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
 import { addGeneratedPreviewImageIfNone, generateCardRender } from "../services/previewImageService";
 import { printOutById } from "../services/printLoader";
+import { buildPlatePreview, getBuildPlateManifest } from "../services/buildPlatePreviewCache";
 import {
   generateModelPreviewGlb,
   modelPreviewGlbPath,
@@ -28,7 +29,7 @@ import {
   type ModelImageKind,
   canRenderModelImage,
 } from "../services/modelPreviewCache";
-import { getPreviewMode } from "../services/settingsService";
+import { getPreviewMode, getSimplifyPreviews } from "../services/settingsService";
 import { readablePrintWhere } from "../services/socialService";
 import { isProfileProject, plateThumbEntry } from "../services/printProfileFile";
 import { readZipEntry } from "../utils/zipReader";
@@ -134,14 +135,15 @@ router.get(
   "/plate/:plateId/profile-plate/:index.png",
   asyncHandler(async (req, res) => {
     const index = Number(req.params.index);
-    if (!Number.isInteger(index) || index < 1 || index > 9999) throw new HttpError(404, "Not found");
+    if (!Number.isSafeInteger(index) || index < 0 || index > 9999) throw new HttpError(404, "Not found");
     const plate = await prisma.plate.findFirst({
       where: { id: req.params.plateId, print: await readablePrintWhere(req.userId!) },
     });
     if (!plate || !isProfileProject(plate.filename)) throw new HttpError(404, "Not found");
     const filePath = resolvePlateFilePath(plate);
     const png = filePath
-      ? await readZipEntry(filePath, plateThumbEntry(index), PLATE_PICTURE_LIMIT).catch(() => null)
+      ? ((await readZipEntry(filePath, plateThumbEntry(index), PLATE_PICTURE_LIMIT).catch(() => null)) ??
+        (await readZipEntry(filePath, `Metadata/top_${index}.png`, PLATE_PICTURE_LIMIT).catch(() => null)))
       : null;
     if (!png) throw new HttpError(404, "Not found");
     res.setHeader("Content-Type", "image/png");
@@ -159,6 +161,39 @@ router.get(
       include: { print: { select: { assetsPath: true } } },
     });
     if (!plate) throw new HttpError(404, "Not found");
+    if (req.query.plates === "1" || req.query.buildPlate !== undefined) {
+      if (!isProfileProject(plate.filename) || (await getPreviewMode()) === "disabled")
+        throw new HttpError(404, "Build plate previews are unavailable", "PREVIEW_UNSUPPORTED");
+      const source = resolvePlateFilePath(plate);
+      if (!source) throw new HttpError(404, "Model file is missing", "PREVIEW_FAILED");
+      const simplify = await getSimplifyPreviews();
+      const manifest = await getBuildPlateManifest(source, simplify);
+      if (!manifest) throw new HttpError(404, "Build plate previews are unavailable", "PREVIEW_UNSUPPORTED");
+      if (req.query.plates === "1") {
+        res.setHeader("Cache-Control", "private, no-cache");
+        res.json(manifest);
+        return;
+      }
+      const buildPlate =
+        typeof req.query.buildPlate === "string" && /^\d+$/.test(req.query.buildPlate)
+          ? Number(req.query.buildPlate)
+          : NaN;
+      if (manifest.version !== req.query.projectVersion || !manifest.plates.some(({ index }) => index === buildPlate))
+        throw new HttpError(404, "That build plate is unavailable", "PREVIEW_FAILED");
+      const preview = buildPlatePreview(plate.id, source, manifest.version, buildPlate, simplify);
+      if (preview.status !== "ready")
+        throw new HttpError(
+          404,
+          preview.status === "generating"
+            ? "Preview is being generated"
+            : "This build plate preview couldn't be generated",
+          preview.status === "generating" ? "PREVIEW_GENERATING" : "PREVIEW_FAILED",
+        );
+      res.setHeader("Content-Type", "model/gltf-binary");
+      res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+      res.sendFile(path.resolve(preview.file));
+      return;
+    }
     const home = plate.print.assetsPath;
     const glbPath = modelPreviewGlbPath(plate.id, home);
     if (!fs.existsSync(glbPath)) {

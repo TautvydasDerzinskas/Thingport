@@ -249,11 +249,14 @@ router.post(
   }),
 );
 
+const deleteSchema = z.object({ expected_version: z.number().int().min(0).max(2_147_483_647).optional() });
+
 router.delete(
   "/studio/designs/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    await deleteStudioDesign(req.userId!, req.params.id);
+    const body = parseBody(deleteSchema, req.body ?? {});
+    await deleteStudioDesign(req.userId!, req.params.id, body.expected_version);
     res.status(204).end();
   }),
 );

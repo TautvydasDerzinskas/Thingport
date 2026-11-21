@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import JSZip from "jszip";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { writeZip } from "../src/utils/zipWriter";
 import { readColor, readColorGroups, sharePalette } from "../src/services/threeMfColors";
-import { loadStudioThreeMf, loadThreeMfGroup } from "../src/services/modelPreviewRender";
+import { loadStudioThreeMf, loadThreeMfGroup, readThreeMfBuildPlates } from "../src/services/modelPreviewRender";
 
 // Two triangles, two colours, written the way frontend/src/sdk/threeMf.ts writes a generated model: a colour
 // group the object points at, each triangle naming its own entry, and the same assignment again as the painting
@@ -244,6 +245,43 @@ it("keeps explicit zero offsets on a later Studio plate", async () => {
     [10, 5, 0],
     [15, 2, 0],
   ]);
+});
+
+it("assigns build plates by decoded XML names when the model settings omit them", async () => {
+  const mesh = COLOURED_XML.match(/<mesh>[\s\S]*?<\/mesh>/)![0];
+  const archive = new JSZip();
+  archive.file(
+    "3D/3dmodel.model",
+    `<model unit="millimeter"><resources>
+      <object id="1" name="Lid &amp; hinge">${mesh}</object>
+      <object id="2" name="XML base">${mesh}</object>
+      <object id="3">${mesh}</object>
+    </resources><build><item objectid="1"/><item objectid="2"/><item objectid="3"/></build></model>`,
+  );
+  archive.file(
+    "Metadata/model_settings.config",
+    '<config><object id="2"><metadata key="name" value="Config base"/></object></config>',
+  );
+  archive.file(
+    "Metadata/plate_1.json",
+    JSON.stringify({ bbox_objects: [{ name: "Lid & hinge" }, { name: "XML base" }] }),
+  );
+  archive.file("Metadata/plate_2.json", JSON.stringify({ bbox_objects: [{ name: "Config base" }] }));
+  const file = path.join(dir, "plates-by-name.3mf");
+  await fs.writeFile(file, await archive.generateAsync({ type: "nodebuffer" }));
+
+  expect(await readThreeMfBuildPlates(file)).toMatchObject([
+    { index: 1, objectCount: 1 },
+    { index: 2, objectCount: 1 },
+    { index: null, objectCount: 1 },
+  ]);
+  for (const [index, name] of [
+    [1, "Lid & hinge"],
+    [2, "Config base"],
+    [null, null],
+  ] as const) {
+    expect(await loadStudioThreeMf(file, 2, 1, 2, { index })).toMatchObject({ plates: [{ parts: [{ name }] }] });
+  }
 });
 
 describe("readColorGroups", () => {

@@ -4864,6 +4864,28 @@
           "closed": "Fermé"
         }
       },
+      "importModel": {
+        "loadingStudio": "Chargement de Thingport Studio…",
+        "preparing": "Préparation de « {{filename}} » pour Thingport Studio…",
+        "failed": "Impossible d’ouvrir « {{filename}} » dans Thingport Studio",
+        "platePreparing": "Préparation de « {{name}} »…",
+        "plateFailed": "Impossible de préparer « {{name}} »",
+        "loadPlate": "Charger le plateau d’impression",
+        "checkUnloaded": "Ouvrez « {{name}} » avant de vérifier si l’ensemble de la conception peut être imprimé.",
+        "archiveLimit": "Cette archive 3MF est trop volumineuse pour être lue par Studio.",
+        "noPlates": "Studio n’a pu lire aucun plateau d’impression dans ce fichier 3MF.",
+        "plateLimit": "Un plateau d’impression peut contenir jusqu’à {{objects}} objets et {{plateTriangles}} triangles.",
+        "bodyLimit": "Chaque corps importé peut contenir jusqu’à {{bodyTriangles}} triangles.",
+        "missingParts": "Ce fichier 3MF fait référence à des parties du modèle qui manquent dans le fichier.",
+        "noBodies": "Studio n’a pu lire aucun corps imprimable.",
+        "readFailed": "Studio n’a pas pu lire le fichier du modèle.",
+        "tooManyPlates": "Une conception Studio peut contenir jusqu’à {{plates}} plateaux d’impression.",
+        "tooManyObjects": "Une conception Studio peut contenir jusqu’à {{objects}} corps et fonctions.",
+        "loadPlateFirst": "Chargez d’abord ce plateau d’impression.",
+        "platePending": "Les corps se chargent à l’ouverture de ce plateau.",
+        "filamentsPending": "Ouvrez les autres plateaux d’impression pour voir toutes les couleurs de filament.",
+        "geometryFailed": "Studio n’a pas pu traiter cette géométrie."
+      },
       "imported": {
         "parts_one": "Le modèle a été importé en un seul corps de {{count}} pièce",
         "parts_many": "Le modèle a été importé en un seul corps de {{count}} pièces séparées",

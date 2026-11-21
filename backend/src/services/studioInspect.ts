@@ -104,8 +104,16 @@ export function importStudioMesh(srcPath: string, ext: string, destPath: string)
 }
 
 /** Reads the 3MF's objects into a staging directory, one mesh asset per object. */
-export function importStudioThreeMf(srcPath: string, destDir: string): Promise<StudioWorkerResult> {
-  return queued({ kind: "import-3mf", srcPath, destDir }, IMPORT_TIMEOUT_MS);
+export function importStudioThreeMf(
+  srcPath: string,
+  destDir: string,
+  plate?: { index: number | null },
+): Promise<StudioWorkerResult> {
+  return queued({ kind: "import-3mf", srcPath, destDir, plate }, IMPORT_TIMEOUT_MS);
+}
+
+export function listStudioSourcePlates(srcPath: string): Promise<StudioWorkerResult> {
+  return queued({ kind: "list-3mf-plates", srcPath }, IMPORT_TIMEOUT_MS);
 }
 
 /** Traces one of a design's pictures, as trace_picture does. */

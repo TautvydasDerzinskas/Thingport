@@ -999,5 +999,7 @@ export function estimateTriangles(doc: StudioDocument, ids?: ReadonlySet<string>
     known.set(id, total);
     return total;
   };
-  return topLevel(doc).reduce((sum, feature) => sum + (!ids || ids.has(feature.id) ? of(feature.id) : 0), 0);
+  let estimate = 0;
+  for (const id of ids ?? topLevel(doc).map((feature) => feature.id)) estimate += of(id);
+  return estimate;
 }

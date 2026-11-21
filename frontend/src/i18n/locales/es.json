@@ -4851,6 +4851,28 @@
           "closed": "Cerrado"
         }
       },
+      "importModel": {
+        "loadingStudio": "Cargando Thingport Studio…",
+        "preparing": "Preparando «{{filename}}» para Thingport Studio…",
+        "failed": "No se pudo abrir «{{filename}}» en Thingport Studio",
+        "platePreparing": "Preparando «{{name}}»…",
+        "plateFailed": "No se pudo preparar «{{name}}»",
+        "loadPlate": "Cargar placa de impresión",
+        "checkUnloaded": "Abre «{{name}}» antes de comprobar si se puede imprimir el diseño completo.",
+        "archiveLimit": "Este archivo 3MF es demasiado grande para que Studio pueda leerlo.",
+        "noPlates": "Studio no pudo leer ninguna placa de impresión de este 3MF.",
+        "plateLimit": "Una placa de impresión admite hasta {{objects}} objetos y {{plateTriangles}} triángulos.",
+        "bodyLimit": "Cada cuerpo importado admite hasta {{bodyTriangles}} triángulos.",
+        "missingParts": "Este 3MF hace referencia a partes del modelo que faltan en el archivo.",
+        "noBodies": "Studio no pudo leer ningún cuerpo imprimible.",
+        "readFailed": "Studio no pudo leer el archivo del modelo.",
+        "tooManyPlates": "Un diseño de Studio admite hasta {{plates}} placas de impresión.",
+        "tooManyObjects": "Un diseño de Studio admite hasta {{objects}} cuerpos y operaciones.",
+        "loadPlateFirst": "Carga primero esta placa de impresión.",
+        "platePending": "Los cuerpos se cargan al abrir esta placa.",
+        "filamentsPending": "Abre las demás placas de impresión para ver todos los colores de filamento.",
+        "geometryFailed": "Studio no pudo procesar esta geometría."
+      },
       "imported": {
         "parts_one": "El modelo se importó como un solo cuerpo de {{count}} pieza",
         "parts_many": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",

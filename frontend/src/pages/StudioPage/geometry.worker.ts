@@ -16,11 +16,18 @@ const reply = (answer: GeometryAnswer, transfer: Transferable[] = []) =>
   // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's port, not window.postMessage.
   (self as unknown as DedicatedWorkerGlobalScope).postMessage(answer, transfer);
 const meshes = new Map<string, MeshData>();
+const assetBuffers = new WeakSet<ArrayBufferLike>();
+// Large imported meshes can be drawn directly. Build their picking topology when a tool asks for it.
+const EAGER_PICKING_TRIANGLES = 200_000;
 
 self.addEventListener("message", async (event: MessageEvent<GeometryQuestion>) => {
-  const { id, document, ids, assets, parts, bounds, check, between } = event.data;
+  const { id, document, ids, detailedIds, assets, parts, bounds, check, between } = event.data;
   const lookup = (assetId: string) => meshes.get(assetId);
-  for (const [assetId, mesh] of Object.entries(assets)) meshes.set(assetId, mesh);
+  for (const [assetId, mesh] of Object.entries(assets)) {
+    meshes.set(assetId, mesh);
+    assetBuffers.add(mesh.positions.buffer);
+    assetBuffers.add(mesh.indices.buffer);
+  }
   try {
     manifold ??= Module({ locateFile: () => wasm }).then((module) => {
       module.setup();
@@ -40,9 +47,20 @@ self.addEventListener("message", async (event: MessageEvent<GeometryQuestion>) =
       return reply({ id, bodies: [], errors: [], parts: measureParts(await manifold, document, parts, lookup) });
     const evaluation = evaluateDesign(await manifold, document, ids, lookup);
     const bodies: WorkerBody[] = evaluation.bodies.map((body) => {
-      const top = analyze(body.mesh);
+      // An open body can return the asset itself. Keep its cached buffers when replying with transferable geometry.
+      const { positions, indices } = body.mesh;
+      const mesh = {
+        positions: assetBuffers.has(positions.buffer) ? positions.slice() : positions,
+        indices: assetBuffers.has(indices.buffer) ? indices.slice() : indices,
+      };
+      const dense = body.triangles > EAGER_PICKING_TRIANGLES;
+      if (dense && !detailedIds?.includes(body.id))
+        return { ...body, mesh, dense, picking: { faceOf: new Int32Array(), faces: [], edges: [] } };
+      const top = analyze(mesh);
       return {
         ...body,
+        mesh,
+        dense,
         picking: {
           faceOf: top.faceOf,
           faces: top.faces.map((face) => ({ normal: face.normal })),

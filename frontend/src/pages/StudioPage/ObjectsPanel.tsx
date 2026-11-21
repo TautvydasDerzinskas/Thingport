@@ -27,7 +27,7 @@ import {
   type StudioDocument,
 } from "../../studio/document";
 import { FeatureIcon, IntersectIcon, SubtractIcon, UnionIcon } from "./studioIcons";
-import { featureLabel } from "./labels";
+import { featureLabel, plateLabel } from "./labels";
 import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
 import type { RunCommand } from "./useStudioDesign";
@@ -277,12 +277,13 @@ export default function ObjectsPanel({
           const active = plate.id === activePlate;
           const expanded = plateExpansion[plate.id] ?? active;
           const roots = rootsByPlate.get(plate.id) ?? [];
+          const name = plateLabel(plate, t);
           return (
-            <Box key={plate.id} role="treeitem" aria-label={plate.name} aria-expanded={expanded} aria-current={active}>
+            <Box key={plate.id} role="treeitem" aria-label={name} aria-expanded={expanded} aria-current={active}>
               <ListItemButton
                 dense
                 selected={active}
-                aria-label={plate.name}
+                aria-label={name}
                 onClick={() => activatePlate(plate.id)}
                 onKeyDown={(event) => {
                   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -293,7 +294,7 @@ export default function ObjectsPanel({
               >
                 <IconButton
                   size="small"
-                  aria-label={`${t(expanded ? "studio.tree.collapse" : "studio.tree.expand")} ${plate.name}`}
+                  aria-label={`${t(expanded ? "studio.tree.collapse" : "studio.tree.expand")} ${name}`}
                   onClick={(event) => {
                     event.stopPropagation();
                     expandPlate(plate.id, !expanded);
@@ -306,14 +307,14 @@ export default function ObjectsPanel({
                   sx={{ fontSize: 18, color: active ? "primary.main" : "text.secondary", flexShrink: 0 }}
                 />
                 <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0, fontWeight: active ? 600 : 500 }}>
-                  {plate.name}
+                  {name}
                 </Typography>
                 {canEditPlates && (
                   <Tooltip title={t("studio.plates.actions")}>
                     <IconButton
                       size="small"
                       aria-haspopup="menu"
-                      aria-label={`${t("studio.plates.actions")}: ${plate.name}`}
+                      aria-label={`${t("studio.plates.actions")}: ${name}`}
                       onClick={(event) => {
                         event.stopPropagation();
                         setPlateMenu({ id: plate.id, anchor: event.currentTarget });
@@ -332,7 +333,7 @@ export default function ObjectsPanel({
                     roots.map((feature) => row(feature, plate.id, 0))
                   ) : (
                     <Typography variant="body2" color="text.secondary" sx={{ pl: 3, pr: 1, py: 0.75 }}>
-                      {t("studio.tree.empty")}
+                      {t(plate.source ? "studio.importModel.platePending" : "studio.tree.empty")}
                     </Typography>
                   )}
                 </Box>
@@ -346,7 +347,9 @@ export default function ObjectsPanel({
           <Menu anchorEl={plateMenu?.anchor} open={Boolean(menuPlate)} onClose={() => setPlateMenu(null)}>
             <MenuItem
               disabled={
-                !menuPlate || !rootsByPlate.get(menuPlate.id)?.some((feature) => isBody(feature) && feature.visible)
+                !menuPlate ||
+                Boolean(menuPlate.source) ||
+                !rootsByPlate.get(menuPlate.id)?.some((feature) => isBody(feature) && feature.visible)
               }
               onClick={() => {
                 if (menuPlate) onArrange(menuPlate.id);
@@ -364,7 +367,12 @@ export default function ObjectsPanel({
               {t("studio.plates.rename")}
             </MenuItem>
             <MenuItem
-              disabled={!menuPlate || menuPlate.id === DEFAULT_PLATE_ID || rootsByPlate.has(menuPlate.id)}
+              disabled={
+                !menuPlate ||
+                menuPlate.id === DEFAULT_PLATE_ID ||
+                Boolean(menuPlate.source) ||
+                rootsByPlate.has(menuPlate.id)
+              }
               onClick={() => {
                 if (menuPlate) void run("delete_plate", { plate_id: menuPlate.id });
                 setPlateMenu(null);
@@ -377,7 +385,9 @@ export default function ObjectsPanel({
             value={
               plateDialog?.kind === "create"
                 ? t("studio.plates.defaultName", { count: document?.next_plate_id ?? plates.length + 1 })
-                : (renamePlate?.name ?? null)
+                : renamePlate
+                  ? plateLabel(renamePlate, t)
+                  : null
             }
             title={t(plateDialog?.kind === "create" ? "studio.plates.add" : "studio.plates.rename")}
             maxLength={80}
