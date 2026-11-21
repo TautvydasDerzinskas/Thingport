@@ -259,11 +259,14 @@ function RowTooltip({ node, children }: { node: Leaf | Branch; children: ReactEl
 function LeafRow({ node, depth }: { node: Leaf; depth: number }) {
   const menu = useMenu();
   const { t } = useTranslation("common");
+  // Still an anchor while inert, so a focused row stays mounted, but with nowhere to go: a middle click follows an href.
   const link = node.href
     ? {
         component: "a" as const,
-        href: node.href,
-        ...(node.external && { target: "_blank", rel: "noopener noreferrer" }),
+        ...(!node.inert && {
+          href: node.href,
+          ...(node.external && { target: "_blank", rel: "noopener noreferrer" }),
+        }),
       }
     : {};
   const glyph = node.busy ? <CircularProgress size={18} color="inherit" /> : (node.media ?? node.icon);
@@ -551,6 +554,16 @@ function PanelStack({ nodes, rootId, rootLabel }: { nodes: Node[]; rootId: strin
   );
 }
 
+/** Scrolls the row's own list, and nothing else, just enough to show it. */
+function reveal(row: HTMLElement) {
+  const list = row.closest<HTMLElement>("[data-menu-level]");
+  if (!list) return;
+  const box = list.getBoundingClientRect();
+  const at = row.getBoundingClientRect();
+  if (at.top < box.top) list.scrollTop -= box.top - at.top;
+  else if (at.bottom > box.bottom) list.scrollTop += at.bottom - box.bottom;
+}
+
 type Pending = { key: string; timer: number };
 
 function clearPending(pending: MutableRefObject<Pending | null>) {
@@ -622,10 +635,26 @@ export default function NestedMenu({
       const row =
         level?.querySelector<HTMLElement>("[data-menu-key]:not(.Mui-disabled)") ??
         level?.querySelector<HTMLElement>("[data-menu-key]");
-      row?.focus({ preventScroll: true });
+      if (!row) return;
+      row.focus({ preventScroll: true });
+      // A submenu entered again may be scrolled down its list.
+      reveal(row);
     },
     [id],
   );
+  /** The trigger row if it can be seen, else the first row of that level that can, without scrolling. */
+  const focusSeen = (depth: number, trigger: string) => {
+    const list = document.querySelector<HTMLElement>(`[data-menu-level="${id}:${depth}"]`);
+    if (!list) return;
+    const box = list.getBoundingClientRect();
+    const seen = (row: HTMLElement) => {
+      const at = row.getBoundingClientRect();
+      return at.top >= box.top - 1 && at.bottom <= box.bottom + 1;
+    };
+    const rows = Array.from(list.querySelectorAll<HTMLElement>("[data-menu-key]"));
+    const own = rows.find((row) => row.getAttribute("data-menu-key") === `${id}:${trigger}`);
+    (own && seen(own) ? own : (rows.find(seen) ?? own))?.focus({ preventScroll: true });
+  };
 
   // A right-click elsewhere moves the open menu to a new point without closing it: it starts again there.
   const lastAnchor = useRef(anchorEl);
@@ -647,6 +676,9 @@ export default function NestedMenu({
   useLayoutEffect(() => {
     if (shownPanels.current === panels) return;
     shownPanels.current = panels;
+    // A hover's timer would open its branch in the new layout, its row gone, without a click or a key.
+    clearPending(pending);
+    grace.current = null;
     const root = paper.current;
     if (!open || !root) return;
     let depth = live.current.path.length;
@@ -669,6 +701,8 @@ export default function NestedMenu({
       if (focusInside) focusFirst(depth + 1);
       return;
     }
+    // The way to the submenu it replaces no longer leads anywhere.
+    grace.current = null;
     focusWanted.current = focusInside ? { depth: depth + 1 } : null;
     setDirection("forward");
     setPath((current) => [...current.slice(0, depth), key]);
@@ -679,12 +713,16 @@ export default function NestedMenu({
     cancelPending();
     const trigger = live.current.path[depth];
     if (!trigger) return;
+    // Focus in what closes, as when scrolling the list closes it, comes back to this level instead of the paper.
+    const focusInside = surfaces.current.slice(depth + 1).some((surface) => surface?.contains(document.activeElement));
+    grace.current = null;
     setDirection("back");
     setPath((current) => current.slice(0, depth));
-    if (!focusTrigger) return;
+    if (!focusTrigger && !focusInside) return;
     // A panel comes back when it mounts again; beside, the row is still there.
     if (live.current.panels) focusWanted.current = { depth, key: trigger };
-    else focusRow(trigger);
+    else if (focusTrigger) focusRow(trigger);
+    else focusSeen(depth, trigger);
   };
 
   // Stable, as each level calls it once as it mounts.

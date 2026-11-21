@@ -82,13 +82,18 @@ const visuallyHidden = {
   whiteSpace: "nowrap",
 } as const;
 
-/** A button, or a link when it has somewhere to go. */
-const linkProps = (item: { href?: string; external?: boolean }) =>
+/**
+ * A button, or a link when it has somewhere to go. Still an anchor while inert, so a focused item stays mounted, but
+ * with nowhere to go: a middle click follows an href whatever the click handler does.
+ */
+const linkProps = (item: { href?: string; external?: boolean }, inert: boolean) =>
   item.href
     ? {
         component: "a" as const,
-        href: item.href,
-        ...(item.external && { target: "_blank", rel: "noopener noreferrer" }),
+        ...(!inert && {
+          href: item.href,
+          ...(item.external && { target: "_blank", rel: "noopener noreferrer" }),
+        }),
       }
     : { component: "button" as const, type: "button" as const };
 
@@ -113,18 +118,22 @@ export default function TileMenu({
   const trayAction = tiles.find((tile) => tile.key === expanded && hasPicks(tile));
 
   const navNodes = () => Array.from(menu.current?.querySelectorAll<HTMLElement>("[data-nav]") ?? []);
-  // A right-click elsewhere moves the open menu to a new point without closing it: it starts again there.
-  // The action that has focus, by key: a change to the actions can swap its element, as a tile becoming a row when
-  // another takes its place. Focus follows it to the new one, and is left alone while the old one is still there.
-  const focusedKey = useRef<string | null>(null);
+  // What has focus, by key: a change to the actions can swap its element, as a tile becoming a row when another takes
+  // its place, or take a pick away. Focus follows it to its new element, or from a pick that's gone to its action,
+  // and is left alone while the old element is still there.
+  const focusedKey = useRef<{ action: string; pick?: string } | null>(null);
   useLayoutEffect(() => {
     const box = menu.current;
-    const key = focusedKey.current;
-    if (!open || !box || !key) return;
+    const was = focusedKey.current;
+    if (!open || !box || !was) return;
     const focused = document.activeElement;
     if (focused && focused !== document.body && !focused.contains(box)) return;
-    box.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`)?.focus();
+    const action = CSS.escape(was.action);
+    const pick =
+      was.pick && box.querySelector<HTMLElement>(`[data-of="${action}"][data-pick="${CSS.escape(was.pick)}"]`);
+    (pick || box.querySelector<HTMLElement>(`[data-key="${action}"]`))?.focus();
   });
+  // A right-click elsewhere moves the open menu to a new point without closing it: it starts again there.
   const lastAnchor = useRef(anchorEl);
   useLayoutEffect(() => {
     if (!anchorEl || anchorEl === lastAnchor.current) return;
@@ -234,7 +243,8 @@ export default function TileMenu({
         role="menu"
         aria-label={label}
         onFocus={(event: FocusEvent<HTMLDivElement>) => {
-          focusedKey.current = event.target.dataset.key ?? null;
+          const { key, of, pick } = event.target.dataset;
+          focusedKey.current = key ? { action: key } : of ? { action: of, pick } : null;
         }}
       >
         {tiles.length > 0 && (
@@ -326,7 +336,7 @@ function Tile({
   return (
     <Box
       // One with picks lists them: not a link to follow first.
-      {...linkProps(picks ? {} : action)}
+      {...linkProps(picks ? {} : action, isInert(action))}
       role="menuitem"
       tabIndex={-1}
       data-nav="tile"
@@ -533,7 +543,7 @@ const Row = forwardRef<HTMLElement, RowProps>(function Row(
   return (
     <Box
       {...rest}
-      {...linkProps(picks ? {} : action)}
+      {...linkProps(picks ? {} : action, isInert(action))}
       ref={ref}
       role="menuitem"
       tabIndex={-1}
@@ -628,12 +638,13 @@ function PickRow({ action, pick, onPick }: { action: MenuAction; pick: MenuPick;
   const inert = isInert(action) || Boolean(pick.disabled);
   const row = (
     <Box
-      {...linkProps(pick)}
+      {...linkProps(pick, inert)}
       role="menuitem"
       tabIndex={-1}
       title={pick.title}
       data-nav="pick"
       data-of={action.key}
+      data-pick={pick.key}
       aria-disabled={inert || undefined}
       onClick={(event: MouseEvent) => {
         if (inert) event.preventDefault();
