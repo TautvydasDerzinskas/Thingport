@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type FocusEvent,
   type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
@@ -113,6 +114,17 @@ export default function TileMenu({
 
   const navNodes = () => Array.from(menu.current?.querySelectorAll<HTMLElement>("[data-nav]") ?? []);
   // A right-click elsewhere moves the open menu to a new point without closing it: it starts again there.
+  // The action that has focus, by key: a change to the actions can swap its element, as a tile becoming a row when
+  // another takes its place. Focus follows it to the new one, and is left alone while the old one is still there.
+  const focusedKey = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const box = menu.current;
+    const key = focusedKey.current;
+    if (!open || !box || !key) return;
+    const focused = document.activeElement;
+    if (focused && focused !== document.body && !focused.contains(box)) return;
+    box.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`)?.focus();
+  });
   const lastAnchor = useRef(anchorEl);
   useLayoutEffect(() => {
     if (!anchorEl || anchorEl === lastAnchor.current) return;
@@ -211,11 +223,20 @@ export default function TileMenu({
           onExited: () => {
             setExpanded(null);
             lastTile.current = null;
+            focusedKey.current = null;
           },
         },
       }}
     >
-      <Box id={id} ref={menu} role="menu" aria-label={label}>
+      <Box
+        id={id}
+        ref={menu}
+        role="menu"
+        aria-label={label}
+        onFocus={(event: FocusEvent<HTMLDivElement>) => {
+          focusedKey.current = event.target.dataset.key ?? null;
+        }}
+      >
         {tiles.length > 0 && (
           <Box
             // A menu's groups: fieldset is a form's.
@@ -304,7 +325,8 @@ function Tile({
   const { t } = useTranslation("common");
   return (
     <Box
-      {...linkProps(action)}
+      // One with picks lists them: not a link to follow first.
+      {...linkProps(picks ? {} : action)}
       role="menuitem"
       tabIndex={-1}
       data-nav="tile"
@@ -511,7 +533,7 @@ const Row = forwardRef<HTMLElement, RowProps>(function Row(
   return (
     <Box
       {...rest}
-      {...linkProps(action)}
+      {...linkProps(picks ? {} : action)}
       ref={ref}
       role="menuitem"
       tabIndex={-1}

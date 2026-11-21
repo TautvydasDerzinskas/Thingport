@@ -62,6 +62,8 @@ type Props = {
 const HOVER_OPEN_MS = 110;
 const HOVER_CLOSE_MS = 180;
 const GRACE_MS = 400;
+const SUBMENU_MIN = 200;
+const SUBMENU_MAX = 360;
 const PANELS_QUERY = "(max-width: 599.95px), (hover: none)";
 
 type Leaf = {
@@ -368,12 +370,21 @@ function Submenu({
     const row = parent?.querySelector(rowSelector);
     if (!parent || !element || !row) return;
     const measure = () => {
-      const next = placeSubmenu(
-        row.getBoundingClientRect(),
-        parent.getBoundingClientRect(),
-        { width: element.offsetWidth, height: element.offsetHeight },
-        { width: window.innerWidth, height: window.innerHeight },
-      );
+      const rowBox = row.getBoundingClientRect();
+      const parentBox = parent.getBoundingClientRect();
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const fit = (room: number) => {
+        element.style.minWidth = `${Math.min(SUBMENU_MIN, room)}px`;
+        element.style.maxWidth = `${Math.min(SUBMENU_MAX, room)}px`;
+      };
+      // The side goes by its own width, not one it was narrowed to before; the height by the width it gets there.
+      fit(Infinity);
+      const width = element.offsetWidth;
+      const { room } = placeSubmenu(rowBox, parentBox, { width, height: element.offsetHeight }, viewport);
+      fit(room);
+      const next = placeSubmenu(rowBox, parentBox, { width, height: element.offsetHeight }, viewport);
+      element.style.minWidth = "";
+      element.style.maxWidth = "";
       setPlace((current) =>
         current?.side === next.side && current.top === next.top && current.room === next.room ? current : next,
       );
@@ -414,8 +425,8 @@ function Submenu({
           top: place?.top ?? 0,
           width: "max-content",
           // Measured at its own width first; where neither side has that much room, narrowed to fit the roomier.
-          minWidth: Math.min(200, place?.room ?? 200),
-          maxWidth: Math.min(360, place?.room ?? 360),
+          minWidth: Math.min(SUBMENU_MIN, place?.room ?? SUBMENU_MIN),
+          maxWidth: Math.min(SUBMENU_MAX, place?.room ?? SUBMENU_MAX),
           // Rows wrap to that width rather than spill out of it; a pick's file name is cut short instead.
           "& .MuiMenuItem-root": { whiteSpace: "normal" },
           // Not hidden while it's measured: a submenu opened from the keyboard takes focus as it mounts.
@@ -604,12 +615,15 @@ export default function NestedMenu({
         ?.focus({ preventScroll: !live.current.panels }),
     [id],
   );
+  /** Its first row that can be chosen, else its first: a level of disabled rows still takes focus. */
   const focusFirst = useCallback(
-    (depth: number) =>
-      document
-        .querySelector(`[data-menu-level="${id}:${depth}"]`)
-        ?.querySelector<HTMLElement>("[data-menu-key]:not(.Mui-disabled)")
-        ?.focus({ preventScroll: true }),
+    (depth: number) => {
+      const level = document.querySelector(`[data-menu-level="${id}:${depth}"]`);
+      const row =
+        level?.querySelector<HTMLElement>("[data-menu-key]:not(.Mui-disabled)") ??
+        level?.querySelector<HTMLElement>("[data-menu-key]");
+      row?.focus({ preventScroll: true });
+    },
     [id],
   );
 
