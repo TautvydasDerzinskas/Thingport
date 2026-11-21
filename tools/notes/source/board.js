@@ -6,7 +6,7 @@ import { NOTE_SVG, UI_CSS, el, icon, menuButton, openMenu, themed } from "./ui.j
 const PAGE = 40;
 
 export default function mount(thingport) {
-  const { root, labels, models, t, ui, language } = thingport;
+  const { root, labels, models, t, ui, language, api } = thingport;
   themed(thingport, root.querySelector(".tpn-board"));
   const style = el("style");
   style.textContent = UI_CSS;
@@ -16,6 +16,14 @@ export default function mount(thingport) {
   const cards = root.querySelector(".tpn-cards");
   const state = root.querySelector(".tpn-state");
   const more = root.querySelector(".tpn-more");
+  // Shown when a model couldn't be looked up for a reason that may pass, with a retry.
+  const notice = el("div", "tpn-notice");
+  const noticeRetry = el("button", "tpn-btn", t("board.retry"));
+  noticeRetry.addEventListener("click", () => load());
+  notice.append(el("span", "", t("board.lookupFailed")), noticeRetry);
+  notice.setAttribute("role", "status");
+  notice.hidden = true;
+  cards.before(notice);
   const modelsById = new Map();
   let alive = true;
   let revision = 0;
@@ -23,6 +31,7 @@ export default function mount(thingport) {
   let notes = [];
   let loading = true;
   let failed = false;
+  let lookupFailed = false;
 
   labels();
 
@@ -58,6 +67,7 @@ export default function mount(thingport) {
   function card(note) {
     const model = modelsById.get(note.modelId);
     const article = el("article", "tpn-card tpn-c-" + note.value.color);
+    article.dataset.id = noteId(note);
     const head = el("div", "tpn-card-head");
     const link = el("button", "tpn-model");
     const thumbnail = el("span", "tpn-thumb");
@@ -109,6 +119,7 @@ export default function mount(thingport) {
 
   function render() {
     more.hidden = true;
+    notice.hidden = true;
     count.hidden = loading || failed;
     count.textContent = String(notes.length);
     cards.setAttribute("aria-busy", String(loading));
@@ -126,13 +137,23 @@ export default function mount(thingport) {
       cards.replaceChildren();
       return showState("error");
     }
+    notice.hidden = !lookupFailed;
     const query = search.value.trim().toLocaleLowerCase(language);
     const filtered = notes.filter((note) =>
       [note.value.text, modelsById.get(note.modelId)?.name].some((text) =>
         text?.toLocaleLowerCase(language).includes(query),
       ),
     );
+    // The cards are drawn afresh: focus on one goes to the same control of the same note's new card.
+    const active = document.activeElement;
+    const focusId = cards.contains(active) ? active.closest(".tpn-card")?.dataset.id : null;
+    const focusClass = ["tpn-model", "tpn-icon-btn"].find((name) => active?.classList?.contains(name));
     cards.replaceChildren(...filtered.slice(0, shown).map(card));
+    if (focusId && focusClass)
+      [...cards.children]
+        .find((element) => element.dataset.id === focusId)
+        ?.querySelector("." + focusClass)
+        ?.focus();
     showState(filtered.length ? null : query ? "noMatches" : "empty");
     more.hidden = shown >= filtered.length;
   }
@@ -142,22 +163,28 @@ export default function mount(thingport) {
     const first = !notes.length;
     loading = first;
     failed = false;
-    render();
+    // Cards already shown stay until the new ones are in, so a refresh doesn't take focus away.
+    if (first) render();
     try {
       const incoming = await readNotes(thingport);
       const missing = [...new Set(incoming.map((note) => note.modelId))].filter((id) => id && !modelsById.has(id));
+      let unsure = false;
       for (let i = 0; i < missing.length && alive && revision === run; i += 8) {
         await Promise.all(
           missing.slice(i, i + 8).map(async (id) => {
             try {
               modelsById.set(id, await models.get(id));
             } catch {
-              // Leave failed lookups uncached so the next load can try again.
+              // Left uncached so a later load tries again. A model that's gone or no longer shared stays "Model
+              // unavailable"; any other failure may pass, so the board offers a retry.
+              const res = await api("/print/" + encodeURIComponent(id)).catch(() => null);
+              if (!res || ![403, 404].includes(res.status)) unsure = true;
             }
           }),
         );
       }
       if (!alive || revision !== run) return;
+      lookupFailed = unsure;
       notes = incoming;
       loading = false;
       // Cards rise in on the first fill only, not on every keystroke of a search.

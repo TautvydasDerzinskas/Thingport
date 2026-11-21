@@ -26,7 +26,7 @@ function fakeStorage(entries = {}) {
   };
 }
 
-function fakeShared(entries = [], { readable } = {}) {
+function fakeShared(entries = [], { readable, full, stuck } = {}) {
   const calls = [];
   return {
     calls,
@@ -35,8 +35,12 @@ function fakeShared(entries = [], { readable } = {}) {
       calls.push({ set: key, value, options });
       // As the server does for a model the writer can't open.
       if (readable && options?.model && !readable.includes(options.model)) throw new Error("No such model");
+      if (full) throw new Error("This tool shares 5000 entries at most for you");
     },
-    remove: async (key) => void calls.push({ remove: key }),
+    remove: async (key) => {
+      calls.push({ remove: key });
+      if (stuck) throw new Error("Couldn't remove it");
+    },
   };
 }
 
@@ -136,7 +140,10 @@ test("a note is kept where its visibility says, with its look and colour", async
   const storage = fakeStorage();
   const shared = fakeShared();
   const value = { x: 0.3, y: 0.6, text: "Hello", look: "sticky", color: "green", extra: "dropped" };
-  await saveNote({ storage, shared }, { key: "note:m1:image:a:1", public: false }, value, "m1");
+  assert.deepEqual(await saveNote({ storage, shared }, { key: "note:m1:image:a:1", public: false }, value, "m1"), {
+    key: "note:m1:image:a:1",
+    leftover: false,
+  });
   const kept = storage.data.get("note:m1:image:a:1");
   assert.deepEqual(
     { ...kept, updatedAt: undefined },
@@ -155,7 +162,10 @@ test("a public note edited on another copy stays tied to the model its key names
   const shared = fakeShared([], { readable: ["m1", "m2"] });
   const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
   const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-  assert.equal(await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b"), note.key);
+  assert.deepEqual(await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b"), {
+    key: note.key,
+    leftover: false,
+  });
   assert.deepEqual(shared.calls, [{ set: note.key, value, options: { model: "m1" } }]);
 });
 
@@ -163,9 +173,27 @@ test("a public note whose writer can't open its model any more moves to the copy
   const shared = fakeShared([], { readable: ["m2"] });
   const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
   const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
-  const key = await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b");
+  const { key, leftover } = await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b");
   assert.match(key, /^note:m2:image:b:/);
+  assert.equal(leftover, false);
   assert.deepEqual(shared.calls.slice(1), [{ set: key, value, options: { model: "m2" } }, { remove: note.key }]);
+});
+
+test("a moved note whose old copy can't be removed says so, and is kept", async () => {
+  const shared = fakeShared([], { readable: ["m2"], stuck: true });
+  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
+  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
+  const { key, leftover } = await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b");
+  assert.match(key, /^note:m2:image:b:/);
+  assert.equal(leftover, true);
+});
+
+test("a note that can't move for want of room fails as a whole, leaving the old copy alone", async () => {
+  const shared = fakeShared([], { readable: ["m2"], full: true });
+  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
+  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
+  await assert.rejects(saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b"), /5000 entries/);
+  assert.ok(!shared.calls.some((call) => call.remove));
 });
 
 test("a public note that can't be saved on the model it's edited on isn't moved", async () => {
@@ -196,17 +224,28 @@ test("every label the code asks for exists in English", () => {
     .map((file) => fs.readFileSync(path.join(here, file), "utf8"))
     .join("\n");
   const html = fs.readFileSync(path.join(here, "..", "tool.html"), "utf8");
+  // Every label key written inside a t(…) call, both sides of a choice between two included; keys put together in the
+  // code are listed by hand.
+  const inCalls = [];
+  for (let at = code.indexOf("t("); at !== -1; at = code.indexOf("t(", at + 2)) {
+    if (/[\w.$]/.test(code[at - 1] ?? "")) continue;
+    let depth = 0;
+    let end = at + 1;
+    for (; end < code.length; end++) {
+      if (code[end] === "(") depth++;
+      else if (code[end] === ")" && --depth === 0) break;
+    }
+    for (const match of code.slice(at, end).matchAll(/"([a-z]+(?:\.[A-Za-z]+)+)"/g)) inCalls.push(match[1]);
+  }
   const asked = new Set([
-    ...[...code.matchAll(/\bt\("([\w.]+)"(?!\s*\+)/g)].map((match) => match[1]),
+    ...inCalls,
     ...[...html.matchAll(/data-t(?:-aria|-placeholder)?="([\w.]+)"/g)].map((match) => match[1]),
-    // Put together in the code.
     ...COLORS.map((color) => "color." + color),
     ...["loading", "error", "empty", "noMatches"].map((kind) => "board." + kind),
   ]);
   const missing = [...asked].filter((key) => !(key in english));
   assert.deepEqual(missing, []);
-  // Some are picked between in the code, so a key counts as used wherever it's written out.
-  const unused = Object.keys(english).filter((key) => !asked.has(key) && !(code + html).includes(`"${key}"`));
+  const unused = Object.keys(english).filter((key) => !asked.has(key));
   assert.deepEqual(unused, []);
 });
 

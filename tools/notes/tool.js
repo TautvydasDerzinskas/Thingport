@@ -81,27 +81,31 @@ export async function readNotes({ shared, storage }, { model, preview } = {}) {
 
 /**
  * Keeps a note where its visibility says, under its key: a retry overwrites rather than adding a second one. Returns
- * the key it's kept under.
+ * the key it's kept under, and whether an older copy of it was left shared.
  */
 export async function saveNote({ shared, storage }, note, value, modelId, previewKey) {
   const contents = { x: value.x, y: value.y, text: value.text, look: value.look, color: value.color };
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
-    return note.key;
+    return { key: note.key, leftover: false };
   }
   // A public note stays tied to the model its key names, which is how copies of that model find it.
   const written = note.modelId ?? modelId;
   try {
     await shared.set(note.key, contents, { model: written });
-    return note.key;
+    return { key: note.key, leftover: false };
   } catch (error) {
     // Edited on another copy after its writer lost the model it was on: it moves to this copy, under a key naming it.
+    // The new one is written first, so a failure along the way leaves a second copy rather than none.
     if (written === modelId || !previewKey) throw error;
     const key = newNoteKey(modelId, previewKey);
     await shared.set(key, contents, { model: modelId });
-    await shared.remove(note.key).catch(() => undefined);
-    return key;
+    const leftover = await shared.remove(note.key).then(
+      () => false,
+      () => true,
+    );
+    return { key, leftover };
   }
 }
 
@@ -314,6 +318,12 @@ export function openMenu(thingport, button, anchor, items, onClose) {
         menu.append(entry);
       }
       menu.addEventListener("keydown", (event) => {
+        // Tab leaves a menu, as in Thingport's own: it closes, and focus goes back to its button.
+        if (event.key === "Tab") {
+          event.preventDefault();
+          handle?.close();
+          return;
+        }
         const at = entries.indexOf(document.activeElement);
         const next = {
           ArrowDown: (at + 1) % entries.length,
@@ -416,6 +426,8 @@ export const UI_CSS = `
 // bubbles or sticky notes, a note opened in place, and the editor, which is the note itself and can be dragged.
 
 const EDGE = 4;
+// Unsaved edits by model and picture: switching pictures draws the part afresh, and coming back brings the edit back.
+const drafts = new Map();
 const TILTS = [-3, -1.5, 1, 2.5, -2, 1.8];
 const clamp = (value, low, high) => Math.min(Math.max(value, low), Math.max(low, high));
 
@@ -431,6 +443,8 @@ const editorWidth = (width, look) =>
 
 // The bubble is a square turned 45° with one sharp corner: its tip sits half a diagonal below its centre.
 const bubbleTip = (size) => (size / 2) * Math.SQRT2;
+// The fewest pixels of text the editor shrinks to on a short picture.
+const MIN_TEXT = 36;
 
 /** A sticky hangs from its tape at the spot; a bubble's tip is on it. Both stay whole inside the picture. */
 function spotRange(look, width, height, box) {
@@ -648,6 +662,7 @@ export function modelImage(thingport) {
   const visibility = (isPublic) => t(isPublic ? "visibility.public" : "visibility.personal");
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
+  const draftKey = modelId + "|" + (preview?.key ?? "");
 
   // The saved settings, read once. A change made before they arrive wins over them, and is written after them, so
   // it neither gets undone nor writes the defaults over the saved look and colour.
@@ -655,21 +670,25 @@ export function modelImage(thingport) {
   let viewRead = false;
   const viewReady = readView(storage).then((stored) => {
     viewRead = true;
-    if (!alive) return;
+    // Merged even when the part has gone, as for another picture: a write still queued then keeps the saved look.
     view = { ...stored, ...early };
-    render();
+    if (alive) render();
   });
+
+  // One write at a time, each of the settings as they are when it starts, so the last change is the one kept. A
+  // failed write doesn't hold up the next.
+  let writing = viewReady;
 
   function setView(change) {
     view = { ...view, ...change };
     if (!viewRead) Object.assign(early, change);
     render();
-    viewReady
-      .then(() => writeView(storage, view))
-      .catch(() => {
-        // The switch keeps what was chosen here; the next picture would show the saved choice, so say so.
-        if (alive && "hidden" in change) ui.toast(t("menu.showFailed"), "error");
-      });
+    const write = writing.then(() => writeView(storage, view));
+    writing = write.catch(() => undefined);
+    write.catch(() => {
+      // The switch keeps what was chosen here; the next picture would show the saved choice, so say so.
+      if (alive && "hidden" in change) ui.toast(t("menu.showFailed"), "error");
+    });
   }
 
   function renderButton() {
@@ -893,24 +912,25 @@ export function modelImage(thingport) {
 
   // ---- The editor: the note itself, with a toolbar under it ----
 
-  function startEdit(note, menuGone) {
+  function startEdit(note, menuGone, draft) {
     if (!layer || editing) return;
     closeRead(false);
     if (view.hidden) setView({ hidden: false });
-    const value = note?.value ?? {
+    const original = note?.value ?? {
       x: 0.5,
       y: view.look === "sticky" ? 0.3 : 0.55,
       text: "",
       look: view.look,
       color: view.color,
     };
+    const value = draft ?? original;
     const parts = buildEditor();
     editing = {
       ...parts,
       note,
-      key: note?.key ?? newNoteKey(modelId, preview.key),
-      isPublic: Boolean(note?.public),
-      original: value,
+      key: draft?.key ?? note?.key ?? newNoteKey(modelId, preview.key),
+      isPublic: draft ? draft.isPublic : Boolean(note?.public),
+      original,
       x: value.x,
       y: value.y,
       text: value.text,
@@ -967,13 +987,41 @@ export function modelImage(thingport) {
     // Compact, only the chosen one of each pair shows, and choosing it again picks the other.
     const pick = (chosen, current, other) => (editing.compact && chosen === current ? other : chosen);
     const pair = (control) => (control.classList.add("tpn-pair"), control);
+    // The button pressed may hide as the other choice shows: focus follows to it rather than being lost.
+    const keepFocus = (group) => {
+      const active = document.activeElement;
+      if (active && active !== document.body && active.offsetParent !== null) return;
+      Object.values(group)
+        .find((control) => control.getAttribute("aria-pressed") === "true")
+        ?.focus();
+    };
     const looks = {
-      bubble: pair(tool("bubble", t("editor.bubble"), () => setLook(pick("bubble", editing.look, "sticky")))),
-      sticky: pair(tool("sticky", t("editor.sticky"), () => setLook(pick("sticky", editing.look, "bubble")))),
+      bubble: pair(
+        tool("bubble", t("editor.bubble"), () => {
+          setLook(pick("bubble", editing.look, "sticky"));
+          keepFocus(looks);
+        }),
+      ),
+      sticky: pair(
+        tool("sticky", t("editor.sticky"), () => {
+          setLook(pick("sticky", editing.look, "bubble"));
+          keepFocus(looks);
+        }),
+      ),
     };
     const audience = {
-      personal: pair(tool("lock", t("editor.personal"), () => setAudience(pick(false, editing.isPublic, true)))),
-      public: pair(tool("globe", t("editor.public"), () => setAudience(pick(true, editing.isPublic, false)))),
+      personal: pair(
+        tool("lock", t("editor.personal"), () => {
+          setAudience(pick(false, editing.isPublic, true));
+          keepFocus(audience);
+        }),
+      ),
+      public: pair(
+        tool("globe", t("editor.public"), () => {
+          setAudience(pick(true, editing.isPublic, false));
+          keepFocus(audience);
+        }),
+      ),
     };
     const swatches = el("span", "tpn-swatches");
     const colors = Object.fromEntries(
@@ -986,6 +1034,7 @@ export function modelImage(thingport) {
           const next = COLORS[(COLORS.indexOf(color) + 1) % COLORS.length];
           editing.color = pick(color, editing.color, next);
           applyEditor();
+          keepFocus(colors);
         });
         swatches.append(swatch);
         return [color, swatch];
@@ -1090,13 +1139,15 @@ export function modelImage(thingport) {
     layoutEditor();
   }
 
-  function layoutEditor() {
+  function layoutEditor(textLimit) {
     const e = editing;
     if (!e) return;
     const { width, height } = size();
     if (!width) return;
     e.surface.style.width = editorWidth(width, e.look) + "px";
-    // The text grows with what's written, up to the textarea's own limit.
+    // The text grows with what's written, up to the textarea's own limit, or less on a picture too short for it.
+    e.field.style.maxHeight = textLimit ? textLimit + "px" : "";
+    e.field.style.minHeight = textLimit ? Math.min(58, textLimit) + "px" : "";
     e.field.style.height = "auto";
     e.field.style.height = e.field.scrollHeight + "px";
     const surface = { width: e.surface.offsetWidth, height: e.surface.offsetHeight };
@@ -1133,7 +1184,12 @@ export function modelImage(thingport) {
     const left = clamp(group.left + group.width / 2 - bar.width / 2, EDGE, width - bar.width - EDGE);
     const below = group.top + group.height + 8;
     const above = group.top - 8 - bar.height;
-    const top = below + bar.height <= height - EDGE ? below : above >= EDGE ? above : height - bar.height - EDGE;
+    const fitsBelow = below + bar.height <= height - EDGE;
+    if (!fitsBelow && above < EDGE) {
+      const text = e.field.offsetHeight;
+      if (text > MIN_TEXT && !(textLimit <= MIN_TEXT)) return layoutEditor(Math.max(MIN_TEXT, text - 16));
+    }
+    const top = fitsBelow ? below : above >= EDGE ? above : height - bar.height - EDGE;
     Object.assign(e.toolbar.style, { left: left + "px", top: top + "px" });
   }
 
@@ -1194,8 +1250,10 @@ export function modelImage(thingport) {
   async function cancelEdit() {
     const e = editing;
     if (!e || e.saving) return;
-    const changed = e.text.trim() && e.text !== e.original.text;
-    if (changed) {
+    const o = e.original;
+    const changed = ["text", "look", "color", "x", "y"].some((field) => e[field] !== o[field]);
+    // A new note with nothing written couldn't be saved anyway.
+    if (changed && (e.note || e.text.trim())) {
       const discard = await ui.confirm({
         title: t("editor.discardTitle"),
         message: t("editor.discardMessage"),
@@ -1231,7 +1289,8 @@ export function modelImage(thingport) {
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
     try {
       const draft = { key: e.key, public: e.isPublic, modelId: e.note?.modelId };
-      const key = await saveNote(thingport, draft, value, modelId, preview.key);
+      const { key, leftover } = await saveNote(thingport, draft, value, modelId, preview.key);
+      if (leftover && alive) ui.toast(t("editor.oldCopy"), "warning");
       if (!alive || editing !== e) return;
       const moved = key !== e.key;
       const saved = {
@@ -1273,7 +1332,18 @@ export function modelImage(thingport) {
       const next = await readNotes(thingport, { model: modelId, preview: preview.key });
       if (!alive || run !== revision) return;
       notes = next;
+      // Saving would write it back, so an edit of a note deleted elsewhere (the window, another tab) ends, and says so.
+      if (editing?.note && !editing.saving && !notes.some((note) => noteId(note) === noteId(editing.note))) {
+        endEdit(null);
+        ui.toast(t("editor.deleted"), "warning");
+      }
       render();
+      const draft = drafts.get(draftKey);
+      if (draft && !editing) {
+        drafts.delete(draftKey);
+        const note = draft.noteId && notes.find((candidate) => noteId(candidate) === draft.noteId);
+        if (!draft.noteId || note) startEdit(note || null, null, draft);
+      }
     } catch {
       if (alive && run === revision) ui.toast(t("board.error"), "error");
     }
@@ -1293,6 +1363,12 @@ export function modelImage(thingport) {
   void load();
   return () => {
     alive = false;
+    const e = editing;
+    const o = e?.original;
+    if (e && !e.saving && ["text", "look", "color", "x", "y"].some((field) => e[field] !== o[field])) {
+      const { key, isPublic, x, y, text, look, color } = e;
+      drafts.set(draftKey, { noteId: e.note && noteId(e.note), key, isPublic, x, y, text, look, color });
+    }
     stop();
     observer?.disconnect();
     document.removeEventListener("pointerdown", onPointerDown, true);
@@ -1307,7 +1383,7 @@ export function modelImage(thingport) {
 const PAGE = 40;
 
 export default function mount(thingport) {
-  const { root, labels, models, t, ui, language } = thingport;
+  const { root, labels, models, t, ui, language, api } = thingport;
   themed(thingport, root.querySelector(".tpn-board"));
   const style = el("style");
   style.textContent = UI_CSS;
@@ -1317,6 +1393,14 @@ export default function mount(thingport) {
   const cards = root.querySelector(".tpn-cards");
   const state = root.querySelector(".tpn-state");
   const more = root.querySelector(".tpn-more");
+  // Shown when a model couldn't be looked up for a reason that may pass, with a retry.
+  const notice = el("div", "tpn-notice");
+  const noticeRetry = el("button", "tpn-btn", t("board.retry"));
+  noticeRetry.addEventListener("click", () => load());
+  notice.append(el("span", "", t("board.lookupFailed")), noticeRetry);
+  notice.setAttribute("role", "status");
+  notice.hidden = true;
+  cards.before(notice);
   const modelsById = new Map();
   let alive = true;
   let revision = 0;
@@ -1324,6 +1408,7 @@ export default function mount(thingport) {
   let notes = [];
   let loading = true;
   let failed = false;
+  let lookupFailed = false;
 
   labels();
 
@@ -1359,6 +1444,7 @@ export default function mount(thingport) {
   function card(note) {
     const model = modelsById.get(note.modelId);
     const article = el("article", "tpn-card tpn-c-" + note.value.color);
+    article.dataset.id = noteId(note);
     const head = el("div", "tpn-card-head");
     const link = el("button", "tpn-model");
     const thumbnail = el("span", "tpn-thumb");
@@ -1410,6 +1496,7 @@ export default function mount(thingport) {
 
   function render() {
     more.hidden = true;
+    notice.hidden = true;
     count.hidden = loading || failed;
     count.textContent = String(notes.length);
     cards.setAttribute("aria-busy", String(loading));
@@ -1427,13 +1514,23 @@ export default function mount(thingport) {
       cards.replaceChildren();
       return showState("error");
     }
+    notice.hidden = !lookupFailed;
     const query = search.value.trim().toLocaleLowerCase(language);
     const filtered = notes.filter((note) =>
       [note.value.text, modelsById.get(note.modelId)?.name].some((text) =>
         text?.toLocaleLowerCase(language).includes(query),
       ),
     );
+    // The cards are drawn afresh: focus on one goes to the same control of the same note's new card.
+    const active = document.activeElement;
+    const focusId = cards.contains(active) ? active.closest(".tpn-card")?.dataset.id : null;
+    const focusClass = ["tpn-model", "tpn-icon-btn"].find((name) => active?.classList?.contains(name));
     cards.replaceChildren(...filtered.slice(0, shown).map(card));
+    if (focusId && focusClass)
+      [...cards.children]
+        .find((element) => element.dataset.id === focusId)
+        ?.querySelector("." + focusClass)
+        ?.focus();
     showState(filtered.length ? null : query ? "noMatches" : "empty");
     more.hidden = shown >= filtered.length;
   }
@@ -1443,22 +1540,28 @@ export default function mount(thingport) {
     const first = !notes.length;
     loading = first;
     failed = false;
-    render();
+    // Cards already shown stay until the new ones are in, so a refresh doesn't take focus away.
+    if (first) render();
     try {
       const incoming = await readNotes(thingport);
       const missing = [...new Set(incoming.map((note) => note.modelId))].filter((id) => id && !modelsById.has(id));
+      let unsure = false;
       for (let i = 0; i < missing.length && alive && revision === run; i += 8) {
         await Promise.all(
           missing.slice(i, i + 8).map(async (id) => {
             try {
               modelsById.set(id, await models.get(id));
             } catch {
-              // Leave failed lookups uncached so the next load can try again.
+              // Left uncached so a later load tries again. A model that's gone or no longer shared stays "Model
+              // unavailable"; any other failure may pass, so the board offers a retry.
+              const res = await api("/print/" + encodeURIComponent(id)).catch(() => null);
+              if (!res || ![403, 404].includes(res.status)) unsure = true;
             }
           }),
         );
       }
       if (!alive || revision !== run) return;
+      lookupFailed = unsure;
       notes = incoming;
       loading = false;
       // Cards rise in on the first fill only, not on every keystroke of a search.

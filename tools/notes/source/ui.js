@@ -138,6 +138,12 @@ export function openMenu(thingport, button, anchor, items, onClose) {
         menu.append(entry);
       }
       menu.addEventListener("keydown", (event) => {
+        // Tab leaves a menu, as in Thingport's own: it closes, and focus goes back to its button.
+        if (event.key === "Tab") {
+          event.preventDefault();
+          handle?.close();
+          return;
+        }
         const at = entries.indexOf(document.activeElement);
         const next = {
           ArrowDown: (at + 1) % entries.length,

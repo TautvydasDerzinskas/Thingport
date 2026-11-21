@@ -19,6 +19,8 @@ import { NOTE_SVG, UI_CSS, avatar, el, icon, menuButton, openMenu, themed } from
 // bubbles or sticky notes, a note opened in place, and the editor, which is the note itself and can be dragged.
 
 const EDGE = 4;
+// Unsaved edits by model and picture: switching pictures draws the part afresh, and coming back brings the edit back.
+const drafts = new Map();
 const TILTS = [-3, -1.5, 1, 2.5, -2, 1.8];
 const clamp = (value, low, high) => Math.min(Math.max(value, low), Math.max(low, high));
 
@@ -34,6 +36,8 @@ const editorWidth = (width, look) =>
 
 // The bubble is a square turned 45° with one sharp corner: its tip sits half a diagonal below its centre.
 const bubbleTip = (size) => (size / 2) * Math.SQRT2;
+// The fewest pixels of text the editor shrinks to on a short picture.
+const MIN_TEXT = 36;
 
 /** A sticky hangs from its tape at the spot; a bubble's tip is on it. Both stay whole inside the picture. */
 function spotRange(look, width, height, box) {
@@ -251,6 +255,7 @@ export function modelImage(thingport) {
   const visibility = (isPublic) => t(isPublic ? "visibility.public" : "visibility.personal");
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
+  const draftKey = modelId + "|" + (preview?.key ?? "");
 
   // The saved settings, read once. A change made before they arrive wins over them, and is written after them, so
   // it neither gets undone nor writes the defaults over the saved look and colour.
@@ -258,21 +263,25 @@ export function modelImage(thingport) {
   let viewRead = false;
   const viewReady = readView(storage).then((stored) => {
     viewRead = true;
-    if (!alive) return;
+    // Merged even when the part has gone, as for another picture: a write still queued then keeps the saved look.
     view = { ...stored, ...early };
-    render();
+    if (alive) render();
   });
+
+  // One write at a time, each of the settings as they are when it starts, so the last change is the one kept. A
+  // failed write doesn't hold up the next.
+  let writing = viewReady;
 
   function setView(change) {
     view = { ...view, ...change };
     if (!viewRead) Object.assign(early, change);
     render();
-    viewReady
-      .then(() => writeView(storage, view))
-      .catch(() => {
-        // The switch keeps what was chosen here; the next picture would show the saved choice, so say so.
-        if (alive && "hidden" in change) ui.toast(t("menu.showFailed"), "error");
-      });
+    const write = writing.then(() => writeView(storage, view));
+    writing = write.catch(() => undefined);
+    write.catch(() => {
+      // The switch keeps what was chosen here; the next picture would show the saved choice, so say so.
+      if (alive && "hidden" in change) ui.toast(t("menu.showFailed"), "error");
+    });
   }
 
   function renderButton() {
@@ -496,24 +505,25 @@ export function modelImage(thingport) {
 
   // ---- The editor: the note itself, with a toolbar under it ----
 
-  function startEdit(note, menuGone) {
+  function startEdit(note, menuGone, draft) {
     if (!layer || editing) return;
     closeRead(false);
     if (view.hidden) setView({ hidden: false });
-    const value = note?.value ?? {
+    const original = note?.value ?? {
       x: 0.5,
       y: view.look === "sticky" ? 0.3 : 0.55,
       text: "",
       look: view.look,
       color: view.color,
     };
+    const value = draft ?? original;
     const parts = buildEditor();
     editing = {
       ...parts,
       note,
-      key: note?.key ?? newNoteKey(modelId, preview.key),
-      isPublic: Boolean(note?.public),
-      original: value,
+      key: draft?.key ?? note?.key ?? newNoteKey(modelId, preview.key),
+      isPublic: draft ? draft.isPublic : Boolean(note?.public),
+      original,
       x: value.x,
       y: value.y,
       text: value.text,
@@ -570,13 +580,41 @@ export function modelImage(thingport) {
     // Compact, only the chosen one of each pair shows, and choosing it again picks the other.
     const pick = (chosen, current, other) => (editing.compact && chosen === current ? other : chosen);
     const pair = (control) => (control.classList.add("tpn-pair"), control);
+    // The button pressed may hide as the other choice shows: focus follows to it rather than being lost.
+    const keepFocus = (group) => {
+      const active = document.activeElement;
+      if (active && active !== document.body && active.offsetParent !== null) return;
+      Object.values(group)
+        .find((control) => control.getAttribute("aria-pressed") === "true")
+        ?.focus();
+    };
     const looks = {
-      bubble: pair(tool("bubble", t("editor.bubble"), () => setLook(pick("bubble", editing.look, "sticky")))),
-      sticky: pair(tool("sticky", t("editor.sticky"), () => setLook(pick("sticky", editing.look, "bubble")))),
+      bubble: pair(
+        tool("bubble", t("editor.bubble"), () => {
+          setLook(pick("bubble", editing.look, "sticky"));
+          keepFocus(looks);
+        }),
+      ),
+      sticky: pair(
+        tool("sticky", t("editor.sticky"), () => {
+          setLook(pick("sticky", editing.look, "bubble"));
+          keepFocus(looks);
+        }),
+      ),
     };
     const audience = {
-      personal: pair(tool("lock", t("editor.personal"), () => setAudience(pick(false, editing.isPublic, true)))),
-      public: pair(tool("globe", t("editor.public"), () => setAudience(pick(true, editing.isPublic, false)))),
+      personal: pair(
+        tool("lock", t("editor.personal"), () => {
+          setAudience(pick(false, editing.isPublic, true));
+          keepFocus(audience);
+        }),
+      ),
+      public: pair(
+        tool("globe", t("editor.public"), () => {
+          setAudience(pick(true, editing.isPublic, false));
+          keepFocus(audience);
+        }),
+      ),
     };
     const swatches = el("span", "tpn-swatches");
     const colors = Object.fromEntries(
@@ -589,6 +627,7 @@ export function modelImage(thingport) {
           const next = COLORS[(COLORS.indexOf(color) + 1) % COLORS.length];
           editing.color = pick(color, editing.color, next);
           applyEditor();
+          keepFocus(colors);
         });
         swatches.append(swatch);
         return [color, swatch];
@@ -693,13 +732,15 @@ export function modelImage(thingport) {
     layoutEditor();
   }
 
-  function layoutEditor() {
+  function layoutEditor(textLimit) {
     const e = editing;
     if (!e) return;
     const { width, height } = size();
     if (!width) return;
     e.surface.style.width = editorWidth(width, e.look) + "px";
-    // The text grows with what's written, up to the textarea's own limit.
+    // The text grows with what's written, up to the textarea's own limit, or less on a picture too short for it.
+    e.field.style.maxHeight = textLimit ? textLimit + "px" : "";
+    e.field.style.minHeight = textLimit ? Math.min(58, textLimit) + "px" : "";
     e.field.style.height = "auto";
     e.field.style.height = e.field.scrollHeight + "px";
     const surface = { width: e.surface.offsetWidth, height: e.surface.offsetHeight };
@@ -736,7 +777,12 @@ export function modelImage(thingport) {
     const left = clamp(group.left + group.width / 2 - bar.width / 2, EDGE, width - bar.width - EDGE);
     const below = group.top + group.height + 8;
     const above = group.top - 8 - bar.height;
-    const top = below + bar.height <= height - EDGE ? below : above >= EDGE ? above : height - bar.height - EDGE;
+    const fitsBelow = below + bar.height <= height - EDGE;
+    if (!fitsBelow && above < EDGE) {
+      const text = e.field.offsetHeight;
+      if (text > MIN_TEXT && !(textLimit <= MIN_TEXT)) return layoutEditor(Math.max(MIN_TEXT, text - 16));
+    }
+    const top = fitsBelow ? below : above >= EDGE ? above : height - bar.height - EDGE;
     Object.assign(e.toolbar.style, { left: left + "px", top: top + "px" });
   }
 
@@ -797,8 +843,10 @@ export function modelImage(thingport) {
   async function cancelEdit() {
     const e = editing;
     if (!e || e.saving) return;
-    const changed = e.text.trim() && e.text !== e.original.text;
-    if (changed) {
+    const o = e.original;
+    const changed = ["text", "look", "color", "x", "y"].some((field) => e[field] !== o[field]);
+    // A new note with nothing written couldn't be saved anyway.
+    if (changed && (e.note || e.text.trim())) {
       const discard = await ui.confirm({
         title: t("editor.discardTitle"),
         message: t("editor.discardMessage"),
@@ -834,7 +882,8 @@ export function modelImage(thingport) {
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
     try {
       const draft = { key: e.key, public: e.isPublic, modelId: e.note?.modelId };
-      const key = await saveNote(thingport, draft, value, modelId, preview.key);
+      const { key, leftover } = await saveNote(thingport, draft, value, modelId, preview.key);
+      if (leftover && alive) ui.toast(t("editor.oldCopy"), "warning");
       if (!alive || editing !== e) return;
       const moved = key !== e.key;
       const saved = {
@@ -876,7 +925,18 @@ export function modelImage(thingport) {
       const next = await readNotes(thingport, { model: modelId, preview: preview.key });
       if (!alive || run !== revision) return;
       notes = next;
+      // Saving would write it back, so an edit of a note deleted elsewhere (the window, another tab) ends, and says so.
+      if (editing?.note && !editing.saving && !notes.some((note) => noteId(note) === noteId(editing.note))) {
+        endEdit(null);
+        ui.toast(t("editor.deleted"), "warning");
+      }
       render();
+      const draft = drafts.get(draftKey);
+      if (draft && !editing) {
+        drafts.delete(draftKey);
+        const note = draft.noteId && notes.find((candidate) => noteId(candidate) === draft.noteId);
+        if (!draft.noteId || note) startEdit(note || null, null, draft);
+      }
     } catch {
       if (alive && run === revision) ui.toast(t("board.error"), "error");
     }
@@ -896,6 +956,12 @@ export function modelImage(thingport) {
   void load();
   return () => {
     alive = false;
+    const e = editing;
+    const o = e?.original;
+    if (e && !e.saving && ["text", "look", "color", "x", "y"].some((field) => e[field] !== o[field])) {
+      const { key, isPublic, x, y, text, look, color } = e;
+      drafts.set(draftKey, { noteId: e.note && noteId(e.note), key, isPublic, x, y, text, look, color });
+    }
     stop();
     observer?.disconnect();
     document.removeEventListener("pointerdown", onPointerDown, true);

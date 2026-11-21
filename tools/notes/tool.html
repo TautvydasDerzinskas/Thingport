@@ -65,6 +65,23 @@
     color: var(--tp-text);
     font: inherit;
   }
+  .tpn-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--tp-warning) 14%, transparent);
+    font-size: 13px;
+  }
+  .tpn-notice[hidden] {
+    display: none;
+  }
+  .tpn-notice .tpn-btn {
+    height: 28px;
+  }
   .tpn-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
