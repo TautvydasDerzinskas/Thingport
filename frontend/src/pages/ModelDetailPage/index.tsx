@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -63,6 +63,11 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const { t, i18n } = useTranslation(["models", "common", "library"]);
   const [print, setPrint] = useState<Print | null>(null);
   const [collectionCount, setCollectionCount] = useState<CollectionCount>("loading");
+  // The header shows the last model until the next one loads: a count its dialog reports by then is that model's.
+  const routeId = useRef(printId);
+  useLayoutEffect(() => {
+    routeId.current = printId;
+  });
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -146,7 +151,9 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
           onUpdated={updatePrint}
-          onCollectionCountChange={setCollectionCount}
+          onCollectionCountChange={(count) => {
+            if (print.id === routeId.current) setCollectionCount(count);
+          }}
           viewer={viewer}
           offerLink
         />

@@ -112,9 +112,14 @@ export function useModelActions({
   const [improving, setImproving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
-  const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
-  const [fillGapsOpen, setFillGapsOpen] = useState(false);
-  const [linkOpen, setLinkOpen] = useState(false);
+  // The page header keeps this menu across models, so a dialog is open for the model it was opened on: going back to
+  // another one mustn't open it there.
+  const [dialog, setDialog] = useState<{ name: "collection" | "fillGaps" | "link"; printId: string } | null>(null);
+  // Closed on leaving the model, so coming back to it doesn't open it again.
+  if (dialog && dialog.printId !== print.id) setDialog(null);
+  const dialogOpen = (name: "collection" | "fillGaps" | "link") => dialog?.name === name && dialog.printId === print.id;
+  const openDialog = (name: "collection" | "fillGaps" | "link") => setDialog({ name, printId: print.id });
+  const closeDialog = () => setDialog(null);
   const sourceGaps = print.source_gaps ?? [];
   // Driven by ?edit=<id> so links and the back button open/close it.
   const editOpen = searchParams.get("edit") === print.id;
@@ -283,12 +288,13 @@ export function useModelActions({
   const openAdapted = (target: AdaptedTarget) => {
     void adapted.open(target).then((launched) => launched && closeMenu());
   };
-  const adaptedPick = (target: AdaptedTarget): Partial<MenuPick> => {
+  const adaptedPick = (target: AdaptedTarget, tooltip: string | undefined): Partial<MenuPick> => {
     const state = adapted.stateOf(target);
     // The folder stays beside the state: two files of one name are told apart by theirs.
     const withFolder = (status: string) => (target.folder ? `${folderLabel(target.folder)} · ${status}` : status);
     return {
       keepOpen: true,
+      tooltip,
       disabled: state === "preparing",
       onSelect: () => openAdapted(target),
       ...(state === "preparing" && { secondary: withFolder(t("models:detail.adaptPreparingShort")) }),
@@ -313,7 +319,7 @@ export function useModelActions({
     group: "library",
     label: t("models:detail.addToCollection"),
     icon: <PlaylistAddIcon />,
-    onSelect: () => setAddToCollectionOpen(true),
+    onSelect: () => openDialog("collection"),
   });
   add(
     Boolean(collectionId) && {
@@ -434,6 +440,9 @@ export function useModelActions({
     const only = adaptedTargets.length === 1 ? adaptedTargets[0] : null;
     const state = only ? adapted.stateOf(only) : "idle";
     const idleLabel = t("models:detail.openAdaptedInSlicer", { slicer: slicerOption.label });
+    // Files of different kinds are adapted differently: then each file explains its own copy.
+    const infos = adaptedTargets.map((target) => adaptedInfo(t, slicerOption.label, target.plan));
+    const sharedInfo = infos.every((info) => info === infos[0]) ? infos[0] : undefined;
     const stateLabel =
       state === "preparing"
         ? t("models:detail.adaptPreparing")
@@ -447,11 +456,15 @@ export function useModelActions({
       shortLabel: stateLabel ?? t("models:actionsMenu.adapted", { slicer: slicerOption.label }),
       icon: <LightbulbIcon />,
       tone: "warning",
-      tooltip: adaptedInfo(t, slicerOption.label, adaptedTargets[0].plan),
+      tooltip: sharedInfo,
       busy: state === "preparing",
       keepOpen: true,
       onSelect: only ? () => openAdapted(only) : undefined,
-      picks: only ? undefined : slicerPicks(adaptedTargets, adaptedPick),
+      picks: only
+        ? undefined
+        : slicerPicks(adaptedTargets, (target) =>
+            adaptedPick(target, sharedInfo ? undefined : infos[adaptedTargets.indexOf(target)]),
+          ),
     });
   }
   // One file opens straight away; several are listed, as the slicer's are.
@@ -496,7 +509,7 @@ export function useModelActions({
       group: "source",
       label: t("models:linkSource.action"),
       icon: <AddLinkIcon />,
-      onSelect: () => setLinkOpen(true),
+      onSelect: () => openDialog("link"),
     },
   );
   add(
@@ -514,7 +527,7 @@ export function useModelActions({
       group: "source",
       label: t("models:detail.fillGaps", { provider: providerInfo?.label }),
       icon: <AutoFixHighIcon />,
-      onSelect: () => setFillGapsOpen(true),
+      onSelect: () => openDialog("fillGaps"),
     },
   );
   add(
@@ -547,8 +560,8 @@ export function useModelActions({
       {/* The page header keeps this menu across models: a write on its way mustn't land on the next one's list. */}
       <AddToCollectionModal
         key={print.id}
-        open={addToCollectionOpen}
-        onClose={() => setAddToCollectionOpen(false)}
+        open={dialogOpen("collection")}
+        onClose={closeDialog}
         printId={print.id}
         onUnauthorized={onUnauthorized}
         collectionId={collectionId}
@@ -556,7 +569,8 @@ export function useModelActions({
         onCountChange={onCollectionCountChange}
       />
 
-      {editOpen && !owner && (
+      {/* As the menu offers it: a link can't edit a model that's another user's or a tool's. */}
+      {editOpen && !owner && !toolOwned && (
         <EditModelModal
           print={print}
           onClose={closeEdit}
@@ -566,21 +580,21 @@ export function useModelActions({
         />
       )}
 
-      {fillGapsOpen && (
+      {dialogOpen("fillGaps") && (
         <FillGapsDialog
           open
           print={print}
           gaps={sourceGaps}
-          onClose={() => setFillGapsOpen(false)}
+          onClose={closeDialog}
           onUpdated={(updated) => onUpdated?.(updated)}
           onUnauthorized={onUnauthorized}
         />
       )}
 
-      {linkOpen && (
+      {dialogOpen("link") && (
         <LinkSourceDialog
           print={print}
-          onClose={() => setLinkOpen(false)}
+          onClose={closeDialog}
           onLinked={(updated) => onUpdated?.(updated)}
           onUnauthorized={onUnauthorized}
         />
