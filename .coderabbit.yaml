@@ -12,15 +12,21 @@ reviews:
   review_status: true
   collapse_walkthrough: true
 
-  # Only PRs into the default branch (develop) are reviewed automatically. Release PRs from develop into
-  # main carry work that was already reviewed on its way into develop; comment `@coderabbitai review` on
-  # one to review it anyway.
+  # Only PRs into the default branch (develop) are reviewed automatically, and only when opened or marked ready for
+  # review. Release PRs from develop into main carry work that was already reviewed on its way into develop; comment
+  # `@coderabbitai review` on one to review it anyway.
   auto_review:
     enabled: true
     drafts: false
-    # Review rounds go on until a round finds only nitpicks, so every push is reviewed rather than pausing after a
-    # few; `@coderabbitai pause` still stops a pull request, and coderabbit-retry.yml leaves paused ones alone.
+    # A push isn't reviewed on its own: a round ends with `@coderabbitai review` once every thread is answered, so a
+    # review never lands on a half-answered round (docs/STORAGE_DEVELOPMENT.md, "Reviews").
+    auto_incremental_review: false
     auto_pause_after_reviewed_commits: 0
+
+  # Pull requests in a series link issues they only partly fix.
+  pre_merge_checks:
+    issue_assessment:
+      mode: "off"
 
   path_filters:
     # Generated or tool-owned files
@@ -29,6 +35,21 @@ reviews:
     - "!web/.astro/**"
     - "!**/dist/**"
     - "!backend/assets/printers/**"
+    # Written by the sync scripts from sources that are reviewed (the providers', adapter's and Studio's copies, the
+    # SDK reference from frontend/src/sdk/types.ts); Format's *:check steps keep them in step. Left out, as the
+    # translations below are, so a pull request near the 100-file review limit stays reviewed.
+    - "!**/*.generated.*"
+    - "!docs/developers/sdk-reference.md"
+    - "!docs/developers/examples/thingport.d.ts"
+    # Translations of en.json, which is reviewed; Format's strict locale check fails on a key one misses or keeps.
+    - "!frontend/src/i18n/locales/be.json"
+    - "!frontend/src/i18n/locales/de.json"
+    - "!frontend/src/i18n/locales/es.json"
+    - "!frontend/src/i18n/locales/fr.json"
+    - "!frontend/src/i18n/locales/lt.json"
+    - "!frontend/src/i18n/locales/ru.json"
+    - "!frontend/src/i18n/locales/uk.json"
+    - "!frontend/src/i18n/locales/zh.json"
     # Fixtures
     - "!regression/fixtures/**"
 
@@ -55,6 +76,24 @@ reviews:
         is multi-user, so one user must not be able to read or change another's data), unvalidated
         input, path traversal in anything that touches files under storage, and unhandled promise
         rejections. Watch for N+1 queries and unbounded result sets.
+
+    - path: "backend/src/{files,modelFiles,intake,import,providers}/**"
+      instructions: |
+        How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. Flag a
+        change that breaks a rule docs/STORAGE_DEVELOPMENT.md lists under "Rules in force". Don't flag code for a rule
+        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests.
+
+    - path: "backend/src/services/{print*,import*,upload*,consume*,zip*,download*,modelFiles*,missingFiles*,storage*}.ts"
+      instructions: |
+        How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. Flag a
+        change that breaks a rule docs/STORAGE_DEVELOPMENT.md lists under "Rules in force". Don't flag code for a rule
+        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests.
+
+    - path: "backend/src/routes/{plates,printFiles,prints,upload,import}*.ts"
+      instructions: |
+        How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. Flag a
+        change that breaks a rule docs/STORAGE_DEVELOPMENT.md lists under "Rules in force". Don't flag code for a rule
+        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests.
 
     - path: "backend/prisma/**"
       instructions: |
@@ -107,5 +146,13 @@ reviews:
         Docs are also published to the GitHub wiki and the website. Check that commands, paths and
         behaviour described still match the code, and that relative links resolve.
 
+# Rules reviews read alongside the code: storage's rules in force, and the repo's own instructions.
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - "docs/STORAGE_DEVELOPMENT.md"
+      - ".claude/CLAUDE.md"
+
 chat:
-  auto_reply: true
+  # Replies in a review thread don't start an answer: the next review checks each fix instead.
+  auto_reply: false

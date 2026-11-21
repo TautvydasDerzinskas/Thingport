@@ -11,9 +11,9 @@ A model is more than its STL. Thingport keeps everything you need to print it in
 - **The script it was generated from:** where a model was published with its OpenSCAD source, that comes in too,
   so the model can be generated again rather than only printed as its creator set it up.
 
-Add supporting files or a prepared print from the model page. When you
-[upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and its manuals
-and notes are attached automatically.
+Supporting files come with the model: when you [upload a folder](../guides/upload-folders.md) with one model per
+folder, its images become photos and its manuals and notes are attached automatically. A list of them on the model
+page, and adding them to a model you already have, are on the way.
 
 ## Models you can generate again
 

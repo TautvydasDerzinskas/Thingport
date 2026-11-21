@@ -16,6 +16,14 @@ Read [CONTRIBUTING.md](../CONTRIBUTING.md) for the workflow, commit style and co
 Before adding or changing a provider (a model site Thingport imports from), read
 [docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md) and follow its checklist.
 
+## Model files and storage
+
+Before changing how a model's files are stored, moved, imported or deleted (plates, supporting files, the prepared
+print, pictures; uploads, imports, the consume folder, copies, repairs), read
+[docs/STORAGE_DEVELOPMENT.md](../docs/STORAGE_DEVELOPMENT.md). Its "Rules in force" are what that code follows: a pull
+request that puts a new rule in force adds it there, with the test that pins it, and reviews check code against that
+list only.
+
 ## Studio
 
 Studio (`/studio`) is a CAD page that an AI must be able to drive completely. **Every change a
