@@ -79,13 +79,29 @@ export async function readNotes({ shared, storage }, { model, preview } = {}) {
     .sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")));
 }
 
-/** Keeps a note where its visibility says, under its key: a retry overwrites rather than adding a second one. */
-export async function saveNote({ shared, storage }, note, value, modelId) {
+/**
+ * Keeps a note where its visibility says, under its key: a retry overwrites rather than adding a second one. Returns
+ * the key it's kept under.
+ */
+export async function saveNote({ shared, storage }, note, value, modelId, previewKey) {
   const contents = { x: value.x, y: value.y, text: value.text, look: value.look, color: value.color };
-  if (note.public) await shared.set(note.key, contents, { model: note.modelId ?? modelId });
-  else {
+  if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
+    return note.key;
+  }
+  // A public note stays tied to the model its key names, which is how copies of that model find it.
+  const written = note.modelId ?? modelId;
+  try {
+    await shared.set(note.key, contents, { model: written });
+    return note.key;
+  } catch (error) {
+    // Edited on another copy after its writer lost the model it was on: it moves to this copy, under a key naming it.
+    if (written === modelId || !previewKey) throw error;
+    const key = newNoteKey(modelId, previewKey);
+    await shared.set(key, contents, { model: modelId });
+    await shared.remove(note.key).catch(() => undefined);
+    return key;
   }
 }
 
@@ -627,14 +643,33 @@ export function modelImage(thingport) {
   let reading = null;
   let editing = null;
   let confirming = false;
+  // The pointer dragging the note being edited, if one is.
+  let dragging = null;
   const visibility = (isPublic) => t(isPublic ? "visibility.public" : "visibility.personal");
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
 
+  // The saved settings, read once. A change made before they arrive wins over them, and is written after them, so
+  // it neither gets undone nor writes the defaults over the saved look and colour.
+  const early = {};
+  let viewRead = false;
+  const viewReady = readView(storage).then((stored) => {
+    viewRead = true;
+    if (!alive) return;
+    view = { ...stored, ...early };
+    render();
+  });
+
   function setView(change) {
     view = { ...view, ...change };
+    if (!viewRead) Object.assign(early, change);
     render();
-    writeView(storage, view).catch(() => undefined);
+    viewReady
+      .then(() => writeView(storage, view))
+      .catch(() => {
+        // The switch keeps what was chosen here; the next picture would show the saved choice, so say so.
+        if (alive && "hidden" in change) ui.toast(t("menu.showFailed"), "error");
+      });
   }
 
   function renderButton() {
@@ -650,7 +685,7 @@ export function modelImage(thingport) {
       {
         icon: "add",
         label: t("menu.add"),
-        action: (gone) => startEdit(null, gone),
+        action: (gone) => viewReady.then(() => startEdit(null, gone)),
         disabled: !layer || Boolean(editing),
         title: layer ? undefined : t("menu.noPicture"),
       },
@@ -884,6 +919,8 @@ export function modelImage(thingport) {
       saving: false,
     };
     parts.field.value = value.text;
+    dragging = null;
+    pins.inert = true;
     layer.classList.add("tpn-editing");
     layer.append(parts.editor);
     renderPins();
@@ -1100,15 +1137,21 @@ export function modelImage(thingport) {
     Object.assign(e.toolbar.style, { left: left + "px", top: top + "px" });
   }
 
-  function moveTo(fx, fy) {
-    const e = editing;
-    const { width, height } = size();
-    if (!e || !width) return;
+  /** The spot as the editor draws it, in pixels: a note saved at an edge is drawn whole, a little way in. */
+  function shownSpot(e, width, height) {
     const box =
       e.look === "sticky"
         ? { width: e.surface.offsetWidth, height: e.surface.offsetHeight }
         : { width: e.pin.offsetWidth, height: e.pin.offsetWidth };
     const range = spotRange(e.look, width, height, box);
+    return { x: clamp(e.x * width, ...range.x), y: clamp(e.y * height, ...range.y), range };
+  }
+
+  function moveTo(fx, fy) {
+    const e = editing;
+    const { width, height } = size();
+    if (!e || !width) return;
+    const { range } = shownSpot(e, width, height);
     e.x = clamp(clamp(fx * width, ...range.x) / width, 0, 1);
     e.y = clamp(clamp(fy * height, ...range.y) / height, 0, 1);
     e.hint.classList.add("tpn-gone");
@@ -1118,28 +1161,33 @@ export function modelImage(thingport) {
   function dragFrom(handle) {
     handle.addEventListener("pointerdown", (event) => {
       const e = editing;
-      if (!e || e.saving || event.button !== 0 || event.target.closest("textarea")) return;
+      if (!e || e.saving || dragging !== null || event.button !== 0 || event.target.closest("textarea")) return;
       // The grip is inside the note: one drag, not two.
       event.preventDefault();
       event.stopPropagation();
+      const pointer = event.pointerId;
+      dragging = pointer;
       const box = layer.getBoundingClientRect();
-      const offset = { x: event.clientX - box.left - e.x * box.width, y: event.clientY - box.top - e.y * box.height };
-      handle.setPointerCapture(event.pointerId);
+      const shown = shownSpot(e, box.width, box.height);
+      const offset = { x: event.clientX - box.left - shown.x, y: event.clientY - box.top - shown.y };
+      handle.setPointerCapture(pointer);
       layer.classList.add("tpn-dragging");
+      // Only the pointer that started it moves the note or ends the drag; a second finger does neither.
       const move = (next) => {
+        if (next.pointerId !== pointer) return;
         const now = layer.getBoundingClientRect();
         moveTo((next.clientX - now.left - offset.x) / now.width, (next.clientY - now.top - offset.y) / now.height);
       };
-      const end = () => {
+      const end = (last) => {
+        if (last.pointerId !== pointer) return;
+        for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) handle.removeEventListener(type, end);
         handle.removeEventListener("pointermove", move);
-        handle.removeEventListener("pointerup", end);
-        handle.removeEventListener("pointercancel", end);
+        if (dragging === pointer) dragging = null;
         layer.classList.remove("tpn-dragging");
-        if (handle !== e.grip) e.field.focus({ preventScroll: true });
+        if (editing === e && handle !== e.grip) e.field.focus({ preventScroll: true });
       };
       handle.addEventListener("pointermove", move);
-      handle.addEventListener("pointerup", end);
-      handle.addEventListener("pointercancel", end);
+      for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) handle.addEventListener(type, end);
     });
   }
 
@@ -1166,6 +1214,8 @@ export function modelImage(thingport) {
     const e = editing;
     editing = null;
     e.editor.remove();
+    dragging = null;
+    pins.inert = false;
     layer.classList.remove("tpn-editing");
     renderPins();
     const target = focusNote && [...pins.children].find((element) => element.dataset.id === noteId(focusNote));
@@ -1180,14 +1230,18 @@ export function modelImage(thingport) {
     applyEditor();
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
     try {
-      await saveNote(thingport, { key: e.key, public: e.isPublic, modelId: e.note?.modelId }, value, modelId);
+      const draft = { key: e.key, public: e.isPublic, modelId: e.note?.modelId };
+      const key = await saveNote(thingport, draft, value, modelId, preview.key);
       if (!alive || editing !== e) return;
+      const moved = key !== e.key;
       const saved = {
         ...(e.note ?? { key: e.key, mine: true, modelId, ...(e.isPublic ? { public: true, user } : {}) }),
+        ...(moved ? { key, modelId } : {}),
         value: noteValue(value),
         updatedAt: new Date().toISOString(),
       };
-      notes = [saved, ...notes.filter((note) => noteId(note) !== noteId(saved))];
+      const replaced = [noteId(saved), ...(e.note ? [noteId(e.note)] : [])];
+      notes = [saved, ...notes.filter((note) => !replaced.includes(noteId(note)))];
       if (e.look !== view.look || e.color !== view.color) setView({ look: e.look, color: e.color });
       endEdit(saved);
     } catch {
@@ -1236,11 +1290,6 @@ export function modelImage(thingport) {
   document.addEventListener("pointerdown", onPointerDown, true);
   const stop = onNotesChange(thingport, load);
   renderButton();
-  readView(storage).then((stored) => {
-    if (!alive) return;
-    view = stored;
-    render();
-  });
   void load();
   return () => {
     alive = false;

@@ -17,6 +17,7 @@
   "menu.noPicture": "Pastabos dedamos ant modelio paveikslėlių",
   "menu.open": "Atverti pastabas",
   "menu.show": "Rodyti pastabas",
+  "menu.showFailed": "Nepavyko išsaugoti, ar rodyti pastabas. Bandykite dar kartą.",
   "visibility.personal": "Tik aš",
   "visibility.public": "Visi",
   "note.you": "Jūs",

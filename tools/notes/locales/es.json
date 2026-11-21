@@ -17,6 +17,7 @@
   "menu.noPicture": "Las notas van en las imágenes del modelo",
   "menu.open": "Abrir notas",
   "menu.show": "Mostrar notas",
+  "menu.showFailed": "No se pudo guardar si se muestran las notas. Inténtalo de nuevo.",
   "visibility.personal": "Solo yo",
   "visibility.public": "Todos",
   "note.you": "Tú",

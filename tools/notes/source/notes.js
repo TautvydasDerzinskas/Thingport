@@ -75,13 +75,29 @@ export async function readNotes({ shared, storage }, { model, preview } = {}) {
     .sort((a, b) => String(b.updatedAt ?? "").localeCompare(String(a.updatedAt ?? "")));
 }
 
-/** Keeps a note where its visibility says, under its key: a retry overwrites rather than adding a second one. */
-export async function saveNote({ shared, storage }, note, value, modelId) {
+/**
+ * Keeps a note where its visibility says, under its key: a retry overwrites rather than adding a second one. Returns
+ * the key it's kept under.
+ */
+export async function saveNote({ shared, storage }, note, value, modelId, previewKey) {
   const contents = { x: value.x, y: value.y, text: value.text, look: value.look, color: value.color };
-  if (note.public) await shared.set(note.key, contents, { model: note.modelId ?? modelId });
-  else {
+  if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
+    return note.key;
+  }
+  // A public note stays tied to the model its key names, which is how copies of that model find it.
+  const written = note.modelId ?? modelId;
+  try {
+    await shared.set(note.key, contents, { model: written });
+    return note.key;
+  } catch (error) {
+    // Edited on another copy after its writer lost the model it was on: it moves to this copy, under a key naming it.
+    if (written === modelId || !previewKey) throw error;
+    const key = newNoteKey(modelId, previewKey);
+    await shared.set(key, contents, { model: modelId });
+    await shared.remove(note.key).catch(() => undefined);
+    return key;
   }
 }
 

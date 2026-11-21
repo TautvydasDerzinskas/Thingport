@@ -17,6 +17,7 @@
   "menu.noPicture": "便签只能贴在模型图片上",
   "menu.open": "打开便签",
   "menu.show": "显示便签",
+  "menu.showFailed": "无法保存是否显示便签的设置，请重试。",
   "visibility.personal": "仅自己",
   "visibility.public": "所有人",
   "note.you": "你",

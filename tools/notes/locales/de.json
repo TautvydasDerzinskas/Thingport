@@ -17,6 +17,7 @@
   "menu.noPicture": "Notizen kommen auf die Bilder des Modells",
   "menu.open": "Notizen öffnen",
   "menu.show": "Notizen anzeigen",
+  "menu.showFailed": "Konnte nicht speichern, ob Notizen angezeigt werden. Versuch es noch einmal.",
   "visibility.personal": "Nur ich",
   "visibility.public": "Alle",
   "note.you": "Du",

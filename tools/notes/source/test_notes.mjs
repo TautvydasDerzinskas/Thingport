@@ -26,12 +26,17 @@ function fakeStorage(entries = {}) {
   };
 }
 
-function fakeShared(entries = []) {
+function fakeShared(entries = [], { readable } = {}) {
   const calls = [];
   return {
     calls,
     list: async (options) => (calls.push(options), entries),
-    set: async (key, value, options) => void calls.push({ set: key, value, options }),
+    set: async (key, value, options) => {
+      calls.push({ set: key, value, options });
+      // As the server does for a model the writer can't open.
+      if (readable && options?.model && !readable.includes(options.model)) throw new Error("No such model");
+    },
+    remove: async (key) => void calls.push({ remove: key }),
   };
 }
 
@@ -144,6 +149,31 @@ test("a note is kept where its visibility says, with its look and colour", async
     value: { x: 0.3, y: 0.6, text: "Hello", look: "sticky", color: "green" },
     options: { model: "m1" },
   });
+});
+
+test("a public note edited on another copy stays tied to the model its key names", async () => {
+  const shared = fakeShared([], { readable: ["m1", "m2"] });
+  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
+  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
+  assert.equal(await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b"), note.key);
+  assert.deepEqual(shared.calls, [{ set: note.key, value, options: { model: "m1" } }]);
+});
+
+test("a public note whose writer can't open its model any more moves to the copy it's edited on", async () => {
+  const shared = fakeShared([], { readable: ["m2"] });
+  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
+  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
+  const key = await saveNote({ storage: fakeStorage(), shared }, note, value, "m2", "image:b");
+  assert.match(key, /^note:m2:image:b:/);
+  assert.deepEqual(shared.calls.slice(1), [{ set: key, value, options: { model: "m2" } }, { remove: note.key }]);
+});
+
+test("a public note that can't be saved on the model it's edited on isn't moved", async () => {
+  const shared = fakeShared([], { readable: [] });
+  const note = { key: "note:m1:image:a:1", public: true, modelId: "m1" };
+  const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
+  await assert.rejects(saveNote({ storage: fakeStorage(), shared }, note, value, "m1", "image:a"), /No such model/);
+  assert.equal(shared.calls.length, 1);
 });
 
 test("the view starts with notes shown and a yellow sticky, and keeps what was saved", async () => {

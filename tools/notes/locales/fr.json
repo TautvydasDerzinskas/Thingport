@@ -17,6 +17,7 @@
   "menu.noPicture": "Les notes se placent sur les images du modèle",
   "menu.open": "Ouvrir les notes",
   "menu.show": "Afficher les notes",
+  "menu.showFailed": "Impossible d’enregistrer l’affichage des notes. Réessayez.",
   "visibility.personal": "Moi uniquement",
   "visibility.public": "Tout le monde",
   "note.you": "Vous",

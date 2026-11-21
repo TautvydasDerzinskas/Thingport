@@ -17,6 +17,7 @@
   "menu.noPicture": "Notes go on the model's pictures",
   "menu.open": "Open Notes",
   "menu.show": "Show notes",
+  "menu.showFailed": "Couldn't save whether notes are shown. Try again.",
   "visibility.personal": "Only me",
   "visibility.public": "Everyone",
   "note.you": "You",

@@ -17,6 +17,7 @@
   "menu.noPicture": "Нотатки додаються на зображення моделі",
   "menu.open": "Відкрити нотатки",
   "menu.show": "Показувати нотатки",
+  "menu.showFailed": "Не вдалося зберегти, чи показувати нотатки. Спробуйте ще раз.",
   "visibility.personal": "Лише я",
   "visibility.public": "Усі",
   "note.you": "Ви",
