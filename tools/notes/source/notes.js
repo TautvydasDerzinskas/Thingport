@@ -81,13 +81,15 @@ export class NoteGone extends Error {}
 /**
  * Thrown by `saveNote` for an edit whose changed fields were also changed somewhere else since it was opened. `stored`
  * is the note as it is now, for the editor to start from, and `key` where it's kept: a moved note's new key once its
- * move turned out done. Saving again replaces those changes.
+ * move turned out done, with `leftover` saying whether its old copy is still shared. Saving again replaces those
+ * changes.
  */
 export class NoteChanged extends Error {
-  constructor(stored, key) {
+  constructor(stored, key, leftover = false) {
     super("The note changed somewhere else");
     this.stored = stored;
     this.key = key;
+    this.leftover = leftover;
   }
 }
 
@@ -117,6 +119,13 @@ export const rebaseEdit = (edit, original, stored, tried = []) => {
 };
 
 /**
+ * What an edit's earlier saves sent, for a draft of it coming back onto the note as stored now, which becomes its
+ * original: the fields it changed (`fields`) keep what was sent, and the rest take the stored values, so a later change
+ * made somewhere else back to the old value isn't taken for one of the edit's own writes.
+ */
+export const restoredTried = (tried, stored, fields) => tried.map((sent) => ({ ...stored, ...pick(sent, fields) }));
+
+/**
  * Keeps a note where its visibility says, under its key, so a retry overwrites rather than adding a second one.
  * An edit (`existing`, with the `original` it was opened from) is written onto the note as stored now: a field changed
  * somewhere else, as in another tab, stays when the edit never changed it, and is a `NoteChanged` when it did. It
@@ -126,8 +135,9 @@ export const rebaseEdit = (edit, original, stored, tried = []) => {
  * and taken as an edit of the first; one not found is written afresh. `onSend` is called as this save starts writing,
  * when its value joins those.
  * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
- * pass the same one to a retry of the move. A move whose new copy turns out written is finished there. Returns the key
- * it's kept under, the value written, and whether an older copy was left.
+ * pass the same one to a retry of the move. A move whose new copy turns out written is finished there, and its old copy
+ * removed only if it's as this editor left it: one changed since, or that can't be read, is left. Returns the key it's
+ * kept under, the value written, and whether an older copy was left.
  */
 export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
@@ -144,14 +154,17 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     const theirs = FIELDS.filter((field) => ![original, value, ...tried].some((sent) => sent[field] === stored[field]));
     const touched = touchedFields(value, original, tried);
     if (theirs.some((field) => touched.includes(field))) {
-      // The move itself is done: the old copy goes either way.
-      if (moved) await shared.remove(note.key).catch(() => undefined);
-      throw new NoteChanged(stored, moved ? moveKey : note.key);
+      // The move itself is done, so its old copy goes as it would have.
+      if (moved) throw new NoteChanged(stored, moveKey, await dropOldCopy(thingport, note, tried));
+      throw new NoteChanged(stored, note.key);
     }
     contents = { ...contents, ...pick(stored, theirs) };
   }
   note.onSend?.();
-  if (moved) return finishMove(shared, note.key, moveKey, contents, modelId);
+  if (moved) {
+    await shared.set(moveKey, contents, { model: modelId });
+    return { key: moveKey, value: contents, leftover: await dropOldCopy(thingport, note, tried) };
+  }
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
@@ -168,18 +181,30 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     // model's licence answers that the way the write does, without counting as a visit to the model.
     const res = await api("/print/" + encodeURIComponent(written) + "/license").catch(() => null);
     if (!res || ![403, 404].includes(res.status)) throw error;
-    return finishMove(shared, note.key, moveKey, contents, modelId);
+    // The new copy is written first, so a failure along the way leaves two copies rather than none.
+    await shared.set(moveKey, contents, { model: modelId });
+    const leftover = await shared.remove(note.key).then(
+      () => false,
+      () => true,
+    );
+    return { key: moveKey, value: contents, leftover };
   }
 }
 
-async function finishMove(shared, from, to, contents, modelId) {
-  // The new copy is written first, so a failure along the way leaves two copies rather than none.
-  await shared.set(to, contents, { model: modelId });
-  const leftover = await shared.remove(from).then(
+/**
+ * Removes the old copy of a note whose move turned out done on a retry, but only as this editor left it: saved to
+ * since, as once its model can be opened again, or unreadable, it stays. Says whether a copy is left.
+ */
+async function dropOldCopy(thingport, note, tried) {
+  const old = await storedNote(thingport, note).catch(() => undefined);
+  if (old === null) return false;
+  const untouched =
+    old && FIELDS.every((field) => [note.original, ...tried].some((sent) => sent[field] === old[field]));
+  if (!untouched) return true;
+  return thingport.shared.remove(note.key).then(
     () => false,
     () => true,
   );
-  return { key: to, value: contents, leftover };
 }
 
 const pick = (value, fields) => Object.fromEntries(fields.map((field) => [field, value[field]]));

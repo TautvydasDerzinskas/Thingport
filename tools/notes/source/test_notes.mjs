@@ -22,6 +22,7 @@ import {
   readNotes,
   readView,
   rebaseEdit,
+  restoredTried,
   saveNote,
   storedNote,
 } from "./notes.js";
@@ -420,8 +421,40 @@ test("a retried move whose new copy was written, its answer lost, is finished th
   assert.deepEqual(shared.calls, [
     { prefix: to },
     { set: to, value: { ...edited, color: "pink" }, options: { model: "m2" } },
+    // The old copy is read first, and goes as the editor left it.
+    { prefix: from },
     { remove: from },
   ]);
+});
+
+test("a retried move leaves an old copy saved to since, or unreadable, and says so", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:9";
+  const original = { ...value, text: "Old" };
+  const edited = { ...original, text: "Moved" };
+  const note = { key: from, public: true, modelId: "m1", existing: true, original, tried: [edited] };
+  const api = fakeApi(["m1"]);
+  // Saved to since the move, as once its model can be opened again.
+  const changed = fakeShared([
+    { key: from, value: { ...original, color: "pink" }, mine: true },
+    { key: to, value: edited, mine: true },
+  ]);
+  assert.equal(
+    (await saveNote({ storage: fakeStorage(), shared: changed, api }, note, edited, "m2", to)).leftover,
+    true,
+  );
+  assert.ok(!changed.calls.some((call) => call.remove));
+  const unreadable = fakeShared([{ key: to, value: edited, mine: true }]);
+  const list = unreadable.list;
+  unreadable.list = async (options) => (options.prefix === from ? Promise.reject(new Error("offline")) : list(options));
+  assert.equal(
+    (await saveNote({ storage: fakeStorage(), shared: unreadable, api }, note, edited, "m2", to)).leftover,
+    true,
+  );
+  assert.ok(!unreadable.calls.some((call) => call.remove));
+  // Already gone: nothing is left.
+  const gone = fakeShared([{ key: to, value: edited, mine: true }]);
+  assert.equal((await saveNote({ storage: fakeStorage(), shared: gone, api }, note, edited, "m2", to)).leftover, false);
 });
 
 test("a retried move that meets a change to its new copy says so from there, and the old copy goes", async () => {
@@ -442,8 +475,37 @@ test("a retried move that meets a change to its new copy says so from there, and
   assert.ok(conflict instanceof NoteChanged);
   assert.equal(conflict.key, to);
   assert.equal(conflict.stored.color, "pink");
+  assert.equal(conflict.leftover, false);
   assert.ok(!shared.calls.some((call) => call.set));
   assert.ok(shared.calls.some((call) => call.remove === from));
+  // An old copy that can't be removed is reported with the conflict.
+  const stuck = fakeShared(
+    [
+      { key: from, value: original, mine: true },
+      { key: to, value: { ...original, color: "pink" }, mine: true },
+    ],
+    { stuck: true },
+  );
+  const stuckConflict = await saveNote({ ...thingport, shared: stuck }, note, blue, "m2", to).catch((error) => error);
+  assert.ok(stuckConflict instanceof NoteChanged);
+  assert.equal(stuckConflict.leftover, true);
+});
+
+test("a draft coming back onto a note changed since keeps its earlier saves to the fields it changed", async () => {
+  const key = "note:m1:image:a:1";
+  // A yellow note that was A: B saved with its answer lost, then the edit went back to A and the picture changed.
+  const base = { ...value, text: "A", color: "yellow" };
+  const tried = [{ ...base, text: "B" }];
+  const changes = { text: "A" };
+  // Meanwhile another tab made it pink, and the draft comes back onto that.
+  const latest = { ...base, text: "B", color: "pink" };
+  const restored = restoredTried(tried, latest, Object.keys(changes));
+  assert.deepEqual(restored, [{ ...latest, text: "B" }]);
+  // Then the other tab puts yellow back before the restored edit is saved: its yellow isn't taken for the edit's.
+  const storage = fakeStorage({ [key]: { ...base, text: "B" } });
+  const note = { key, public: false, existing: true, original: latest, tried: restored };
+  await saveNote({ storage, shared: fakeShared() }, note, { ...latest, ...changes }, "m1");
+  assert.deepEqual([storage.data.get(key).text, storage.data.get(key).color], ["A", "yellow"]);
 });
 
 test("a retried move whose new copy wasn't written moves as before", async () => {

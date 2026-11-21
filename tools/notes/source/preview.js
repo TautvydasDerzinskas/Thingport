@@ -13,6 +13,7 @@ import {
   readNotes,
   readView,
   rebaseEdit,
+  restoredTried,
   saveNote,
   storedNote,
   writeView,
@@ -626,6 +627,9 @@ export function modelImage(thingport) {
   const readyDraft = (skip) =>
     [...(drafts.get(draftKey)?.values() ?? [])].find((kept) => !kept.saving && !skip?.has(kept));
   const stillKept = (draft) => drafts.get(draftKey)?.get(draft.token) === draft && !draft.saving;
+  // The new copy a move this edit sent may have written with its answer lost, which then stands in for the old one.
+  const movedCopy = (e) => (e.tried.length && e.moveKey && e.moveKey !== e.key ? e.moveKey : null);
+  const ownPublic = (key) => notes.find((candidate) => candidate.mine && candidate.public && candidate.key === key);
 
   async function restoreDraft() {
     // Past any whose note has been deleted since, or can't be checked now, to the first that can open: each once.
@@ -635,13 +639,22 @@ export function modelImage(thingport) {
       const draft = !editing && readyDraft(seen);
       if (!draft) return;
       seen.add(draft);
-      let note = draft.note && notes.find((candidate) => noteId(candidate) === noteId(draft.note));
+      const moveTo = movedCopy(draft);
+      let note =
+        draft.note &&
+        (notes.find((candidate) => noteId(candidate) === noteId(draft.note)) ?? (moveTo && ownPublic(moveTo)));
       if (draft.note && !note) {
         // Not among this picture's notes isn't deleted: one from another copy shows only while the pictures can be
-        // compared. Where it's kept says which; one still there comes back as it's stored.
+        // compared. Where it's kept says which, or its move's new copy for one gone; one still there comes back as
+        // it's stored.
         let stored;
+        let key = draft.note.key;
         try {
           stored = await storedNote(thingport, draft.note);
+          if (!stored && moveTo) {
+            key = moveTo;
+            stored = await storedNote(thingport, { public: true, key });
+          }
         } catch {
           // Can't tell: this draft waits for the next load, said once however many fail.
           if (!alive) return;
@@ -655,18 +668,20 @@ export function modelImage(thingport) {
           ui.toast(t("editor.deleted"), "warning");
           continue;
         }
-        note = { ...draft.note, value: stored };
+        note = { ...draft.note, ...(key === draft.note.key ? {} : { key, modelId }), value: stored };
       }
       dropDraft(draft);
       const latest = note?.value ?? draft.base;
+      const movedOn = Boolean(note) && note.key !== draft.key;
       startEdit(note ?? null, null, {
         ...latest,
         ...draft.changes,
-        key: draft.key,
+        key: note?.key ?? draft.key,
         isPublic: draft.isPublic,
-        tried: draft.tried,
+        // Measured against the note as it comes back, which the edit now starts from.
+        tried: note ? restoredTried(draft.tried, latest, Object.keys(draft.changes)) : draft.tried,
         chosen: draft.chosen,
-        moveKey: draft.moveKey,
+        moveKey: movedOn ? null : draft.moveKey,
         // What a new note started as, which its changes are measured against.
         base: note ? undefined : draft.base,
       });
@@ -1162,6 +1177,8 @@ export function modelImage(thingport) {
           e.key = error.key;
           e.moveKey = null;
         }
+        // Said first, so the conflict stays up longer.
+        if (error.leftover) ui.toast(t("editor.oldCopy"), "warning");
         ui.toast(t("editor.conflict"), "warning");
         // The picture shows the note as it's stored, and a new one its lost answer never drew.
         if (alive) void load();
@@ -1216,10 +1233,15 @@ export function modelImage(thingport) {
 
   // An edit of a note deleted on this page, as in the Notes window, ends and says so. One deleted in another tab isn't
   // heard here: saving it then finds it gone instead of writing it back. Missing from the picture's notes isn't enough:
-  // one from another copy shows only while the pictures can be compared, so where it's kept has the last word.
+  // one from another copy shows only while the pictures can be compared, so where it's kept has the last word. Nor is
+  // one whose move's new copy is there: saving finishes the move.
   async function endIfGone(e) {
     if (!e?.note || e.saving || notes.some((note) => noteId(note) === noteId(e.note))) return;
-    const stored = await storedNote(thingport, e.note).catch(() => undefined);
+    const moveTo = movedCopy(e);
+    if (moveTo && ownPublic(moveTo)) return;
+    const kept = (key) => storedNote(thingport, { ...e.note, key }).catch(() => undefined);
+    let stored = await kept(e.note.key);
+    if (stored === null && moveTo) stored = await kept(moveTo);
     if (stored !== null || !alive || editing !== e || e.saving) return;
     dropDraft(e);
     endEdit(null);
