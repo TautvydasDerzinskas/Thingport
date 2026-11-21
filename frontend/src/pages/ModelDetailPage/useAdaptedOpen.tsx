@@ -44,11 +44,20 @@ export function useAdaptedOpen(
   const [states, setStates] = useState<Record<string, AdaptState>>({});
   // The copy picked for a target that asks, kept while it's made, so the second click opens it without asking again.
   const [picked, setPicked] = useState<Record<string, AdaptedTarget>>({});
-  const [asking, setAsking] = useState<{
+  const [asked, setAsking] = useState<{
+    /** The model it was asked for: the page header keeps this hook while another model loads. */
+    printId: string;
     target: AdaptedTarget;
     action: "open" | "download";
     resolve: (done: boolean) => void;
   } | null>(null);
+  // Never answered for another model: its plate with this one's id would be a copy of neither.
+  const asking = asked?.printId === printId ? asked : null;
+  useEffect(() => {
+    if (!asked || asked.printId === printId) return;
+    asked.resolve(false);
+    setAsking(null);
+  }, [asked, printId]);
   const [downloading, setDownloading] = useState(false);
   // Set on every mount: StrictMode unmounts and remounts once in development.
   const mounted = useRef(false);
@@ -189,22 +198,23 @@ export function useAdaptedOpen(
   const download = useCallback(
     async (target: AdaptedTarget): Promise<boolean> => {
       const now = current(target);
-      if (now.ask) return new Promise<boolean>((resolve) => setAsking({ target, action: "download", resolve }));
+      if (now.ask)
+        return new Promise<boolean>((resolve) => setAsking({ printId, target, action: "download", resolve }));
       return downloadNow(now, printerOf(target)?.printer.model ?? null);
     },
-    [current, downloadNow, printerOf],
+    [current, downloadNow, printerOf, printId],
   );
 
   /** Resolves true when the slicer was launched, so a menu can close. */
   const open = useCallback(
     async (target: AdaptedTarget): Promise<boolean> => {
       const now = current(target);
-      if (now.ask) return new Promise<boolean>((resolve) => setAsking({ target, action: "open", resolve }));
+      if (now.ask) return new Promise<boolean>((resolve) => setAsking({ printId, target, action: "open", resolve }));
       const launched = await openNow(now);
       if (launched && target.ask) forget(pickKey(target));
       return launched;
     },
-    [current, openNow, forget, pickKey],
+    [current, openNow, forget, pickKey, printId],
   );
 
   const choose = async (printer: UserPrinter, remember: boolean) => {
