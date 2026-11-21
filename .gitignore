@@ -32,7 +32,6 @@ backend/storage/
 
 # IDE, operating-system, and temporary files
 .idea/
-.vscode/
 .DS_Store
 Thumbs.db
 *.swp

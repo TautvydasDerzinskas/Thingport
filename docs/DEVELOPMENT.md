@@ -88,6 +88,9 @@ npm --prefix backend run dev  # tsx watch  -> http://localhost:8000
 npm --prefix frontend run dev # vite --host -> http://localhost:5173
 ```
 
+In VS Code, **Run and Debug** starts both as **Backend + Frontend**, with the debugger attached to the backend.
+**Web app in Chrome (debugger)** adds breakpoints in the web app ([`.vscode/launch.json`](../.vscode/launch.json)).
+
 Open <http://localhost:5173>. **The first account you register becomes the admin** -- see
 `backend/src/routes/auth.ts`, which bootstraps the first user as `ADMIN` and everyone after as
 `MEMBER`.
