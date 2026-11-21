@@ -84,12 +84,14 @@ export class NoteGone extends Error {}
 
 /**
  * Thrown by `saveNote` for an edit whose changed fields were also changed somewhere else since it was opened. `stored`
- * is the note as it is now, for the editor to start from; saving again replaces those changes.
+ * is the note as it is now, for the editor to start from, and `key` where it's kept: a moved note's new key once its
+ * move turned out done. Saving again replaces those changes.
  */
 export class NoteChanged extends Error {
-  constructor(stored) {
+  constructor(stored, key) {
     super("The note changed somewhere else");
     this.stored = stored;
+    this.key = key;
   }
 }
 
@@ -125,25 +127,35 @@ export const rebaseEdit = (edit, original, stored, tried = []) => {
  * throws `NoteGone` for a note deleted meanwhile.
  * `tried` lists what the editor's earlier saves sent, each of which may have gone through with its answer lost: a
  * stored value one of them sent isn't a change made somewhere else. A new note with any is looked for under its key
- * and taken as an edit of the first; one not found is written afresh.
+ * and taken as an edit of the first; one not found is written afresh. `onSend` is called as this save starts writing,
+ * when its value joins those.
  * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
- * pass the same one to a retry of the move. Returns the key it's kept under, the value written, and whether an older
- * copy was left.
+ * pass the same one to a retry of the move. A move whose new copy turns out written is finished there. Returns the key
+ * it's kept under, the value written, and whether an older copy was left.
  */
 export async function saveNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
   const tried = note.tried ?? [];
+  // A move sent before may have written the new copy with its answer lost: then that copy is the note now.
+  const movable = note.public && note.existing && moveKey && moveKey !== note.key;
+  const moved = movable && tried.length ? await storedNote(thingport, { public: true, key: moveKey }) : null;
   let contents = pick(value, FIELDS);
-  const stored = note.existing || tried.length ? await storedNote(thingport, note) : null;
+  const stored = moved ?? (note.existing || tried.length ? await storedNote(thingport, note) : null);
   if (note.existing && !stored) throw new NoteGone();
   if (stored) {
     const original = note.existing ? note.original : tried[0];
     // Changed somewhere else: neither what it was, nor what this editor sent, nor already as this edit asks.
     const theirs = FIELDS.filter((field) => ![original, value, ...tried].some((sent) => sent[field] === stored[field]));
     const touched = touchedFields(value, original, tried);
-    if (theirs.some((field) => touched.includes(field))) throw new NoteChanged(stored);
+    if (theirs.some((field) => touched.includes(field))) {
+      // The move itself is done: the old copy goes either way.
+      if (moved) await shared.remove(note.key).catch(() => undefined);
+      throw new NoteChanged(stored, moved ? moveKey : note.key);
+    }
     contents = { ...contents, ...pick(stored, theirs) };
   }
+  note.onSend?.();
+  if (moved) return finishMove(shared, note.key, moveKey, contents, modelId);
   if (!note.public) {
     await storage.set(note.key, { ...contents, updatedAt: new Date().toISOString() });
     personalChanges.dispatchEvent(new Event("change"));
@@ -160,14 +172,18 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     // model's licence answers that the way the write does, without counting as a visit to the model.
     const res = await api("/print/" + encodeURIComponent(written) + "/license").catch(() => null);
     if (!res || ![403, 404].includes(res.status)) throw error;
-    // The new copy is written first, so a failure along the way leaves two copies rather than none.
-    await shared.set(moveKey, contents, { model: modelId });
-    const leftover = await shared.remove(note.key).then(
-      () => false,
-      () => true,
-    );
-    return { key: moveKey, value: contents, leftover };
+    return finishMove(shared, note.key, moveKey, contents, modelId);
   }
+}
+
+async function finishMove(shared, from, to, contents, modelId) {
+  // The new copy is written first, so a failure along the way leaves two copies rather than none.
+  await shared.set(to, contents, { model: modelId });
+  const leftover = await shared.remove(from).then(
+    () => false,
+    () => true,
+  );
+  return { key: to, value: contents, leftover };
 }
 
 const pick = (value, fields) => Object.fromEntries(fields.map((field) => [field, value[field]]));
@@ -1068,10 +1084,12 @@ export function modelImage(thingport) {
   const EDITABLE = ["text", "look", "color", "x", "y"];
   const changedFields = (e) => EDITABLE.filter((field) => e[field] !== e.original[field]);
 
-  // An edit kept for the picture: what it started from and only the fields changed, so coming back applies those to
-  // the note as it is then, rather than writing back fields someone else has changed since.
+  // An edit kept for the picture: what it started from and only the fields it changed, now or in a save whose answer
+  // was lost, so coming back applies those to the note as it is then, rather than writing back fields someone else has
+  // changed since. One put back after such a save still comes back as the edit has it.
   function keepDraft(e, saving) {
-    const changes = Object.fromEntries(changedFields(e).map((field) => [field, e[field]]));
+    const fields = EDITABLE.filter((field) => [e, ...e.tried].some((sent) => sent[field] !== e.original[field]));
+    const changes = Object.fromEntries(fields.map((field) => [field, e[field]]));
     if (!drafts.has(draftKey)) drafts.set(draftKey, new Map());
     drafts.get(draftKey).set(e.token, {
       note: e.note,
@@ -1141,9 +1159,11 @@ export function modelImage(thingport) {
         // What a new note started as, which its changes are measured against.
         base: note ? undefined : draft.base,
       });
-      // Changed here and somewhere else since: saving would replace the other change, so say so.
-      if (note && Object.keys(draft.changes).some((field) => latest[field] !== draft.base[field]))
-        ui.toast(t("editor.conflict"), "warning");
+      // Changed here and somewhere else since: saving would replace the other change, so say so. A value this edit's
+      // own save left there isn't such a change.
+      const elsewhere = (field) =>
+        latest[field] !== draft.base[field] && !draft.tried.some((sent) => sent[field] === latest[field]);
+      if (note && Object.keys(draft.changes).some(elsewhere)) ui.toast(t("editor.conflict"), "warning");
       return;
     }
   }
@@ -1549,9 +1569,7 @@ export function modelImage(thingport) {
     if (!text || e.saving) return;
     e.saving = true;
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
-    // This save joins the ones before it until it's known to have gone through, or not to have.
     const tried = e.tried;
-    e.tried = [...tried, value];
     applyEditor();
     // Taken now, as the save may finish after the picture changes.
     const chosen = { ...e.chosen };
@@ -1566,6 +1584,13 @@ export function modelImage(thingport) {
         existing: Boolean(e.note),
         original: e.original,
         tried,
+        // Once it's written, this save joins the ones before it until it's known to have gone through, or not to have:
+        // a read failing first sends nothing.
+        onSend: () => {
+          e.tried = [...tried, value];
+          const kept = drafts.get(draftKey)?.get(e.token);
+          if (kept) kept.tried = e.tried;
+        },
       };
       const saved = await saveNote(thingport, draft, value, modelId, e.moveKey);
       // Saved, even if the picture changed meanwhile: a draft kept for it is spent, and what was picked is remembered.
@@ -1614,12 +1639,18 @@ export function modelImage(thingport) {
       if (error instanceof NoteChanged) {
         // Changed here and somewhere else since it was opened, or for a new note since it was sent: the editor stays,
         // now measured against the note as it is, so saving again replaces the other change. What this edit didn't
-        // change takes the stored value. A new note found stored is from now on an edit of it.
+        // change takes the stored value. A new note found stored is from now on an edit of it, and a moved one an edit
+        // of its new copy.
         Object.assign(e, rebaseEdit(value, e.note ? e.original : tried[0], error.stored, tried));
         if (e.field.value.trim() !== e.text) e.field.value = e.text;
         e.original = error.stored;
         e.tried = [];
         e.note = { ...(e.note ?? ownNote(e)), value: error.stored };
+        if (error.key !== e.key) {
+          e.note = { ...e.note, key: error.key, modelId };
+          e.key = error.key;
+          e.moveKey = null;
+        }
         ui.toast(t("editor.conflict"), "warning");
         // The picture shows the note as it's stored, and a new one its lost answer never drew.
         if (alive) void load();
@@ -1700,8 +1731,10 @@ export function modelImage(thingport) {
     alive = false;
     settings.listeners.delete(onSettings);
     draftsFreed.removeEventListener("freed", onDraftFreed);
-    // An unsaved edit waits for the picture to come back; one still saving waits too, in case the save fails.
-    if (editing && (editing.saving || changedFields(editing).length)) keepDraft(editing, editing.saving);
+    // An unsaved edit waits for the picture to come back, as does one a lost answer left unsure of; one still saving
+    // waits too, in case the save fails.
+    if (editing && (editing.saving || editing.tried.length || changedFields(editing).length))
+      keepDraft(editing, editing.saving);
     stop();
     observer?.disconnect();
     document.removeEventListener("pointerdown", onPointerDown, true);

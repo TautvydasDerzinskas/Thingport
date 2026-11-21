@@ -595,10 +595,12 @@ export function modelImage(thingport) {
   const EDITABLE = ["text", "look", "color", "x", "y"];
   const changedFields = (e) => EDITABLE.filter((field) => e[field] !== e.original[field]);
 
-  // An edit kept for the picture: what it started from and only the fields changed, so coming back applies those to
-  // the note as it is then, rather than writing back fields someone else has changed since.
+  // An edit kept for the picture: what it started from and only the fields it changed, now or in a save whose answer
+  // was lost, so coming back applies those to the note as it is then, rather than writing back fields someone else has
+  // changed since. One put back after such a save still comes back as the edit has it.
   function keepDraft(e, saving) {
-    const changes = Object.fromEntries(changedFields(e).map((field) => [field, e[field]]));
+    const fields = EDITABLE.filter((field) => [e, ...e.tried].some((sent) => sent[field] !== e.original[field]));
+    const changes = Object.fromEntries(fields.map((field) => [field, e[field]]));
     if (!drafts.has(draftKey)) drafts.set(draftKey, new Map());
     drafts.get(draftKey).set(e.token, {
       note: e.note,
@@ -668,9 +670,11 @@ export function modelImage(thingport) {
         // What a new note started as, which its changes are measured against.
         base: note ? undefined : draft.base,
       });
-      // Changed here and somewhere else since: saving would replace the other change, so say so.
-      if (note && Object.keys(draft.changes).some((field) => latest[field] !== draft.base[field]))
-        ui.toast(t("editor.conflict"), "warning");
+      // Changed here and somewhere else since: saving would replace the other change, so say so. A value this edit's
+      // own save left there isn't such a change.
+      const elsewhere = (field) =>
+        latest[field] !== draft.base[field] && !draft.tried.some((sent) => sent[field] === latest[field]);
+      if (note && Object.keys(draft.changes).some(elsewhere)) ui.toast(t("editor.conflict"), "warning");
       return;
     }
   }
@@ -1076,9 +1080,7 @@ export function modelImage(thingport) {
     if (!text || e.saving) return;
     e.saving = true;
     const value = { x: e.x, y: e.y, text, look: e.look, color: e.color };
-    // This save joins the ones before it until it's known to have gone through, or not to have.
     const tried = e.tried;
-    e.tried = [...tried, value];
     applyEditor();
     // Taken now, as the save may finish after the picture changes.
     const chosen = { ...e.chosen };
@@ -1093,6 +1095,13 @@ export function modelImage(thingport) {
         existing: Boolean(e.note),
         original: e.original,
         tried,
+        // Once it's written, this save joins the ones before it until it's known to have gone through, or not to have:
+        // a read failing first sends nothing.
+        onSend: () => {
+          e.tried = [...tried, value];
+          const kept = drafts.get(draftKey)?.get(e.token);
+          if (kept) kept.tried = e.tried;
+        },
       };
       const saved = await saveNote(thingport, draft, value, modelId, e.moveKey);
       // Saved, even if the picture changed meanwhile: a draft kept for it is spent, and what was picked is remembered.
@@ -1141,12 +1150,18 @@ export function modelImage(thingport) {
       if (error instanceof NoteChanged) {
         // Changed here and somewhere else since it was opened, or for a new note since it was sent: the editor stays,
         // now measured against the note as it is, so saving again replaces the other change. What this edit didn't
-        // change takes the stored value. A new note found stored is from now on an edit of it.
+        // change takes the stored value. A new note found stored is from now on an edit of it, and a moved one an edit
+        // of its new copy.
         Object.assign(e, rebaseEdit(value, e.note ? e.original : tried[0], error.stored, tried));
         if (e.field.value.trim() !== e.text) e.field.value = e.text;
         e.original = error.stored;
         e.tried = [];
         e.note = { ...(e.note ?? ownNote(e)), value: error.stored };
+        if (error.key !== e.key) {
+          e.note = { ...e.note, key: error.key, modelId };
+          e.key = error.key;
+          e.moveKey = null;
+        }
         ui.toast(t("editor.conflict"), "warning");
         // The picture shows the note as it's stored, and a new one its lost answer never drew.
         if (alive) void load();
@@ -1227,8 +1242,10 @@ export function modelImage(thingport) {
     alive = false;
     settings.listeners.delete(onSettings);
     draftsFreed.removeEventListener("freed", onDraftFreed);
-    // An unsaved edit waits for the picture to come back; one still saving waits too, in case the save fails.
-    if (editing && (editing.saving || changedFields(editing).length)) keepDraft(editing, editing.saving);
+    // An unsaved edit waits for the picture to come back, as does one a lost answer left unsure of; one still saving
+    // waits too, in case the save fails.
+    if (editing && (editing.saving || editing.tried.length || changedFields(editing).length))
+      keepDraft(editing, editing.saving);
     stop();
     observer?.disconnect();
     document.removeEventListener("pointerdown", onPointerDown, true);

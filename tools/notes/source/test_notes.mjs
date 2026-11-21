@@ -401,6 +401,90 @@ test("a field an earlier save changed counts as the edit's, even once it's back 
   assert.equal(rebaseEdit(original, original, conflict.stored, [b]).text, "A");
 });
 
+test("a retried move whose new copy was written, its answer lost, is finished there, keeping another tab's change", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:9";
+  const original = { ...value, text: "Old", color: "yellow" };
+  const edited = { ...original, text: "Moved" };
+  // The new copy went through, then another tab made it pink; the old one is still there.
+  const shared = fakeShared(
+    [
+      { key: from, value: original, mine: true },
+      { key: to, value: { ...edited, color: "pink" }, mine: true },
+    ],
+    { readable: ["m2"] },
+  );
+  const note = { key: from, public: true, modelId: "m1", existing: true, original, tried: [edited] };
+  const saved = await saveNote({ storage: fakeStorage(), shared, api: fakeApi(["m1"]) }, note, edited, "m2", to);
+  assert.deepEqual(saved, { key: to, value: { ...edited, color: "pink" }, leftover: false });
+  assert.deepEqual(shared.calls, [
+    { prefix: to },
+    { set: to, value: { ...edited, color: "pink" }, options: { model: "m2" } },
+    { remove: from },
+  ]);
+});
+
+test("a retried move that meets a change to its new copy says so from there, and the old copy goes", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:9";
+  const original = { ...value, color: "yellow" };
+  const shared = fakeShared(
+    [
+      { key: from, value: original, mine: true },
+      { key: to, value: { ...original, color: "pink" }, mine: true },
+    ],
+    { readable: ["m2"] },
+  );
+  const note = { key: from, public: true, modelId: "m1", existing: true, original, tried: [original] };
+  const blue = { ...original, color: "blue" };
+  const thingport = { storage: fakeStorage(), shared, api: fakeApi(["m1"]) };
+  const conflict = await saveNote(thingport, note, blue, "m2", to).catch((error) => error);
+  assert.ok(conflict instanceof NoteChanged);
+  assert.equal(conflict.key, to);
+  assert.equal(conflict.stored.color, "pink");
+  assert.ok(!shared.calls.some((call) => call.set));
+  assert.ok(shared.calls.some((call) => call.remove === from));
+});
+
+test("a retried move whose new copy wasn't written moves as before", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:9";
+  const original = { ...value, text: "Old" };
+  const edited = { ...original, text: "Moved" };
+  const shared = fakeShared([{ key: from, value: original, mine: true }], { readable: ["m2"] });
+  const note = { key: from, public: true, modelId: "m1", existing: true, original, tried: [edited] };
+  const saved = await saveNote({ storage: fakeStorage(), shared, api: fakeApi(["m1"]) }, note, edited, "m2", to);
+  assert.deepEqual(saved, { key: to, value: edited, leftover: false });
+  assert.deepEqual(shared.calls, [
+    { prefix: to },
+    { prefix: from },
+    { set: from, value: edited, options: { model: "m1" } },
+    { set: to, value: edited, options: { model: "m2" } },
+    { remove: from },
+  ]);
+});
+
+test("a save counts as sent only once it writes: not when its read fails, nor on a conflict", async () => {
+  const key = "note:m1:image:a:1";
+  const original = { ...value, text: "A" };
+  let sends = 0;
+  const onSend = () => sends++;
+  const note = { key, public: false, existing: true, original, onSend };
+  const failing = { ...fakeStorage({ [key]: original }), get: async () => Promise.reject(new Error("offline")) };
+  await assert.rejects(saveNote({ storage: failing, shared: fakeShared() }, note, { ...original, text: "B" }, "m1"));
+  assert.equal(sends, 0);
+  const changed = fakeStorage({ [key]: { ...original, text: "C" } });
+  await assert.rejects(saveNote({ storage: changed, shared: fakeShared() }, note, { ...original, text: "B" }, "m1"));
+  assert.equal(sends, 0);
+  await saveNote(
+    { storage: fakeStorage({ [key]: original }), shared: fakeShared() },
+    note,
+    { ...original, text: "B" },
+    "m1",
+  );
+  assert.equal(sends, 1);
+});
+
 test("the view starts with notes shown and a yellow sticky, and keeps what was saved", async () => {
   assert.deepEqual(await readView(fakeStorage()), { hidden: false, look: "sticky", color: "yellow" });
   assert.deepEqual(await readView(fakeStorage({ view: { hidden: true, look: "bubble", color: "blue" } })), {
