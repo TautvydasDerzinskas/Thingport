@@ -63,8 +63,9 @@ export function safeArea(pointer: Point, submenu: Box): Point[] {
 
 /**
  * Where a submenu goes beside its row: to the right unless it would leave the window, then to the left if that's
- * roomier; and up by as much as it would hang below the bottom, never above the top. `row` and `parent` are the
- * row's and its menu's boxes, `size` the submenu's, all in window coordinates.
+ * roomier; and up by as much as it would hang below the bottom, never above the top. `room` is the width there is on
+ * that side, which a submenu wider than both sides is narrowed to. `row` and `parent` are the row's and its menu's
+ * boxes, `size` the submenu's, all in window coordinates.
  */
 export function placeSubmenu(
   row: Box,
@@ -72,11 +73,11 @@ export function placeSubmenu(
   size: { width: number; height: number },
   viewport: { width: number; height: number },
   { gap = 4, margin = 8, lift = 7 }: { gap?: number; margin?: number; lift?: number } = {},
-): { side: "right" | "left"; top: number } {
+): { side: "right" | "left"; top: number; room: number } {
   const roomRight = viewport.width - margin - (parent.right + gap);
   const roomLeft = parent.left - gap - margin;
   const side = size.width <= roomRight || roomRight >= roomLeft ? "right" : "left";
   const wanted = row.top - lift;
   const top = Math.max(margin, Math.min(wanted, viewport.height - margin - size.height));
-  return { side, top: top - parent.top };
+  return { side, top: top - parent.top, room: Math.max(0, Math.floor(side === "right" ? roomRight : roomLeft)) };
 }

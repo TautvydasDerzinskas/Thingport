@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type FocusEvent,
   type KeyboardEvent,
   type MutableRefObject,
   type MouseEvent,
@@ -31,7 +32,7 @@ import Tooltip from "@mui/material/Tooltip";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { alpha, type Theme } from "@mui/material/styles";
 import { dividerBorderColor, statusTint } from "../../theme";
-import { hasPicks, type MenuAction, type MenuAnchor } from "./menuAction";
+import { hasPicks, isInert, type MenuAction, type MenuAnchor } from "./menuAction";
 import { insidePolygon, placeSubmenu, safeArea, type Point } from "./menuNav";
 
 // A menu whose groups open as submenus beside it: after a short hover or at once on a click, kept open while the
@@ -113,13 +114,14 @@ function toNodes(nodes: NestedMenuNode[], parent = ""): Node[] {
     }
     const { action } = node;
     const key = `${parent}${action.key}`;
+    const inert = isInert(action);
     if (hasPicks(action)) {
       return {
         kind: "branch",
         key,
         label: node.short ? (action.shortLabel ?? action.label) : action.label,
         icon: action.icon,
-        inert: Boolean(action.disabled || action.busy),
+        inert,
         busy: Boolean(action.busy),
         tooltip: action.tooltip,
         picks: true,
@@ -130,7 +132,9 @@ function toNodes(nodes: NestedMenuNode[], parent = ""): Node[] {
           secondary: pick.secondary,
           media: pick.media,
           title: pick.title,
-          inert: Boolean(pick.disabled),
+          tooltip: pick.tooltip,
+          // Its action going busy while its picks are open stops them too.
+          inert: inert || Boolean(pick.disabled),
           busy: false,
           href: pick.href,
           keepOpen: pick.keepOpen,
@@ -144,7 +148,7 @@ function toNodes(nodes: NestedMenuNode[], parent = ""): Node[] {
       label: node.short ? (action.shortLabel ?? action.label) : action.label,
       secondary: action.secondary,
       icon: action.icon,
-      inert: Boolean(action.disabled || action.busy || action.note),
+      inert,
       busy: Boolean(action.busy),
       tone: action.tone,
       href: action.href,
@@ -208,7 +212,11 @@ const rowSx = (theme: Theme) => ({
   minHeight: 34,
   gap: 0,
   "& .MuiListItemIcon-root": { minWidth: 32, color: "action.active" },
-  "&.Mui-focusVisible": { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: -2 },
+  // A disabled row can take focus too, so a note is read, but MUI gives it no focus-visible class.
+  "&.Mui-focusVisible, &.Mui-disabled:focus-visible": {
+    outline: `2px solid ${theme.palette.primary.main}`,
+    outlineOffset: -2,
+  },
   "@media (pointer: coarse)": { minHeight: 44 },
 });
 
@@ -263,7 +271,11 @@ function LeafRow({ node, depth }: { node: Leaf; depth: number }) {
       data-menu-key={menu.keyAttr(node.key)}
       disabled={node.inert}
       title={node.title}
-      onClick={() => menu.run(node)}
+      onClick={(event) => {
+        // Focusable while disabled, so a link's Enter still lands here: it mustn't go anywhere.
+        if (node.inert) event.preventDefault();
+        menu.run(node);
+      }}
       onPointerMove={(event) => menu.rowPointerMove(depth, node, event)}
       onPointerLeave={(event) => menu.rowPointerLeave(depth, node.key, event)}
       sx={[rowSx, toneSx(node.tone), Boolean(node.media) && { py: 0.5 }]}
@@ -301,8 +313,9 @@ function SubRow({ node, depth }: { node: Branch; depth: number }) {
       aria-haspopup="menu"
       aria-expanded={expanded}
       aria-controls={expanded ? menu.menuId(node.key) : undefined}
-      // A keyboard press (detail 0) moves focus into the submenu; a click leaves it here.
-      onClick={(event) => menu.openSub(depth, node.key, menu.panels || event.detail === 0)}
+      // A keyboard press (detail 0) moves focus into the submenu; a click leaves it here. MUI still clicks a focused
+      // disabled row on Space.
+      onClick={(event) => !node.inert && menu.openSub(depth, node.key, menu.panels || event.detail === 0)}
       onKeyDown={(event) => {
         if (node.inert || event.key !== "ArrowRight") return;
         event.preventDefault();
@@ -345,9 +358,10 @@ function Submenu({
 }) {
   const menu = useMenu();
   const surface = useRef<HTMLDivElement | null>(null);
-  const [place, setPlace] = useState<{ side: "right" | "left"; top: number } | null>(null);
+  const [place, setPlace] = useState<ReturnType<typeof placeSubmenu> | null>(null);
 
-  // Reposition for viewport changes and after the parent paper moves. Hovering alone keeps the position stable.
+  // Reposition for viewport changes, after the parent paper moves and when it changes size (narrowed to the room
+  // there, its rows wrap). Hovering alone keeps the position stable.
   useLayoutEffect(() => {
     const parent = container.current;
     const element = surface.current;
@@ -360,7 +374,9 @@ function Submenu({
         { width: element.offsetWidth, height: element.offsetHeight },
         { width: window.innerWidth, height: window.innerHeight },
       );
-      setPlace((current) => (current?.side === next.side && current.top === next.top ? current : next));
+      setPlace((current) =>
+        current?.side === next.side && current.top === next.top && current.room === next.room ? current : next,
+      );
     };
     let frame = 0;
     const scheduleMeasure = () => {
@@ -370,10 +386,13 @@ function Submenu({
     const paper = parent.closest(".MuiPaper-root");
     const observer = new MutationObserver(scheduleMeasure);
     if (paper) observer.observe(paper, { attributes: true, attributeFilter: ["style", "class"] });
+    const resized = new ResizeObserver(scheduleMeasure);
+    resized.observe(element);
     window.addEventListener("resize", scheduleMeasure);
     measure();
     return () => {
       observer.disconnect();
+      resized.disconnect();
       window.removeEventListener("resize", scheduleMeasure);
       cancelAnimationFrame(frame);
     };
@@ -394,8 +413,11 @@ function Submenu({
           zIndex: 1,
           top: place?.top ?? 0,
           width: "max-content",
-          minWidth: 200,
-          maxWidth: 360,
+          // Measured at its own width first; where neither side has that much room, narrowed to fit the roomier.
+          minWidth: Math.min(200, place?.room ?? 200),
+          maxWidth: Math.min(360, place?.room ?? 360),
+          // Rows wrap to that width rather than spill out of it; a pick's file name is cut short instead.
+          "& .MuiMenuItem-root": { whiteSpace: "normal" },
           // Not hidden while it's measured: a submenu opened from the keyboard takes focus as it mounts.
           opacity: place ? undefined : 0,
           animation: place ? `${place.side === "left" ? fromRight : fromLeft} 160ms ease-out` : "none",
@@ -438,6 +460,8 @@ function Level({
         id={id}
         aria-label={label}
         variant="menu"
+        // Arrows stop on disabled rows too, as on the tile menu: a note says why something is missing.
+        disabledItemsFocusable
         data-menu-level={menu.levelAttr(depth)}
         onKeyDown={(event) => menu.levelKeyDown(depth, event)}
         onScroll={openBranch ? () => menu.closeBelow(depth, false) : undefined}
@@ -504,11 +528,12 @@ function PanelStack({ nodes, rootId, rootLabel }: { nodes: Node[]; rootId: strin
       key={current?.key ?? "root"}
       sx={{ animation: slide ? `${slide} 200ms cubic-bezier(0.2, 0, 0, 1)` : "none", ...NO_MOTION }}
     >
+      {/* Whichever level is shown has the top level's id: it's the one menu the trigger controls. */}
       <Level
         depth={trail.length}
         nodes={level}
         label={current?.label ?? rootLabel}
-        id={current ? menu.menuId(current.key) : rootId}
+        id={rootId}
         back={Boolean(current)}
       />
     </Box>
@@ -547,6 +572,8 @@ export default function NestedMenu({
   const pending = useRef<Pending | null>(null);
   const grace = useRef<{ depth: number; area: Point[]; until: number } | null>(null);
   const surfaces = useRef<(HTMLElement | null)[]>([]);
+  /** The last row focused, as its data-menu-key. */
+  const lastFocused = useRef<string | null>(null);
 
   const cancelPending = () => clearPending(pending);
   /** Runs `action` after `delay`, unless something else is scheduled first; the same key doesn't restart it. */
@@ -564,6 +591,7 @@ export default function NestedMenu({
     clearPending(pending);
     grace.current = null;
     focusWanted.current = null;
+    lastFocused.current = null;
   }, [open]);
   useEffect(() => () => clearPending(pending), []);
 
@@ -584,6 +612,36 @@ export default function NestedMenu({
         ?.focus({ preventScroll: true }),
     [id],
   );
+
+  // A right-click elsewhere moves the open menu to a new point without closing it: it starts again there.
+  const lastAnchor = useRef(anchorEl);
+  useLayoutEffect(() => {
+    if (!anchorEl || anchorEl === lastAnchor.current) return;
+    lastAnchor.current = anchorEl;
+    clearPending(pending);
+    grace.current = null;
+    focusWanted.current = null;
+    setPath([]);
+    setDirection("none");
+    // Still mounted only when it moved; a menu opening focuses its first row as it mounts.
+    focusFirst(0);
+  }, [anchorEl, focusFirst]);
+
+  // Crossing the narrow-screen width swaps the layout and drops the focused row: the new layout's levels take focus
+  // back as they mount, on the same row if the open level has it, else on its first.
+  const shownPanels = useRef(panels);
+  useLayoutEffect(() => {
+    if (shownPanels.current === panels) return;
+    shownPanels.current = panels;
+    const root = paper.current;
+    if (!open || !root) return;
+    let depth = live.current.path.length;
+    while (depth > 0 && !root.querySelector(`[data-menu-level="${id}:${depth}"]`)) depth--;
+    const row = lastFocused.current;
+    const same =
+      row !== null && root.querySelector(`[data-menu-level="${id}:${depth}"] [data-menu-key="${CSS.escape(row)}"]`);
+    focusWanted.current = { depth, key: same ? row.slice(id.length + 1) : undefined };
+  }, [panels, open, id]);
 
   const closeAll = () => {
     cancelPending();
@@ -627,7 +685,9 @@ export default function NestedMenu({
           focusFirst(depth);
         }
       } else if (depth === 0 && !wanted) {
-        focusFirst(0);
+        // A new layout's submenu mounts, and takes focus back, before the top level does.
+        const focused = document.activeElement;
+        if (!(focused?.hasAttribute("data-menu-key") && paper.current?.contains(focused))) focusFirst(0);
       }
     },
     [focusRow, focusFirst],
@@ -642,6 +702,10 @@ export default function NestedMenu({
       event.preventDefault();
       event.stopPropagation();
       closeBelow(depth - 1, true);
+    } else if (event.key === " " && !event.defaultPrevented && event.target instanceof HTMLAnchorElement) {
+      // A link only answers Enter, and MUI leaves it so; a menu item answers Space too.
+      event.preventDefault();
+      event.target.click();
     }
   };
 
@@ -753,11 +817,19 @@ export default function NestedMenu({
           },
         }}
       >
-        {panels ? (
-          <PanelStack nodes={tree} rootId={id} rootLabel={label} />
-        ) : (
-          <Level depth={0} nodes={tree} label={label} id={id} />
-        )}
+        {/* Here, not on the paper: the popover's focus trap puts its own onFocus there. */}
+        <Box
+          onFocus={(event: FocusEvent<HTMLDivElement>) => {
+            const row = event.target.getAttribute("data-menu-key");
+            if (row) lastFocused.current = row;
+          }}
+        >
+          {panels ? (
+            <PanelStack nodes={tree} rootId={id} rootLabel={label} />
+          ) : (
+            <Level depth={0} nodes={tree} label={label} id={id} />
+          )}
+        </Box>
       </Popover>
     </MenuContext.Provider>
   );

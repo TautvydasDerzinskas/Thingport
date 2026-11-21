@@ -1,6 +1,7 @@
 import { keyframes } from "@emotion/react";
 import {
   forwardRef,
+  useLayoutEffect,
   useRef,
   useState,
   type HTMLAttributes,
@@ -111,6 +112,16 @@ export default function TileMenu({
   const trayAction = tiles.find((tile) => tile.key === expanded && hasPicks(tile));
 
   const navNodes = () => Array.from(menu.current?.querySelectorAll<HTMLElement>("[data-nav]") ?? []);
+  // A right-click elsewhere moves the open menu to a new point without closing it: it starts again there.
+  const lastAnchor = useRef(anchorEl);
+  useLayoutEffect(() => {
+    if (!anchorEl || anchorEl === lastAnchor.current) return;
+    lastAnchor.current = anchorEl;
+    setExpanded(null);
+    lastTile.current = null;
+    // Still mounted only when it moved; a menu opening focuses its first item as it enters.
+    menu.current?.querySelector<HTMLElement>("[data-nav]")?.focus();
+  }, [anchorEl]);
   const choose = (item: MenuAction | MenuPick) => {
     if (isInert(item)) return;
     if (!item.keepOpen) onClose();
@@ -584,72 +595,86 @@ function Picks({ action, onPick }: { action: MenuAction; onPick: (pick: MenuPick
   return (
     <>
       {action.picks?.map((pick) => (
-        <Box
-          key={pick.key}
-          {...linkProps(pick)}
-          role="menuitem"
-          tabIndex={-1}
-          title={pick.title}
-          data-nav="pick"
-          data-of={action.key}
-          aria-disabled={pick.disabled || undefined}
-          onClick={(event: MouseEvent) => {
-            if (pick.disabled) event.preventDefault();
-            onPick(pick);
-          }}
-          sx={(theme) => ({
-            ...buttonReset,
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            width: "100%",
-            minHeight: 36,
-            px: "6px",
-            py: "4px",
-            borderRadius: "6px",
-            color: "text.primary",
-            textAlign: "left",
-            transition: "background-color 150ms ease",
-            "&:hover": { bgcolor: "action.hover" },
-            "&:focus-visible": focusRing(theme),
-            "&[aria-disabled='true']": { opacity: 0.5, cursor: "default", bgcolor: "transparent" },
-            "@media (pointer: coarse)": { minHeight: 44 },
-            "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-          })}
-        >
-          {pick.media}
-          <Box component="span" sx={{ flex: 1, minWidth: 0 }}>
-            <Box
-              component="span"
-              sx={{
-                display: "block",
-                fontSize: 12.5,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {pick.label}
-            </Box>
-            {pick.secondary && (
-              <Box
-                component="span"
-                sx={{
-                  display: "block",
-                  color: "text.secondary",
-                  fontSize: 11,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {pick.secondary}
-              </Box>
-            )}
-          </Box>
-        </Box>
+        <PickRow key={pick.key} action={action} pick={pick} onPick={onPick} />
       ))}
     </>
+  );
+}
+
+function PickRow({ action, pick, onPick }: { action: MenuAction; pick: MenuPick; onPick: (pick: MenuPick) => void }) {
+  // Its action going busy while its picks are open stops them too.
+  const inert = isInert(action) || Boolean(pick.disabled);
+  const row = (
+    <Box
+      {...linkProps(pick)}
+      role="menuitem"
+      tabIndex={-1}
+      title={pick.title}
+      data-nav="pick"
+      data-of={action.key}
+      aria-disabled={inert || undefined}
+      onClick={(event: MouseEvent) => {
+        if (inert) event.preventDefault();
+        else onPick(pick);
+      }}
+      sx={(theme) => ({
+        ...buttonReset,
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        width: "100%",
+        minHeight: 36,
+        px: "6px",
+        py: "4px",
+        borderRadius: "6px",
+        color: "text.primary",
+        textAlign: "left",
+        transition: "background-color 150ms ease",
+        "&:hover": { bgcolor: "action.hover" },
+        "&:focus-visible": focusRing(theme),
+        "&[aria-disabled='true']": { opacity: 0.5, cursor: "default", bgcolor: "transparent" },
+        "@media (pointer: coarse)": { minHeight: 44 },
+        "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+      })}
+    >
+      {pick.media}
+      <Box component="span" sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          component="span"
+          sx={{
+            display: "block",
+            fontSize: 12.5,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {pick.label}
+        </Box>
+        {pick.secondary && (
+          <Box
+            component="span"
+            sx={{
+              display: "block",
+              color: "text.secondary",
+              fontSize: 11,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {pick.secondary}
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+  return pick.tooltip ? (
+    <Tooltip title={inert ? "" : pick.tooltip} placement="left" enterDelay={400} arrow describeChild>
+      {row}
+    </Tooltip>
+  ) : (
+    row
   );
 }
 

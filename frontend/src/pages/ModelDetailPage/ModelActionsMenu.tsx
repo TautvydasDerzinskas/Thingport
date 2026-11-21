@@ -1,4 +1,4 @@
-import { useCallback, useId, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -51,12 +51,16 @@ export default function ModelActionsMenu({
   const { t } = useTranslation(["models", "common"]);
   const menuId = useId();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  // A point rather than anchorPosition, so both menus can take either.
-  const menuAnchor: MenuAnchor =
-    anchorEl ??
-    (contextMenuAt
-      ? { nodeType: 1, getBoundingClientRect: () => new DOMRect(contextMenuAt.left, contextMenuAt.top, 0, 0) }
-      : null);
+  // A point rather than anchorPosition, so both menus can take either. One per right-click: a menu given a new one
+  // starts again there.
+  const pointAnchor = useMemo<MenuAnchor>(
+    () =>
+      contextMenuAt
+        ? { nodeType: 1, getBoundingClientRect: () => new DOMRect(contextMenuAt.left, contextMenuAt.top, 0, 0) }
+        : null,
+    [contextMenuAt],
+  );
+  const menuAnchor = anchorEl ?? pointAnchor;
   const open = menuAnchor !== null;
 
   const closeMenu = useCallback(() => {

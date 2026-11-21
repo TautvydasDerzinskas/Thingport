@@ -70,7 +70,11 @@ describe("placeSubmenu", () => {
   const row = { left: 300, top: 160, right: 520, bottom: 194 };
 
   it("opens to the right, its first row level with the one it came from", () => {
-    expect(placeSubmenu(row, parent, { width: 240, height: 200 }, viewport)).toEqual({ side: "right", top: 53 });
+    expect(placeSubmenu(row, parent, { width: 240, height: 200 }, viewport)).toEqual({
+      side: "right",
+      top: 53,
+      room: 1000 - 8 - 524,
+    });
   });
 
   it("opens to the left when the right has no room for it", () => {
@@ -83,6 +87,27 @@ describe("placeSubmenu", () => {
     expect(placeSubmenu(row, { ...parent, left: 200, right: 420 }, { width: 400, height: 200 }, narrow).side).toBe(
       "right",
     );
+  });
+
+  it("gives the room on the side it picks, to narrow a submenu wider than both", () => {
+    // 640 wide, the menu in the middle: 198 px either side.
+    const phoneish = { width: 640, height: 800 };
+    const middle = { ...parent, left: 210, right: 430 };
+    expect(placeSubmenu(row, middle, { width: 360, height: 200 }, phoneish)).toMatchObject({
+      side: "right",
+      room: 198,
+    });
+    const leftRoomier = { ...parent, left: 230, right: 450 };
+    expect(placeSubmenu(row, leftRoomier, { width: 360, height: 200 }, phoneish)).toMatchObject({
+      side: "left",
+      room: 218,
+    });
+  });
+
+  it("keeps its side once narrowed to the room there", () => {
+    const phoneish = { width: 640, height: 800 };
+    const leftRoomier = { ...parent, left: 230, right: 450 };
+    expect(placeSubmenu(row, leftRoomier, { width: 218, height: 200 }, phoneish).side).toBe("left");
   });
 
   it("moves up rather than hang below the window", () => {

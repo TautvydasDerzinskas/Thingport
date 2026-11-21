@@ -12,6 +12,8 @@ export type MenuPick = {
   media?: ReactNode;
   /** The full name, on hover, for a label cut short. */
   title?: string;
+  /** Explains the pick on hover, where its action's explanation doesn't hold for every pick. */
+  tooltip?: ReactNode;
   disabled?: boolean;
   href?: string;
   /** Leaves the menu open: the action closes it itself once it's done. */
