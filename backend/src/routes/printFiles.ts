@@ -96,10 +96,7 @@ router.get(
     await sendStored(res, {
       filePath: managedPrintFilePath(record),
       site: "serve.prepared",
-      // And still the model's prepared print: another may have taken its place.
-      stillNames: async () =>
-        (await printFileStillNames(record)) &&
-        (await prisma.print.count({ where: { id: print.id, preparedFileId: record.id } })) > 0,
+      stillNames: () => printFileStillNames(record, { prepared: true }),
       headers: () => fileHeaders(res, record),
     });
   }),

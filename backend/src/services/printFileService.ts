@@ -27,13 +27,21 @@ export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">):
   return candidate;
 }
 
-/** Whether the file's row, read again by id, is still the model's, in its role, at its path: what a download asks
- *  once the file is open (utils/sendStored.ts). */
+/** Whether the file's row, read again by id, is still the model's, in its role, at its path, and with `prepared` still
+ *  its prepared print, as another may have taken its place: what a download asks once the file is open
+ *  (utils/sendStored.ts). */
 export async function printFileStillNames(
   file: Pick<PrintFile, "id" | "printId" | "role" | "storagePath">,
+  { prepared = false } = {},
 ): Promise<boolean> {
   const count = await prisma.printFile.count({
-    where: { id: file.id, printId: file.printId, role: file.role, storagePath: file.storagePath },
+    where: {
+      id: file.id,
+      printId: file.printId,
+      role: file.role,
+      storagePath: file.storagePath,
+      ...(prepared ? { preparedFor: { is: { id: file.printId } } } : {}),
+    },
   });
   return count > 0;
 }

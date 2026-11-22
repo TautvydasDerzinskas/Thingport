@@ -7,15 +7,16 @@ import fs from "node:fs";
 import type { Prisma } from "@prisma/client";
 import { AUTH_SECRET } from "../config";
 import { prisma } from "../db";
-import { fileState, openStored, type OpenedFile } from "../modelFiles/storageFs";
-import { plateStillNames, printFileStillNames } from "../modelFiles/stillNames";
+import { fileState, type OpenedFile } from "../modelFiles/storageFs";
 import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
 import { blockedByLookup, metadataHost, widgetDispatcher } from "./customWidgetsService";
 import { buildImportSourceUrl } from "../sources/sourceUrls";
 import { handlePath } from "./fileReuse";
 import { resolvePlateFilePath } from "./printCreation";
-import { managedPrintFilePath } from "./printFileService";
+import { managedPrintFilePath, printFileStillNames } from "./printFileService";
+import { plateStillNames } from "./printService";
+import { openRowFile } from "../utils/sendStored";
 import {
   SEND_EXPORT_KIND,
   fillIn,
@@ -252,7 +253,7 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
       plateId: null,
       preparedId: record.id,
       print: model,
-      stillNames: printFileStillNames(record, { prepared: true }),
+      stillNames: () => printFileStillNames(record, { prepared: true }),
     };
   }
   const plate = await prisma.plate.findFirst({ where: { id: fileKey, printId: print.id } });
@@ -268,7 +269,7 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
     plateId: plate.id,
     preparedId: null,
     print: model,
-    stillNames: plateStillNames(plate),
+    stillNames: () => plateStillNames(plate),
   };
 }
 
@@ -278,15 +279,8 @@ export async function openFileToSend(
   file: Pick<FileToSend, "path" | "stillNames">,
   notFound = "No such file",
 ): Promise<OpenedFile> {
-  const opened = await openStored(file.path, "send.file");
+  const opened = await openRowFile({ filePath: file.path, site: "send.file", stillNames: file.stillNames });
   if (!opened) throw new HttpError(404, notFound);
-  let named = false;
-  try {
-    named = await file.stillNames();
-  } finally {
-    if (!named) await opened.handle.close();
-  }
-  if (!named) throw new HttpError(404, notFound);
   return opened;
 }
 

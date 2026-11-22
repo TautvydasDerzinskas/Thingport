@@ -8,10 +8,10 @@ import { HttpError } from "../utils/fileUtils";
 import { folderLevels, isInFolder } from "../utils/fileFolder";
 import { ZipPaths } from "../files/zipPaths";
 import { fileState } from "../modelFiles/storageFs";
-import { plateStillNames, printFileStillNames } from "../modelFiles/stillNames";
 import { writeZip, zipFits, type ZipEntryDescriptor } from "../utils/zipWriter";
 import { resolvePlateFilePath } from "./printCreation";
-import { managedPrintFilePath } from "./printFileService";
+import { managedPrintFilePath, printFileStillNames } from "./printFileService";
+import { plateStillNames } from "./printService";
 import { LICENSE_FILENAME, licenseFileText } from "./licenseFile";
 import { readableCollection, readablePrintWhere } from "./socialService";
 import type { Category, Plate, Print, PrintFile, Prisma } from "@prisma/client";
@@ -146,7 +146,7 @@ export async function buildZipEntries(
           arcname: zip.file(zip.nested(home, folderLevels(plate.folder), owner), plate.filename),
           filePath,
           site: "zip.entry",
-          stillNames: plateStillNames(plate),
+          stillNames: () => plateStillNames(plate),
         });
       }
     }
@@ -164,7 +164,7 @@ export async function buildZipEntries(
           arcname: zip.file(folder, file.filename),
           filePath: managedPrintFilePath(file),
           site: "zip.entry",
-          stillNames: printFileStillNames(file),
+          stillNames: () => printFileStillNames(file),
         });
       }
     }
@@ -173,7 +173,7 @@ export async function buildZipEntries(
         arcname: zip.file(preparedHome, prepared.filename),
         filePath: managedPrintFilePath(prepared),
         site: "zip.entry",
-        stillNames: printFileStillNames(prepared, { prepared: true }),
+        stillNames: () => printFileStillNames(prepared, { prepared: true }),
       });
     }
   }

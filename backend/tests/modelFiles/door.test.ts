@@ -58,14 +58,12 @@ describe("the file door", () => {
   });
 
   it("has a test that fails each of its call sites", () => {
+    // A site counts once a test file that plants faults names one of its checkpoints, inline or in a constant.
     const failed = new Set<string>();
     for (const file of sources(path.join(root, "tests"))) {
-      if (!file.endsWith(".test.ts")) continue;
-      for (const match of fs
-        .readFileSync(file, "utf8")
-        .matchAll(/faults\.at\(\s*["'`](?:fileState|open|opened):([a-z.]+)["'`]/g)) {
-        failed.add(match[1]);
-      }
+      const text = fs.readFileSync(file, "utf8");
+      if (!file.endsWith(".test.ts") || !text.includes("faults.at(")) continue;
+      for (const match of text.matchAll(/["'`](?:fileState|open|opened):([a-z.]+)["'`]/g)) failed.add(match[1]);
     }
     expect(STORAGE_SITES.filter((site) => !failed.has(site))).toEqual([]);
   });
@@ -74,7 +72,13 @@ describe("the file door", () => {
     const setters = [...sources(path.join(root, "src")), ...sources(path.join(root, "tests"))]
       .filter((file) => fs.readFileSync(file, "utf8").includes("setCheckpointHookForTest"))
       .map(rel)
-      .filter((file) => file !== "src/modelFiles/checkpoints.ts" && !file.startsWith("tests/harness/"));
+      // The definition, the harness, and this test, which names it to look for it.
+      .filter(
+        (file) =>
+          file !== "src/modelFiles/checkpoints.ts" &&
+          file !== "tests/modelFiles/door.test.ts" &&
+          !file.startsWith("tests/harness/"),
+      );
     expect(setters).toEqual([]);
   });
 });
