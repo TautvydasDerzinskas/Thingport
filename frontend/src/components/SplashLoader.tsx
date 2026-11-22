@@ -1,6 +1,6 @@
 import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
+import CircularProgress, { circularProgressClasses } from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
@@ -75,7 +75,17 @@ export default function SplashLoader({ title, label, phrasesKey, detail }: Props
       >
         {title}
       </Box>
-      <CircularProgress size={28} aria-hidden />
+      <CircularProgress
+        size={28}
+        aria-hidden
+        sx={{
+          // Held still as a short arc; the phrases still show it's working.
+          "@media (prefers-reduced-motion: reduce)": {
+            animation: "none",
+            [`& .${circularProgressClasses.circle}`]: { animation: "none" },
+          },
+        }}
+      />
       <Typography
         key={phrase}
         component="span"
