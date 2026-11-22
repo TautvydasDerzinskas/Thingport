@@ -31,7 +31,8 @@ function picture(seed: string, format: "png" | "jpeg"): Promise<Buffer> {
 
 /** `seed` keeps two cases' files apart, so neither reads the other's as a file it already has. */
 export async function contentOf(name: string, seed: string): Promise<Buffer> {
-  const base = name.split("/").pop()!.toLowerCase();
+  // By what the name says it is: a trailing space doesn't change what the file holds.
+  const base = name.split("/").pop()!.trim().toLowerCase();
   const id = `${seed}/${name}`;
   if (base.endsWith(".gcode.3mf")) return slicedThreeMf(id);
   const ext = base.includes(".") ? base.slice(base.lastIndexOf(".")) : "";

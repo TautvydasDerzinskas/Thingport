@@ -26,6 +26,9 @@ const RESERVED_STEM = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
  *  settings, Windows' thumbnail cache and folder settings, and other hidden files. */
 const SYSTEM_FILES = new Set(["thumbs.db", "desktop.ini"]);
 
+/** What a name may not end in: the dots and spaces Windows drops, and any other whitespace. */
+const TRAILING = /[.\s]+$/;
+
 const bytes = (text: string) => Buffer.byteLength(text, "utf8");
 const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
@@ -57,9 +60,8 @@ export function splitName(name: string): { stem: string; ext: string } {
  *  trimmed as the name's own end is, so normalising again changes nothing. */
 function fit(stem: string, ext: string): string {
   if (bytes(stem + ext) <= NAME_MAX_BYTES) return stem + ext;
-  const end = /[. ]+$/;
-  if (bytes(ext) >= NAME_MAX_BYTES) return cut(stem + ext, NAME_MAX_BYTES).replace(end, "");
-  return cut(stem, NAME_MAX_BYTES - bytes(ext)).replace(end, "") + ext;
+  if (bytes(ext) >= NAME_MAX_BYTES) return cut(stem + ext, NAME_MAX_BYTES).replace(TRAILING, "");
+  return cut(stem, NAME_MAX_BYTES - bytes(ext)).replace(TRAILING, "") + ext;
 }
 
 /** `name` within `maxLength` UTF-16 units as well as NAME_MAX_BYTES, cut from the stem so its extension survives:
@@ -67,34 +69,36 @@ function fit(stem: string, ext: string): string {
 export function cutName(name: string, maxLength: number): string {
   if (name.length <= maxLength && bytes(name) <= NAME_MAX_BYTES) return name;
   const { stem, ext } = splitName(name);
-  const end = /[. ]+$/;
   if (ext.length >= maxLength || bytes(ext) >= NAME_MAX_BYTES)
-    return cut(name, NAME_MAX_BYTES, maxLength).replace(end, "");
-  return cut(stem, NAME_MAX_BYTES - bytes(ext), maxLength - ext.length).replace(end, "") + ext;
+    return cut(name, NAME_MAX_BYTES, maxLength).replace(TRAILING, "");
+  return cut(stem, NAME_MAX_BYTES - bytes(ext), maxLength - ext.length).replace(TRAILING, "") + ext;
 }
 
 /**
  * The name a file is kept under, from what came with it (a picked file's name, a header, a zip entry's last part):
- * composed (NFC), without control characters, with "/" and "\" made "_", trimmed, without the trailing dots and
- * spaces Windows drops, with "_" after a name Windows reserves, and at most NAME_MAX_BYTES long, cut from the stem.
+ * without control characters, then composed (NFC), with "/" and "\" made "_", trimmed, without the trailing dots and
+ * whitespace Windows drops, with "_" after a name Windows reserves, and at most NAME_MAX_BYTES long, cut from the stem.
  * Running it again changes nothing. A name with nothing left is `fallback`.
  */
 export function normalizeFileName(raw: string | null | undefined, fallback = "imported-file"): NormalName {
+  // Control characters go first: one between a letter and its accent keeps NFC from composing them.
   const cleaned = (raw ?? "")
-    .normalize("NFC")
     .replace(CONTROL_CHARACTERS, "")
+    .normalize("NFC")
     .replace(/[/\\]/g, "_")
     .trim()
-    .replace(/[. ]+$/, "");
+    .replace(TRAILING, "");
   const { stem, ext } = splitName(cleaned || fallback);
   return fit(RESERVED_STEM.test(stem) ? `${stem}_` : stem, ext) as NormalName;
 }
 
-/** `name` numbered apart: "job (2).gcode.3mf" for the second "job.gcode.3mf", still within NAME_MAX_BYTES. */
-export function numberedName(name: NormalName, n: number): NormalName {
+/** `name` numbered apart: "job (2).gcode.3mf" for the second "job.gcode.3mf", still within NAME_MAX_BYTES and, for a
+ *  storage path's segment, `maxLength` UTF-16 units: the stem gives way, never the number or the extension. */
+export function numberedName(name: NormalName, n: number, maxLength = Infinity): NormalName {
   const { stem, ext } = splitName(name);
   const suffix = ` (${n})`;
-  return fit(cut(stem, NAME_MAX_BYTES - bytes(suffix + ext)) + suffix, ext) as NormalName;
+  const kept = cut(stem, NAME_MAX_BYTES - bytes(suffix + ext), maxLength - suffix.length - ext.length);
+  return `${kept.length < stem.length ? kept.replace(TRAILING, "") : kept}${suffix}${ext}` as NormalName;
 }
 
 /** What makes two names the same file in one folder of a model: case doesn't count, as on most desktops. */

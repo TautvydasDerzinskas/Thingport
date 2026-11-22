@@ -56,7 +56,11 @@
     ["Model v1.2 final", "Model v1.2 final", ""],
     ["LICENSE", "LICENSE", ""],
     ["__MACOSX", "__MACOSX", "junk is still a name; isJunk tells it"],
-    ["Ünïcödé Ñame.stl", "Ünïcödé Ñame.stl", ""]
+    ["Ünïcödé Ñame.stl", "Ünïcödé Ñame.stl", ""],
+    ["e\u0001́.stl", "é.stl", "a control character between a letter and its accent doesn't keep them apart"],
+    ["a　.", "a", "whitespace before a trailing dot goes with it"],
+    ["a. ", "a", "a no-break space at the end too"],
+    ["notes　　.txt", "notes　　.txt", "whitespace inside a name stays"]
   ],
   "split": [
     ["job.gcode.3mf", "job", ".gcode.3mf"],
@@ -85,6 +89,11 @@
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
       1000,
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (1000).stl"
+    ],
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      2,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (2).stl"
     ]
   ],
   "junk": [
@@ -105,5 +114,20 @@
     ["./Dotted/hull.stl", false],
     [".hidden/part.stl", true],
     ["Design/.git/config", true]
+  ],
+  "numberedWithin": [
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      2,
+      120,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (2).stl"
+    ],
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.gcode.3mf",
+      10,
+      120,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (10).gcode.3mf"
+    ],
+    ["Notes.pdf", 2, 120, "Notes (2).pdf"]
   ]
 }

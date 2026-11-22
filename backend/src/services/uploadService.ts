@@ -33,8 +33,9 @@ export type UploadedFile = {
   mimetype?: string | null;
 };
 
+/** By the name as it will be kept, so "part.STL " is an STL. */
 function isRenderable(file: UploadedFile): boolean {
-  return RENDERABLE_MODEL_EXTS.has(path.extname(file.originalname).toLowerCase());
+  return RENDERABLE_MODEL_EXTS.has(path.extname(normalizeFileName(file.originalname)).toLowerCase());
 }
 
 /** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
@@ -123,7 +124,7 @@ async function addFilesTo(
 ): Promise<{ plates: number; files: number }> {
   const printId = print.id;
   const isPlate = (f: (typeof files)[number]) =>
-    f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(f.originalname);
+    f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(normalizeFileName(f.originalname));
 
   const plateIds: string[] = [];
   const before = new Set(

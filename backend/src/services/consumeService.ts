@@ -103,7 +103,8 @@ type Item = { rel: string; path: string; size: number };
 
 export type ConsumeSummary = { models: number; files: number; failed: string[]; printIds: string[] };
 
-const extOf = (name: string) => path.extname(name).toLowerCase();
+/** A file's extension by its name as it will be kept, so "part.STL " is an STL here as well. */
+const extOf = (rel: string) => path.extname(normalizeFileName(path.basename(rel))).toLowerCase();
 const foldersOf = (rel: string) => rel.split("/").slice(0, -1);
 const byName = (a: Item, b: Item) =>
   path.basename(a.rel).localeCompare(path.basename(b.rel), undefined, { numeric: true, sensitivity: "base" });

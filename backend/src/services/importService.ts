@@ -542,7 +542,7 @@ async function filesFromNestedZips(
   budget: NestedZipBudget,
 ): Promise<NewPlateInput[]> {
   const nested = (await listZipEntries(zipPath)).filter(
-    (entry) => !entry.isDirectory && !isJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
+    (entry) => !entry.isDirectory && !isJunk(entry.name) && entryExtension(entry.name) === ".zip",
   );
   const inputs: NewPlateInput[] = [];
   // Every importable file's folder, of both kinds whichever this call takes, so the plates and the scripts of a zip
@@ -639,6 +639,11 @@ async function placedZipEntries(
   return withoutSharedTop(await zipEntriesInFolders(zipPath));
 }
 
+/** A zip entry's extension by its name as it will be kept, so "part.STL " is an STL. */
+function entryExtension(entryPath: string): string {
+  return path.extname(normalizeFileName(entryPath.replace(/\\/g, "/").split("/").pop())).toLowerCase();
+}
+
 /** A zip's plates and scripts, each with the folder it's in, as the zip has it. */
 async function zipEntriesInFolders(
   zipPath: string,
@@ -646,7 +651,7 @@ async function zipEntriesInFolders(
   return (await listZipEntries(zipPath))
     .filter((entry) => !entry.isDirectory && !isJunk(entry.name))
     .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
+    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(entryExtension(parts.at(-1)!)))
     .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
 }
 
@@ -662,9 +667,7 @@ async function filesFromZip(
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
-    const entries = (await placedZipEntries(zipPath)).filter(({ parts }) =>
-      exts.has(path.extname(parts.at(-1)!).toLowerCase()),
-    );
+    const entries = (await placedZipEntries(zipPath)).filter(({ parts }) => exts.has(entryExtension(parts.at(-1)!)));
     for (const { entry, parts, folder } of entries) {
       const filename = normalizeFileName(parts.at(-1)!);
       const tempFilePath = path.join(

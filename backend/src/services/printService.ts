@@ -39,6 +39,7 @@ import {
   validateStorageTemplate,
   type PrintLike,
   type PrintTemplateValues,
+  PATH_SEGMENT_MAX,
 } from "../modelFiles/template";
 import { printTemplateValues } from "../modelFiles/templateValues";
 
@@ -104,7 +105,7 @@ async function freePrintFilePath(relative: string, printFileId?: string): Promis
   let candidate = relative;
   for (let suffix = 2; await pathTaken(candidate, { printFileId }); suffix++) {
     if (suffix > 1000) throw new HttpError(409, `Storage path already exists: ${relative}`);
-    candidate = path.join(path.dirname(relative), numberedName(name, suffix));
+    candidate = path.join(path.dirname(relative), numberedName(name, suffix, PATH_SEGMENT_MAX));
   }
   return candidate;
 }

@@ -36,6 +36,9 @@ const TOKEN_RE = /\{([a-z_-]+)\}/g;
 // oxlint-disable-next-line no-control-regex -- stripping control chars is the point here.
 const INVALID_SEGMENT_RE = /[<>:"|?*\x00-\x1f]/g;
 
+/** How long a storage path's segment may be, in UTF-16 units, as well as fitting NAME_MAX_BYTES. */
+export const PATH_SEGMENT_MAX = 120;
+
 export function sanitizePathSegment(value: string | null | undefined, fallback: string): string {
   let cleaned = (value || "").trim().replace(INVALID_SEGMENT_RE, "_");
   cleaned = cleaned
@@ -44,7 +47,7 @@ export function sanitizePathSegment(value: string | null | undefined, fallback: 
     .replace(/^[ .]+|[ .]+$/g, "");
   if (cleaned === "" || cleaned === "." || cleaned === "..") cleaned = fallback;
   // Its extension kept, and within the bytes a file system allows for a name, which 120 CJK characters are not.
-  return cutName(cleaned, 120);
+  return cutName(cleaned, PATH_SEGMENT_MAX);
 }
 
 /** Trimmed, with "/" separators and current token names; not yet checked. */

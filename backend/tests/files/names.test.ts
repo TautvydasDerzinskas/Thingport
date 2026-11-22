@@ -18,6 +18,26 @@ const SEED = { seed: 20261122, numRuns: 2000 };
 const bytes = (text: string) => Buffer.byteLength(text, "utf8");
 /** Any string, every code point a name could hold, control characters and lone surrogates included. */
 const anyName = fc.string({ unit: "binary", maxLength: 300 });
+/** Mostly the characters that interact: letters and their accents, control characters, dots, kinds of space. */
+const trickyName = fc.string({
+  unit: fc.constantFrom(
+    "e",
+    "a",
+    "E",
+    "\u0301",
+    "\u0308",
+    "\u0001",
+    "\u0085",
+    ".",
+    " ",
+    "\u3000",
+    "\u00a0",
+    "/",
+    "組",
+    "_",
+  ),
+  maxLength: 40,
+});
 
 describe("normalizeFileName", () => {
   it.each(vectors.normalized)("%j is %j", (input, expected) => {
@@ -31,7 +51,7 @@ describe("normalizeFileName", () => {
 
   it("changes nothing the second time", () => {
     fc.assert(
-      fc.property(anyName, (raw) => {
+      fc.property(fc.oneof(anyName, trickyName), (raw) => {
         expect(normalizeFileName(normalizeFileName(raw))).toBe(normalizeFileName(raw));
       }),
       SEED,
@@ -71,6 +91,22 @@ describe("splitName", () => {
 describe("numberedName", () => {
   it.each(vectors.numbered)("%j number %i is %j", (name, n, expected) => {
     expect(numberedName(name as NormalName, n as number)).toBe(expected);
+  });
+
+  it.each(vectors.numberedWithin)("%j number %i within %i units is %j", (name, n, max, expected) => {
+    expect(numberedName(name as NormalName, n as number, max as number)).toBe(expected);
+  });
+
+  it("stays within a storage segment's length too, keeping the number and the extension", () => {
+    fc.assert(
+      fc.property(anyName, fc.integer({ min: 2, max: 1000 }), (raw, n) => {
+        const name = normalizeFileName(raw);
+        const numbered = numberedName(name, n, 120);
+        expect(numbered.length).toBeLessThanOrEqual(120);
+        expect(numbered.endsWith(` (${n})${splitName(name).ext}`)).toBe(true);
+      }),
+      SEED,
+    );
   });
 
   it("never gives two numbers the same name, and stays within the limit", () => {
