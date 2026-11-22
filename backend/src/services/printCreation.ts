@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
-import { pruneWhatModelsLeft, removeModel } from "../modelFiles/removeModel";
+import { removeModel } from "../modelFiles/removeModel";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
@@ -411,8 +411,11 @@ export async function discardPrint(printId: string): Promise<void> {
  *  is gone already. */
 export async function discardPrintOrThrow(printId: string): Promise<void> {
   const went = await removeModel(printId);
-  // An author or tag only this model brought, as an import's can be, goes with it.
-  if (went) await pruneWhatModelsLeft(went.userId, [went]);
+  if (!went) return;
+  // An author or tag only this model brought, as an import's can be, goes with it. Loaded here: the tag services lead
+  // back to the provider registry, which loads this module.
+  const { pruneWhatModelsLeft } = await import("./printEditService");
+  await pruneWhatModelsLeft(went.userId, [went]);
 }
 
 export async function addPlatesToPrint(

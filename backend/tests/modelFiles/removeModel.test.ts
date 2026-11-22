@@ -9,6 +9,7 @@ import { removeModel } from "../../src/modelFiles/removeModel";
 import { deleteAllPrintsForUser } from "../../src/services/adminService";
 import { discardPrintOrThrow } from "../../src/services/printCreation";
 import { deletePrint } from "../../src/services/printEditService";
+import { saveFileFromTemp } from "../../src/services/printFileService";
 import { deleteUser } from "../../src/services/userAdminService";
 import { checkLibraryInvariants, faults, pauseAt, useStorageKit, type KitModel, type KitUser } from "../harness";
 
@@ -85,6 +86,28 @@ describe("removing a model", () => {
     await expect(removeModel(model.print.id)).rejects.toMatchObject({ code: "EIO" });
 
     expect(await prisma.printFile.count({ where: { printId: model.print.id } })).toBe(model.files.length);
+    expect(await checkLibraryInvariants(kit.scope())).toEqual([]);
+  });
+
+  it("looks again under the lock at a file added since its first look, removing nothing when that look fails", async () => {
+    const owner = await kit.user();
+    const model = await kit.model(owner);
+    const gate = pauseAt("fileState:delete.look");
+    const removing = kit.start(() => removeModel(model.print.id));
+    await gate.reachedBy(removing);
+    // A file comes while the delete is between its first look and the model's lock.
+    const temp = path.join(kit.tempStorage(), `upload-${kit.nonce()}`);
+    fs.writeFileSync(temp, "notes");
+    await saveFileFromTemp(owner.id, model.print.id, temp, "notes.txt", null, { role: "SUPPORTING" });
+    const added = await prisma.printFile.findFirstOrThrow({
+      where: { printId: model.print.id, filename: "notes.txt" },
+    });
+    faults.at("fileState:delete.look", 1, "EIO", { path: at(added.storagePath) });
+    gate.release();
+
+    await expect(removing).rejects.toMatchObject({ code: "EIO" });
+    expect(await prisma.print.count({ where: { id: model.print.id } })).toBe(1);
+    expect(await prisma.printFile.count({ where: { printId: model.print.id } })).toBe(model.files.length + 1);
     expect(await checkLibraryInvariants(kit.scope())).toEqual([]);
   });
 

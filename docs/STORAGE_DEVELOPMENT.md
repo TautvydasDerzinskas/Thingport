@@ -41,9 +41,10 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
   on Windows) reads the file by its path just after the row check instead. Pinned by `tests/modelFiles/serveByHandle.test.ts` and `tests/modelFiles/door.zip.test.ts`.
 - **One delete.** Every way a model goes runs `removeModel` (`modelFiles/removeModel.ts`): the owner's delete, an
   admin's, the discard of a model that couldn't be made, and an account's tool models. It looks at the model's files
-  first, so a disk error stops it with nothing removed; takes its rows down in one transaction under the model's row
-  lock, so a failure leaves the model whole; then removes every file and picture they named, in its folder and the old
-  shared ones, logging and leaving any it can't. Pinned by `tests/modelFiles/removeModel.test.ts`.
+  first, and again under the model's row lock at any added since, so a disk error stops it with nothing removed; takes
+  its rows down in one transaction under that lock, so a failure leaves the model whole; then removes every file and
+  picture they named, in its folder and the old shared ones. A file it can't remove is logged and left; a picture is
+  still removed quietly, as pictures aren't under these rules yet. Pinned by `tests/modelFiles/removeModel.test.ts`.
 - **A tool's plate owns no file.** A plate with a `sourcePath` reads the tool's file there and only there; nothing places,
   moves or removes a file at its `storagePath`. Pinned by the tool cases in `tests/modelFiles/door.services.test.ts` and
   `removeModel.test.ts`.
