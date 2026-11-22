@@ -226,6 +226,17 @@ test("a first review that was rate limited, got stuck or never started is asked 
   assert.match(skipped.reason, /Review skipped/);
 });
 
+test("a first review that finished without a word still counts once there's a newer push", () => {
+  // Asked for at minute 5 and finished at 15 with no review posted and no walkthrough; then a push at minute 20.
+  const quiet = [SUMMARY, comment(ASKER, ASK, 5), comment(CODERABBIT, ACCEPTED, 5, { updated: 15 })];
+  const later = state({ reviews: [], comments: quiet, checkRuns: [], headDate: at(20), now: at(40) });
+  assert.equal(later.waiting, false);
+  assert.match(later.reason, /a push is reviewed when someone asks/);
+  // A refused ask isn't a review: that first review is still owed.
+  const refused = [SUMMARY, comment(ASKER, ASK, 5), comment(CODERABBIT, REFUSED, 5)];
+  assert.equal(state({ reviews: [], comments: refused, checkRuns: [], headDate: at(20), now: at(40) }).waiting, true);
+});
+
 test("CodeRabbit's answer to a thread reply isn't a review of the head", () => {
   // An ask it refused, then a reply in a review thread: the refused ask is still owed.
   const refused = [SUMMARY, comment(ASKER, ASK, 20), comment(CODERABBIT, REFUSED, 20)];

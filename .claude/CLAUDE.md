@@ -21,8 +21,8 @@ Before adding or changing a provider (a model site Thingport imports from), read
 Before changing how a model's files are stored, moved, imported or deleted (plates, supporting files, the prepared
 print, pictures; uploads, imports, the consume folder, copies, repairs), read
 [docs/STORAGE_DEVELOPMENT.md](../docs/STORAGE_DEVELOPMENT.md). Its "Rules in force" are what that code follows: a pull
-request that puts a new rule in force adds it there, with the test that pins it, and reviews check code against that
-list only.
+request that puts a new rule in force adds it there, with the test that pins it. Reviews judge rule conformance against
+that list only; a regression or any other defect in a change is a finding as usual.
 
 ## Studio
 

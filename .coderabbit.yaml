@@ -81,19 +81,22 @@ reviews:
       instructions: |
         How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. Flag a
         change that breaks a rule docs/STORAGE_DEVELOPMENT.md lists under "Rules in force". Don't flag code for a rule
-        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests.
+        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests. Any other
+        defect in the change, a regression included, is a finding as usual.
 
     - path: "backend/src/services/{print*,import*,upload*,consume*,zip*,download*,modelFiles*,missingFiles*,storage*}.ts"
       instructions: |
         How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. Flag a
         change that breaks a rule docs/STORAGE_DEVELOPMENT.md lists under "Rules in force". Don't flag code for a rule
-        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests.
+        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests. Any other
+        defect in the change, a regression included, is a finding as usual.
 
     - path: "backend/src/routes/{plates,printFiles,prints,upload,import}*.ts"
       instructions: |
         How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. Flag a
         change that breaks a rule docs/STORAGE_DEVELOPMENT.md lists under "Rules in force". Don't flag code for a rule
-        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests.
+        that list doesn't have yet: it isn't in force, and a later pull request brings it in with its tests. Any other
+        defect in the change, a regression included, is a finding as usual.
 
     - path: "backend/prisma/**"
       instructions: |

@@ -7,7 +7,9 @@ nothing to register or wire up.
 
 A translation doesn't have to be finished to be useful: keep every key, and leave any text you haven't translated
 yet in English, where it shows in English, so you can send a partial translation and fill it in later. A language
-file needs every key `en.json` has, and no others: every pull request is checked for that.
+file needs every key `en.json` has, and no others, with one difference for plurals: a key that depends on a number
+takes the forms your language uses (see [Plurals](#plurals)), so a `_few` or `_many` form English doesn't have is
+expected, not extra. Every pull request is checked for that.
 
 ## Add a language
 

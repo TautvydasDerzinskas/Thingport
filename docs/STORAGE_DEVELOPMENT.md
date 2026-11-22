@@ -12,8 +12,9 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
 None yet.
 
 A rule goes here only in the pull request whose code follows it everywhere it applies, with the test that pins it.
-Reviewers, CodeRabbit included, check a change against this list, and only this list: a rule that isn't here isn't in
-force yet, so code that doesn't follow it isn't a finding.
+Reviewers, CodeRabbit included, judge a change's rule conformance against this list only: a rule that isn't here isn't
+in force yet, so code that doesn't follow it isn't a finding for that rule. Anything else wrong with the change, a
+regression or a bug in what it does, is a finding as usual.
 
 ## How it works today
 

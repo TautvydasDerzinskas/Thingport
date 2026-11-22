@@ -240,9 +240,11 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], r
 
   // Nothing since the push. Only an ask brings a review of a push, so all a pull request can be owed here is its first
   // review: one that was rate limited, got stuck or never started.
+  // A review that finished without a word left no review behind, only its reply, and still reviewed the pull request.
   const reviewedBefore =
     reviews.some((r) => isReview(r, topLevel)) ||
-    comments.some((c) => isSummary(c) && c.body.includes(WALKTHROUGH_MARKER));
+    comments.some((c) => isSummary(c) && c.body.includes(WALKTHROUGH_MARKER)) ||
+    comments.some((c) => isReply(c) && replyOutcome(c.body) === "accepted" && /finished/i.test(plain(c.body)));
   if (reviewedBefore) return no("pushed to since CodeRabbit's last review; a push is reviewed when someone asks");
   if (!check && now - headDate < MISSED_HEAD_MS) {
     return no("no CodeRabbit check on its head yet", headDate + MISSED_HEAD_MS);
