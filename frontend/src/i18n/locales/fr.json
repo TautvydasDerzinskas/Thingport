@@ -2474,6 +2474,11 @@
         "folderSummary_one": "{{count}} fichier · {{size}}",
         "folderSummary_other": "{{count}} fichiers · {{size}}",
         "ofModel": "modèle « {{name}} »",
+        "cantRead": "Illisible",
+        "cantReadFolder": "Dossier illisible",
+        "unreadable_one": "Le disque n’a pas pu lire {{count}} élément ici. Il est peut-être encore là.",
+        "unreadable_many": "Le disque n’a pas pu lire {{count}} éléments ici. Ils sont peut-être encore là.",
+        "unreadable_other": "Le disque n’a pas pu lire {{count}} éléments ici. Ils sont peut-être encore là.",
         "kind": {
           "plate": "Fichier du modèle",
           "file": "Fichier annexe",

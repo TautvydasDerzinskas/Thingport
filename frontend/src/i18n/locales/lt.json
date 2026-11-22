@@ -2505,6 +2505,12 @@
         "folderSummary_many": "{{count}} failo · {{size}}",
         "folderSummary_other": "{{count}} failų · {{size}}",
         "ofModel": "modelis „{{name}}“",
+        "cantRead": "Nepavyksta perskaityti",
+        "cantReadFolder": "Nepavyksta perskaityti šio aplanko",
+        "unreadable_one": "Diskas negalėjo čia perskaityti {{count}} elemento. Jis vis dar gali ten būti.",
+        "unreadable_few": "Diskas negalėjo čia perskaityti {{count}} elementų. Jie vis dar gali ten būti.",
+        "unreadable_many": "Diskas negalėjo čia perskaityti {{count}} elemento. Jie vis dar gali ten būti.",
+        "unreadable_other": "Diskas negalėjo čia perskaityti {{count}} elementų. Jie vis dar gali ten būti.",
         "kind": {
           "plate": "Modelio failas",
           "file": "Papildomas failas",
