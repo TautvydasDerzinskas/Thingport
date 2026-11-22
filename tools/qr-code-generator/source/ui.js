@@ -1154,7 +1154,15 @@ export default async function mount(thingport) {
         renderSheet();
         queue(0);
       } catch (error) {
-        ui.toast(error.message || t("toast.logoFailed"), "error");
+        const known = new Map([
+          ["That file isn't SVG this can read.", "error.badSvg"],
+          ["That file has no <svg> in it.", "error.noSvg"],
+          ["Nothing in that file is an outline this can print.", "error.noOutline"],
+        ]);
+        ui.toast(
+          known.has(error.message) ? t(known.get(error.message)) : error.message || t("toast.logoFailed"),
+          "error",
+        );
       }
     });
     input.click();

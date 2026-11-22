@@ -104,5 +104,17 @@
   "unused.title": "Espace inutilisé",
   "wall.height": "Hauteur",
   "wall.title": "Taille du mur",
-  "wall.width": "Largeur"
+  "wall.width": "Largeur",
+  "parts.tiles": "Plaques",
+  "parts.optional": "Facultatif",
+  "parts.count": "Plaques : {count}",
+  "parts.empty": "Aucune pièce pour le moment.",
+  "error.largeTitle": "Mur trop grand",
+  "error.large": "Il faudrait environ {estimate} plaques. Vérifiez les dimensions et les unités ou choisissez une plaque plus grande (limite : {limit} plaques).",
+  "error.dimensionsTitle": "Dimensions incorrectes",
+  "error.dimensions": "Saisissez une largeur et une hauteur supérieures à zéro.",
+  "error.smallTitle": "Plaque trop petite",
+  "error.small": "Cette fixation nécessite des plaques plus grandes que {size}×{size}.",
+  "error.noFitTitle": "Aucune plaque ne convient",
+  "error.noFit": "Pour des plaques de {size}×{size}, le mur doit mesurer au moins {required} en largeur et en hauteur. Choisissez une plaque plus petite."
 }

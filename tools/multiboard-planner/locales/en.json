@@ -104,5 +104,17 @@
   "unused.title": "Unused space",
   "wall.height": "Height",
   "wall.title": "Wall size",
-  "wall.width": "Width"
+  "wall.width": "Width",
+  "parts.tiles": "Tiles",
+  "parts.optional": "Optional",
+  "parts.count": "Tiles: {count}",
+  "parts.empty": "No parts yet.",
+  "error.largeTitle": "Wall too large",
+  "error.large": "That would take about {estimate} tiles. Check the size and units, or pick a bigger tile (limit {limit} tiles).",
+  "error.dimensionsTitle": "Dimensions are incorrect",
+  "error.dimensions": "Enter a width and height above zero.",
+  "error.smallTitle": "Tile too small",
+  "error.small": "This mount needs tiles bigger than {size}×{size}.",
+  "error.noFitTitle": "No tile fits",
+  "error.noFit": "The wall must be at least {required} wide and high for {size}×{size} tiles. Pick a smaller tile size."
 }

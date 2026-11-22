@@ -1414,7 +1414,7 @@ export default async function mount(thingport) {
     const svg = el("svg", {
       viewBox: `${-pad} ${-pad} ${W + 2 * pad} ${H + 2 * pad}`,
       role: "img",
-      "aria-label": `Layout of ${data.tiles.map.size} tiles`,
+      "aria-label": t("parts.count", { count: data.tiles.map.size }),
     });
     latticePattern(svg, PAL);
     el("rect", { x: 0, y: 0, width: W, height: H, fill: PAL.room, rx: Math.min(W, H) * 0.004 }, svg);
@@ -1772,8 +1772,8 @@ export default async function mount(thingport) {
     const host = $("results");
     host.innerHTML = "";
     const sections = [
-      ["Tiles", result.tileRows[0], true],
-      ["Mounting", result.mountRows[0].concat(result.mountRows[2] || []), false],
+      [t("parts.tiles"), result.tileRows[0], true],
+      [t("mount.title"), result.mountRows[0].concat(result.mountRows[2] || []), false],
     ];
     let tileCount = 0;
     let delay = 0;
@@ -1796,7 +1796,10 @@ export default async function mount(thingport) {
         item.appendChild(name);
         const qty = document.createElement("span");
         qty.className = "mbp-qty";
-        qty.innerHTML = row[1] === "-" ? "<small>optional</small>" : `${Number(row[1])}<small>×</small>`;
+        const small = document.createElement("small");
+        small.textContent = row[1] === "-" ? t("parts.optional") : "×";
+        if (row[1] !== "-") qty.append(String(Number(row[1])));
+        qty.append(small);
         item.appendChild(qty);
         item.appendChild(partLinks(row));
         if (isTile) {
@@ -1812,7 +1815,7 @@ export default async function mount(thingport) {
       }
       host.appendChild(list);
     }
-    $("count").textContent = `${tileCount} tile${tileCount === 1 ? "" : "s"}`;
+    $("count").textContent = t("parts.count", { count: tileCount });
   }
 
   function highlight(name) {
@@ -1830,7 +1833,11 @@ export default async function mount(thingport) {
     strong.textContent = title;
     box.append(strong, text);
     stage.appendChild(box);
-    $("results").innerHTML = '<p class="mbp-empty" style="margin:24px auto">No parts yet.</p>';
+    const empty = document.createElement("p");
+    empty.className = "mbp-empty";
+    empty.style.margin = "24px auto";
+    empty.textContent = t("parts.empty");
+    $("results").replaceChildren(empty);
     $("count").textContent = "";
     $("legend").innerHTML = "";
     $("unused").classList.remove("mbp-show");
@@ -1908,27 +1915,19 @@ export default async function mount(thingport) {
     const estimate = C.estimateTileCount(input);
     if (estimate > MAX_TILES) {
       return showEmpty(
-        "Wall too large",
-        `That would take about ${estimate.toLocaleString()} tiles. Check the size and units, or pick a bigger tile (limit ${MAX_TILES.toLocaleString()} tiles).`,
+        t("error.largeTitle"),
+        t("error.large", { estimate: estimate.toLocaleString(), limit: MAX_TILES.toLocaleString() }),
         true,
       );
     }
     const result = C.calculate(input, parts);
-    if (result.error === "dimensions")
-      return showEmpty("Dimensions are incorrect", "Enter a width and height above zero.", true);
+    if (result.error === "dimensions") return showEmpty(t("error.dimensionsTitle"), t("error.dimensions"), true);
     if (result.error === "minSize")
-      return showEmpty(
-        "Tile too small",
-        `This mount needs tiles bigger than ${result.minSize - 1}×${result.minSize - 1}.`,
-        true,
-      );
+      return showEmpty(t("error.smallTitle"), t("error.small", { size: result.minSize - 1 }), true);
     if (result.error === "noTiles") {
       const req = state.tileSize * C.TILE_CELL_OFFSET;
       const reqText = state.units === C.MM ? `${req} mm` : `${(req / C.MM_TO_INCH).toFixed(2)} in`;
-      return showEmpty(
-        "No tile fits",
-        `The wall must be at least ${reqText} wide and high for ${state.tileSize}×${state.tileSize} tiles. Pick a smaller tile size.`,
-      );
+      return showEmpty(t("error.noFitTitle"), t("error.noFit", { required: reqText, size: state.tileSize }));
     }
     current = result;
     const { svg } = buildSvg(result);

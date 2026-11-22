@@ -104,5 +104,17 @@
   "unused.title": "Nepanaudota erdvė",
   "wall.height": "Aukštis",
   "wall.title": "Sienos dydis",
-  "wall.width": "Plotis"
+  "wall.width": "Plotis",
+  "parts.tiles": "Plytelės",
+  "parts.optional": "Nebūtina",
+  "parts.count": "Plytelių: {count}",
+  "parts.empty": "Dalių dar nėra.",
+  "error.largeTitle": "Siena per didelė",
+  "error.large": "Reikėtų apie {estimate} plytelių. Patikrinkite dydį ir matavimo vienetus arba pasirinkite didesnę plytelę (riba – {limit} plytelių).",
+  "error.dimensionsTitle": "Matmenys neteisingi",
+  "error.dimensions": "Įveskite didesnį už nulį plotį ir aukštį.",
+  "error.smallTitle": "Plytelė per maža",
+  "error.small": "Šiam tvirtinimui reikia didesnių nei {size}×{size} plytelių.",
+  "error.noFitTitle": "Netelpa nė viena plytelė",
+  "error.noFit": "{size}×{size} plytelėms sienos plotis ir aukštis turi būti bent {required}. Pasirinkite mažesnę plytelę."
 }

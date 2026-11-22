@@ -1,7 +1,7 @@
 {
   "name": "Print queue",
   "description": "A print queue the household shares: add models from their pages, see who has what queued or printing, drag each print to Printing, Printed or Failed, and keep the history.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {
@@ -10,7 +10,7 @@
   },
   "hosts": [],
   "category": "planners",
-  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be", "zh"],
+  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be", "zh", "de"],
   "commands": [
     {
       "id": "queue",
