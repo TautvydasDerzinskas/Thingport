@@ -35,6 +35,7 @@ import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectio
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
+import { useToast } from "../../components/ToastProvider";
 
 const PAGE_SIZE = 24;
 
@@ -61,6 +62,7 @@ function CollectionDetail({
 }: Props & { collectionId?: string }) {
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common"]);
+  const showToast = useToast();
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
     Print,
     Collection | null
@@ -138,7 +140,7 @@ function CollectionDetail({
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 

@@ -15,7 +15,8 @@
     "jsx-no-new-array-as-prop": "off",
     "set-state-in-effect": "off",
     "incompatible-library": "off",
-    "consistent-function-scoping": "off"
+    "consistent-function-scoping": "off",
+    "no-alert": "error"
   },
   "env": {
     "builtin": true,

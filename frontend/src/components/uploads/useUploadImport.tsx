@@ -186,7 +186,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
       }
     }
     if (failed.length) {
-      alert(t("uploadBar.uploadFailed", { files: failed.join(", ") }));
+      showToast({ message: t("uploadBar.uploadFailed", { files: failed.join(", ") }), severity: "error" });
     }
     setUploading(false);
   };

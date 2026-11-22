@@ -30,6 +30,7 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useToast } from "../../components/ToastProvider";
 
 const PAGE_SIZE = 24;
 
@@ -46,6 +47,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   const { tagName } = useParams<{ tagName: string }>();
   const tag = tagName ? decodeURIComponent(tagName) : "";
   const { t } = useTranslation(["models", "common"]);
+  const showToast = useToast();
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
     loadingAtFirst: true,
   });
@@ -94,7 +96,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 

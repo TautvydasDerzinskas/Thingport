@@ -37,6 +37,7 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useToast } from "../../components/ToastProvider";
 
 const PAGE_SIZE = 24;
 
@@ -66,6 +67,7 @@ export default function ModelsPage({
   viewer,
 }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
+  const showToast = useToast();
   const mobile = useMediaQuery((muiTheme: Theme) => muiTheme.breakpoints.down("md"));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -183,7 +185,7 @@ export default function ModelsPage({
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 

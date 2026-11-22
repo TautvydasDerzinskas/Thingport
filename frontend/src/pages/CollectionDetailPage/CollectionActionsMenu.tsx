@@ -31,6 +31,7 @@ import CollectionSyncDialog from "./CollectionSyncDialog";
 import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 import { useSocialStatus } from "../../hooks/useSocialStatus";
+import { useToast } from "../../components/ToastProvider";
 
 export type CollectionActionsHandle = {
   /** Opens its form on who it's shared with, as Share… in the menu does. */
@@ -64,6 +65,7 @@ const CollectionActionsMenu = forwardRef<CollectionActionsHandle, Props>(functio
   ref,
 ) {
   const { t } = useTranslation(["models", "common"]);
+  const showToast = useToast();
   const confirmDialog = useConfirm();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   // The form, as Edit opens it, or as Share… does: on who sees it.
@@ -96,7 +98,7 @@ const CollectionActionsMenu = forwardRef<CollectionActionsHandle, Props>(functio
         return;
       }
       console.error(err);
-      alert(t("models:collections.bookmarkFailed"));
+      showToast({ message: t("models:collections.bookmarkFailed"), severity: "error" });
     } finally {
       setBookmarking(false);
     }
@@ -134,7 +136,7 @@ const CollectionActionsMenu = forwardRef<CollectionActionsHandle, Props>(functio
         return;
       }
       console.error(err);
-      alert(t("models:collections.detail.deleteFailed"));
+      showToast({ message: t("models:collections.detail.deleteFailed"), severity: "error" });
     } finally {
       setDeleting(false);
     }

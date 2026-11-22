@@ -25,6 +25,7 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useToast } from "../../components/ToastProvider";
 
 const PAGE_SIZE = 24;
 
@@ -39,6 +40,7 @@ type Props = {
  *  leaves `?q=` alone on this page. */
 export default function SearchResultsPage({ theme, previewMode, onUnauthorized, viewer }: Props) {
   const { t } = useTranslation(["models", "app"]);
+  const showToast = useToast();
   const [searchParams] = useSearchParams();
   const query = (searchParams.get("q") ?? "").trim();
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
@@ -68,7 +70,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 
