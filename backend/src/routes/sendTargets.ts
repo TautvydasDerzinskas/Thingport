@@ -1,11 +1,10 @@
 import path from "node:path";
-import { create as contentDisposition } from "content-disposition";
 import { Router, type Request } from "express";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { prisma } from "../db";
 import { asyncHandler } from "../utils/asyncHandler";
-import { HttpError } from "../utils/fileUtils";
+import { attachmentDisposition, HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { getPublicUrl } from "../services/settingsService";
 import { sendPlacementSchema, sendTargetInputSchema, sendTargetUpdateSchema } from "../services/sendTargetFormat";
@@ -41,7 +40,7 @@ sendFileRoutes.get(
     const file = await fileFromGrant(String(req.params.grant));
     res.setHeader("Content-Type", file.mime);
     // A plain name where it is one, and the whole name as UTF-8 beside it where it isn't.
-    res.setHeader("Content-Disposition", contentDisposition(file.filename));
+    res.setHeader("Content-Disposition", attachmentDisposition(file.filename));
     res.setHeader("Cache-Control", "private, no-store");
     res.sendFile(path.resolve(file.path));
   }),

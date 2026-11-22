@@ -7165,7 +7165,8 @@
       "summaryFailed": "Nepavyko apskaičiuoti atsisiuntimo dydžio. Bandykite dar kartą.",
       "empty": "Nerasta modelių failų atsisiuntimui.",
       "downloading": "Atsisiunčiama…",
-      "failed": "Nepavyko atsisiųsti zip failo. Bandykite dar kartą."
+      "failed": "Nepavyko atsisiųsti zip failo. Bandykite dar kartą.",
+      "tooLarge": "Vienam zip failui tai per daug: daugiausia 65 534 failai ir apie 4 GB. Atsisiųskite mažiau modelių vienu metu arba failus po vieną."
     },
     "errors": {
       "loadFailed": "Nepavyko įkelti modelių.",

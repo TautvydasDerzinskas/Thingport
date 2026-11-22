@@ -1,9 +1,8 @@
 import express, { Router } from "express";
-import { create as contentDisposition } from "content-disposition";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
-import { HttpError } from "../utils/fileUtils";
+import { attachmentDisposition, HttpError } from "../utils/fileUtils";
 import { normalizeFileName } from "../files/names";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
@@ -224,7 +223,7 @@ router.get(
     // With its extension, so the whole name keeps within the limit and the cut comes off the title.
     const name = normalizeFileName(`${title}.${file.format}`).replace(/[:*?"<>|]+/g, "-");
     res.set("Cache-Control", "private, no-store");
-    res.set("Content-Disposition", contentDisposition(name));
+    res.set("Content-Disposition", attachmentDisposition(name));
     res.type(file.mime).send(Buffer.from(file.bytes));
   }),
 );

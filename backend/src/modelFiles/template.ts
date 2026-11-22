@@ -4,7 +4,7 @@ import { STORAGE } from "../config";
 import { folderLevels } from "../utils/fileFolder";
 import { HttpError } from "../utils/fileUtils";
 import { ASSETS_FOLDER } from "../services/modelAssets";
-import { cutName } from "../files/names";
+import { cutName, PATH_SEGMENT_MAX } from "../files/names";
 
 export const STORAGE_TEMPLATE_TOKENS = [
   "category-or-folder",
@@ -36,8 +36,7 @@ const TOKEN_RE = /\{([a-z_-]+)\}/g;
 // oxlint-disable-next-line no-control-regex -- stripping control chars is the point here.
 const INVALID_SEGMENT_RE = /[<>:"|?*\x00-\x1f]/g;
 
-/** How long a storage path's segment may be, in UTF-16 units, as well as fitting NAME_MAX_BYTES. */
-export const PATH_SEGMENT_MAX = 120;
+export { PATH_SEGMENT_MAX };
 
 export function sanitizePathSegment(value: string | null | undefined, fallback: string): string {
   let cleaned = (value || "").trim().replace(INVALID_SEGMENT_RE, "_");

@@ -118,6 +118,14 @@ export type Author = {
   is_linked: boolean;
 };
 
+/** A zip the server won't make: more files, or more bytes, than a zip holds. */
+export class ZipTooLargeError extends Error {
+  constructor() {
+    super("zip_too_large");
+    this.name = "ZipTooLargeError";
+  }
+}
+
 export type Print = {
   id: string;
   /** Set on a model a tool brought: it can be opened, downloaded and printed, not edited or deleted. */
@@ -914,6 +922,10 @@ export const printsApi = {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(opts),
     });
+    if (res.status === 413) {
+      const body = (await res.json().catch(() => null)) as { code?: string } | null;
+      if (body?.code === "zip_too_large") throw new ZipTooLargeError();
+    }
     assertOk(res, "Download failed");
     return res;
   },

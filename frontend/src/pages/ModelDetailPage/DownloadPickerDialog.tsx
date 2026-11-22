@@ -20,6 +20,7 @@ import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
 import type { Plate } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import { useToastHost } from "../../components/ToastProvider";
 import { fileRowText } from "./fileRowText";
 import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
@@ -30,6 +31,8 @@ type Props = {
   onClose: () => void;
   downloading: boolean;
   sortedPlates: Plate[];
+  /** How many files "Download all" puts in the zip, the model's other files besides its plates. */
+  zipFileCount: number;
   downloadAllZip: () => void;
   /** One folder of the model's (Plate.folder), with the folders in it, as a zip. */
   downloadFolderZip: (folder: string) => void;
@@ -43,11 +46,14 @@ export default function DownloadPickerDialog({
   onClose,
   downloading,
   sortedPlates,
+  zipFileCount,
   downloadAllZip,
   downloadFolderZip,
   downloadPlate,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  // A download that fails says so in here, where a screen reader and the keyboard can reach it.
+  const toastHost = useToastHost(open);
   const grouped = hasFolders(sortedPlates, folderOf);
   const names = useMemo(
     () =>
@@ -85,7 +91,13 @@ export default function DownloadPickerDialog({
     </ListItemButton>
   );
   return (
-    <Dialog open={open} onClose={() => !downloading && onClose()} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={() => !downloading && onClose()}
+      fullWidth
+      maxWidth="xs"
+      slotProps={{ paper: { ref: toastHost } }}
+    >
       <DialogTitle>{t("models:detail.downloadPickerTitle")}</DialogTitle>
       <DialogContent>
         <Stack spacing={1.5}>
@@ -95,7 +107,7 @@ export default function DownloadPickerDialog({
             disabled={downloading}
             startIcon={downloading ? <CircularProgress size={14} /> : <DownloadIcon fontSize="small" />}
           >
-            {t("models:detail.downloadAllZip", { count: sortedPlates.length })}
+            {t("models:detail.downloadAllZip", { count: zipFileCount })}
           </Button>
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>

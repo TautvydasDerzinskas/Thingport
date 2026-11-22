@@ -1,13 +1,29 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UnauthorizedError } from "../../api/client";
-import { type Plate, type Print, printsApi } from "../../api/prints";
+import { type Plate, type Print, printsApi, ZipTooLargeError } from "../../api/prints";
+import { useToast } from "../../components/ToastProvider";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
+
+/** How many files "Download all" puts in a model's zip: its plates, supporting files and prepared print, and the
+ *  LICENSE.txt written for its licence. None for a model with only one file of its own, as there's nothing to put with
+ *  it. */
+export function zipFileCount(print: {
+  plates: readonly unknown[];
+  supporting_file_count?: number;
+  prepared_print?: { removable: boolean } | null;
+  license?: object | null;
+}): number {
+  // A prepared print that isn't removable is the first plate itself, sliced: already counted, and not in prepared/.
+  const own = print.plates.length + (print.supporting_file_count ?? 0) + (print.prepared_print?.removable ? 1 : 0);
+  return own > 1 ? own + (print.license ? 1 : 0) : 0;
+}
 
 /** A single-plate model downloads directly; multi-plate opens a picker. `recordUse` records an
  *  Open in {Slicer}. */
 export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRecorded?: (print: Print) => void) {
   const { t } = useTranslation(["models"]);
+  const showToast = useToast();
   // The page header keeps this across models: the picker is open for the model it was opened on, leaving that model
   // closes it, and a download of that model finishing later closes only its own.
   const [pickerFor, setPickerFor] = useState<string | null>(null);
@@ -23,7 +39,9 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
       return;
     }
     console.error(err);
-    alert(t("models:detail.downloadFailed"));
+    const message =
+      err instanceof ZipTooLargeError ? t("models:downloadZip.tooLarge") : t("models:detail.downloadFailed");
+    showToast({ message, severity: "error" });
   };
 
   // Fire-and-forget. Only a real print is passed on: an older backend answers `{ ok: true }`.
@@ -43,7 +61,8 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   const downloadFile = async (file: Pick<Plate, "url" | "filename">) => {
     setDownloading(true);
     try {
-      const res = await fetch(printsApi.fileUrl(file.url));
+      // Asked again rather than taken from the cache the 3D viewer filled, which may hold an older name for it.
+      const res = await fetch(printsApi.fileUrl(file.url), { cache: "no-cache" });
       if (res.status === 401) throw new UnauthorizedError();
       if (!res.ok) throw new Error("Download failed");
       await saveResponseToDisk(res, file.filename || "download");
@@ -84,7 +103,6 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   };
 
   const sortedPlates = print.plates.toSorted((a, b) => a.position - b.position);
-
   return {
     pickerOpen,
     setPickerOpen,
@@ -94,6 +112,7 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     downloadPlate: downloadFile,
     downloadAllZip,
     sortedPlates,
+    zipFileCount: zipFileCount(print),
     recordUse,
     recordDownload,
   };

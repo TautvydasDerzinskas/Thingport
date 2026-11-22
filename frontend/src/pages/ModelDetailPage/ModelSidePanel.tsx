@@ -186,7 +186,7 @@ export default function ModelSidePanel({
   // The provider whose own category this maps from, when it isn't AI's answer.
   const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
   const viewerAvatarUrl = viewer?.avatar_url;
-  const { downloading, downloadFile, downloadAllZip, recordUse, recordDownload } = useDownloadPrint(
+  const { downloading, downloadFile, downloadAllZip, zipFileCount, recordUse, recordDownload } = useDownloadPrint(
     print,
     onUnauthorized,
     onUpdated,
@@ -623,8 +623,7 @@ export default function ModelSidePanel({
               }}
               downloading={downloading}
               onDownload={() => void downloadFile(selectedFile)}
-              // The zip holds the plates and supporting files, not the prepared print.
-              zipCount={files.filter((file) => file.plate).length}
+              zipCount={zipFileCount}
               onDownloadZip={() => void downloadAllZip()}
               onCustomize={customize.available ? customize.start : undefined}
               onOpenInStudio={studioPlate ? () => studio.open(studioPlate) : undefined}
