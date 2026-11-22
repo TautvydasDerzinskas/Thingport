@@ -202,7 +202,8 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
 
   /** Updates each tool with an update, one at a time, by the same rule as its own Update chip. Disabled tools too: they
    *  stay disabled. Each is read again just before its turn, as an earlier one's update can take a while: one another
-   *  admin has updated or uninstalled since is left alone, and models imported since are kept. One already being
+   *  admin has updated or uninstalled since is left alone, and models imported since are kept. One that can't be read
+   *  again isn't updated, as it may have been uninstalled, and is named among those that failed. One already being
    *  worked on here is left to that work. */
   const updateAll = async (tools: AdminTool[]) => {
     if (updatingAll) return;
@@ -213,9 +214,12 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     try {
       for (const [index, queued] of queue.entries()) {
         setUpdatingAll({ name: queued.manifest.name, at: index + 1, total: queue.length });
-        // Where the catalogue can't be read, the queued state stands: the server keeps models an instance has anyway.
         const fresh = await loadCatalog();
-        const tool = fresh ? fresh.tools.find((one) => one.slug === queued.slug) : queued;
+        if (!fresh) {
+          failed.push({ name: queued.manifest.name, error: t("adminSettings.tools.repo.failed") });
+          continue;
+        }
+        const tool = fresh.tools.find((one) => one.slug === queued.slug);
         if (!tool?.installed?.updateAvailable || !tool.inRepo) continue;
         try {
           await toolsApi.install(tool.slug, tool.installed.models?.imported === true);
