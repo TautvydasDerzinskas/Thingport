@@ -5,7 +5,8 @@ import path from "node:path";
 import type { Print } from "@prisma/client";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import {
   addPlatesToPrint,
   createPrint,
@@ -79,7 +80,7 @@ async function createModelFrom(userId: string, meta: PrintMetaInput, files: Uplo
   const plateFiles = renderable.length ? renderable : files;
 
   const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
-    const safeName = sanitizeFilename(f.originalname);
+    const safeName = normalizeFileName(f.originalname);
     return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
   });
   const nameHint = path.parse(plateInputs[0].filename).name;
@@ -131,7 +132,7 @@ async function addFilesTo(
   try {
     for (const f of files) {
       if (isPlate(f)) {
-        const safeName = sanitizeFilename(f.originalname);
+        const safeName = normalizeFileName(f.originalname);
         const [plate] = await addPlatesToPrint(userId, printId, [
           { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path },
         ]);

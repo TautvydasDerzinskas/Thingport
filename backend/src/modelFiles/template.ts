@@ -4,6 +4,7 @@ import { STORAGE } from "../config";
 import { folderLevels } from "../utils/fileFolder";
 import { HttpError } from "../utils/fileUtils";
 import { ASSETS_FOLDER } from "../services/modelAssets";
+import { cutName } from "../files/names";
 
 export const STORAGE_TEMPLATE_TOKENS = [
   "category-or-folder",
@@ -42,7 +43,8 @@ export function sanitizePathSegment(value: string | null | undefined, fallback: 
     .replace(/\\/g, "_")
     .replace(/^[ .]+|[ .]+$/g, "");
   if (cleaned === "" || cleaned === "." || cleaned === "..") cleaned = fallback;
-  return cleaned.slice(0, 120);
+  // Its extension kept, and within the bytes a file system allows for a name, which 120 CJK characters are not.
+  return cutName(cleaned, 120);
 }
 
 /** Trimmed, with "/" separators and current token names; not yet checked. */

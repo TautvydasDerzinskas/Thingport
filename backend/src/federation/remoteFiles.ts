@@ -10,7 +10,8 @@ import type { Peer, RemoteModel, RemotePerson } from "@prisma/client";
 import type { Request, Response as ExpressResponse } from "express";
 import { IMPORT_MAX_BYTES } from "../config";
 import { prisma } from "../db";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { folderPath, normalizeFolder } from "../utils/fileFolder";
 import { writeZip } from "../utils/zipWriter";
 import { originOf } from "./addresses";
@@ -196,7 +197,7 @@ export async function sendRemoteZip(
       await fetchRemoteFile(model, index, dest, { signal: viewer.signal, maxBytes: IMPORT_MAX_BYTES - total });
       total += (await fsp.stat(dest)).size;
       // In its folder, as the partner keeps it. Two files may still share a place: the later one gets a number.
-      const name = sanitizeFilename(file.name) || `file-${index}`;
+      const name = normalizeFileName(file.name);
       let arcname = folderPath(file.folder, name);
       for (let n = 2; taken.has(arcname); n++) arcname = folderPath(file.folder, `${n}-${name}`);
       taken.add(arcname);
@@ -211,7 +212,7 @@ export async function sendRemoteZip(
   } finally {
     if (dir) await fsp.rm(dir, { recursive: true, force: true }).catch(() => {});
   }
-  res.download(zipPath, `${sanitizeFilename(model.title) || "model"}.zip`, () => {
+  res.download(zipPath, `${normalizeFileName(model.title)}.zip`, () => {
     zipping.delete(userId);
     fs.rm(zipPath, { force: true }, () => undefined);
   });

@@ -1,0 +1,102 @@
+import fc from "fast-check";
+import { describe, expect, it } from "vitest";
+import {
+  isJunk,
+  NAME_MAX_BYTES,
+  nameKey,
+  normalizeFileName,
+  numberedName,
+  splitName,
+  type NormalName,
+} from "../../src/files/names";
+import vectors from "./vectors.json";
+
+// The name rule (src/files/names.ts): hard names by example in vectors.json, and what holds for any name by fast-check,
+// with a fixed seed so a run is the same everywhere.
+
+const SEED = { seed: 20261122, numRuns: 2000 };
+const bytes = (text: string) => Buffer.byteLength(text, "utf8");
+/** Any string, every code point a name could hold, control characters and lone surrogates included. */
+const anyName = fc.string({ unit: "binary", maxLength: 300 });
+
+describe("normalizeFileName", () => {
+  it.each(vectors.normalized)("%j is %j", (input, expected) => {
+    expect(normalizeFileName(input)).toBe(expected);
+  });
+
+  it("makes no name from nothing", () => {
+    expect(normalizeFileName(null)).toBe("imported-file");
+    expect(normalizeFileName(undefined, "script")).toBe("script");
+  });
+
+  it("changes nothing the second time", () => {
+    fc.assert(
+      fc.property(anyName, (raw) => {
+        expect(normalizeFileName(normalizeFileName(raw))).toBe(normalizeFileName(raw));
+      }),
+      SEED,
+    );
+  });
+
+  it("is never empty, nor longer than a file system holds", () => {
+    fc.assert(
+      fc.property(anyName, (raw) => {
+        const name = normalizeFileName(raw);
+        expect(name).not.toBe("");
+        expect(bytes(name)).toBeLessThanOrEqual(NAME_MAX_BYTES);
+        expect(name).not.toMatch(/[/\\]/);
+        expect(name).toBe(name.trim());
+      }),
+      SEED,
+    );
+  });
+
+  it("keeps an extension, however long the name in front of it", () => {
+    const ext = fc.constantFrom(".stl", ".3mf", ".gcode.3mf", ".tar.gz", ".pdf", ".STEP");
+    fc.assert(
+      fc.property(anyName, ext, (stem, extension) => {
+        expect(normalizeFileName(`${stem}${extension}`).endsWith(extension)).toBe(true);
+      }),
+      SEED,
+    );
+  });
+});
+
+describe("splitName", () => {
+  it.each(vectors.split)("%j is %j and %j", (name, stem, ext) => {
+    expect(splitName(name)).toEqual({ stem, ext });
+  });
+});
+
+describe("numberedName", () => {
+  it.each(vectors.numbered)("%j number %i is %j", (name, n, expected) => {
+    expect(numberedName(name as NormalName, n as number)).toBe(expected);
+  });
+
+  it("never gives two numbers the same name, and stays within the limit", () => {
+    fc.assert(
+      fc.property(anyName, fc.integer({ min: 2, max: 1000 }), fc.integer({ min: 2, max: 1000 }), (raw, n, m) => {
+        fc.pre(n !== m);
+        const name = normalizeFileName(raw);
+        const [a, b] = [numberedName(name, n), numberedName(name, m)];
+        expect(bytes(a)).toBeLessThanOrEqual(NAME_MAX_BYTES);
+        expect(nameKey(null, a)).not.toBe(nameKey(null, b));
+      }),
+      SEED,
+    );
+  });
+});
+
+describe("nameKey", () => {
+  it("tells names apart by folder and name, not by case", () => {
+    const name = normalizeFileName("Frog.STL");
+    expect(nameKey("Docs", name)).toBe(nameKey("docs", normalizeFileName("frog.stl")));
+    expect(nameKey(null, name)).not.toBe(nameKey("docs", name));
+  });
+});
+
+describe("isJunk", () => {
+  it.each(vectors.junk)("%j: %s", (entryPath, junk) => {
+    expect(isJunk(entryPath as string)).toBe(junk);
+  });
+});

@@ -2,7 +2,8 @@ import express from "express";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { modelUpload } from "../src/uploadMiddleware";
-import { buildImportFilename, parseContentDisposition, sanitizeFilename } from "../src/utils/fileUtils";
+import { normalizeFileName } from "../src/files/names";
+import { buildImportFilename, parseContentDisposition } from "../src/utils/fileUtils";
 
 // MakerWorld's CDN puts raw UTF-8 in the ISO-8859-1 `filename=` parameter; the repair must leave a
 // genuine Latin-1 name untouched.
@@ -60,17 +61,17 @@ describe("parseContentDisposition", () => {
   });
 });
 
-describe("sanitizeFilename", () => {
+describe("normalizeFileName at an import", () => {
   it("strips C1 control characters, not just NUL", () => {
     // Mis-decoded C1 characters get rejected by cloud storage.
-    expect(sanitizeFilename("we\u0080ird\u009dname.stl")).toBe("weirdname.stl");
-    expect(sanitizeFilename("tab\tseparated.stl")).toBe("tabseparated.stl");
+    expect(normalizeFileName("we\u0080ird\u009dname.stl")).toBe("weirdname.stl");
+    expect(normalizeFileName("tab\tseparated.stl")).toBe("tabseparated.stl");
   });
 
   it("keeps the existing behaviour for separators and empties", () => {
-    expect(sanitizeFilename("a/b\\c.stl")).toBe("a_b_c.stl");
-    expect(sanitizeFilename("   ")).toBe("imported-file");
-    expect(sanitizeFilename(null)).toBe("imported-file");
+    expect(normalizeFileName("a/b\\c.stl")).toBe("a_b_c.stl");
+    expect(normalizeFileName("   ")).toBe("imported-file");
+    expect(normalizeFileName(null)).toBe("imported-file");
   });
 });
 
@@ -103,7 +104,7 @@ describe("modelUpload", () => {
   it("decodes a browser's raw UTF-8 multipart filename as UTF-8, not Latin-1", async () => {
     const app = express();
     app.post("/upload", modelUpload.single("file"), (req, res) => {
-      res.json({ name: sanitizeFilename(req.file?.originalname) });
+      res.json({ name: normalizeFileName(req.file?.originalname) });
     });
     const res = await request(app)
       .post("/upload")

@@ -3,7 +3,8 @@ import { create as contentDisposition } from "content-disposition";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
 import { exportStudioDesign } from "../services/studioExport";
@@ -220,7 +221,7 @@ router.get(
     });
     const plateName = plate === "-" ? null : studioPlates(design.document).find((entry) => entry.id === plate)?.name;
     const title = plateName ? `${design.name} - ${plateName}` : design.name;
-    const name = sanitizeFilename(title).replace(/[:*?"<>|]+/g, "-");
+    const name = normalizeFileName(title).replace(/[:*?"<>|]+/g, "-");
     res.set("Cache-Control", "private, no-store");
     res.set("Content-Disposition", contentDisposition(`${name}.${file.format}`));
     res.type(file.mime).send(Buffer.from(file.bytes));

@@ -4,7 +4,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload, thumbnailUpload } from "../uploadMiddleware";
@@ -48,7 +49,7 @@ router.post(
       if (!print) throw new HttpError(404, "Print not found");
 
       const plateInputs: NewPlateInput[] = files.map((f) => {
-        const safeName = sanitizeFilename(f.originalname);
+        const safeName = normalizeFileName(f.originalname);
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
       await addPlatesToPrint(req.userId!, print.id, plateInputs);

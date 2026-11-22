@@ -9,7 +9,14 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
 
 ## Rules in force
 
-None yet.
+- **One rule for names.** Every name that comes in goes through `normalizeFileName` (`files/names.ts`) before anything
+  reads it: an upload, a file added to a model, an import, a zip entry, the consume folder, a partner's copy, a tool or
+  Studio. A second file of a name is numbered by `numberedName`, which keeps a compound extension:
+  `job (2).gcode.3mf`. A path segment keeps its 120-character cap and fits 240 bytes, cut before its extension
+  (`cutName`). Pinned by `tests/files/names.test.ts` and `tests/files/namesAtUpload.test.ts`.
+- **One rule for junk.** `isJunk` (`files/names.ts`) decides what a computer left among files. `/upload`, the zip
+  listing, `/import/zip` (before its empty check and its job's total) and the consume folder drop it. Pinned by the
+  cases table (A14, C14 and Z14) and `tests/upgradeCompat.test.ts`'s older Grab.
 
 A rule goes here only in the pull request whose code follows it everywhere it applies, with the test that pins it.
 Reviewers, CodeRabbit included, judge a change's rule conformance against this list only: a rule that isn't here isn't

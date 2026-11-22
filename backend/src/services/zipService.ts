@@ -4,7 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "../db";
-import { HttpError, sanitizeFilename, guessMimeFromPath } from "../utils/fileUtils";
+import { HttpError, guessMimeFromPath } from "../utils/fileUtils";
+import { isJunk, normalizeFileName } from "../files/names";
 import { IMPORT_MAX_BYTES } from "../config";
 import { listZipEntries as listRawZipEntries, readZipEntry } from "../utils/zipReader";
 import { validateParentCategory } from "./categoryService";
@@ -39,7 +40,8 @@ export async function listZipEntries(zipPath: string): Promise<ZipEntrySummary[]
   for (const entry of raw) {
     if (entry.isDirectory) continue;
     const name = normalizeZipEntryPath(entry.name);
-    if (!name) continue;
+    // What the zip's system left in it is never offered, so no client ticks it.
+    if (!name || isJunk(name)) continue;
     entries.push({ path: name, size: entry.size });
   }
   entries.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
@@ -155,7 +157,7 @@ export async function extractZipEntriesToPrints(
     let tempPath: string | null = null;
     try {
       const targetCategoryId = await resolveZipCategoryId(userId, options.categoryId ?? null, entryName, categoryCache);
-      const filename = sanitizeFilename(path.basename(entryName));
+      const filename = normalizeFileName(path.basename(entryName));
       const buffer = await readZipEntry(zipPath, info.rawName, IMPORT_MAX_BYTES);
       if (!buffer) throw new Error("Extracted file exceeds size limit or could not be read");
 

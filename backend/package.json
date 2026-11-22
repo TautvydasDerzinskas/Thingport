@@ -68,6 +68,7 @@
     "@types/three": "^0.186.0",
     "@types/turndown": "^5.0.6",
     "@types/yauzl": "^3.4.0",
+    "fast-check": "^4.10.2",
     "oxlint": "^1.88.0",
     "supertest": "^7.3.1",
     "tsx": "^4.23.15",

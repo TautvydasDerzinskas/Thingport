@@ -6,7 +6,7 @@ import { isProviderId, modelUrl, parseModelUrl } from "../providers/index.genera
 import type { CategoryRef } from "../services/categoryService";
 import { compactFacts, hexColor, type ProviderProfileFacts } from "../services/printProfileFacts";
 import { SOURCE_GAPS, type SourceGap } from "../services/sourceGaps";
-import { sanitizeFilename } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { originOf } from "./addresses";
 import { FederationFetchError } from "./fetch";
@@ -609,7 +609,7 @@ async function readModelIds(
  *  is; its plain name, in no folder, from a partner too old to say or a path that names no file. */
 function placeOf(where: string | undefined, name: string): { name: string; folder?: string } {
   const levels = where?.split("/") ?? [];
-  const filename = sanitizeFilename(levels.pop());
+  const filename = normalizeFileName(levels.pop());
   const folder = normalizeFolder(levels);
   return where && filename !== "imported-file" && folder ? { name: filename.slice(0, 255), folder } : { name };
 }

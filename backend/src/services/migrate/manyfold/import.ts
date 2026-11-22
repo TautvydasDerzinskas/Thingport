@@ -4,7 +4,8 @@ import { STORAGE } from "../../../config";
 import { prisma } from "../../../db";
 import { createLogger } from "../../../logger";
 import { parseModelUrl } from "../../../providers/index.generated";
-import { mimeFromContentType, sanitizeFilename } from "../../../utils/fileUtils";
+import { mimeFromContentType } from "../../../utils/fileUtils";
+import { normalizeFileName } from "../../../files/names";
 import { normalizeTags } from "../../../utils/tagNormalization";
 import { addPrintsToCollection, normalizeCollectionName } from "../../collectionService";
 import { licenseById, licenseIdFromText, type ProviderLicense } from "../../licenseCatalog";
@@ -230,7 +231,7 @@ export class ManyfoldImport {
           this.report.files.missing += 1;
           continue;
         }
-        const name = sanitizeFilename(path.posix.basename(relative));
+        const name = normalizeFileName(path.posix.basename(relative));
         const folder = path.posix.dirname(relative) === "." ? null : path.posix.dirname(relative);
         const local = path.join(temp, `${index}-${name}`);
         if (!(await this.client.download(file.contentUrl, local))) {
