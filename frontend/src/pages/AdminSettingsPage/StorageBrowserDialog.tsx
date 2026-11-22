@@ -188,6 +188,8 @@ export function StorageListingView({
       {unreadable > 0 && (
         <Alert severity="warning" sx={{ mx: 2, mt: 2, mb: 1 }}>
           {t("adminSettings.storageBrowser.unreadable", { count: unreadable })}
+          {/* The folder's own code, as an unreadable row shows its. */}
+          {listing.error_code ? ` · ${listing.error_code}` : null}
         </Alert>
       )}
       <List dense disablePadding>

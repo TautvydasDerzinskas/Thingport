@@ -113,7 +113,7 @@ describe("the storage browser's listing", () => {
 
   it("counts the folder itself when the disk couldn't list all of it", () => {
     const text = textOf(render([], [file("Tower.gcode")], "light", "EACCES"));
-    expect(text).toContain("The disk couldn't read 1 thing here. It may still be there.");
+    expect(text).toContain("The disk couldn't read 1 thing here. It may still be there. · EACCES");
   });
 
   it("warns of nothing when everything could be read", () => {
