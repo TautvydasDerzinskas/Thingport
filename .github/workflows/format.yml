@@ -34,6 +34,8 @@ jobs:
         run: npm run adapter:check
       - name: Grab's printer catalogue matches backend/assets/printers
         run: npm run printers:check
+      - name: Kind table page is up to date
+        run: npm run kinds:check
       - name: gofmt
         run: test -z "$(gofmt -l bridge)" || { gofmt -l bridge; exit 1; }
       - name: Workflow scripts' tests

@@ -260,6 +260,15 @@ export const DOCS = [
       "Keep instructions, notes and a ready-to-print sliced file next to each model, and customize one that came with its OpenSCAD script right in your browser.",
   },
   {
+    slug: "features/file-kinds",
+    source: "docs/features/file-kinds.md",
+    group: "Features",
+    title: "File kinds",
+    nav: "File kinds",
+    description:
+      "What Thingport reads each file as, by its extension or its name: model, laser, sliced and CAD files, scripts, pictures, documents, archives and more.",
+  },
+  {
     slug: "features/licenses",
     source: "docs/features/licenses.md",
     group: "Features",

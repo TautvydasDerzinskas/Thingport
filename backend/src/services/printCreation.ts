@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { LEGACY } from "../files/kinds";
 import { nameKey, normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -40,7 +41,7 @@ import { importingQuietly } from "../utils/quietImport";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
 
-const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
+const IMAGE_EXTS = LEGACY.photo;
 
 export type NewPlateInput = {
   /** Untrusted; will be sanitized. */

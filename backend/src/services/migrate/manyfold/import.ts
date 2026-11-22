@@ -5,6 +5,7 @@ import { prisma } from "../../../db";
 import { createLogger } from "../../../logger";
 import { parseModelUrl } from "../../../providers/index.generated";
 import { mimeFromContentType } from "../../../utils/fileUtils";
+import { LEGACY } from "../../../files/kinds";
 import { normalizeFileName } from "../../../files/names";
 import { normalizeTags } from "../../../utils/tagNormalization";
 import { addPrintsToCollection, normalizeCollectionName } from "../../collectionService";
@@ -34,8 +35,8 @@ import {
 
 const log = createLogger("migrate");
 
-const PLATE_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".glb", ".f3d", ".lbrn", ".lbrn2"]);
-const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"]);
+const PLATE_EXTS = LEGACY.libraryPlate;
+const IMAGE_EXTS = LEGACY.libraryImage;
 const MAX_FAILURES = 50;
 const STOPS = new Set(["manyfold_lost", "manyfold_unreachable", "manyfold_key", "manyfold_slow_down"]);
 

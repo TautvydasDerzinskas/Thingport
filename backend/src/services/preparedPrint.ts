@@ -1,9 +1,10 @@
+import { LEGACY } from "../files/kinds";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 
 const TEXT_LIMIT = 2 * 1024 * 1024;
-const PREPARED_SUFFIXES = [".gcode.3mf", ".gcode", ".gco", ".bgcode"];
+const PREPARED_SUFFIXES = LEGACY.prepared;
 
 export type PreparedMetadata = {
   printer: string | null;

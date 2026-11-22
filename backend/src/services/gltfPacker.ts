@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
+import { PACKED_SCENE_EXTENSION } from "../files/kinds";
 
 // A .gltf is a JSON scene whose geometry sits in .bin files and whose textures sit in image files beside it, found by
 // relative path. Thingport stores a model's files apart and serves them by id, so those paths would lead nowhere: a
@@ -25,7 +26,7 @@ type GltfJson = {
   [key: string]: unknown;
 };
 
-export const isGltfName = (name: string) => path.extname(name).toLowerCase() === ".gltf";
+export const isGltfName = (name: string) => path.extname(name).toLowerCase() === PACKED_SCENE_EXTENSION;
 
 const isDataUri = (uri: string) => uri.startsWith("data:");
 const isRemoteUri = (uri: string) => /^[a-z][a-z0-9+.-]*:/i.test(uri) && !isDataUri(uri);

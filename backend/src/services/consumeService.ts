@@ -6,6 +6,7 @@ import crypto from "node:crypto";
 import { prisma } from "../db";
 import { CONSUME_DIR, IMPORT_MAX_BYTES, RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
 import { HttpError, guessMimeFromPath } from "../utils/fileUtils";
+import { LEGACY } from "../files/kinds";
 import { isJunk, normalizeFileName } from "../files/names";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { normalizeZipEntryPath, resolveZipCategoryId } from "./zipService";
@@ -25,7 +26,7 @@ const USER_KEY = "consume_user_id";
 export const NOT_IMPORTED_DIR = "Not imported";
 
 const POLL_MS = 2000;
-const PREVIEW_IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
+const PREVIEW_IMAGE_EXTS = LEGACY.photo;
 // As for uploads: a bigger image is attached as a file instead of being read in as a preview.
 const PREVIEW_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
