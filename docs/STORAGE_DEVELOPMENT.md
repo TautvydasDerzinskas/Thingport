@@ -24,11 +24,12 @@ regression or a bug in what it does, is a finding as usual.
   - `PrintFile`: supporting files, the prepared print and `LICENSE.txt` (roles `SUPPORTING`, `PREPARED`, `LICENSE`);
   - `PreviewImage`: its pictures, in the model's pictures folder.
 
-  Each table's `storagePath` is unique on its own.
+  `Plate` and `PrintFile` rows each keep a `storagePath`, unique within its table. A picture has none: its file is
+  named after its row's id, in the model's pictures folder, and its row is unique by model and position.
 
 - **One process.** One backend process writes storage. Its worker threads (previews, adapting, Studio) never touch the
-  database, and `pg_dump` and `pg_restore` run only for Migrate's staging database. In-process coordination is
-  therefore enough.
+  database. Migrate's `pg_restore` writes only its staging database, and its `pg_dump` (the export another instance
+  pulls) only reads the live one. In-process coordination is therefore enough.
 - **The storage lock.** `utils/storageLock.ts` is one process-wide promise chain, and it isn't reentrant: code holding
   it must not take it again.
   - It guards checks followed by renames, at 15 call sites in 10 files: placing files, moving a model's files when its
@@ -40,9 +41,10 @@ regression or a bug in what it does, is a finding as usual.
   pictures folder without the lock, while a folder move may be moving that folder.
 - **Claim order.**
   - A plate's file is placed first, as a hard link or else a copy, and its row is created after (`printCreation.ts`).
-  - A `PrintFile`'s row is created first, at the placeholder `storagePath` `"pending"`, and its file is placed after
-    (`printFileService.ts`). The placeholder is the same for every model and the column is unique, so two saves at
-    once collide, and a crash between the two steps leaves a row that blocks later saves.
+  - A `PrintFile`'s row is created first, at the placeholder `storagePath` `"pending"`, then given its final path, and
+    its file is placed after (`printFileService.ts`). The placeholder is the same for every model and the column is
+    unique, so two saves at once collide. A crash before the final path leaves a `"pending"` row that blocks later
+    saves; one after it, before the file is placed, leaves a row whose file is missing.
 - **Temporary files** go to `os.tmpdir()`: multer's uploads and about 16 other places. In Docker that's another
   filesystem than storage, so placing a file there falls back to a full copy, inside the lock.
 - **Repair** (`modelFilesReplace.ts`) deletes every `PrintFile` of the model, including supporting files, the prepared

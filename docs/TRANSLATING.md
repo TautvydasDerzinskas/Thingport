@@ -52,16 +52,17 @@ drop forms to match; `i18n:check` below lists any form your language is missing.
 With the [development setup](DEVELOPMENT.md) running, pick your language under **Configuration → Appearance**
 and look through the app; the choice is remembered by your browser.
 
-To list what's left to translate, run:
+To check that a language file has every key, run:
 
 ```bash
 npm --prefix frontend run i18n:check es
 ```
 
-It prints how much of the language is done, each key that's still missing, and any key that English no longer
-uses (which you can delete). Without a code, it checks every language. With `--strict`
+It prints the share of English's keys the file has, each key that's still missing, and any key that English no
+longer uses (which you can delete). Without a code, it checks every language. With `--strict`
 (`npm --prefix frontend run i18n:check -- --strict`) it also fails when there's any, as the Format check on every pull
-request does.
+request does. It checks keys, not words: a text left in English counts as there, so look through the app in your
+language for what's still to translate.
 
 ## Tools and shared widgets
 

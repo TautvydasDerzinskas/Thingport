@@ -67,7 +67,7 @@ for (const code of codes) {
   const missing = [...en].filter((key) => !locale.has(key));
   const stale = [...locale].filter((key) => !en.has(key));
   const done = Math.floor(((en.size - missing.length) / en.size) * 100);
-  console.log(`${code}: ${done}% translated, ${missing.length} missing, ${stale.length} no longer used`);
+  console.log(`${code}: ${done}% of keys, ${missing.length} missing, ${stale.length} no longer used`);
   for (const key of missing) console.log(`  missing  ${key}`);
   for (const key of stale) console.log(`  unused   ${key}`);
   problems += missing.length + stale.length;
