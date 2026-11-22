@@ -6,7 +6,7 @@ import { createApp } from "../../src/app";
 import { STORAGE } from "../../src/config";
 import { prisma } from "../../src/db";
 import { setThingiverseAccessToken } from "../../src/providers/thingiverse/token";
-import { setSocialSettings } from "../../src/services/settingsService";
+import { getLicenseFiles, setLicenseFiles, setSocialSettings } from "../../src/services/settingsService";
 import { installFetch, type FetchHandler, type FetchStub } from "../providers/support";
 import { CASES, caseName, treeOf } from "./cases";
 import { linesOf, modelsOf, register, runWay, THINGIVERSE_TOKEN } from "./ways";
@@ -31,10 +31,14 @@ let stub: FetchStub;
 // cells reads their new outcomes, to look over before they go in the table.
 const recording = process.env.INTAKE_RECORD;
 const recorded: Record<string, string[]> = {};
+let licenseFiles: boolean;
 
 beforeAll(async () => {
   await setThingiverseAccessToken(THINGIVERSE_TOKEN);
   await setSocialSettings({ enabled: true });
+  // Instance-wide: on, as it is by default, so a model with a licence has its LICENSE.txt whatever ran before.
+  licenseFiles = await getLicenseFiles();
+  await setLicenseFiles(true);
   stub = installFetch((call) => handler(call));
 });
 
@@ -46,6 +50,7 @@ afterAll(async () => {
   stub.restore();
   await setThingiverseAccessToken(null);
   await setSocialSettings({ enabled: false });
+  await setLicenseFiles(licenseFiles);
   await prisma.setting.deleteMany({ where: { key: { in: ["consume_mode", "consume_user_id"] } } });
   if (recording) fs.writeFileSync(recording, `${JSON.stringify(recorded, null, 2)}\n`);
 });

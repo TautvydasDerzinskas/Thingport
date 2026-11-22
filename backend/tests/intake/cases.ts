@@ -266,8 +266,9 @@ export const CASES: Case[] = [
   { family: "E", shape: "14", way: "site", today: ["Thing: P Frog.stl, P ._Frog.stl, 2 photos"], changes: [STEP.siteFiles] },
   { family: "E", shape: "15", way: "site", today: ["Thing: P Benchy.stl, P part.STL, 2 photos"] },
 
-  // F: repair: a model imported from its site, with a text file its owner added, whose plates' files are gone from
-  // the disk, downloaded again (Repair, "Download the missing files again").
+  // F: repair: a model imported from its site with its licence, and a text file and a sliced print its owner added,
+  // whose plates' files and LICENSE.txt are gone from the disk, downloaded again (Repair, "Download the missing files
+  // again").
   { family: "F", shape: "1", way: "repair", today: ["Thing: P Benchy.stl, 2 photos"], changes: [STEP.repair] },
   { family: "F", shape: "2", way: "repair", today: ["Thing: P Lid.stl, P Base.3mf, 2 photos"], changes: [STEP.repair] },
   { family: "F", shape: "3", way: "repair", today: ["Thing: P Frog.stl, 2 photos"], changes: [STEP.repair] },
