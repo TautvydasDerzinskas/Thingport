@@ -47,7 +47,8 @@ export function sanitizePathSegment(value: string | null | undefined, fallback: 
     .replace(/^[ .]+|[ .]+$/g, "");
   if (cleaned === "" || cleaned === "." || cleaned === "..") cleaned = fallback;
   // Its extension kept, and within the bytes a file system allows for a name, which 120 CJK characters are not.
-  return cutName(cleaned, PATH_SEGMENT_MAX);
+  // A cut can leave nothing of a name that is one huge character.
+  return cutName(cleaned, PATH_SEGMENT_MAX) || fallback;
 }
 
 /** Trimmed, with "/" separators and current token names; not yet checked. */

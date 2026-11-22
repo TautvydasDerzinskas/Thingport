@@ -63,14 +63,15 @@ describe("normalizeFileName", () => {
       .tuple(
         fc.constantFrom("CON", "aux", "LPT1", "nul"),
         fc.integer({ min: 0, max: 120 }),
-        fc.constantFrom(".stl", ""),
+        fc.constantFrom(".stl", "", ".backup.stl", ".tar.gz"),
       )
       .map(([stem, spaces, ext]) => `${stem}${"\u3000".repeat(spaces)}${ext}`);
     fc.assert(
       fc.property(reservedThenSpaces, (raw) => {
         const name = normalizeFileName(raw);
         expect(normalizeFileName(name)).toBe(name);
-        expect(splitName(name).stem).not.toMatch(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i);
+        // Whatever follows its first dot: Windows reserves "NUL.backup.stl" as much as "NUL".
+        expect(name.split(".")[0]).not.toMatch(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i);
       }),
       SEED,
     );

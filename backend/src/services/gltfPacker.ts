@@ -167,9 +167,10 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
   } catch {
     // A stray % in a file name: match it as written.
   }
-  const folder = path.posix.dirname(gltfName.replace(/\\/g, "/"));
-  const wanted = path.posix.normalize(path.posix.join(folder, decoded));
-  const pathOf = (file: T) => path.posix.normalize(file.name.replace(/\\/g, "/"));
+  // Composed on both sides, as names are kept: a scene written on one system names a file another composed.
+  const folder = path.posix.dirname(gltfName.replace(/\\/g, "/").normalize("NFC"));
+  const wanted = path.posix.normalize(path.posix.join(folder, decoded.normalize("NFC")));
+  const pathOf = (file: T) => path.posix.normalize(file.name.replace(/\\/g, "/").normalize("NFC"));
   const byPath = files.find((file) => pathOf(file) === wanted);
   if (byPath) return byPath;
   const base = path.posix.basename(wanted).toLowerCase();

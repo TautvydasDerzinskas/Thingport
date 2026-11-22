@@ -221,9 +221,10 @@ router.get(
     });
     const plateName = plate === "-" ? null : studioPlates(design.document).find((entry) => entry.id === plate)?.name;
     const title = plateName ? `${design.name} - ${plateName}` : design.name;
-    const name = normalizeFileName(title).replace(/[:*?"<>|]+/g, "-");
+    // With its extension, so the whole name keeps within the limit and the cut comes off the title.
+    const name = normalizeFileName(`${title}.${file.format}`).replace(/[:*?"<>|]+/g, "-");
     res.set("Cache-Control", "private, no-store");
-    res.set("Content-Disposition", contentDisposition(`${name}.${file.format}`));
+    res.set("Content-Disposition", contentDisposition(name));
     res.type(file.mime).send(Buffer.from(file.bytes));
   }),
 );

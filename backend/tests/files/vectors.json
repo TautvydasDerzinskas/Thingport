@@ -65,7 +65,10 @@
       "CON　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　.stl",
       "CON_.stl",
       "a cut that leaves a reserved name still gets the _"
-    ]
+    ],
+    ["NUL.backup.stl", "NUL_.backup.stl", "a device name before more than one extension is reserved too"],
+    ["con.tar.gz", "con_.tar.gz", ""],
+    ["á́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́", "imported-file", "one character bigger than a name may be leaves the fallback"]
   ],
   "split": [
     ["job.gcode.3mf", "job", ".gcode.3mf"],

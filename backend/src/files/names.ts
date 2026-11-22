@@ -19,7 +19,7 @@ const EXTENSION = /^\.[A-Za-z0-9_-]{1,15}$/;
 // oxlint-disable-next-line no-control-regex -- stripping control characters is the point.
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g;
 
-/** What Windows won't name a file, whatever its extension. */
+/** What Windows won't name a file, whatever its extensions. */
 const RESERVED_STEM = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 
 /** Left behind by the systems a folder or zip was made on, never content: macOS's resource forks and folder
@@ -89,11 +89,19 @@ export function normalizeFileName(raw: string | null | undefined, fallback = "im
     .trim()
     .replace(TRAILING, "");
   const { stem, ext } = splitName(cleaned || fallback);
-  // A reserved name is looked for in what's left once the name fits: a cut can leave one ("CON" and its spaces).
-  const fitted = splitName(fit(stem, ext));
-  return (
-    RESERVED_STEM.test(fitted.stem) ? fit(`${fitted.stem}_`, fitted.ext) : fitted.stem + fitted.ext
-  ) as NormalName;
+  const fitted = fit(stem, ext);
+  // Windows reserves a device name whatever follows its first dot ("NUL.backup.stl"), and a cut can leave one ("CON"
+  // and its spaces), so it's looked for in what's left once the name fits.
+  const head = fitted.split(".")[0];
+  const named = RESERVED_STEM.test(head) ? refit(`${head}_${fitted.slice(head.length)}`) : fitted;
+  // A name one huge character took all of (a letter under hundreds of accents) is no name either.
+  return (named || fallback) as NormalName;
+}
+
+/** `name` fitted again, after something was added to it. */
+function refit(name: string): string {
+  const { stem, ext } = splitName(name);
+  return fit(stem, ext);
 }
 
 /** `name` numbered apart: "job (2).gcode.3mf" for the second "job.gcode.3mf", still within NAME_MAX_BYTES and, for a
