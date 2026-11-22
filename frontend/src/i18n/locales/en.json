@@ -2389,6 +2389,10 @@
         "folderSummary_one": "{{count}} file · {{size}}",
         "folderSummary_other": "{{count}} files · {{size}}",
         "ofModel": "model \"{{name}}\"",
+        "cantRead": "Can't read",
+        "cantReadFolder": "Can't read this folder",
+        "unreadable_one": "The disk couldn't read {{count}} thing here. It may still be there.",
+        "unreadable_other": "The disk couldn't read {{count}} things here. They may still be there.",
         "kind": {
           "plate": "Model file",
           "file": "Supporting file",
@@ -5403,6 +5407,11 @@
           "name": "Many sources",
           "rule": "Keep collections in sync from {{count}} different sites",
           "stat": "Synced from {{count}} sites"
+        },
+        "fdmFundamentals": {
+          "name": "FDM Fundamentals",
+          "rule": "Score at least 80% on the 3D Printing Wiki quiz.",
+          "stat": "Passed the FDM quiz"
         },
         "weatherGuest": {
           "name": "Met the guest",

@@ -1,10 +1,10 @@
-import path from "node:path";
 import { Router, type Request } from "express";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { prisma } from "../db";
 import { asyncHandler } from "../utils/asyncHandler";
 import { attachmentDisposition, HttpError } from "../utils/fileUtils";
+import { sendStored } from "../utils/sendStored";
 import { parseBody } from "../utils/validate";
 import { getPublicUrl } from "../services/settingsService";
 import { sendPlacementSchema, sendTargetInputSchema, sendTargetUpdateSchema } from "../services/sendTargetFormat";
@@ -38,11 +38,16 @@ sendFileRoutes.get(
   "/send-file/:grant/:filename",
   asyncHandler(async (req, res) => {
     const file = await fileFromGrant(String(req.params.grant));
-    res.setHeader("Content-Type", file.mime);
-    // A plain name where it is one, and the whole name as UTF-8 beside it where it isn't.
-    res.setHeader("Content-Disposition", attachmentDisposition(file.filename));
-    res.setHeader("Cache-Control", "private, no-store");
-    res.sendFile(path.resolve(file.path));
+    await sendStored(res, {
+      filePath: file.path,
+      site: "send.file",
+      stillNames: file.stillNames,
+      headers: () => {
+        res.setHeader("Content-Type", file.mime);
+        res.setHeader("Content-Disposition", attachmentDisposition(file.filename));
+        res.setHeader("Cache-Control", "private, no-store");
+      },
+    });
   }),
 );
 

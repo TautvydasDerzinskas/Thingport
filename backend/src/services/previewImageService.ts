@@ -93,7 +93,7 @@ async function makeGalleryThumb(source: string, dest: string): Promise<string | 
 }
 
 /** The image and its card-sized copy, wherever they are: the image first, which a copy being made looks for. */
-async function removeGalleryFiles(home: AssetHome, id: string): Promise<void> {
+export async function removeGalleryFiles(home: AssetHome, id: string): Promise<void> {
   await removeAsset(home, galleryImageFile(id));
   await removeAsset(home, galleryThumbFile(id));
 }

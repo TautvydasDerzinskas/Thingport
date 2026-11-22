@@ -16,6 +16,7 @@ import {
 import { classifyImportFailure, type ImportFailureReason, type StopReason } from "./importJobRunner";
 import { forgetMissingFilesScan, missingFilesScan, modelFilesMissing, type BrokenModel } from "./missingFilesService";
 import { deletePrint, pruneWhatModelsLeft } from "./printEditService";
+import { lookAtPrintFiles } from "./printFileService";
 import { assertUrlProviderEnabled } from "./providerSettingsService";
 
 // Putting a library back together once its files are gone (what missingFilesService.ts found): either fetching
@@ -58,6 +59,8 @@ export type ModelRepairRun = {
 };
 
 const runs = new Map<string, ModelRepairRun>();
+// Each user's last run as it works, for modelRepairRunSettled.
+const working = new Map<string, Promise<void>>();
 
 export function currentModelRepairRun(userId: string): ModelRepairRun | null {
   return runs.get(userId) ?? null;
@@ -84,7 +87,7 @@ export function startModelRepairRun(userId: string, action: RepairAction): Model
   };
   runs.set(userId, run);
   log.info("run started", { user: userId, action });
-  void (action === "delete" ? deleteBroken(userId, run) : reimportBroken(userId, run))
+  const work = (action === "delete" ? deleteBroken(userId, run) : reimportBroken(userId, run))
     .catch((error) => {
       run.failed++;
       run.lastError = messageOf(error);
@@ -103,7 +106,13 @@ export function startModelRepairRun(userId: string, action: RepairAction): Model
         log.warn("could not notify the repair run", { user: userId, error }),
       );
     });
+  working.set(userId, work);
   return run;
+}
+
+/** Waits for the user's last run to finish. For tests. */
+export async function modelRepairRunSettled(userId: string): Promise<void> {
+  await working.get(userId);
 }
 
 export function cancelModelRepairRun(userId: string): ModelRepairRun | null {
@@ -242,6 +251,9 @@ async function repairModel(userId: string, provider: ProviderId, model: BrokenMo
     await backend.grabQueue.queue(userId, url);
     return "queued";
   }
+  // A disk that can't answer for one of the model's other files stops the repair before it removes anything, so the
+  // download would be spent for nothing: sites count them against a daily allowance.
+  await lookAtPrintFiles(model.id);
   // The provider's own pick of files, as a fresh import of the model's page would get: a model that had several of
   // its print profiles comes back with that pick, and the others are added by importing their links again.
   const files = backend.sourcedImport

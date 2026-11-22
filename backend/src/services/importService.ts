@@ -22,7 +22,7 @@ import { type MakerworldProfileRef } from "../providers/makerworld/pageData";
 // woven into the download, plate and print steps below.
 import { parseMakerworldModelUrl } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
-import { replaceModelPlates } from "./modelFilesReplace";
+import { modelStillBroken, replaceModelPlates } from "./modelFilesReplace";
 import { modelFilesMissing } from "./missingFilesService";
 import { createLogger } from "../logger";
 
@@ -1169,12 +1169,7 @@ export async function replaceModelFiles(
   const { inputs, coverImageUrl, galleryImages, profiles } = files;
   try {
     return await withPrintLock(printId, async () => {
-      const recorded = await prisma.plate.findMany({
-        where: { printId, print: { userId } },
-        select: { storagePath: true, sourcePath: true },
-      });
-      // A model with no plates at all has nothing to take away, so it is always worth the files.
-      if (recorded.length > 0 && !(await modelFilesMissing(recorded))) return null;
+      if (!(await modelStillBroken(userId, printId))) return null;
 
       const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
       // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any

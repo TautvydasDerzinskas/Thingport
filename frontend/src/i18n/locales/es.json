@@ -2474,6 +2474,11 @@
         "folderSummary_one": "{{count}} archivo · {{size}}",
         "folderSummary_other": "{{count}} archivos · {{size}}",
         "ofModel": "modelo «{{name}}»",
+        "cantRead": "No se puede leer",
+        "cantReadFolder": "No se puede leer esta carpeta",
+        "unreadable_one": "El disco no pudo leer {{count}} elemento aquí. Puede que siga ahí.",
+        "unreadable_many": "El disco no pudo leer {{count}} elementos aquí. Puede que sigan ahí.",
+        "unreadable_other": "El disco no pudo leer {{count}} elementos aquí. Puede que sigan ahí.",
         "kind": {
           "plate": "Archivo del modelo",
           "file": "Archivo adjunto",
@@ -5626,6 +5631,11 @@
           "name": "Muchas fuentes",
           "rule": "Sincroniza colecciones desde {{count}} sitios distintos",
           "stat": "Sincronizado desde {{count}} sitios"
+        },
+        "fdmFundamentals": {
+          "name": "Fundamentos de FDM",
+          "rule": "Obtén al menos un 80 % en el cuestionario de la wiki de impresión 3D.",
+          "stat": "Cuestionario de FDM superado"
         },
         "weatherGuest": {
           "name": "Conoció al invitado",

@@ -1,20 +1,17 @@
 import { Prisma, type Print } from "@prisma/client";
+import { removeModel } from "../modelFiles/removeModel";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { normalizeTag, normalizeTags } from "../utils/tagNormalization";
-import { assetOwnerIds, relocatePrint, removeAssetHome, removePlatePictures, uniqueModelName } from "./printService";
+import { relocatePrint, uniqueModelName } from "./printService";
+import { deleteAuthorIfOrphaned } from "./authorService";
+import { removeTagBookmark } from "./bookmarkService";
+import { removeTagMosaics } from "./tagMosaicService";
 import { forgetAiDescription } from "./aiDescriptionService";
 import { localizeDescriptionImages, pruneDescriptionImages } from "./descriptionImageService";
 import { createLog } from "./auditLog";
 import { recordActivity } from "./activityService";
 import { loadFullPrint } from "./printLoader";
-import { deleteAllPrintFiles } from "./printFileService";
-import { deleteAllPreviewImages } from "./previewImageService";
-import { deleteAllDescriptionImages } from "./descriptionImageService";
-import { deletePlateFiles } from "./printCreation";
-import { deleteAuthorIfOrphaned } from "./authorService";
-import { removeTagBookmark } from "./bookmarkService";
-import { removeTagMosaics } from "./tagMosaicService";
 import { afterLicenseChange, assertLicenseChoice, setOwnerLicense } from "./licenseService";
 
 // Editing and deleting a model, shared by the model page's routes and the MCP tools.
@@ -152,17 +149,8 @@ export async function deletePrint(
   const full = await loadFullPrint(userId, printId);
   // Only the tool's uninstall, quietly, removes a model a tool brought.
   if (!quiet) assertNotToolModel(full.print);
-  const assetOwners = await assetOwnerIds(printId);
-  await deleteAllPrintFiles(printId);
-  await deleteAllPreviewImages(printId);
-  await deleteAllDescriptionImages(printId);
-  await prisma.print.delete({ where: { id: printId } });
-  for (const plate of full.plates) {
-    await deletePlateFiles(plate);
-    await removePlatePictures(plate.id, full.print.assetsPath);
-  }
-  await removeAssetHome(full.print.assetsPath, assetOwners);
-  if (prune) await pruneWhatModelsLeft(userId, [{ authorId: full.print.authorId, tags: full.print.tags }]);
+  const went = await removeModel(printId);
+  if (went && prune) await pruneWhatModelsLeft(userId, [went]);
   if (quiet) return;
   void recordActivity(userId, "delete", printId, full.print.name);
   void createLog({

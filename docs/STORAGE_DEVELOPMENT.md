@@ -22,6 +22,32 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
 - **One rule for junk.** `isJunk` (`files/names.ts`) decides what a computer left among files. `/upload`, the zip
   listing, `/import/zip` (before its empty check and its job's total) and the consume folder drop it. Pinned by the
   cases table (A14, C14 and Z14) and `tests/upgradeCompat.test.ts`'s older Grab.
+- **Fs 1: only a missing file counts as missing.** Whether a plate's or a `PrintFile`'s file is there is asked through
+  the file door (`modelFiles/storageFs.ts`): `fileState` answers file, missing or not-a-file, `openStored` opens one.
+  Only ENOENT and ENOTDIR mean missing, and a folder isn't a file. Any other error (EIO, EACCES, ELOOP) stops the
+  operation before it removes or records anything, save in the repair's sweep, which runs once the plates are in: there
+  the row whose look failed stays, and the rest go on. It holds for downloads and the zip, copies, Send to, MCP's
+  `get_model_file`, partners' downloads, Migrate's export, free paths, moves, the storage browser, the missing-files scan
+  and the repair. A plate with a `sourcePath` is read there only. It doesn't hold yet for pictures and the files made
+  from a model's files, an upload's temporary files, the prune, a profile plate's size before it's matched and a new
+  plate's recorded size: `tests/modelFiles/door.test.ts` lists every `existsSync` left with the step that removes it, and
+  fails on a new one, and on a door call site no test fails. Pinned by `tests/modelFiles/door.*.test.ts` and
+  `tests/repairKeeps.test.ts`.
+- **Fs 2: a download serves the file it opened.** A model's file is opened first; its row is read again by id, and the
+  open handle is served only while the row still names that path (`utils/sendStored.ts`), else the answer is 404. Not its
+  size: a file may be edited in place, and its row keeps the size it was saved with. It covers plates, supporting files,
+  the prepared print, the zip, Send to's link and upload, MCP's `get_model_file` and partners' downloads; copies still
+  read by path. A system that can't reopen a handle by a path (no `/proc/self/fd` or `/dev/fd`: a backend run natively
+  on Windows) reads the file by its path just after the row check instead. Pinned by `tests/modelFiles/serveByHandle.test.ts` and `tests/modelFiles/door.zip.test.ts`.
+- **One delete.** Every way a model goes runs `removeModel` (`modelFiles/removeModel.ts`): the owner's delete, an
+  admin's, the discard of a model that couldn't be made, and an account's tool models. It looks at the model's files
+  first, and again under the model's row lock at any added since, so a disk error stops it with nothing removed; takes
+  its rows down in one transaction under that lock, so a failure leaves the model whole; then removes every file and
+  picture they named, in its folder and the old shared ones. A file it can't remove is logged and left; a picture is
+  still removed quietly, as pictures aren't under these rules yet. Pinned by `tests/modelFiles/removeModel.test.ts`.
+- **A tool's plate owns no file.** A plate with a `sourcePath` reads the tool's file there and only there; nothing places,
+  moves or removes a file at its `storagePath`. Pinned by the tool cases in `tests/modelFiles/door.services.test.ts` and
+  `removeModel.test.ts`.
 
 A rule goes here only in the pull request whose code follows it everywhere it applies, with the test that pins it.
 Reviewers, CodeRabbit included, judge a change's rule conformance against this list only: a rule that isn't here isn't
@@ -61,16 +87,32 @@ regression or a bug in what it does, is a finding as usual.
     saves; one after it, before the file is placed, leaves a row whose file is missing.
 - **Temporary files** go to `os.tmpdir()`: multer's uploads and about 16 other places. In Docker that's another
   filesystem than storage, so placing a file there falls back to a full copy, inside the lock.
-- **Repair** (`modelFilesReplace.ts`) deletes every `PrintFile` of the model, including supporting files, the prepared
-  print and `LICENSE.txt`, then keeps only the scripts it downloaded again. It doesn't write the licence file again.
+- **Repair** (`modelFilesReplace.ts`) replaces the model's plates. It looks at every file of the model first, in one
+  storage-lock turn, so a disk error stops it with nothing removed. After the swap it drops only the rows whose files
+  are gone, in a second turn where a row whose look fails stays and is logged. The prepared print stays when its file is
+  there, and `LICENSE.txt` is written again.
 - **Prepared print.** Saving a `PREPARED` file replaces the model's prepared print, so of two sliced files saved
   together only the last is kept.
-- **Model delete** is written three times, and none of them is one transaction: `printEditService.deletePrint`,
-  `adminService` and `printCreation.discardPrintOrThrow`.
-- **Plates left where they were found.** A plate with a `sourcePath` points at a file outside storage
-  (`storedContent.ts`). It isn't Thingport's file to move, share or delete.
+- **A tool's plates.** A plate with a `sourcePath` reads a tool's file, under `storage/tools/<tool>/<version>/`
+  (`toolsService.ts`): one file for every user's copy of the tool's model.
 - **Stops and crashes.** The backend has no `SIGTERM` handler, and node runs as PID 1, so a container stop ends in
   `SIGKILL`. Nothing at start-up settles work that a stop cut short.
+
+## How to write a storage test
+
+The harness is in `backend/tests/harness/`; `harness.test.ts` and `kit.test.ts` show it at work.
+
+1. Make users and models with `useStorageKit(app)`, so they're in the test's scope and their bytes are distinct.
+2. Make disk errors with `faults.at("<fileState|open|opened>:<site>", nth, code)`. Never spy on `node:fs` for a call
+   the door makes. A new call site gets its name in `STORAGE_SITES` and a test that fails it: `door.test.ts` checks.
+3. Reach a moment in between with `pauseAt`, `kit.start` and `reachedBy`, change the disk or the rows, then `release`.
+   No timers or polls.
+4. Check the scenario happened (`reached`, `hits`), then the end state with `checkLibraryInvariants(kit.scope())`. A
+   fault, pause or `reached` never met fails the test when it ends.
+5. Previews stay off in storage suites (the kit turns them off), as nothing yet waits for them.
+6. Don't park inside `withStorageLock` and then wait on anything that takes it: `path.taken` runs inside it during
+   licence syncs and moves, and so do the repair's look and sweep.
+7. Rows written by hand aren't for the invariants.
 
 ## The cases table
 

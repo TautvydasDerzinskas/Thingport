@@ -672,14 +672,18 @@ describe("migrating from Manyfold", () => {
       new Set(),
       () => undefined,
     );
-    // Its collection can't be made, and then the database is gone for removing the model too.
+    // Its collection can't be made, and then the database refuses to remove the model too.
     const create = vi.spyOn(prisma.collection, "create").mockRejectedValueOnce(new Error("The database went away"));
-    const remove = vi.spyOn(prisma.print, "delete").mockRejectedValueOnce(new Error("Still away"));
+    await prisma.$executeRawUnsafe(`CREATE FUNCTION manyfold_test_refuse() RETURNS trigger AS $$ BEGIN
+      IF OLD."userId" = '${pia}' THEN RAISE EXCEPTION 'Still away'; END IF; RETURN OLD; END $$ LANGUAGE plpgsql`);
+    await prisma.$executeRawUnsafe(`CREATE TRIGGER manyfold_test_refuse BEFORE DELETE ON "Print"
+      FOR EACH ROW EXECUTE FUNCTION manyfold_test_refuse()`);
     try {
       await expect(job.run()).rejects.toThrow("Still away");
     } finally {
       create.mockRestore();
-      remove.mockRestore();
+      await prisma.$executeRawUnsafe(`DROP TRIGGER manyfold_test_refuse ON "Print"`);
+      await prisma.$executeRawUnsafe(`DROP FUNCTION manyfold_test_refuse()`);
       piaServer.close();
     }
     const first = await prisma.print.findFirstOrThrow({ where: { userId: pia, name: "First" } });

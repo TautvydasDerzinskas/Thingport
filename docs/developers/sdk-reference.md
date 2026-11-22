@@ -898,6 +898,20 @@ Gives the user a secret badge this widget or tool hides: an easter egg Thingport
 root.addEventListener("dblclick", () => thingport.achievements?.unlock("guest"));
 ```
 
+#### `achievements.unlockWithStatus(key)`
+
+```ts
+thingport.achievements.unlockWithStatus(key: string): Promise<"earned" | "unavailable" | "retry">
+```
+
+Requests a secret badge and reports the outcome. Use `thingport.achievements?.unlockWithStatus?.(key)` when supporting hosts with an older SDK.
+
+| Parameter | What it is                                                          |
+| --------- | ------------------------------------------------------------------- |
+| `key`     | The secret's name, as Thingport's catalogue has it for this script. |
+
+**Returns:** `"earned"` when the user has it, `"unavailable"` when achievements are off, the secret is unknown, or the script is an unsaved draft, and `"retry"` when the request could not be confirmed. Repeating a claim is safe.
+
 ### `close()`
 
 _Tools only_

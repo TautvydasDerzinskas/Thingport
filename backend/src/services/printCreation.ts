@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
+import { removeModel } from "../modelFiles/removeModel";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
@@ -9,6 +10,7 @@ import { LEGACY } from "../files/kinds";
 import { nameKey, normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
+import { fileStateSync, type StorageSite } from "../modelFiles/storageFs";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
@@ -18,15 +20,12 @@ import {
   managedPlatePath,
   pruneEmptyStorageDirs,
   relocatePrint,
-  removeAssetHome,
-  assetOwnerIds,
   removePlatePictures,
   renderPlateStoragePath,
   saveThumbFromFile,
 } from "./printService";
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
-import { printAssetHome } from "./modelAssets";
 import { deleteAdapted3mfs } from "./adapted3mfCache";
 import { storePlateFormat } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
@@ -36,7 +35,7 @@ import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
-import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
+import { saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
@@ -95,7 +94,8 @@ export type PrintMetaInput = {
  *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
  *  after a file saved at a path its row just freed); removing the temp file is not. */
 async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<string | null> {
-  await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
+  // Nothing is placed for a tool's plate, which reads the tool's file: no folder is made for it either.
+  if (input.tempFilePath || input.copyFromPath) await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
   try {
     if (input.tempFilePath) {
       const tempFilePath = input.tempFilePath;
@@ -166,18 +166,29 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
   }
 }
 
-export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourcePath">): string | null {
-  const managed = managedPlatePath(plate);
-  if (fsSync.existsSync(managed)) return managed;
-  if (plate.sourcePath && fsSync.existsSync(plate.sourcePath)) return plate.sourcePath;
-  return null;
+/** The plate's file, or null when no file is there. A plate with a sourcePath (a tool's) is read there only: the file
+ *  is the tool's, and its path under storage is only reserved. An error other than a missing file throws (Fs 1), so a
+ *  caller never takes a disk that failed to answer for a file that's gone. */
+export function resolvePlateFilePath(
+  plate: Pick<Plate, "storagePath" | "sourcePath">,
+  site: StorageSite = "plate.file",
+): string | null {
+  const abs = plate.sourcePath ?? managedPlatePath(plate);
+  return fileStateSync(abs, site).state === "file" ? abs : null;
 }
 
 export async function refreshAutoPreparedMetadata(printId: string): Promise<void> {
   const plate0 = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
   let metadata: Prisma.InputJsonValue | null = null;
   if (plate0) {
-    const filePath = resolvePlateFilePath(plate0);
+    let filePath: string | null;
+    try {
+      filePath = resolvePlateFilePath(plate0);
+    } catch (err) {
+      // An error says nothing of what the file holds, so the reading stays. The caller's change is saved already.
+      console.warn(`Couldn't look at plate ${plate0.id}'s file; the model's print facts stay as they were:`, err);
+      return;
+    }
     if (filePath) {
       const sniffed = await inspectPreparedPrint(filePath, plate0.filename);
       if (sniffed) metadata = sniffed as unknown as Prisma.InputJsonValue;
@@ -399,20 +410,12 @@ export async function discardPrint(printId: string): Promise<void> {
 /** The same, failing when the print couldn't be removed, for a caller that must know it's gone. One that isn't there
  *  is gone already. */
 export async function discardPrintOrThrow(printId: string): Promise<void> {
-  if (!(await prisma.print.findUnique({ where: { id: printId }, select: { id: true } }))) return;
-  const plates = await prisma.plate.findMany({ where: { printId } });
-  const home = await printAssetHome(printId);
-  const assetOwners = await assetOwnerIds(printId);
-  await deleteAllPrintFiles(printId);
-  await prisma.print.delete({ where: { id: printId } });
-  for (const plate of plates) {
-    await removePlatePictures(plate.id, home);
-    if (plate.sourcePath) continue;
-    const managed = managedPlatePath(plate);
-    await fs.rm(managed, { force: true });
-    await pruneEmptyStorageDirs(path.dirname(managed));
-  }
-  await removeAssetHome(home, assetOwners);
+  const went = await removeModel(printId);
+  if (!went) return;
+  // An author or tag only this model brought, as an import's can be, goes with it. Loaded here: the tag services lead
+  // back to the provider registry, which loads this module.
+  const { pruneWhatModelsLeft } = await import("./printEditService");
+  await pruneWhatModelsLeft(went.userId, [went]);
 }
 
 export async function addPlatesToPrint(
@@ -470,8 +473,10 @@ export async function renamePlate(print: Print, plateId: string, filename: strin
   return nextFilename;
 }
 
-export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {
+export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath" | "sourcePath">): Promise<void> {
   await deleteAdapted3mfs(plate.id);
+  // A tool's plate reads the tool's file, which isn't the model's to remove.
+  if (plate.sourcePath) return;
   const abs = path.join(STORAGE, plate.storagePath);
   try {
     await fs.rm(abs, { force: true });

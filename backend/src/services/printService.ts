@@ -42,6 +42,7 @@ import {
   PATH_SEGMENT_MAX,
 } from "../modelFiles/template";
 import { printTemplateValues } from "../modelFiles/templateValues";
+import { fileState } from "../modelFiles/storageFs";
 
 export {
   DEFAULT_STORAGE_TEMPLATE,
@@ -80,7 +81,8 @@ async function pathTaken(relative: string, owner: PathOwner = {}): Promise<boole
   if (file) return file.id !== owner.printFileId;
   const assets = await prisma.print.findUnique({ where: { assetsPath: relative }, select: { id: true } });
   if (assets) return assets.id !== owner.assetsOf;
-  return fsSync.existsSync(path.join(STORAGE, relative));
+  // Anything there is in the way, a folder too. A look that fails throws: nothing is saved over a file it couldn't see.
+  return (await fileState(path.join(STORAGE, relative), "path.taken")).state !== "missing";
 }
 
 /** Whether the file `printFileId` could move to `relative`: no other file, row or folder has it. */
@@ -233,6 +235,15 @@ export function managedPlatePath(plate: Pick<Plate, "storagePath">): string {
   return path.join(STORAGE, plate.storagePath);
 }
 
+/** Whether the plate's row, read again by id, still names the file it did: what a download asks once the file is
+ *  open (utils/sendStored.ts). */
+export async function plateStillNames(plate: Pick<Plate, "id" | "storagePath" | "sourcePath">): Promise<boolean> {
+  const count = await prisma.plate.count({
+    where: { id: plate.id, storagePath: plate.storagePath, sourcePath: plate.sourcePath },
+  });
+  return count > 0;
+}
+
 export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   const root = path.resolve(STORAGE);
   let current = start;
@@ -256,8 +267,9 @@ async function moveStored(
   const listMove = async (): Promise<[string, string][]> => {
     const oldPath = await stored();
     // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
-    // that file. Asked again, this one sees the place is taken and goes elsewhere.
-    if (oldPath !== newPath && fsSync.existsSync(newPath)) {
+    // that file. Asked again, this one sees the place is taken and goes elsewhere. Free is nothing there; a look that
+    // fails throws before anything is renamed.
+    if (oldPath !== newPath && (await fileState(newPath, "move.target")).state !== "missing") {
       throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, newPath)}`);
     }
     return [[oldPath, newPath]];
@@ -274,7 +286,12 @@ async function moveAllStored(
 ): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
-    const present = (await listMoves()).filter(([oldPath]) => fsSync.existsSync(oldPath));
+    // Every one looked at before any is renamed: a look that fails stops them all, rather than leave that file behind
+    // while its record is saved where it never went. Only a file moves, never a folder in its place.
+    const present: [string, string][] = [];
+    for (const move of await listMoves()) {
+      if ((await fileState(move[0], "move.source")).state === "file") present.push(move);
+    }
     const done: [string, string][] = [];
     try {
       for (const [oldPath, newPath] of present) {
@@ -406,6 +423,8 @@ export async function relocatePrint(
   const printValues = await printTemplateValues(print, safeTemplate);
   let moved = 0;
   for (const plate of plates) {
+    // A tool's plate reads the tool's file, which isn't the model's to move.
+    if (plate.sourcePath) continue;
     const oldPath = managedPlatePath(plate);
     const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
     // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
@@ -525,8 +544,10 @@ export async function storageOutOfPlace(template: string): Promise<{ files: numb
   let models = 0;
   for (const print of prints) {
     const values = await printTemplateValues(print, safeTemplate);
+    // A tool's plate reads the tool's file, which a move leaves where it is.
     let misplaced = print.plates.filter(
       (plate) =>
+        !plate.sourcePath &&
         !inPlace(
           plate.storagePath,
           renderFilePath(print, safeTemplate, values, plate.filename, plate.position, plate.folder),

@@ -10,14 +10,16 @@ import { categoryRefs, type CategoryRef } from "../services/categoryService";
 import { descriptionImagePath } from "../services/descriptionImageService";
 import { previewImagePath } from "../services/previewImageService";
 import { resolvePlateFilePath } from "../services/printCreation";
-import { managedPrintFilePath } from "../services/printFileService";
+import { managedPrintFilePath, printFileStillNames } from "../services/printFileService";
 import { PROFILE_PROVIDER_VERSION, storedProfile } from "../services/printProfileService";
-import { plateThumbPath } from "../services/printService";
+import { plateStillNames, plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
 import { achievementsOf } from "../services/achievementService";
 import { getAchievementSettings } from "../services/settingsService";
 import { sharedAtOf, sharedModelCounts, sharedModelsWhere, sharers } from "../services/socialService";
 import { FOLDER_MAX, folderLevels, folderPath } from "../utils/fileFolder";
+import { HttpError } from "../utils/fileUtils";
+import { sendStored } from "../utils/sendStored";
 import { originOf } from "./addresses";
 import { canonicalHeaders, keyIdOf } from "./edge";
 import { AP_PREFIX, getRuntime, type Runtime } from "./runtime";
@@ -931,6 +933,7 @@ export async function sendSharedFile(res: Response, kind: string, id: string, pe
       ? await prisma.plate.findUnique({
           where: { id },
           select: {
+            id: true,
             filename: true,
             mime: true,
             storagePath: true,
@@ -941,22 +944,34 @@ export async function sendSharedFile(res: Response, kind: string, id: string, pe
       : kind === "file"
         ? await prisma.printFile.findUnique({
             where: { id },
-            select: { filename: true, mime: true, storagePath: true, print: { select: { id: true, userId: true } } },
+            select: {
+              id: true,
+              printId: true,
+              role: true,
+              filename: true,
+              mime: true,
+              storagePath: true,
+              print: { select: { id: true, userId: true } },
+            },
           })
         : null;
   if (!found || !(await isShared(found.print, peer))) return notFound();
-  const file =
-    kind === "plate"
-      ? resolvePlateFilePath({
-          storagePath: found.storagePath,
-          sourcePath: (found as { sourcePath?: string | null }).sourcePath ?? null,
-        })
-      : managedPrintFilePath(found);
-  if (!file || !fs.existsSync(file)) return notFound();
-  res.attachment(found.filename);
-  res.setHeader("Content-Type", found.mime || "application/octet-stream");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.sendFile(path.resolve(file), (err) => {
-    if (err && !res.headersSent) notFound();
-  });
+  const file = "sourcePath" in found ? resolvePlateFilePath(found) : managedPrintFilePath(found);
+  if (!file) return notFound();
+  try {
+    await sendStored(res, {
+      filePath: file,
+      site: "partner.file",
+      stillNames: () => ("sourcePath" in found ? plateStillNames(found) : printFileStillNames(found)),
+      headers: () => {
+        res.attachment(found.filename);
+        res.setHeader("Content-Type", found.mime || "application/octet-stream");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+      },
+    });
+  } catch (err) {
+    // Only a file that isn't there is "not found": a disk that fails to answer is an error.
+    if (!(err instanceof HttpError && err.status === 404)) throw err;
+    notFound();
+  }
 }
