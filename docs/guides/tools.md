@@ -49,7 +49,7 @@ Twelve come with Thingport, for an admin to install:
 | Print cost estimator      | Calculators | A model's print time, filament and real cost, and the price to charge for the margin you want.                                                                     |
 | Print queue               | Planners    | A print queue the household shares: who has a model queued, printing or printed, on its page, and a board to move each print along.                                |
 | Filament shelf            | Planners    | Everyone's filament spools on one shelf, and on each model's page the filaments it needs and who has them, matched by material and colour.                         |
-| Notes                     | Library     | Pin personal or public notes to a model's preview image. Open Notes to see and search the notes you've written.                                                    |
+| Notes                     | Library     | Pin notes to a model's picture, as bubbles or sticky notes, for yourself or everyone. Open Notes to see and search the notes you've written.                       |
 | MakerWorld 3MF normalizer | Files       | Makes Bambu Studio and MakerWorld 3MFs open in other slicers with their colours, plates and print settings.                                                        |
 
 A model that came with its script doesn't need the Script customizer: **Customize…** on its own page opens its
@@ -57,12 +57,21 @@ parameters whether the tool is installed or not.
 
 ### Notes
 
-Once an admin installs Notes, use the note icon on a model's preview to pick a spot and write. A **Personal** note is
-visible only to you. A **Public** note is shared with everyone who can use Notes on this Thingport instance. On the
-model page, pins stay on the preview image or saved render where you placed them.
+Once an admin installs Notes, a sticky note sits in the corner of a model's picture, with the number of notes on it.
+Select it for its menu:
 
-Open **Tools → Notes** to filter your own notes by model title or note text. Select a model on a card to open it.
-You can edit or delete your own notes from their pins and delete them from the board.
+- **Add note** puts a new note in the middle of the picture, ready to type in. Drag it by its grip to where it
+  belongs, or move it with the arrow keys from the grip, and choose in the toolbar under it whether it shows as a
+  **bubble** or a **sticky note**, a sticky's colour, and who sees it: **Only me**, or **Everyone** who can use Notes
+  on this Thingport instance. Who sees a note can't be changed once it's saved.
+- **Open Notes** opens the Notes window.
+- **Show notes** hides every note on the pictures, or shows them again.
+
+Select a note to read it in place, with who wrote it and when. Your own notes have a **⋮** menu to edit or delete them,
+and while you edit one you can drag it somewhere else. Notes stay on the picture or saved render where you put them.
+
+The Notes window shows your own notes as sticky notes, to filter by model title or note text. Select a model on a card
+to open it; its **⋮** menu, or a right-click, also deletes the note.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/32_tool_window.png">

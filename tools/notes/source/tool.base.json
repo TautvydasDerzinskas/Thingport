@@ -1,0 +1,42 @@
+{
+  "name": "Notes",
+  "description": "Pin personal or public notes to model preview images, as bubbles or sticky notes, and find all the notes you wrote on your sticky board.",
+  "version": "1.1.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "category": "library",
+  "window": {
+    "width": 980,
+    "height": 660
+  },
+  "locales": ["en", "lt", "de", "es", "fr", "ru", "uk", "be", "zh"],
+  "modelPage": {
+    "image": true
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/notes.webp",
+      "caption": "A model's picture with notes on it: taped sticky notes and bubble pins, yours and a housemate's, and the count on the sticky note in the corner."
+    },
+    {
+      "file": "screenshots/edit.webp",
+      "caption": "Writing a new note on the picture itself: drag it by its grip, and pick bubble or sticky, its colour and who sees it in the toolbar under it."
+    },
+    {
+      "file": "screenshots/read-dark.webp",
+      "caption": "In the dark theme, a housemate's public note opened in place, with who wrote it, when and who can see it."
+    },
+    {
+      "file": "screenshots/menu.webp",
+      "caption": "The menu on the corner's sticky note adds a note, opens the Notes window, or hides every note on pictures while you look at the model."
+    },
+    {
+      "file": "screenshots/board.webp",
+      "caption": "The Notes window: every note you wrote, in its own colour, with the model it's on, to filter by model title or note text."
+    },
+    {
+      "file": "screenshots/board-dark.webp",
+      "caption": "In the dark theme, a note's menu in the window opens its model or deletes the note."
+    }
+  ]
+}
