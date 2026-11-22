@@ -131,6 +131,7 @@ async function request<T>(path: string, method = "GET", payload?: unknown): Prom
 const design = (id: string) => `/studio/designs/${encodeURIComponent(id)}`;
 
 export type StudioExport = {
+  format?: "3mf" | "stl" | "stl-zip";
   slicer?: string;
   printer?: { id: string; nozzle: string };
   plate?: string;
@@ -138,7 +139,7 @@ export type StudioExport = {
 
 export function studioExportPath(id: string, filename: string, options?: StudioExport): string {
   const parts = [
-    options ? "3mf" : "auto",
+    options?.format ?? (options ? "3mf" : "auto"),
     options?.slicer ?? "-",
     options?.printer?.id ?? "-",
     options?.printer?.nozzle ?? "-",

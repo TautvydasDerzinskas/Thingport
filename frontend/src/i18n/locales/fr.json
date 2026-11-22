@@ -4580,6 +4580,7 @@
         "color": "Couleur du corps",
         "clearColor": "Effacer",
         "applyColor": "Appliquer",
+        "exportStl": "Exporter en STL",
         "openSlicer": "Ouvrir dans le trancheur",
         "slicer": "Trancheur",
         "printer": "Imprimante et buse",
@@ -4590,12 +4591,17 @@
         "open": "Ouvrir"
       },
       "design": {
-        "none": "Aucune conception",
         "new": "Nouvelle conception",
         "open": "Ouvrir…",
         "openTitle": "Ouvrir une conception",
         "rename": "Renommer la conception",
-        "export": "Télécharger le modèle",
+        "save": "Enregistrer le modèle",
+        "export": {
+          "title": "Exporter",
+          "format": "Format de fichier",
+          "threeMf": "Téléchargez un fichier 3MF avec tous les plateaux occupés et leurs couleurs.",
+          "stlZip": "Téléchargez une archive ZIP avec un fichier STL par plateau occupé."
+        },
         "delete": "Supprimer la conception",
         "deleteTitle": "Supprimer « {{name}} » ?",
         "deleteMessage": "La conception et son historique sont supprimés définitivement.",
@@ -4603,11 +4609,20 @@
         "emptyTitle": "Aucune conception pour l’instant",
         "emptyHint": "Commencez-en une, puis construisez-la avec des formes et des esquisses.",
         "untitled": "Conception sans titre",
+        "menu": {
+          "quickActions": "Actions rapides",
+          "new": "Nouvelle",
+          "open": "Ouvrir",
+          "slicer": "Trancheur",
+          "recent": "Récentes",
+          "edited": "Modifiée {{time}}"
+        },
         "nothingToExport": "Rien de visible à télécharger",
         "features_one": "{{count}} élément",
         "features_many": "{{count}} éléments",
         "features_other": "{{count}} éléments",
         "saveToLibrary": "Enregistrer dans Thingport",
+        "libraryModelName": "Nom du modèle",
         "saving": "Enregistrement dans Thingport…",
         "saved": "« {{name}} » enregistré dans votre bibliothèque",
         "openSaved": "Ouvrir"
@@ -4863,6 +4878,23 @@
           "smooth": "Lisse",
           "closed": "Fermé"
         }
+      },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Mise à niveau du plateau…",
+          "Taille des crayons…",
+          "Mise en place de la grille…",
+          "Remise à zéro de l’origine…",
+          "Tension des courroies…",
+          "Calibrage des axes…",
+          "Alignement des plans…",
+          "Comptage des triangles…",
+          "Polissage des congés…",
+          "Chauffe de la buse…",
+          "Ouverture de la boîte à outils…",
+          "Mesurer deux fois, couper une fois…"
+        ]
       },
       "importModel": {
         "loadingStudio": "Chargement de Thingport Studio…",

@@ -10,8 +10,9 @@ ones.
 
 ## Designing
 
-The design name at the top of Studio opens a menu for opening, renaming, exporting, opening in a slicer, and saving
-designs to the library. It's available in both modes. The **Edit** button (the pencil) shows the editing tools,
+Use the **⋮** menu next to the design name to create, open, rename, export, or delete a design, or open it in a slicer.
+Its **Recent** list jumps to the three designs you edited last.
+The toolbar's **Save** menu is available in both modes. The **Edit** button (the pencil) shows the editing tools,
 **Properties**, and the status bar. You can turn the view and use the undo and redo shortcuts in either mode.
 The **Objects / Plates** and **Properties** panels fold away with the arrows in their headers. Reopen them from
 their tabs or from the panels button at the right of the status bar, beside the print check and **Studio settings**.
@@ -28,7 +29,10 @@ You can select several bodies to move or color them together. Set **Body color**
 color in the viewport and the 3MF. Each plate with visible bodies gets a thumbnail in the 3MF. Hidden bodies and
 empty plates are skipped during export.
 
-**Download design** exports STL for one uncolored body on one plate and 3MF for designs with colors, multiple
+Use **Export** in the design menu to download a single **3MF** for all populated plates, or choose **STL** to
+download a ZIP with one STL per populated plate. From a plate's menu, **Export as STL** downloads that plate's STL directly.
+
+**Save design** downloads STL for one uncolored body on one plate and 3MF for designs with colors, multiple
 bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
 slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
 plate at a time, choose which plate to open. Studio prepares unopened plates as needed for export, subject to the
@@ -88,13 +92,14 @@ A design is a list of features, built in order:
 Designs stay editable: change a box's width, or a sketch's circle, and everything built from it follows. The bodies a
 boolean was made from are folded under it in the feature list, and deleting the boolean gives them back.
 
-**Parameters** in the design's menu names the numbers a design hangs on, each with its unit as in other CAD: a length
-(mm, cm or in, such as `wall = 2 mm`), an angle (°), or none, for a count. Type `=` and a formula in any size field
-(`=wall * 2 + 10`) and the field follows it, marked **ƒx**; change the parameter and every field that follows it
-changes too. A formula takes `+ - * / % ^`, brackets, `pi`, functions such as `min`, `max`, `round` and `sqrt`, and
-numbers with units (`2 in + 5 mm`, `45°`). A length field takes only a length and a count only a plain number, so
-`wall * wall` in a width is refused. A bare number added to a length is in the design's units, and is kept with that
-unit written in (`wall + 1` in an inch design is kept as `wall + 1 in`), so switching units never changes a size.
+**Parameters**, the sliders icon beside **Undo** and **Redo** in the **Edit** toolbar, lets you name the numbers a
+design depends on. A parameter can be a length (mm, cm or in, such as `wall = 2 mm`), an angle (°), or a count
+without a unit. Enter a formula such as `=wall * 2 + 10` in a size field in **Properties**. Studio marks the linked
+field with **ƒx** and updates it whenever the parameter changes. A formula takes `+ - * / % ^`, brackets, `pi`,
+functions such as `min`, `max`, `round` and `sqrt`, and numbers with units (`2 in + 5 mm`, `45°`). A length
+field takes only a length and a count only a plain number, so `wall * wall` in a width is refused. A bare number
+added to a length is in the design's units, and is kept with that unit written in (`wall + 1` in an inch design
+is kept as `wall + 1 in`), so switching units never changes a size.
 Typing a plain number into the field lets its formula go.
 
 ## Units
@@ -195,8 +200,9 @@ a face to print on. **Measure** gives the gap or overlap between two bodies. Ask
 Open all imported 3MF plates before running the whole-design check.
 As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ridges don't count as overhang or thin walls.
 
-**Save to Thingport** adds a new library model with the design's 3MF, a picture of the view, and what you asked Ask AI
-about the design as its description. An assistant can save it too when you ask.
+**Save to Thingport** asks you to confirm or change the new library model's name, starting with the design's name.
+The model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the design as its description.
+An assistant can save it too when you ask.
 
 ## Working with an AI assistant
 

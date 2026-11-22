@@ -22,8 +22,9 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { studioApi, type StudioAiModels } from "../../api/studio";
+import { studioApi, type StudioAiModels, type StudioExport } from "../../api/studio";
 import { useConfirm } from "../../components/ConfirmProvider";
+import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import PanelTab from "../../components/PanelTab";
 import { useToast } from "../../components/ToastProvider";
 import {
@@ -47,10 +48,13 @@ import ArrangeDialog from "./ArrangeDialog";
 import FitTestDialog from "./FitTestDialog";
 import type { BodyCheck } from "../../studio/printCheck";
 import DesignsDialog from "./DesignsDialog";
+import StudioDesignMenu from "./StudioDesignMenu";
+import StudioExportDialog from "./StudioExportDialog";
 import StudioSlicerDialog, { studioExportName } from "./StudioSlicerDialog";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
+import { onTopBarHeight } from "../../utils/topBarHeight";
 import ObjectsPanel from "./ObjectsPanel";
-import { featureLabel } from "./labels";
+import { featureLabel, plateLabel } from "./labels";
 import { AssistantPanel } from "./AssistantThread";
 import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
@@ -189,6 +193,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   );
   const onError = useCallback((message: string) => toast({ message, severity: "error" }), [toast]);
   const { design, loadFailed, run, reload, waitForSaves } = useStudioDesign(designId, { onError, onUnauthorized });
+  const openDesignId = design?.id;
+  const designName = design?.name;
   const doc = design?.document ?? null;
 
   // With no design asked for, the latest one opens; with none at all, the empty state offers a new one.
@@ -229,6 +235,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const plateInView = doc ? studioPlates(doc).find((plate) => plate.id === activePlate) : undefined;
   const plateSource = plateInView?.source;
   const [slicerOpen, setSlicerOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   // Edit adds the design tools and side panels.
   const [editing, setEditing] = useState(false);
   const [editHandMode, setEditHandMode] = useState(false);
@@ -279,6 +286,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     highlights?: BodyCheck["highlights"];
   } | null>(null);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
+  const [libraryModelName, setLibraryModelName] = useState<string | null>(null);
   // A tool that takes more than a click, while its panel is open, and what making its preview said.
   const [operation, setOperation] = useState<Operation | null>(null);
   const handModeSuspended = Boolean(operation || sketch || measureTool);
@@ -310,6 +318,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setShownDesign(designId);
     setPickedPlate(DEFAULT_PLATE_ID);
     setSlicerOpen(false);
+    setExportOpen(false);
+    setLibraryModelName(null);
     setSelected([]);
     setSketch(null);
     setErrors({});
@@ -696,21 +706,29 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setSelected([]);
   };
 
-  const downloadDesign = async () => {
-    if (!design) return;
+  const [exporting, setExporting] = useState(false);
+  const downloadDesign = async (options?: StudioExport) => {
+    if (!design || exporting) return;
+    setExporting(true);
     try {
       const saved = await waitForSaves(design.id);
       if (!saved) return;
-      const filename = studioExportName(saved.name);
-      await saveResponseToDisk(await studioApi.export(saved.id, filename), filename);
+      const plateId = options?.plate;
+      const plate = plateId ? studioPlates(saved.document).find((entry) => entry.id === plateId) : undefined;
+      const name = plate ? `${saved.name} - ${plateLabel(plate, t)}` : saved.name;
+      const extension = options?.format === "stl-zip" ? "zip" : options?.format;
+      const filename = studioExportName(name, extension);
+      await saveResponseToDisk(await studioApi.export(saved.id, filename, options), filename);
     } catch (error) {
       showError(error);
+    } finally {
+      setExporting(false);
     }
   };
 
   // Saving to the library: the view as it is, kept with the design, is the model's picture.
   const [saving, setSaving] = useState(false);
-  const saveToLibrary = async () => {
+  const saveToLibrary = async (name: string) => {
     if (!design || saving) return;
     setSaving(true);
     try {
@@ -721,7 +739,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       );
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
       const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;
-      const { model } = await studioApi.saveToLibrary(saved.id, picture ? { picture_id: picture.id } : {});
+      const { model } = await studioApi.saveToLibrary(saved.id, { name, picture_id: picture?.id });
       toast({
         message: t("studio.design.saved", { name: model.title || model.name }),
         severity: "success",
@@ -735,21 +753,47 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     }
   };
 
-  const deleteDesign = async () => {
-    if (!design) return;
+  const openSlicer = useCallback(async () => {
+    if (openDesignId && (await waitForSaves(openDesignId))) setSlicerOpen(true);
+  }, [openDesignId, waitForSaves]);
+
+  const deleteDesign = useCallback(async () => {
+    if (!openDesignId || designName === undefined) return;
     const ok = await confirm({
-      title: t("studio.design.deleteTitle", { name: design.name }),
+      title: t("studio.design.deleteTitle", { name: designName }),
       message: t("studio.design.deleteMessage"),
       destructive: true,
     });
     if (!ok) return;
     try {
-      await studioApi.remove(design.id);
+      await studioApi.remove(openDesignId);
       setSearchParams({}, { replace: true });
     } catch (error) {
       showError(error);
     }
-  };
+  }, [confirm, designName, openDesignId, setSearchParams, showError, t]);
+
+  const headerActions = useMemo(
+    () => (
+      <StudioDesignMenu
+        key={openDesignId}
+        designId={openDesignId ?? null}
+        onNewDesign={() => void newDesign()}
+        onBrowseDesigns={() => setDesignsOpen(true)}
+        onSwitchDesign={(id) => setSearchParams({ design: id })}
+        onRenameDesign={() => setRenaming({ kind: "design" })}
+        onExport={() => setExportOpen(true)}
+        onOpenSlicer={() => void openSlicer()}
+        onDeleteDesign={() => void deleteDesign()}
+      />
+    ),
+    [deleteDesign, newDesign, openDesignId, openSlicer, setSearchParams],
+  );
+  usePageHeader({
+    title: designName,
+    subtitle: designName ? t("sidebar.studio") : undefined,
+    actions: headerActions,
+  });
 
   /** Leaving edit mode lets go of what was being made: a tool's panel, a sketch being drawn, the gizmo. */
   const toggleEditing = () => {
@@ -859,7 +903,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     };
     update();
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    const stopListening = onTopBarHeight(update);
+    return () => {
+      window.removeEventListener("resize", update);
+      stopListening();
+    };
   }, []);
 
   const menuFeature = menu && doc ? featureById(doc, menu.id) : undefined;
@@ -1002,7 +1050,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             onClose={() => setMeasureTool(null)}
           />
         )}
-        {(busy || saving) && !operation && (
+        {(busy || saving || exporting) && !operation && (
           <Chip
             size="small"
             icon={<CircularProgress size={12} />}
@@ -1056,7 +1104,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           borderRadius: 2,
           transition: "border-color 200ms, background-color 200ms",
           "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-          // In view mode the design menu and Edit button sit on the view's background.
+          // In view mode the toolbar sits on the view's background.
           ...(editing ? {} : { borderColor: "transparent", bgcolor: theme.thingport.pageBackground }),
         })}
       >
@@ -1066,7 +1114,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           handMode={handMode}
           handModeSuspended={handModeSuspended}
           onToggleHandMode={() => setEditHandMode((active) => !active)}
-          designName={design?.name ?? null}
+          hasDesign={Boolean(design)}
           canUndo={Boolean(design?.can_undo)}
           canRedo={Boolean(design?.can_redo)}
           canCombine={selectedBodies.length >= 2}
@@ -1078,21 +1126,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           mode={mode}
           sketch={sketch && sketchFeature?.type === "sketch" ? { plane: sketchFeature.plane, tool: sketch.tool } : null}
           busy={!doc || Boolean(plateSource)}
-          onNewDesign={() => void newDesign()}
-          onOpenDesign={() => setDesignsOpen(true)}
-          onRenameDesign={() => setRenaming({ kind: "design" })}
-          onExport={() => void downloadDesign()}
-          onOpenSlicer={() => {
-            if (design)
-              void waitForSaves(design.id).then((saved) => {
-                if (saved) setSlicerOpen(true);
-              });
-          }}
-          onSaveToLibrary={() => void saveToLibrary()}
+          exporting={exporting}
+          saving={saving}
+          onSaveDesign={() => void downloadDesign()}
+          onSaveToLibrary={() => setLibraryModelName(designName ?? null)}
           onParameters={() => setParametersOpen(true)}
           measuring={Boolean(measureTool)}
           onMeasure={toggleMeasure}
-          onDeleteDesign={() => void deleteDesign()}
           onAdd={(kind) => void add(kind)}
           onStartSketch={(plane) => void startSketch(plane)}
           onSketchTool={(tool) => setSketch((prev) => (prev ? { ...prev, tool } : prev))}
@@ -1143,10 +1183,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                   document={doc}
                   activePlate={activePlate}
                   editing={editing}
+                  exporting={exporting}
                   selected={selected}
                   errors={errors}
                   onHide={() => togglePanel("features")}
                   onChangePlate={changePlate}
+                  onExportPlate={(plate) => void downloadDesign({ format: "stl", plate })}
                   onArrange={(plate) => {
                     if (!design) return;
                     changePlate(plate);
@@ -1435,6 +1477,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             onError={showError}
           />
         )}
+        {exportOpen && doc && (
+          <StudioExportDialog
+            document={doc}
+            downloading={exporting}
+            onDownload={(exportFormat) => void downloadDesign({ format: exportFormat })}
+            onClose={() => setExportOpen(false)}
+          />
+        )}
         <DesignsDialog
           open={designsOpen}
           currentId={design?.id ?? null}
@@ -1446,6 +1496,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onNew={() => void newDesign()}
           onImport={importModel}
           onError={showError}
+        />
+        <RenameDialog
+          value={libraryModelName}
+          title={t("studio.design.saveToLibrary")}
+          label={t("studio.design.libraryModelName")}
+          maxLength={120}
+          onClose={() => setLibraryModelName(null)}
+          onSave={(name) => void saveToLibrary(name)}
         />
         <RenameDialog
           value={

@@ -4677,6 +4677,7 @@
         "color": "Kūno spalva",
         "clearColor": "Išvalyti",
         "applyColor": "Taikyti",
+        "exportStl": "Eksportuoti kaip STL",
         "openSlicer": "Atidaryti pjaustyklėje",
         "slicer": "Pjaustyklė",
         "printer": "Spausdintuvas ir antgalis",
@@ -4687,12 +4688,17 @@
         "open": "Atidaryti"
       },
       "design": {
-        "none": "Nėra projekto",
         "new": "Naujas projektas",
         "open": "Atidaryti…",
         "openTitle": "Atidaryti projektą",
         "rename": "Pervadinti projektą",
-        "export": "Atsisiųsti dizainą",
+        "save": "Išsaugoti dizainą",
+        "export": {
+          "title": "Eksportuoti",
+          "format": "Failo formatas",
+          "threeMf": "Atsisiųskite vieną 3MF failą su visomis užpildytomis plokštėmis ir jų spalvomis.",
+          "stlZip": "Atsisiųskite ZIP archyvą su vienu STL failu kiekvienai užpildytai plokštei."
+        },
         "delete": "Ištrinti projektą",
         "deleteTitle": "Ištrinti „{{name}}“?",
         "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
@@ -4700,11 +4706,20 @@
         "emptyTitle": "Kol kas nėra projektų",
         "emptyHint": "Pradėkite naują ir kurkite jį iš formų bei eskizų.",
         "untitled": "Projektas be pavadinimo",
+        "menu": {
+          "quickActions": "Greiti veiksmai",
+          "new": "Naujas",
+          "open": "Atidaryti",
+          "slicer": "Pjaustyklė",
+          "recent": "Naujausi",
+          "edited": "Redaguota {{time}}"
+        },
         "nothingToExport": "Nėra matomų elementų atsisiųsti",
         "features_one": "{{count}} elementas",
         "features_few": "{{count}} elementai",
         "features_other": "{{count}} elementų",
         "saveToLibrary": "Išsaugoti į Thingport",
+        "libraryModelName": "Modelio pavadinimas",
         "saving": "Išsaugoma į Thingport…",
         "saved": "„{{name}}“ išsaugotas jūsų bibliotekoje",
         "openSaved": "Atidaryti"
@@ -4960,6 +4975,23 @@
           "smooth": "Glotnus",
           "closed": "Uždaras"
         }
+      },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Lyginama spausdinimo plokštė…",
+          "Drožiami pieštukai…",
+          "Lygiuojamas tinklelis…",
+          "Nustatoma koordinačių pradžia…",
+          "Įtempiami diržai…",
+          "Kalibruojamos ašys…",
+          "Rikiuojamos plokštumos…",
+          "Skaičiuojami trikampiai…",
+          "Šlifuojami užapvalinimai…",
+          "Šildomas purkštukas…",
+          "Išpakuojama įrankių dėžė…",
+          "Septynis kartus matuojama, vieną kartą kerpama…"
+        ]
       },
       "importModel": {
         "loadingStudio": "Kraunama „Thingport Studio“…",

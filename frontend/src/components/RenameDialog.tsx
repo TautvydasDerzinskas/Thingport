@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -11,6 +11,7 @@ type Props = {
   /** Null keeps it closed. */
   value: string | null;
   title: string;
+  label?: string;
   /** An empty name is allowed for a feature, which then shows its type and number. */
   allowEmpty?: boolean;
   maxLength: number;
@@ -18,10 +19,10 @@ type Props = {
   onSave: (name: string) => void;
 };
 
-export default function RenameDialog({ value, title, allowEmpty, maxLength, onClose, onSave }: Props) {
+export default function RenameDialog({ value, title, label, allowEmpty, maxLength, onClose, onSave }: Props) {
   const { t } = useTranslation("common");
   const [text, setText] = useState("");
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (value !== null) setText(value);
   }, [value]);
   const valid = allowEmpty || text.trim().length > 0;
@@ -39,10 +40,14 @@ export default function RenameDialog({ value, title, allowEmpty, maxLength, onCl
           autoFocus
           fullWidth
           size="small"
-          label={t("name")}
+          label={label ?? t("name")}
           value={text}
           onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => event.key === "Enter" && save()}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            save();
+          }}
           slotProps={{ htmlInput: { maxLength } }}
           sx={{ mt: 1 }}
         />

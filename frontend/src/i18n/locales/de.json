@@ -4385,6 +4385,7 @@
         "color": "Körperfarbe",
         "clearColor": "Entfernen",
         "applyColor": "Anwenden",
+        "exportStl": "Als STL exportieren",
         "openSlicer": "Mit Slicer öffnen",
         "slicer": "Slicer",
         "printer": "Drucker und Düse",
@@ -4395,12 +4396,17 @@
         "open": "Öffnen"
       },
       "design": {
-        "none": "Kein Design",
         "new": "Neues Design",
         "open": "Öffnen …",
         "openTitle": "Design öffnen",
         "rename": "Design umbenennen",
-        "export": "Design herunterladen",
+        "save": "Design speichern",
+        "export": {
+          "title": "Exportieren",
+          "format": "Dateiformat",
+          "threeMf": "Eine 3MF-Datei mit allen belegten Druckplatten und ihren Farben herunterladen.",
+          "stlZip": "Eine ZIP-Datei mit einer STL-Datei pro belegter Druckplatte herunterladen."
+        },
         "delete": "Design löschen",
         "deleteTitle": "„{{name}}“ löschen?",
         "deleteMessage": "Das Design und sein Verlauf werden endgültig gelöscht.",
@@ -4408,10 +4414,19 @@
         "emptyTitle": "Noch keine Designs",
         "emptyHint": "Beginne eines und baue es dann aus Formen und Skizzen auf.",
         "untitled": "Design ohne Titel",
+        "menu": {
+          "quickActions": "Schnellaktionen",
+          "new": "Neu",
+          "open": "Öffnen",
+          "slicer": "Slicer",
+          "recent": "Zuletzt bearbeitet",
+          "edited": "Bearbeitet {{time}}"
+        },
         "nothingToExport": "Nichts Sichtbares zum Herunterladen",
         "features_one": "{{count}} Element",
         "features_other": "{{count}} Elemente",
         "saveToLibrary": "In Thingport speichern",
+        "libraryModelName": "Modellname",
         "saving": "Wird in Thingport gespeichert …",
         "saved": "„{{name}}“ in deiner Bibliothek gespeichert",
         "openSaved": "Öffnen"
@@ -4663,6 +4678,23 @@
           "smooth": "Glatt",
           "closed": "Geschlossen"
         }
+      },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Druckplatte wird nivelliert …",
+          "Bleistifte werden gespitzt …",
+          "Raster wird gezeichnet …",
+          "Ursprung wird genullt …",
+          "Riemen werden gespannt …",
+          "Achsen werden kalibriert …",
+          "Ebenen werden ausgerichtet …",
+          "Dreiecke werden gezählt …",
+          "Kanten werden verrundet …",
+          "Düse wird vorgeheizt …",
+          "Werkzeugkasten wird ausgepackt …",
+          "Zweimal messen, einmal schneiden …"
+        ]
       },
       "importModel": {
         "loadingStudio": "Thingport Studio wird geladen …",

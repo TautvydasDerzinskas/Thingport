@@ -4567,6 +4567,7 @@
         "color": "Color del cuerpo",
         "clearColor": "Quitar",
         "applyColor": "Aplicar",
+        "exportStl": "Exportar como STL",
         "openSlicer": "Abrir con laminador",
         "slicer": "Laminador",
         "printer": "Impresora y boquilla",
@@ -4577,12 +4578,17 @@
         "open": "Abrir"
       },
       "design": {
-        "none": "Sin diseño",
         "new": "Nuevo diseño",
         "open": "Abrir…",
         "openTitle": "Abrir un diseño",
         "rename": "Cambiar nombre del diseño",
-        "export": "Descargar diseño",
+        "save": "Guardar diseño",
+        "export": {
+          "title": "Exportar",
+          "format": "Formato de archivo",
+          "threeMf": "Descarga un archivo 3MF con todas las placas ocupadas y sus colores.",
+          "stlZip": "Descarga un ZIP con un archivo STL por cada placa ocupada."
+        },
         "delete": "Eliminar diseño",
         "deleteTitle": "¿Eliminar «{{name}}»?",
         "deleteMessage": "El diseño y su historial se eliminan para siempre.",
@@ -4590,11 +4596,20 @@
         "emptyTitle": "Aún no hay diseños",
         "emptyHint": "Empieza uno y constrúyelo con formas y bocetos.",
         "untitled": "Diseño sin título",
+        "menu": {
+          "quickActions": "Acciones rápidas",
+          "new": "Nuevo",
+          "open": "Abrir",
+          "slicer": "Laminador",
+          "recent": "Recientes",
+          "edited": "Editado {{time}}"
+        },
         "nothingToExport": "No hay nada visible que descargar",
         "features_one": "{{count}} elemento",
         "features_many": "{{count}} elementos",
         "features_other": "{{count}} elementos",
         "saveToLibrary": "Guardar en Thingport",
+        "libraryModelName": "Nombre del modelo",
         "saving": "Guardando en Thingport…",
         "saved": "«{{name}}» guardado en tu biblioteca",
         "openSaved": "Abrir"
@@ -4850,6 +4865,23 @@
           "smooth": "Suave",
           "closed": "Cerrado"
         }
+      },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Nivelando la placa de impresión…",
+          "Afilando los lápices…",
+          "Cuadrando la cuadrícula…",
+          "Poniendo el origen a cero…",
+          "Tensando las correas…",
+          "Calibrando los ejes…",
+          "Alineando los planos…",
+          "Contando los triángulos…",
+          "Puliendo los redondeos…",
+          "Calentando la boquilla…",
+          "Abriendo la caja de herramientas…",
+          "Midiendo dos veces, cortando una…"
+        ]
       },
       "importModel": {
         "loadingStudio": "Cargando Thingport Studio…",

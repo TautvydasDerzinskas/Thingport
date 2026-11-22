@@ -7,9 +7,10 @@ import { HttpError } from "../utils/fileUtils";
 import { exportStudioGeometry } from "./studioInspect";
 import { studioAssetDir, withStudioSourcePlates, type StudioDesignOut } from "./studioService";
 import type { StudioExportTarget } from "./studioThreeMf";
+import type { StudioExportFormat } from "./studioWorker";
 
 export type StudioExportOptions = {
-  format: "auto" | "3mf";
+  format: StudioExportFormat;
   plate?: string;
   slicer?: string;
   printer?: { id: string; nozzle: string };
@@ -20,6 +21,10 @@ export async function exportStudioDesign(userId: string, design: StudioDesignOut
   const plates = studioPlates(document);
   if (options.plate && !plates.some((plate) => plate.id === options.plate))
     throw new HttpError(400, "That plate doesn't belong to this design.");
+  if (options.format === "stl" && !options.plate) throw new HttpError(400, "Choose a plate to export as STL.");
+  if (options.format === "stl-zip" && options.plate) throw new HttpError(400, "STL ZIP exports the whole design.");
+  if ((options.format === "stl" || options.format === "stl-zip") && options.slicer)
+    throw new HttpError(400, "Export as 3MF for a slicer preset.");
   const profile = options.slicer ? slicerProfile(options.slicer) : null;
   if (options.slicer && !profile) throw new HttpError(400, "That slicer isn't supported.");
   if (profile && profile.reads !== "bambu" && !options.plate) {
@@ -69,9 +74,10 @@ export async function exportStudioDesign(userId: string, design: StudioDesignOut
     console.error("[studio] design export failed", made);
     throw new HttpError(500, "Couldn't export the Studio design", "studio_save_failed");
   }
+  const mime = { stl: "model/stl", "3mf": "model/3mf", zip: "application/zip" }[made.format];
   return {
     bytes: made.bytes,
     format: made.format,
-    mime: made.format === "3mf" ? "model/3mf" : "model/stl",
+    mime,
   };
 }

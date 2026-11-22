@@ -25,21 +25,33 @@ import {
   topLevel,
   type Feature,
   type StudioDocument,
+  type StudioPlate,
 } from "../../studio/document";
 import { FeatureIcon, IntersectIcon, SubtractIcon, UnionIcon } from "./studioIcons";
 import { featureLabel, plateLabel } from "./labels";
 import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
 import type { RunCommand } from "./useStudioDesign";
+import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import type { MenuAnchor } from "../../components/menus/menuAction";
+
+/** Where a right-click happened, or the row itself for one from the keyboard, which has no point. */
+function contextAnchor(event: React.MouseEvent<HTMLElement>): MenuAnchor {
+  const { clientX, clientY } = event;
+  if (!clientX && !clientY) return event.currentTarget;
+  return { nodeType: 1, getBoundingClientRect: () => new DOMRect(clientX, clientY, 0, 0) };
+}
 
 type Props = {
   document: StudioDocument | null;
   activePlate: string;
   editing: boolean;
+  exporting: boolean;
   selected: readonly string[];
   errors: Record<string, string>;
   onChangePlate: (id: string) => void;
   onArrange: (id: string) => void;
+  onExportPlate: (id: string) => void;
   onSelect: (plateId: string, featureId: string, additive: boolean) => void;
   onMenu: (plateId: string, featureId: string, at: { top: number; left: number }) => void;
   onHide: () => void;
@@ -60,10 +72,12 @@ export default function ObjectsPanel({
   document,
   activePlate,
   editing,
+  exporting,
   selected,
   errors,
   onChangePlate,
   onArrange,
+  onExportPlate,
   onSelect,
   onMenu,
   onHide,
@@ -73,7 +87,7 @@ export default function ObjectsPanel({
   const title = t("studio.panels.features");
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [plateExpansion, setPlateExpansion] = useState<Partial<Record<string, boolean>>>({});
-  const [plateMenu, setPlateMenu] = useState<{ id: string; anchor: HTMLElement } | null>(null);
+  const [plateMenu, setPlateMenu] = useState<{ id: string; anchor: MenuAnchor } | null>(null);
   const [plateDialog, setPlateDialog] = useState<{ kind: "create" } | { kind: "rename"; id: string } | null>(null);
   const plates = document ? studioPlates(document) : [];
   const rootsByPlate = new Map<string, Feature[]>();
@@ -88,6 +102,8 @@ export default function ObjectsPanel({
   const menuPlate = plates.find((plate) => plate.id === plateMenu?.id);
   const renamePlate = plateDialog?.kind === "rename" ? plates.find((plate) => plate.id === plateDialog.id) : undefined;
   const canEditPlates = Boolean(document && editing);
+  const canExportPlate = (plate: StudioPlate) =>
+    Boolean(plate.source || rootsByPlate.get(plate.id)?.some((feature) => isBody(feature) && feature.visible));
 
   const expandPlate = (id: string, expanded: boolean) => {
     setPlateExpansion((prev) => ({ ...prev, [id]: expanded }));
@@ -278,6 +294,7 @@ export default function ObjectsPanel({
           const expanded = plateExpansion[plate.id] ?? active;
           const roots = rootsByPlate.get(plate.id) ?? [];
           const name = plateLabel(plate, t);
+          const hasActions = canEditPlates || canExportPlate(plate);
           return (
             <Box key={plate.id} role="treeitem" aria-label={name} aria-expanded={expanded} aria-current={active}>
               <ListItemButton
@@ -285,6 +302,14 @@ export default function ObjectsPanel({
                 selected={active}
                 aria-label={name}
                 onClick={() => activatePlate(plate.id)}
+                onContextMenu={
+                  hasActions
+                    ? (event) => {
+                        event.preventDefault();
+                        setPlateMenu({ id: plate.id, anchor: contextAnchor(event) });
+                      }
+                    : undefined
+                }
                 onKeyDown={(event) => {
                   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
                   event.preventDefault();
@@ -309,7 +334,7 @@ export default function ObjectsPanel({
                 <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0, fontWeight: active ? 600 : 500 }}>
                   {name}
                 </Typography>
-                {canEditPlates && (
+                {hasActions && (
                   <Tooltip title={t("studio.plates.actions")}>
                     <IconButton
                       size="small"
@@ -342,65 +367,82 @@ export default function ObjectsPanel({
           );
         })}
       </Box>
-      {canEditPlates && (
-        <>
-          <Menu anchorEl={plateMenu?.anchor} open={Boolean(menuPlate)} onClose={() => setPlateMenu(null)}>
-            <MenuItem
-              disabled={
-                !menuPlate ||
-                Boolean(menuPlate.source) ||
-                !rootsByPlate.get(menuPlate.id)?.some((feature) => isBody(feature) && feature.visible)
-              }
-              onClick={() => {
-                if (menuPlate) onArrange(menuPlate.id);
-                setPlateMenu(null);
-              }}
-            >
-              {t("studio.print.arrange")}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                if (menuPlate) setPlateDialog({ kind: "rename", id: menuPlate.id });
-                setPlateMenu(null);
-              }}
-            >
-              {t("studio.plates.rename")}
-            </MenuItem>
-            <MenuItem
-              disabled={
-                !menuPlate ||
-                menuPlate.id === DEFAULT_PLATE_ID ||
-                Boolean(menuPlate.source) ||
-                rootsByPlate.has(menuPlate.id)
-              }
-              onClick={() => {
-                if (menuPlate) void run("delete_plate", { plate_id: menuPlate.id });
-                setPlateMenu(null);
-              }}
-            >
-              {t("studio.plates.delete")}
-            </MenuItem>
-          </Menu>
-          <RenameDialog
-            value={
-              plateDialog?.kind === "create"
-                ? t("studio.plates.defaultName", { count: document?.next_plate_id ?? plates.length + 1 })
-                : renamePlate
-                  ? plateLabel(renamePlate, t)
-                  : null
+      <Menu
+        anchorEl={plateMenu?.anchor}
+        open={Boolean(menuPlate)}
+        onClose={() => setPlateMenu(null)}
+        onContextMenu={(event) => reopenContextMenuBelow(event, () => setPlateMenu(null))}
+      >
+        <MenuItem
+          disabled={exporting || !menuPlate || !canExportPlate(menuPlate)}
+          onClick={() => {
+            setPlateMenu(null);
+            if (menuPlate) onExportPlate(menuPlate.id);
+          }}
+        >
+          {t("studio.plates.exportStl")}
+        </MenuItem>
+        {canEditPlates && [
+          <MenuItem
+            key="arrange"
+            disabled={
+              !menuPlate ||
+              Boolean(menuPlate.source) ||
+              !rootsByPlate.get(menuPlate.id)?.some((feature) => isBody(feature) && feature.visible)
             }
-            title={t(plateDialog?.kind === "create" ? "studio.plates.add" : "studio.plates.rename")}
-            maxLength={80}
-            onClose={() => setPlateDialog(null)}
-            onSave={(name) => {
-              if (renamePlate) void run("rename_plate", { plate_id: renamePlate.id, name });
-              if (plateDialog?.kind === "create")
-                void run("create_plate", { name }).then((created) => {
-                  if (created?.[0]) activatePlate(created[0]);
-                });
+            onClick={() => {
+              if (menuPlate) onArrange(menuPlate.id);
+              setPlateMenu(null);
             }}
-          />
-        </>
+          >
+            {t("studio.print.arrange")}
+          </MenuItem>,
+          <MenuItem
+            key="rename"
+            onClick={() => {
+              if (menuPlate) setPlateDialog({ kind: "rename", id: menuPlate.id });
+              setPlateMenu(null);
+            }}
+          >
+            {t("studio.plates.rename")}
+          </MenuItem>,
+          <MenuItem
+            key="delete"
+            disabled={
+              !menuPlate ||
+              menuPlate.id === DEFAULT_PLATE_ID ||
+              Boolean(menuPlate.source) ||
+              rootsByPlate.has(menuPlate.id)
+            }
+            onClick={() => {
+              if (menuPlate) void run("delete_plate", { plate_id: menuPlate.id });
+              setPlateMenu(null);
+            }}
+          >
+            {t("studio.plates.delete")}
+          </MenuItem>,
+        ]}
+      </Menu>
+      {canEditPlates && (
+        <RenameDialog
+          value={
+            plateDialog?.kind === "create"
+              ? t("studio.plates.defaultName", { count: document?.next_plate_id ?? plates.length + 1 })
+              : renamePlate
+                ? plateLabel(renamePlate, t)
+                : null
+          }
+          title={t(plateDialog?.kind === "create" ? "studio.plates.add" : "studio.plates.rename")}
+          maxLength={80}
+          onClose={() => setPlateDialog(null)}
+          onSave={(name) => {
+            if (renamePlate) void run("rename_plate", { plate_id: renamePlate.id, name });
+            if (plateDialog?.kind === "create")
+              void run("create_plate", { name }).then((created) => {
+                if (created?.[0]) activatePlate(created[0]);
+              });
+          }}
+        />
       )}
     </SidePanel>
   );
