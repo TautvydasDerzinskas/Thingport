@@ -298,6 +298,7 @@ describe("a disk that can't answer", () => {
     // holding the name and the download taken for one still there.
     expect(files.map((file) => file.id)).toContain(note.id);
     const script = files.find((file) => file.filename === "shape.scad");
+    expect(script).toBeDefined();
     expect(script?.id).not.toBe(shape.id);
     expect(fs.existsSync(at(script?.storagePath ?? ""))).toBe(true);
   });
