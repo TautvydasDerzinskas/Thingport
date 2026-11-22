@@ -155,7 +155,8 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
   const printerKey = profile.printer ? `${profile.printer.id}/${profile.printer.nozzle}` : "";
   const setSetting = (key: ProfileSettingKey, value: ProfileValue | null) =>
     void run("set_print_profile", { profile: { settings: { [key]: value } } });
-  const checks = checkProfile(design.document, profile);
+  // For the slicer shown, which is the person's main one while the profile names none.
+  const checks = checkProfile(design.document, { ...profile, slicer });
 
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, pt: 1 }}>

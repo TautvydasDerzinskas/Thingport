@@ -61,7 +61,7 @@ import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
 import PrintProfilePanel from "./PrintProfilePanel";
-import StudioSaveDialog, { type StudioSaveRequest } from "./StudioSaveDialog";
+import StudioSaveDialog, { type StudioSaveDraft, type StudioSaveRequest } from "./StudioSaveDialog";
 import { profileAiPrompt } from "./printProfileUi";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
@@ -297,6 +297,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   } | null>(null);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [saveDraft, setSaveDraft] = useState<StudioSaveDraft | null>(null);
   const [rightTab, setRightTabState] = useState<RightTab>(() => {
     try {
       return window.localStorage.getItem(RIGHT_TAB_KEY) === "print" ? "print" : "properties";
@@ -343,6 +344,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setSlicerOpen(false);
     setExportOpen(false);
     setSaveOpen(false);
+    setSaveDraft(null);
     setSelected([]);
     setSketch(null);
     setErrors({});
@@ -766,12 +768,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
       const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;
       const { model } = await studioApi.saveToLibrary(saved.id, {
-        name,
+        ...(name ? { name } : {}),
         picture_id: picture?.id,
         ...(modelId ? { model_id: modelId } : {}),
         ...(profileName ? { profile_name: profileName } : {}),
       });
       setSaveOpen(false);
+      setSaveDraft(null);
       toast({
         message: modelId
           ? t("studio.save.addedProfile", { profile: profileName, name: model.title || model.name })
@@ -1613,12 +1616,17 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             madeByPrompts={madeByPrompts}
             about={aboutDesign}
             saving={saving}
-            onEditProfile={() => {
+            draft={saveDraft}
+            onEditProfile={(left) => {
+              setSaveDraft(left);
               setSaveOpen(false);
               openPrintTab();
             }}
             onSave={(request) => void saveToLibrary(request)}
-            onClose={() => setSaveOpen(false)}
+            onClose={() => {
+              setSaveDraft(null);
+              setSaveOpen(false);
+            }}
             onUnauthorized={onUnauthorized}
           />
         )}

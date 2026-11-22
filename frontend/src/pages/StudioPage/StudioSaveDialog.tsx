@@ -43,10 +43,21 @@ import type { RunCommand } from "./useStudioDesign";
 // Save to Thingport: the design as a new model, or as one more print profile of a model the person already has, with
 // its print profile settled first: chosen by the person, suggested by Studio's assistant, or left out.
 
-export type StudioSaveRequest = { name: string; modelId?: string; profileName?: string };
+/** `name` is a new model's; a profile added to a model takes none. */
+export type StudioSaveRequest = { name?: string; modelId?: string; profileName?: string };
 
 type Mode = "new" | "add";
 type Choice = "myself" | "ai" | "without";
+
+/** What the person filled in, kept while they set the profile in the Print tab. */
+export type StudioSaveDraft = {
+  mode: Mode;
+  name: string;
+  model: Print | null;
+  choice: Choice;
+  profileName: string;
+  nameTouched: boolean;
+};
 
 type Props = {
   design: StudioDesign;
@@ -58,7 +69,9 @@ type Props = {
   madeByPrompts: boolean;
   about: string;
   saving: boolean;
-  onEditProfile: () => void;
+  /** The dialog as it was left for the Print tab, to open it with again. */
+  draft?: StudioSaveDraft | null;
+  onEditProfile: (draft: StudioSaveDraft) => void;
   onSave: (request: StudioSaveRequest) => void;
   onClose: () => void;
   onUnauthorized?: () => void;
@@ -73,6 +86,7 @@ export default function StudioSaveDialog({
   madeByPrompts,
   about,
   saving,
+  draft,
   onEditProfile,
   onSave,
   onClose,
@@ -82,12 +96,12 @@ export default function StudioSaveDialog({
   const settings = useSlicerSettings();
   const { printers } = useUserPrinters();
   const profile = design.document.print_profile;
-  const [mode, setMode] = useState<Mode>("new");
-  const [name, setName] = useState(design.name);
-  const [model, setModel] = useState<Print | null>(null);
-  const [choice, setChoice] = useState<Choice>(canAskAi && madeByPrompts ? "ai" : "myself");
-  const [profileName, setProfileName] = useState("");
-  const [nameTouched, setNameTouched] = useState(false);
+  const [mode, setMode] = useState<Mode>(draft?.mode ?? "new");
+  const [name, setName] = useState(draft?.name ?? design.name);
+  const [model, setModel] = useState<Print | null>(draft?.model ?? null);
+  const [choice, setChoice] = useState<Choice>(draft?.choice ?? (canAskAi && madeByPrompts ? "ai" : "myself"));
+  const [profileName, setProfileName] = useState(draft?.profileName ?? "");
+  const [nameTouched, setNameTouched] = useState(draft?.nameTouched ?? false);
   const { query, setQuery, debounced, models, failed } = useLibraryModels(onUnauthorized);
   const suggested = suggestPresets(about)
     .slice(0, 2)
@@ -119,7 +133,7 @@ export default function StudioSaveDialog({
     onSave(
       mode === "new"
         ? { name: name.trim(), ...(profile ? { profileName: profileName.trim() || undefined } : {}) }
-        : { name: name.trim(), modelId: model!.id, profileName: profileName.trim() },
+        : { modelId: model!.id, profileName: profileName.trim() },
     );
   };
 
@@ -286,7 +300,10 @@ export default function StudioSaveDialog({
                     {[slicerName(profile.slicer), profileLine(t, profile)].filter(Boolean).join(" · ")}
                   </Typography>
                 </Box>
-                <Button size="small" onClick={onEditProfile}>
+                <Button
+                  size="small"
+                  onClick={() => onEditProfile({ mode, name, model, choice, profileName, nameTouched })}
+                >
                   {t("studio.save.editProfile")}
                 </Button>
               </Box>

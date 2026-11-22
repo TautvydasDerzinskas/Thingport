@@ -216,8 +216,9 @@ to choose, and it says why. A new profile is for your main slicer and the printe
 the material, below the preset. **Settings** are sorted as Bambu Studio sorts them, into **Quality**, **Strength**,
 **Speed**, **Support** and **Others**, each a section you open or fold; each shows how many settings the profile sets
 there. In a section, a setting the profile sets is a field (put it back to the slicer's own with ×), and one it
-doesn't shows as **Slicer default** with **Set** beside it. Only settings your slicer reads from a 3MF are listed:
-speeds reach Bambu Studio and the slicers built on it, not PrusaSlicer or Cura. Choices with a look, such as the infill
+doesn't shows as **Slicer default** with **Set** beside it. Only settings your slicer reads from a 3MF are offered:
+speeds reach Bambu Studio and the slicers built on it, not PrusaSlicer or Cura. One the profile already sets stays
+listed when you switch to a slicer that doesn't read it, marked as one to set in that slicer. Choices with a look, such as the infill
 and top patterns, support type, brim, seam, wall order, ironing and fuzzy skin, show a small picture of each option.
 Hover a setting to see its name in your slicer. Notes under the preset warn about a material that doesn't suit it, or settings your slicer won't take. A dot
 on the tab means the assistant changed the profile. Fold the panel with its arrow: **Properties** and **Print** then
