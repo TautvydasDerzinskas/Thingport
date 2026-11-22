@@ -4,9 +4,11 @@ import { keyframes } from "@mui/material/styles";
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -23,6 +25,7 @@ import Typography from "@mui/material/Typography";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DownloadIcon from "@mui/icons-material/Download";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { adminApi, type AdminUser } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
 import {
@@ -84,6 +87,12 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   // The tool whose details are open, and the one being installed: a tool that brings models asks first.
   const [details, setDetails] = useState<AdminTool | null>(null);
   const [installing, setInstalling] = useState<AdminTool | null>(null);
+  // Update all, while it runs: the tool being updated now, counting from 1.
+  const [updatingAll, setUpdatingAll] = useState<{ name: string; at: number; total: number } | null>(null);
+  // What Update all takes. As with each tile's chip, no update is claimed while the repository can't be read.
+  const updatable = catalog?.repoError
+    ? []
+    : (catalog?.tools.filter((tool) => tool.installed?.updateAvailable && tool.inRepo) ?? []);
   const openable = (tool: AdminTool) =>
     tool.installed && tool.installed.enabled !== false
       ? (mine?.tools.find((ours) => ours.source === "repo" && ours.slug === tool.slug) ?? null)
@@ -179,6 +188,42 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
       fail(err, t("adminSettings.tools.repo.installFailed"));
     } finally {
       release(tool.slug);
+    }
+  };
+
+  /** Updates each tool with an update, one at a time, by the same rule as its own Update chip. Disabled tools too: they
+   *  stay disabled. One already being worked on is left to that work. */
+  const updateAll = async (tools: AdminTool[]) => {
+    if (updatingAll) return;
+    const queue = tools.filter((tool) => claim(tool.slug));
+    if (queue.length === 0) return;
+    const failed: { name: string; error: string }[] = [];
+    try {
+      for (const [index, tool] of queue.entries()) {
+        setUpdatingAll({ name: tool.manifest.name, at: index + 1, total: queue.length });
+        try {
+          await toolsApi.install(tool.slug, tool.installed?.models?.imported === true);
+        } catch (err) {
+          if (err instanceof UnauthorizedError) {
+            onUnauthorized?.();
+            return;
+          }
+          failed.push({ name: tool.manifest.name, error: err instanceof Error ? err.message : String(err) });
+        }
+      }
+      if (failed.length)
+        toast({
+          message: t("adminSettings.tools.repo.updateAllFailed", {
+            names: failed.map((item) => item.name).join(", "),
+            error: failed[0].error,
+          }),
+          severity: "error",
+        });
+      else toast({ message: t("adminSettings.tools.repo.updatedAll", { count: queue.length }), severity: "success" });
+      await Promise.all([loadCatalog(), reloadTools().catch(() => undefined)]);
+    } finally {
+      setUpdatingAll(null);
+      for (const tool of queue) release(tool.slug);
     }
   };
 
@@ -359,6 +404,50 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
         )}
         {catalog?.repoError && (
           <Alert severity="warning">{t("adminSettings.tools.repo.unreachable", { error: catalog.repoError })}</Alert>
+        )}
+        {(updatingAll || updatable.length > 0) && (
+          <Alert
+            severity="info"
+            icon={<SystemUpdateAltIcon fontSize="inherit" />}
+            aria-live="polite"
+            action={
+              !updatingAll && (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void updateAll(updatable)}
+                  sx={{ whiteSpace: "nowrap" }}
+                >
+                  {t("adminSettings.tools.repo.updateAll")}
+                </Button>
+              )
+            }
+            sx={{
+              animation: `${appear} 220ms ease-out both`,
+              "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+              "& .MuiAlert-message": { flex: 1, minWidth: 0 },
+            }}
+          >
+            {updatingAll ? (
+              <>
+                {t("adminSettings.tools.repo.updatingAll", {
+                  name: updatingAll.name,
+                  done: updatingAll.at,
+                  total: updatingAll.total,
+                })}
+                <LinearProgress
+                  variant="determinate"
+                  value={((updatingAll.at - 1) / updatingAll.total) * 100}
+                  sx={{ mt: 0.75, borderRadius: 1 }}
+                />
+              </>
+            ) : (
+              t("adminSettings.tools.repo.updates", {
+                count: updatable.length,
+                names: updatable.map((tool) => tool.manifest.name).join(", "),
+              })
+            )}
+          </Alert>
         )}
         {catalog === null ? (
           <ListRowSkeletons count={3} leadSize={44} twoLines trailing />
