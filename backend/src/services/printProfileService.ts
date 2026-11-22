@@ -147,11 +147,12 @@ export function profileOut(plate: ProfilePlate): PrintProfileOut | null {
   };
 }
 
-/** The file a profile plate has now, by size and modification time; null while it's missing. */
+/** The file a profile plate has now, by size and modification time; null while it's missing or can't be looked at,
+ *  so it's read once it's back. */
 function fileStampOf(plate: Pick<Plate, "storagePath" | "sourcePath">): string | null {
-  const filePath = resolvePlateFilePath(plate);
-  if (!filePath) return null;
   try {
+    const filePath = resolvePlateFilePath(plate);
+    if (!filePath) return null;
     const stat = fs.statSync(filePath);
     return `${stat.size}:${Math.trunc(stat.mtimeMs)}`;
   } catch {
