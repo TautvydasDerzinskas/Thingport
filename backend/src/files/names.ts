@@ -89,7 +89,11 @@ export function normalizeFileName(raw: string | null | undefined, fallback = "im
     .trim()
     .replace(TRAILING, "");
   const { stem, ext } = splitName(cleaned || fallback);
-  return fit(RESERVED_STEM.test(stem) ? `${stem}_` : stem, ext) as NormalName;
+  // A reserved name is looked for in what's left once the name fits: a cut can leave one ("CON" and its spaces).
+  const fitted = splitName(fit(stem, ext));
+  return (
+    RESERVED_STEM.test(fitted.stem) ? fit(`${fitted.stem}_`, fitted.ext) : fitted.stem + fitted.ext
+  ) as NormalName;
 }
 
 /** `name` numbered apart: "job (2).gcode.3mf" for the second "job.gcode.3mf", still within NAME_MAX_BYTES and, for a

@@ -60,7 +60,12 @@
     ["e\u0001́.stl", "é.stl", "a control character between a letter and its accent doesn't keep them apart"],
     ["a　.", "a", "whitespace before a trailing dot goes with it"],
     ["a. ", "a", "a no-break space at the end too"],
-    ["notes　　.txt", "notes　　.txt", "whitespace inside a name stays"]
+    ["notes　　.txt", "notes　　.txt", "whitespace inside a name stays"],
+    [
+      "CON　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　.stl",
+      "CON_.stl",
+      "a cut that leaves a reserved name still gets the _"
+    ]
   ],
   "split": [
     ["job.gcode.3mf", "job", ".gcode.3mf"],

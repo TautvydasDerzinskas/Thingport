@@ -58,6 +58,24 @@ describe("normalizeFileName", () => {
     );
   });
 
+  it("never leaves a name Windows reserves, even where a cut makes one", () => {
+    const reservedThenSpaces = fc
+      .tuple(
+        fc.constantFrom("CON", "aux", "LPT1", "nul"),
+        fc.integer({ min: 0, max: 120 }),
+        fc.constantFrom(".stl", ""),
+      )
+      .map(([stem, spaces, ext]) => `${stem}${"\u3000".repeat(spaces)}${ext}`);
+    fc.assert(
+      fc.property(reservedThenSpaces, (raw) => {
+        const name = normalizeFileName(raw);
+        expect(normalizeFileName(name)).toBe(name);
+        expect(splitName(name).stem).not.toMatch(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i);
+      }),
+      SEED,
+    );
+  });
+
   it("is never empty, nor longer than a file system holds", () => {
     fc.assert(
       fc.property(anyName, (raw) => {
