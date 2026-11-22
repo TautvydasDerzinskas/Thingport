@@ -2,6 +2,8 @@
 // entry, the consume folder, a partner's copy, a tool or Studio. Everything after that reads the name this makes, so
 // two ways in never disagree about what a file is called or what it is.
 
+import kinds from "./kinds.json";
+
 /** A name normalizeFileName made. Only it makes one, so a writer that takes a NormalName can't be handed a raw one. */
 export type NormalName = string & { readonly __normalName: unique symbol };
 
@@ -9,8 +11,11 @@ export type NormalName = string & { readonly __normalName: unique symbol };
  *  leaves room for " (2)" when two files want the same name. */
 export const NAME_MAX_BYTES = 240;
 
-/** Extensions read as one, so numbering and the kind of file go by the whole of them. */
-const COMPOUND_EXTENSIONS = [".gcode.3mf", ".tar.gz"];
+/** Extensions read as one, so numbering and the kind of file go by the whole of them: the kind table's that have two
+ *  parts (".gcode.3mf", ".tar.gz"). */
+const COMPOUND_EXTENSIONS = (kinds as { extensions?: string[] }[])
+  .flatMap((row) => row.extensions ?? [])
+  .filter((ext) => ext.split(".").length > 2);
 
 /** What follows a name's last dot when it's an extension: a short run of letters and digits. "v1.2 final" has none. */
 const EXTENSION = /^\.[A-Za-z0-9_-]{1,15}$/;

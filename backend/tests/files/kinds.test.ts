@@ -161,7 +161,8 @@ describe("extension lists outside the table", () => {
     const found: Record<string, number> = {};
     for (const file of sources(path.join(root, "src"))) {
       const rel = path.relative(root, file).split(path.sep).join("/");
-      if (rel.startsWith("src/files/")) continue;
+      // The table itself; the rest of src/files is scanned like any other folder.
+      if (rel === "src/files/kinds.ts") continue;
       const text = fs.readFileSync(file, "utf8");
       const count = PATTERNS.reduce((sum, pattern) => sum + (text.match(pattern)?.length ?? 0), 0);
       if (count) found[rel] = count;
