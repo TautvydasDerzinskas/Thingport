@@ -215,6 +215,8 @@ export default function ModelsPage({
 
   useEffect(() => {
     const run = ++listRun.current;
+    // A reloaded list may page again, whatever its last next page did.
+    setMoreFailed(false);
     setLoadingMore(false);
     const renamed = reloadAfterRename.current;
     reloadAfterRename.current = false;
