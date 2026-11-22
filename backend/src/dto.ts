@@ -41,8 +41,7 @@ import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobR
 import { jobPayload } from "./services/importJobService";
 import type { LineOut, OwnQueue, QueueJobRow, QueueJobView } from "./services/importQueueService";
 import type { ImportOutcome } from "./services/modelNotifications";
-import { kindOf } from "./files/kinds";
-import { normalizeFileName } from "./files/names";
+import { extensionsOf } from "./files/kinds";
 
 export type UserOut = {
   id: string;
@@ -417,8 +416,11 @@ export function toPrintOut(
   const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p, print.assetsPath));
   const supporting = files.filter((f) => f.role === "SUPPORTING");
   const supportingCount = supporting.length;
+  // By the script kind's extensions alone, as the Generative filter counts them: a stored script whose name starts with
+  // a dot is still the model's script.
+  const scriptExtensions = extensionsOf("script");
   const generatorScripts = supporting
-    .filter((f) => kindOf(normalizeFileName(f.filename)) === "script")
+    .filter((f) => scriptExtensions.some((ext) => f.filename.toLowerCase().endsWith(ext)))
     .map((f) => ({ id: f.id, filename: f.filename, folder: f.folder ?? null }));
   // The model's own files: LICENSE.txt is Thingport's, written from its licence.
   const totalSize =

@@ -113,7 +113,7 @@ describe("extension lists outside the table", () => {
   // none of these decides what a file someone brings is. A new list or test anywhere else, or one more in these,
   // fails here: it belongs in the table, or here with its reason.
   const EXCEPTIONS: Record<string, [count: number, why: string]> = {
-    "src/config.ts": [1, "web-page assets a link import passes over, not kinds of files"],
+    "src/config.ts": [2, "web-page assets a link import passes over, and the order a page's links are tried in"],
     "src/adapter/format.ts": [1, "what a 3MF holds inside it, for its format"],
     "src/adapter/readers/bambuProject.ts": [1, "a 3MF's own model parts"],
     "src/adapter/readers/plainProject.ts": [1, "a 3MF's own model parts"],
@@ -129,6 +129,7 @@ describe("extension lists outside the table", () => {
     "src/services/modelPreviewJobs.ts": [1, "the formats the 3D renderer reads"],
     "src/services/modelQualityService.ts": [1, "the formats the printability check reads"],
     "src/services/toolFormat.ts": [1, "the model formats a tool's package may hold"],
+    "src/services/customWidgetFormat.ts": [4, "the picture types a widget package's screenshots may be"],
     "src/services/modelAssets.ts": [2, "Thingport's own renders and temporary files"],
     "src/services/storageInventory.ts": [3, "Thingport's own renders and temporary files"],
     "src/services/storageMoveService.ts": [2, "Thingport's own renders"],
@@ -136,9 +137,16 @@ describe("extension lists outside the table", () => {
     "src/routes/icons.ts": [1, "an icon's own type"],
     "src/import/download.ts": [1, "a host name, not a file"],
     "src/utils/urlUtils.ts": [1, "a host name, not a file"],
+    "src/federation/addresses.ts": [1, "host names, not files"],
     "src/providers/makerworld/pageData.ts": [1, "a site's own list of a design's files, until its pull request"],
   };
-  const PATTERNS = [/new Set\(\[\s*"\.[A-Za-z0-9]/g, /\.endsWith\(\s*"\.[A-Za-z0-9]/g];
+  // Double-quoted, as Prettier writes strings: a Set or an array literal opening with an extension, and an extension
+  // test.
+  const PATTERNS = [
+    /new Set\(\[\s*"\.[A-Za-z0-9]/g,
+    /(?<!Set\()\[\s*"\.[A-Za-z0-9]/g,
+    /\.endsWith\(\s*"\.[A-Za-z0-9]/g,
+  ];
   const root = path.join(__dirname, "..", "..");
 
   function sources(dir: string): string[] {

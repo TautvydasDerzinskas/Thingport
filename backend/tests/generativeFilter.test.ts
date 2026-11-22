@@ -105,6 +105,16 @@ describe("models that came with a generator script", () => {
     expect(notes.text).toBe("one\r\ntwo\r\n");
   });
 
+  it("lists a script whose name starts with a dot, as the filter counts it", async () => {
+    const model = await makeModel(`Dotted ${stamp}`);
+    await attachFile(model, ".generator.scad", "size = 10;\n");
+
+    const print = (await request(app).get(`/api/print/${model}`).set(auth())).body;
+    expect(print.generator_scripts.map((script: { filename: string }) => script.filename)).toEqual([".generator.scad"]);
+    const only = await request(app).get("/api/prints?limit=100&generative=1").set(auth());
+    expect(only.body.map((item: { id: string }) => item.id)).toContain(model);
+  });
+
   it("starts as not withheld, which is what an uploaded model is", async () => {
     const res = await request(app).get(`/api/print/${plain}`).set(auth());
     expect(res.body.generator_script_withheld).toBe(false);

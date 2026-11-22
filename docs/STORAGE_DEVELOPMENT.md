@@ -16,8 +16,8 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
   (`cutName`). Pinned by `tests/files/names.test.ts` and `tests/files/namesAtUpload.test.ts`.
 - **One table of file kinds.** What a file is comes from the kind table (`files/kinds.ts`, data in `kinds.json`):
   `kindOf` reads a normalised name, and `extensionsOf` gives a kind's extensions. The extension sets from before it
-  are its `LEGACY` views, pinned to what each held. A new extension list or `.endsWith(".…")` test outside it fails
-  `tests/files/kinds.test.ts` unless it's listed there with its reason. `npm run kinds:sync` writes
+  are its `LEGACY` views, pinned to what each held. Outside it, a new `Set` or array literal opening with an extension, or
+  a `.endsWith(".…")` test, fails `tests/files/kinds.test.ts` unless that file is listed there with its reason. `npm run kinds:sync` writes
   [features/file-kinds.md](features/file-kinds.md) from it, and Format checks the page.
 - **One rule for junk.** `isJunk` (`files/names.ts`) decides what a computer left among files. `/upload`, the zip
   listing, `/import/zip` (before its empty check and its job's total) and the consume folder drop it. Pinned by the
