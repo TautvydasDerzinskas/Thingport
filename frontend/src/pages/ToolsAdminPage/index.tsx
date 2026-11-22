@@ -106,12 +106,21 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     [onUnauthorized, toast],
   );
 
-  const loadCatalog = useCallback(async () => {
+  // Loads overlap (opening, the fetch poll, another admin's change, each action's refresh), so only the latest one
+  // started is shown: an older answer arriving last mustn't bring back a state already left. Returns what it read.
+  const catalogLoads = useRef(0);
+  const loadCatalog = useCallback(async (): Promise<ToolCatalog | null> => {
+    const load = ++catalogLoads.current;
     try {
-      setCatalog(await toolsApi.catalog());
+      const next = await toolsApi.catalog();
+      if (load === catalogLoads.current) setCatalog(next);
+      return next;
     } catch (err) {
-      fail(err, t("adminSettings.tools.repo.failed"));
-      setCatalog((prev) => prev ?? { tools: [], repoError: err instanceof Error ? err.message : String(err) });
+      if (load === catalogLoads.current) {
+        fail(err, t("adminSettings.tools.repo.failed"));
+        setCatalog((prev) => prev ?? { tools: [], repoError: err instanceof Error ? err.message : String(err) });
+      }
+      return null;
     }
   }, [fail, t]);
 
@@ -192,17 +201,25 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   };
 
   /** Updates each tool with an update, one at a time, by the same rule as its own Update chip. Disabled tools too: they
-   *  stay disabled. One already being worked on is left to that work. */
+   *  stay disabled. Each is read again just before its turn, as an earlier one's update can take a while: one another
+   *  admin has updated or uninstalled since is left alone, and models imported since are kept. One already being
+   *  worked on here is left to that work. */
   const updateAll = async (tools: AdminTool[]) => {
     if (updatingAll) return;
     const queue = tools.filter((tool) => claim(tool.slug));
     if (queue.length === 0) return;
+    let updated = 0;
     const failed: { name: string; error: string }[] = [];
     try {
-      for (const [index, tool] of queue.entries()) {
-        setUpdatingAll({ name: tool.manifest.name, at: index + 1, total: queue.length });
+      for (const [index, queued] of queue.entries()) {
+        setUpdatingAll({ name: queued.manifest.name, at: index + 1, total: queue.length });
+        // Where the catalogue can't be read, the queued state stands: the server keeps models an instance has anyway.
+        const fresh = await loadCatalog();
+        const tool = fresh ? fresh.tools.find((one) => one.slug === queued.slug) : queued;
+        if (!tool?.installed?.updateAvailable || !tool.inRepo) continue;
         try {
-          await toolsApi.install(tool.slug, tool.installed?.models?.imported === true);
+          await toolsApi.install(tool.slug, tool.installed.models?.imported === true);
+          updated++;
         } catch (err) {
           if (err instanceof UnauthorizedError) {
             onUnauthorized?.();
@@ -219,7 +236,8 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
           }),
           severity: "error",
         });
-      else toast({ message: t("adminSettings.tools.repo.updatedAll", { count: queue.length }), severity: "success" });
+      else if (updated)
+        toast({ message: t("adminSettings.tools.repo.updatedAll", { count: updated }), severity: "success" });
       await Promise.all([loadCatalog(), reloadTools().catch(() => undefined)]);
     } finally {
       setUpdatingAll(null);

@@ -546,6 +546,24 @@ describe("installing", () => {
     expect((await request(app).post("/api/admin/tools/planner/import-models").set(auth(memberToken))).status).toBe(403);
   });
 
+  it("keeps the instance's models through an update sent without them", async () => {
+    writeRepo();
+    const toolId = await install();
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
+
+    // A page that read the tool before its models came in still sends models: false with the update.
+    writeRepo("1.0.1");
+    const updated = await request(app)
+      .post("/api/admin/tools/planner/install")
+      .set(auth(adminToken))
+      .send({ models: false });
+    expect(updated.status).toBe(200);
+    expect(updated.body).toMatchObject({ version: "1.0.1", models: { total: 2, imported: true } });
+    await toolFetchSettled(toolId);
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
+  });
+
   it("leaves a tool's models where the admin wipes a user's own", async () => {
     writeRepo();
     const toolId = await install();

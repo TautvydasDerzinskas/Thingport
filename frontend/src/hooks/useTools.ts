@@ -22,24 +22,28 @@ function publish(state: State) {
   listeners.forEach((listener) => listener(state));
 }
 
-function load(): Promise<State> {
-  if (cached) return Promise.resolve(cached);
-  if (inFlight) return inFlight;
+/** Asks for the list, superseding any request before it, and publishes the answer unless a newer one was asked for.
+ *  It is the one in flight until it settles, so a load meanwhile waits for it rather than racing it. */
+function requestList(): Promise<State> {
   const forAccount = account;
-  const forGeneration = generation;
-  const request = toolsApi
-    .list()
-    .then((state) => {
-      if (forAccount === account && forGeneration === generation) publish(state);
-      return state;
-    })
-    // A failed load leaves tools out rather than breaking the page around them.
+  const forGeneration = ++generation;
+  const answer = toolsApi.list().then((state) => {
+    if (forAccount === account && forGeneration === generation) publish(state);
+    return state;
+  });
+  // A failed load leaves tools out rather than breaking the page around them.
+  const settled = answer
     .catch((): State => cached ?? NONE)
     .finally(() => {
-      if (inFlight === request) inFlight = null;
+      if (inFlight === settled) inFlight = null;
     });
-  inFlight = request;
-  return request;
+  inFlight = settled;
+  return answer;
+}
+
+function load(): Promise<State> {
+  if (cached) return Promise.resolve(cached);
+  return inFlight ?? requestList().catch((): State => cached ?? NONE);
 }
 
 /** Forgets the previous account's tools; call on sign-in and sign-out. */
@@ -53,10 +57,7 @@ export function resetTools() {
 
 /** Loads them again, e.g. after an admin installed one or changed who may use them. */
 export async function reloadTools(): Promise<void> {
-  const forAccount = account;
-  const forGeneration = ++generation;
-  const state = await toolsApi.list();
-  if (forAccount === account && forGeneration === generation) publish(state);
+  await requestList();
 }
 
 // Check only IDs, not the potentially large scripts, while a tab is active. A failed check keeps the last list and

@@ -102,6 +102,28 @@ describe("tool availability refresh", () => {
     expect(calls.list).toHaveBeenCalledTimes(3);
   });
 
+  it("waits for a pending reload instead of starting a load that could answer after it", async () => {
+    vi.resetModules();
+    calls.list.mockRejectedValueOnce(new Error("offline"));
+    const hooks = await import("./useTools");
+    hooks.useTools();
+    await vi.advanceTimersByTimeAsync(0);
+    let finishReload!: (result: typeof state) => void;
+    let finishLoad: ((result: typeof state) => void) | undefined;
+    calls.list
+      .mockImplementationOnce(() => new Promise((resolve) => (finishReload = resolve)))
+      .mockImplementationOnce(() => new Promise((resolve) => (finishLoad = resolve)));
+    // An admin disables the tool: the reload reads it gone, a load started meanwhile could still read it there.
+    const reload = hooks.reloadTools();
+    await vi.advanceTimersByTimeAsync(30_000);
+    finishReload({ access, tools: [] });
+    await reload;
+    finishLoad?.(state);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mounted.value).toEqual({ access, tools: [] });
+    expect(calls.list).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps the last list and retries when the availability check fails", async () => {
     await mount();
     calls.status.mockRejectedValueOnce(new Error("offline")).mockResolvedValue({ access, ids: [tool.id] });

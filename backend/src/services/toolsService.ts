@@ -546,17 +546,19 @@ export async function adminToolCatalog(): Promise<{
  * `withModels` is what the admin was asked on the way in: a tool's models are most of what it weighs, and a
  * planner's parts run to gigabytes, so an instance short of room can have the tool without them. It works either
  * way -- what it can't do without them is work offline -- and they can be asked for later (`importToolModels`),
- * which is the same as installing again with them.
+ * which is the same as installing again with them. An update never takes away models the instance has: a page that
+ * read the tool before another admin imported them still asks without.
  */
 export async function installRepoTool(
   slug: string,
   adminId: string,
-  { withModels = true }: { withModels?: boolean } = {},
+  { withModels: asked = true }: { withModels?: boolean } = {},
 ): Promise<AdminTool["installed"]> {
   if (!SLUG.test(slug)) throw new HttpError(400, "Not a tool name");
   const repo = await fetchRepoTool(slug, true);
   const files = toolModelFiles(repo.manifest);
   const existing = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
+  const withModels = asked || Boolean(existing?.modelsSha);
   // Without them the tool is installed as one that brings nothing, which is what having no spec recorded means.
   const modelsSha = withModels ? modelsShaOf(repo.manifest) : null;
   const modelsChanged = existing?.modelsSha !== modelsSha;
