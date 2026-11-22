@@ -55,6 +55,15 @@ describe("faults", () => {
     expect(fs.readFileSync(abs, "utf8")).toBe("bytes");
   });
 
+  it("fire at the calls they name when several are planted for one call", async () => {
+    const abs = file("several.stl");
+    faults.at("fileState:copy.source", 1, "EIO");
+    faults.at("fileState:copy.source", 2, "EACCES");
+    await expect(fileState(abs, "copy.source")).rejects.toMatchObject({ code: "EIO" });
+    await expect(fileState(abs, "copy.source")).rejects.toMatchObject({ code: "EACCES" });
+    expect((await fileState(abs, "copy.source")).state).toBe("file");
+  });
+
   it("count only their own file when given a path", async () => {
     const a = file("a.stl");
     const b = file("b.stl");

@@ -49,13 +49,16 @@ function hook(name: string, detail: { path?: string }): Promise<void> | void {
   known(name);
   counts.set(name, (counts.get(name) ?? 0) + 1);
   if (expected.has(name)) expected.set(name, true);
+  // Every fault for this call counts it before one fires, so faults at its 1st and 2nd calls fire at calls 1 and 2.
+  let due: Fault | undefined;
   for (const fault of faultList) {
     if (fault.fired || fault.call !== name || (fault.path !== undefined && fault.path !== detail.path)) continue;
     fault.seen += 1;
-    if (fault.seen === fault.nth) {
-      fault.fired = true;
-      throw errnoError(fault.code, name, detail.path);
-    }
+    if (fault.seen === fault.nth) due ??= fault;
+  }
+  if (due) {
+    due.fired = true;
+    throw errnoError(due.code, name, detail.path);
   }
   for (const pause of pauses) {
     if (pause.reached || pause.name !== name) continue;
