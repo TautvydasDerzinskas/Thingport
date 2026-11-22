@@ -9,6 +9,7 @@ import {
   getToolData,
   listToolData,
   listTools,
+  toolStatus,
   parseToolManifest,
   saveOwnTool,
   setToolData,
@@ -44,6 +45,15 @@ router.get(
     const user = userOf(req);
     res.json(await listTools(user));
     syncToolModelsSoon(user);
+  }),
+);
+
+// Only IDs and access: active tabs use this to notice a tool disabled by an admin without refetching its script.
+router.get(
+  "/tools/status",
+  asyncHandler(async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json(await toolStatus(userOf(req)));
   }),
 );
 

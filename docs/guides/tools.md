@@ -95,8 +95,26 @@ to open it; its **⋮** menu, or a right-click, also deletes the note.
   models it brings, and screenshots to look through first (click one to see them large, and the arrow keys move between
   them). **Install** there makes it available to everyone who sees tools. Under each installed tool, a blue **Update**
   chip means the repository has a newer version, which one click takes, and a green **Latest** that it hasn't; neither
-  shows while the repository can't be read. Right-click an installed tool to **Open** it, **Fetch missing models** when
-  some haven't come in, or **Uninstall** it.
+  shows while the repository can't be read. While any tool has an update, a strip above them names those tools, and
+  its **Update all** takes them one after another. Right-click an installed tool to **Open** it, **Fetch missing
+  models** when some haven't come in, or **Uninstall** it.
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:367b8bd27f1de72a23cd173ae7dc80ab5a343c916382c26774e57bc401be6ad3 -->
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:de070da617eb8f94630643c703223eb5c1f774d650131d921c0177b7fd1b13b1 -->
+
+- **Enable or disable a tool**: choose **Disable** from its right-click menu or at the bottom of its details. Its icon
+  stays coloured with a pause badge. Disabled tools stay installed, with their saved data and imported models intact.
+  Choose **Enable** from the menu, or from the banner in its details, to make one available again.
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+<!-- /coderabbit-ai-generated:v1 -->
+
 - **Users' own tools**: the tools users made, and whose they are.
 
 ### Tools that bring models
@@ -112,11 +130,11 @@ bury your own models under it, so they stay out of the models page and its categ
 Favourite one and it shows in Favourites, as anything you favourite does.
 
 An admin may install a tool without them -- they can run to gigabytes -- by switching off **Import its models** as
-they install it, and import them later with **Import its models** in its details. An update, from its chip or its
-details, brings them only where this Thingport instance already has them, so a tool installed without them stays that
-way. Meanwhile a tool can fetch just the few that a piece of work needs, through `fetchToolModels`: one from a model
-page is imported then through this Thingport instance's first admin account, with its connection to that site, while the
-tool's own files come only with **Import its models**.
+they install it, and import them later with **Import its models** in its details. An update, from its chip, its
+details or **Update all**, brings them only where this Thingport instance already has them, so a tool installed without
+them stays that way. Meanwhile a tool can fetch just the few that a piece of work needs, through `fetchToolModels`: one
+from a model page is imported then through this Thingport instance's first admin account, with its connection to that
+site, while the tool's own files come only with **Import its models**.
 
 The files behind them are the tool's, and are kept once for the instance however many people use the tool -- parts
 that take a gigabyte take a gigabyte, not a gigabyte per person. Each user still has their own model, in their own

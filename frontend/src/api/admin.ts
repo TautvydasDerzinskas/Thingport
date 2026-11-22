@@ -63,6 +63,7 @@ export type LogAction =
   | "photos_per_model_changed"
   | "custom_widgets_changed"
   | "tool_installed"
+  | "tool_availability_changed"
   | "tool_uninstalled"
   | "tools_access_changed"
   | "user_invited"

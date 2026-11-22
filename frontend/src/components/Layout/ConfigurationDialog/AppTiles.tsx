@@ -30,8 +30,8 @@ type TileProps = {
   logo: React.ReactNode;
   /** Coloured when on, grey when off. */
   on: boolean;
-  /** A tick or a cross in the corner, or a plus for one to add; none when undefined. */
-  badge?: boolean | "add";
+  /** The status bubble over the icon; none when undefined. */
+  badge?: boolean | "add" | "disabled";
   /** A small icon in the opposite corner, for something about how the app is used (Thingport Bridge's cable). */
   cornerIcon?: React.ReactNode;
   /** Shown as if hovered, while its menu or box is open. */
@@ -192,12 +192,13 @@ export function AddTile({ label, onClick, size = TILE }: { label: string; onClic
   );
 }
 
-/** A circle with a tick, a cross or a plus. SVG, so dark mode's square-corners rule leaves it round. */
-function StatusBadge({ ok }: { ok: boolean | "add" }) {
+/** A circle with a tick, a cross, a plus or a pause. SVG keeps it round in every theme. */
+function StatusBadge({ ok }: { ok: boolean | "add" | "disabled" }) {
   return (
     <Box
       component="svg"
       viewBox="0 0 16 16"
+      data-badge={ok === "disabled" ? ok : undefined}
       aria-hidden="true"
       sx={{
         position: "absolute",
@@ -213,13 +214,18 @@ function StatusBadge({ ok }: { ok: boolean | "add" }) {
         cx="8"
         cy="8"
         r="7.25"
-        sx={{ fill: (theme) => (ok === "add" ? theme.palette.primary.main : ok ? "#16a34a" : "#dc2626") }}
+        sx={{
+          fill: (theme) =>
+            ok === "disabled" ? "#a2490b" : ok === "add" ? theme.palette.primary.main : ok ? "#16a34a" : "#dc2626",
+        }}
         // A ring in the panel's colour sets it off the tile.
         stroke="currentColor"
         strokeWidth="1.5"
       />
       {ok === "add" ? (
         <path d="M8 4.75v6.5M4.75 8h6.5" fill="none" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
+      ) : ok === "disabled" ? (
+        <path d="M6.2 5v6M9.8 5v6" fill="none" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
       ) : ok ? (
         <path
           d="M4.75 8.25 7 10.5l4.25-4.75"
