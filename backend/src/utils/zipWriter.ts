@@ -41,6 +41,35 @@ function dosDateTime(date: Date): { time: number; date: number } {
 export type ZipEntryDescriptor =
   { arcname: string; filePath: string } | { arcname: string; content: Buffer; mtime?: Date };
 
+/** The most entries a zip from writeZip holds. 0xFFFF there, like 0xFFFFFFFF in a size or an offset, tells a reader
+ *  to look in a ZIP64 record, which this writer doesn't make. */
+export const ZIP_MAX_ENTRIES = 0xfffe;
+const ZIP_MAX_FIELD = 0xfffffffe;
+
+/** At the most, where writeZip's central directory starts (after each entry's header, name, data and descriptor) and
+ *  how long it is. Data that doesn't compress comes out of deflate bigger, by less than allowed here: zlib's
+ *  deflateBound says under 0.04% and 7 bytes, with its default settings. A file that's gone counts as empty, since
+ *  writeZip leaves it out. */
+export function zipExtent(entries: ZipEntryDescriptor[]): { data: number; central: number } {
+  let data = 0;
+  let central = 0;
+  for (const entry of entries) {
+    const size =
+      "content" in entry ? entry.content.length : (fs.statSync(entry.filePath, { throwIfNoEntry: false })?.size ?? 0);
+    const name = Buffer.byteLength(entry.arcname.replace(/\\/g, "/"), "utf-8");
+    data += 30 + name + size + Math.ceil(size / 1024) + 64 + 16;
+    central += 46 + name;
+  }
+  return { data, central };
+}
+
+/** Whether writeZip can write these without ZIP64: how many, and every offset and size under its 32 bits. */
+export function zipFits(entries: ZipEntryDescriptor[]): boolean {
+  if (entries.length > ZIP_MAX_ENTRIES) return false;
+  const { data, central } = zipExtent(entries);
+  return data <= ZIP_MAX_FIELD && central <= ZIP_MAX_FIELD;
+}
+
 type CentralRecord = {
   nameBuf: Buffer;
   crc: number;

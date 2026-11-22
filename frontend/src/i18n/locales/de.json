@@ -6702,7 +6702,8 @@
       "summaryFailed": "Die Downloadgröße konnte nicht berechnet werden. Bitte versuche es erneut.",
       "empty": "Keine herunterladbaren Modelldateien gefunden.",
       "downloading": "Wird heruntergeladen …",
-      "failed": "Die ZIP-Datei konnte nicht heruntergeladen werden. Bitte versuche es erneut."
+      "failed": "Die ZIP-Datei konnte nicht heruntergeladen werden. Bitte versuche es erneut.",
+      "tooLarge": "Das ist zu viel für eine ZIP-Datei: höchstens 65.534 Dateien und etwa 4 GB. Lade weniger Modelle auf einmal herunter oder die Dateien einzeln."
     },
     "errors": {
       "loadFailed": "Modelle konnten nicht geladen werden.",

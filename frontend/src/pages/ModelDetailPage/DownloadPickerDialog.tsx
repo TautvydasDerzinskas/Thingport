@@ -30,6 +30,8 @@ type Props = {
   onClose: () => void;
   downloading: boolean;
   sortedPlates: Plate[];
+  /** How many files "Download all" puts in the zip, the model's other files besides its plates. */
+  zipFileCount: number;
   downloadAllZip: () => void;
   /** One folder of the model's (Plate.folder), with the folders in it, as a zip. */
   downloadFolderZip: (folder: string) => void;
@@ -43,6 +45,7 @@ export default function DownloadPickerDialog({
   onClose,
   downloading,
   sortedPlates,
+  zipFileCount,
   downloadAllZip,
   downloadFolderZip,
   downloadPlate,
@@ -95,7 +98,7 @@ export default function DownloadPickerDialog({
             disabled={downloading}
             startIcon={downloading ? <CircularProgress size={14} /> : <DownloadIcon fontSize="small" />}
           >
-            {t("models:detail.downloadAllZip", { count: sortedPlates.length })}
+            {t("models:detail.downloadAllZip", { count: zipFileCount })}
           </Button>
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>

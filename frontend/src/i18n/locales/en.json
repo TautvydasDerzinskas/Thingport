@@ -6696,7 +6696,8 @@
       "summaryFailed": "Couldn't calculate the download size. Please try again.",
       "empty": "No downloadable model files found.",
       "downloading": "Downloading…",
-      "failed": "Failed to download the zip file. Please try again."
+      "failed": "Failed to download the zip file. Please try again.",
+      "tooLarge": "That's too much for one zip: at most 65,534 files and about 4 GB. Download fewer models at once, or the files one by one."
     },
     "errors": {
       "loadFailed": "Unable to load models.",

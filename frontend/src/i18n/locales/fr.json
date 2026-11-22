@@ -6978,6 +6978,7 @@
       "empty": "Aucun fichier de modèle téléchargeable trouvé.",
       "downloading": "Téléchargement…",
       "failed": "Impossible de télécharger l’archive ZIP. Veuillez réessayer.",
+      "tooLarge": "C’est trop pour une seule archive ZIP : 65 534 fichiers au plus et environ 4 Go. Téléchargez moins de modèles à la fois, ou les fichiers un par un.",
       "summary_many": "{{count}} modèles (~{{size}})",
       "summaryNoSize_many": "{{count}} modèles"
     },

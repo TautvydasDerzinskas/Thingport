@@ -160,6 +160,7 @@ export function useModelActions({
     downloadPlate,
     downloadAllZip,
     sortedPlates,
+    zipFileCount,
     recordUse,
   } = useDownloadPrint(print, onUnauthorized, onUpdated);
   const customize = useCustomize(print, onUnauthorized);
@@ -559,6 +560,7 @@ export function useModelActions({
         onClose={() => setPickerOpen(false)}
         downloading={downloading}
         sortedPlates={sortedPlates}
+        zipFileCount={zipFileCount}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}

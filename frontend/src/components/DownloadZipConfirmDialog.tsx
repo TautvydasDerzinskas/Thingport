@@ -11,7 +11,7 @@ import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import { UnauthorizedError } from "../api/client";
-import { type DownloadZipFilter, printsApi } from "../api/prints";
+import { type DownloadZipFilter, printsApi, ZipTooLargeError } from "../api/prints";
 import { formatFileSize } from "../utils/fileSize";
 import { saveResponseToDisk } from "../utils/downloadResponse";
 
@@ -79,7 +79,13 @@ export default function DownloadZipConfirmDialog({ open, onClose, filter, filena
         onUnauthorized?.();
         return;
       }
-      setDownloadError(err instanceof Error ? err.message : t("models:downloadZip.failed"));
+      setDownloadError(
+        err instanceof ZipTooLargeError
+          ? t("models:downloadZip.tooLarge")
+          : err instanceof Error
+            ? err.message
+            : t("models:downloadZip.failed"),
+      );
     } finally {
       setDownloading(false);
     }

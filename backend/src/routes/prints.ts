@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { create as contentDisposition } from "content-disposition";
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
@@ -544,7 +545,7 @@ const NORMALIZED_FOR = "prusaslicer";
 
 function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
   res.setHeader("Content-Type", plate.mime || "application/octet-stream");
-  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(plate.filename)}"`);
+  res.setHeader("Content-Disposition", contentDisposition(plate.filename));
   res.setHeader("Cache-Control", "private, max-age=86400");
   res.sendFile(path.resolve(filePath));
 }
