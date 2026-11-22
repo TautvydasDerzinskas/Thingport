@@ -9,7 +9,7 @@ import type { Print, QueueImportResult } from "./api";
 import type { BubbleLook } from "./bubble";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
-import type { Locale } from "./i18n";
+import { t, type Locale } from "./i18n";
 import type { Provider } from "./urls";
 import type { MANIFESTS, ProviderId, RegionId } from "../providers/index.generated";
 import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
@@ -349,7 +349,7 @@ export async function request<K extends BackgroundType>(
   ...payload: PayloadArgs<BackgroundMessages[K]["payload"]>
 ): Promise<BackgroundResult<K>> {
   const reply = await send(type, ...payload);
-  if (!reply) throw new Error("No response from the extension background");
+  if (!reply) throw new Error(t("backgroundUnavailable"));
   if (!reply.ok) throw new Error(reply.error);
   return reply.data;
 }

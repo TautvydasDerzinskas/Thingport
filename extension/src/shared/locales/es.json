@@ -83,6 +83,7 @@
   "instancePermission": "Thingport Grab necesita permiso para acceder a esta instancia para funcionar.",
   "saveFailed": "No se pudo guardar",
   "backgroundUnavailable": "La extensión de fondo no responde",
+  "pageChangedDuringAction": "La página cambió mientras se realizaba esta acción.",
   "disconnectFailed": "No se pudo desconectar",
   "openThingportFailed": "No se pudo abrir Thingport",
   "clearFailed": "No se pudo borrar",

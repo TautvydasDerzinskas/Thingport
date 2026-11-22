@@ -83,6 +83,7 @@
   "instancePermission": "Thingport Grab 需要访问此实例的权限才能工作。",
   "saveFailed": "无法保存",
   "backgroundUnavailable": "扩展后台没有响应",
+  "pageChangedDuringAction": "执行此操作期间，页面发生了变化。",
   "disconnectFailed": "无法断开连接",
   "openThingportFailed": "无法打开 Thingport",
   "clearFailed": "无法清除",

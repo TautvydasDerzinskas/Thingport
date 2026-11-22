@@ -51,6 +51,14 @@ export function t(key: string, values: TranslationValues = {}): string {
   return translate(activeLocale, key, values);
 }
 
+/** Format a displayed decimal using Grab's chosen language, which can differ from the browser's. */
+export function formatDecimal(value: number, fractionDigits: number): string {
+  return value.toLocaleString(activeLocale, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+}
+
 export function applyTranslations(root: ParentNode = document): void {
   for (const element of root.querySelectorAll<HTMLElement>("[data-i18n]"))
     element.textContent = t(element.dataset.i18n!);

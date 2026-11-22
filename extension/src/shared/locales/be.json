@@ -83,6 +83,7 @@
   "instancePermission": "Thingport Grab патрэбны дазвол на доступ да гэтага экземпляра.",
   "saveFailed": "Не ўдалося захаваць",
   "backgroundUnavailable": "Фонавы працэс пашырэння не адказвае",
+  "pageChangedDuringAction": "Старонка змянілася падчас выканання дзеяння.",
   "disconnectFailed": "Не ўдалося адключыцца",
   "openThingportFailed": "Не ўдалося адкрыць Thingport",
   "clearFailed": "Не ўдалося ачысціць",
