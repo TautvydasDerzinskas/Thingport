@@ -82,7 +82,7 @@ export default async function mount(thingport) {
   // ---- settings ----------------------------------------------------------------------------------------------
   const preset = $("bedPreset");
   preset.innerHTML =
-    `<option value="">Bed size…</option>` +
+    `<option value="">${escapeHtml(t("form.bedPlaceholder"))}</option>` +
     BEDS.map(([name, x, y], i) => `<option value="${i}">${name} (${x} × ${y})</option>`).join("");
   preset.addEventListener("change", () => {
     const bed = BEDS[Number(preset.value)];
@@ -201,7 +201,7 @@ export default async function mount(thingport) {
       viewBox: `${-pad} ${-pad} ${g.W + 2 * pad} ${g.D + pad + below}`,
       role: "application",
       tabindex: 0,
-      "aria-label": `Drawer layout, ${g.x.count} by ${g.y.count} cells, ${project.bins.length} bins. Drag to draw a bin, or press N to add one; [ and ] pick a bin, the arrow keys move it, Shift and the arrow keys size it, and Delete removes it.`,
+      "aria-label": t("aria.layoutInstructions", { width: g.x.count, depth: g.y.count, bins: project.bins.length }),
     });
     // The drawer, then the baseplate's tiles and cells.
     svgEl(
@@ -514,7 +514,7 @@ export default async function mount(thingport) {
     const down = document.createElement("button");
     down.type = "button";
     down.textContent = "−";
-    down.setAttribute("aria-label", `Fewer: ${label}`);
+    down.setAttribute("aria-label", t("bins.less", { label }));
     down.disabled = value <= min;
     down.addEventListener("click", () => set(value - 1));
     const out = document.createElement("output");
@@ -522,7 +522,7 @@ export default async function mount(thingport) {
     const up = document.createElement("button");
     up.type = "button";
     up.textContent = "+";
-    up.setAttribute("aria-label", `More: ${label}`);
+    up.setAttribute("aria-label", t("bins.more", { label }));
     up.disabled = value >= max;
     up.addEventListener("click", () => set(value + 1));
     box.append(down, out, up);
@@ -542,7 +542,7 @@ export default async function mount(thingport) {
     host.replaceChildren();
     const title = document.createElement("strong");
     const { width, depth, height } = planned.size;
-    title.textContent = `Bin ${b.w}×${b.d}`;
+    title.textContent = t("bins.selected", { width: b.w, depth: b.d });
     const size = document.createElement("span");
     size.className = "gfd-hint";
     size.textContent = `${width.toFixed(1)} × ${depth.toFixed(1)} × ${height} mm`;
@@ -553,7 +553,7 @@ export default async function mount(thingport) {
     const remove = document.createElement("button");
     remove.className = "gfd-btn gfd-danger";
     remove.type = "button";
-    remove.textContent = "Delete";
+    remove.textContent = t("bins.delete");
     remove.addEventListener("click", () => removeBin(b.id));
     const spacer = document.createElement("span");
     spacer.className = "gfd-spacer";
@@ -628,8 +628,8 @@ export default async function mount(thingport) {
       const save = document.createElement("button");
       save.type = "button";
       save.className = "gfd-icon-btn";
-      save.title = `Download ${part.file}`;
-      save.setAttribute("aria-label", `Download ${part.file}`);
+      save.title = t("parts.download", { file: part.file });
+      save.setAttribute("aria-label", save.title);
       save.innerHTML =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
       save.addEventListener("click", (event) => {
@@ -767,7 +767,7 @@ export default async function mount(thingport) {
     if (!project.bins.length) return;
     const ok = await ui.confirm({
       title: t("bins.clearTitle"),
-      message: `All ${project.bins.length} bins go; the drawer and baseplate stay.`,
+      message: t("bins.clearMessage", { count: project.bins.length }),
       confirmLabel: t("bins.clear"),
       destructive: true,
     });
@@ -881,7 +881,7 @@ export default async function mount(thingport) {
           .addImages(model.id, [{ name: "layout.png", data: picture, type: "image/png" }])
           .catch(() => undefined);
       lastSaved = model;
-      showStatus(`Saved as ${model.name}.`, [
+      showStatus(t("save.done", { name: model.name }), [
         [t("save.open"), () => models.open(lastSaved.id)],
         [
           t("save.addToCollection"),
@@ -889,7 +889,7 @@ export default async function mount(thingport) {
             const collection = await thingport.collections.pick({ title: t("save.pickCollection") });
             if (!collection) return;
             await thingport.collections.add(collection.id, [lastSaved.id]);
-            ui.toast(`Added to ${collection.name}`, "success");
+            ui.toast(t("save.addedTo", { name: collection.name }), "success");
           },
         ],
       ]);
