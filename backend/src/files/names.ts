@@ -11,6 +11,10 @@ export type NormalName = string & { readonly __normalName: unique symbol };
  *  leaves room for " (2)" when two files want the same name. */
 export const NAME_MAX_BYTES = 240;
 
+/** How long a path segment may be, in UTF-16 units, as well as fitting NAME_MAX_BYTES: a storage path's, and a zip
+ *  entry's. */
+export const PATH_SEGMENT_MAX = 120;
+
 /** Extensions read as one, so numbering and the kind of file go by the whole of them: the kind table's that have two
  *  parts (".gcode.3mf", ".tar.gz"). */
 const COMPOUND_EXTENSIONS = (kinds as { extensions?: string[] }[])
@@ -116,6 +120,14 @@ export function numberedName(name: NormalName, n: number, maxLength = Infinity):
   const suffix = ` (${n})`;
   const kept = cut(stem, NAME_MAX_BYTES - bytes(suffix + ext), maxLength - suffix.length - ext.length);
   return `${kept.length < stem.length ? kept.replace(TRAILING, "") : kept}${suffix}${ext}` as NormalName;
+}
+
+/** A folder's name within `maxLength` characters and NAME_MAX_BYTES, with " (n)" after it for n above 1. A folder has
+ *  no extension, so the whole name is cut and the number goes at its end: "Benchy v1.2 (2)". */
+export function numberedFolderName(name: NormalName, n: number, maxLength = Infinity): NormalName {
+  const suffix = n > 1 ? ` (${n})` : "";
+  const kept = cut(name, NAME_MAX_BYTES - bytes(suffix), maxLength - suffix.length);
+  return `${kept.length < name.length ? kept.replace(TRAILING, "") : kept}${suffix}` as NormalName;
 }
 
 /** What makes two names the same file in one folder of a model: case doesn't count, as on most desktops. */

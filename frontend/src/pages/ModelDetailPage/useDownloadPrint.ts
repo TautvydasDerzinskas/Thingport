@@ -8,9 +8,12 @@ import { saveResponseToDisk } from "../../utils/downloadResponse";
 /** How many files "Download all" puts in a model's zip: its plates, supporting files and prepared print, and the
  *  LICENSE.txt written for its licence. None for a model with only one file of its own, as there's nothing to put with
  *  it. */
-export function zipFileCount(
-  print: Pick<Print, "plates" | "supporting_file_count" | "prepared_print" | "license">,
-): number {
+export function zipFileCount(print: {
+  plates: readonly unknown[];
+  supporting_file_count?: number;
+  prepared_print?: { removable: boolean } | null;
+  license?: object | null;
+}): number {
   // A prepared print that isn't removable is the first plate itself, sliced: already counted, and not in prepared/.
   const own = print.plates.length + (print.supporting_file_count ?? 0) + (print.prepared_print?.removable ? 1 : 0);
   return own > 1 ? own + (print.license ? 1 : 0) : 0;

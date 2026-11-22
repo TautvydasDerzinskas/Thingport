@@ -11,6 +11,7 @@ import { prisma } from "../src/db";
 import { remoteZipPaths } from "../src/federation/remoteFiles";
 import { ZipPaths } from "../src/files/zipPaths";
 import { createPrint } from "../src/services/printCreation";
+import { attachmentDisposition } from "../src/utils/fileUtils";
 import { listZipEntries, readZipEntry } from "../src/utils/zipReader";
 
 // What a download is called, and where each file goes in a zip of models (services/downloadZip.ts, files/zipPaths.ts).
@@ -130,6 +131,30 @@ describe("a file's download", () => {
     const res = await request(app).get(`/api/print/${printId}/files/${file.id}`).set(auth());
     expect(res.status).toBe(200);
     expect(res.headers["content-disposition"]).not.toMatch(/[\r\n]/);
+  });
+});
+
+describe("a download's plain filename", () => {
+  const plain = (name: string) => {
+    const match = /;\s*filename=(?:"([^"]*)"|([^;\s]*))/i.exec(attachmentDisposition(name));
+    return match?.[1] ?? match?.[2] ?? "";
+  };
+
+  it("keeps an ASCII name as it is, and tells an encoded name from one that only looks encoded", () => {
+    expect(plain("100% done.stl")).toBe("100% done.stl");
+    expect(plain("é.stl")).toBe("%C3%A9.stl");
+    expect(plain("%C3%A9.stl")).toBe("%25C3%25A9.stl");
+  });
+
+  it("fits a long name on a disk, its extension kept and two long names kept apart", () => {
+    const first = `${"零".repeat(60)}.stl`;
+    const second = `${"零".repeat(59)}部.stl`;
+    for (const name of [first, second]) {
+      expect(plain(name)).toMatch(/^[\x20-\x7e]{1,240}$/);
+      expect(plain(name)).toMatch(/~[0-9a-f]{8}\.stl$/);
+      expect(parseDisposition(attachmentDisposition(name)).parameters.filename).toBe(name);
+    }
+    expect(plain(first)).not.toBe(plain(second));
   });
 });
 
@@ -259,6 +284,9 @@ describe("ZipPaths", () => {
       "φιλος",
       "µ",
       "μ",
+      "x".repeat(130),
+      "é".repeat(130),
+      "零".repeat(90),
     ),
     owner: fc.constantFrom("one", "two"),
   });
@@ -278,9 +306,11 @@ describe("ZipPaths", () => {
         expect(new Set(folded).size).toBe(folded.length);
         const folderPaths = new Set(folders.slice(1).map(onDisk));
         for (const file of folded) expect(folderPaths.has(file)).toBe(false);
-        // Every level a name of its own: none empty, none "." or "..".
+        // Every level a name of its own: none empty, none "." or "..", and none past a path segment's cap.
         for (const at of [...files, ...folders.slice(1)]) {
-          expect(at.split("/").filter((level) => ["", ".", ".."].includes(level.trim()))).toEqual([]);
+          const levels = at.split("/");
+          expect(levels.filter((level) => ["", ".", ".."].includes(level.trim()))).toEqual([]);
+          expect(levels.filter((level) => level.length > 120 || Buffer.byteLength(level) > 240)).toEqual([]);
         }
       }),
       { seed: 20261122, numRuns: 500 },
@@ -311,6 +341,24 @@ describe("ZipPaths", () => {
     const zip = new ZipPaths();
     expect(zip.file("M", "ΒΑΣΗ ΦΑΚΟΣ")).toBe("M/ΒΑΣΗ ΦΑΚΟΣ");
     expect(zip.folder("M", "βαση φακοσ", "model")).toBe("M/βαση φακοσ (2)");
+  });
+
+  it("keeps a numbered name within a path segment's cap, the number and extension whole", () => {
+    const zip = new ZipPaths();
+    const long = "x".repeat(120);
+    expect(zip.folder("", long, "one")).toBe(long);
+    expect(zip.folder("", long, "two")).toBe(`${"x".repeat(116)} (2)`);
+    const accented = "é".repeat(120);
+    expect(zip.folder("", accented, "one")).toBe(accented);
+    const second = zip.folder("", accented, "two");
+    expect([second.endsWith(" (2)"), Buffer.byteLength(second) <= 240]).toEqual([true, true]);
+    const name = `${"a".repeat(116)}.stl`;
+    expect(zip.file("M", name)).toBe(`M/${name}`);
+    expect(zip.file("M", name)).toBe(`M/${"a".repeat(112)} (2).stl`);
+    expect(zip.file("M", `${"b".repeat(200)}.stl`)).toBe(`M/${"b".repeat(116)}.stl`);
+    // A folder has no extension: its number goes at the end.
+    expect(zip.folder("", "Benchy v1.2", "one")).toBe("Benchy v1.2");
+    expect(zip.folder("", "Benchy v1.2", "two")).toBe("Benchy v1.2 (2)");
   });
 
   it("makes a category's name one folder, by the name rule", () => {

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { License, Plate, PreparedPrint } from "../../api/prints";
 import { zipFileCount } from "./useDownloadPrint";
 
 describe("zipFileCount", () => {
@@ -9,11 +8,12 @@ describe("zipFileCount", () => {
     prepared: "file" | "first plate" | null = null,
     licensed = false,
   ) => ({
-    plates: Array.from({ length: plates }, () => ({}) as Plate),
+    // Only what the count reads: how many plates, not what they are.
+    plates: Array.from({ length: plates }, (_, index) => index),
     supporting_file_count: supporting,
     // A prepared print that's a file of its own can be removed; one that's the sliced first plate can't.
-    prepared_print: prepared ? ({ removable: prepared === "file" } as PreparedPrint) : null,
-    license: licensed ? ({} as License) : null,
+    prepared_print: prepared ? { removable: prepared === "file" } : null,
+    license: licensed ? { id: "CC0-1.0" } : null,
   });
 
   it("counts what the zip holds: plates, supporting files, the prepared print and LICENSE.txt", () => {

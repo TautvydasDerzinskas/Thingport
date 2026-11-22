@@ -1,8 +1,9 @@
+import crypto from "node:crypto";
 import path from "node:path";
 import { create as createDisposition, decodeExtended, parse as parseDisposition } from "content-disposition";
 import mimeTypes from "mime-types";
 import { IMPORT_ALLOWED_EXTS } from "../config";
-import { normalizeFileName } from "../files/names";
+import { NAME_MAX_BYTES, normalizeFileName, splitName } from "../files/names";
 
 /**
  * Header values are ISO-8859-1, so a server putting raw UTF-8 in `filename=` (MakerWorld's CDN
@@ -32,14 +33,28 @@ export function parseContentDisposition(cd: string | null | undefined): string |
   return matchLooseFilename(cd);
 }
 
+/** A name in ASCII, for a client that reads only `filename`: each character beyond printable ASCII, each quote and
+ *  backslash, and each "%" that would read as an escape, percent-encoded. Two names never come out as one. */
+function asciiName(name: string): string {
+  return name.replace(/[^\x20-\x7e]|["\\]|%(?=[0-9A-Fa-f]{2})/gu, (char) => encodeURIComponent(char));
+}
+
 /** The Content-Disposition a download named `name` goes out with. Browsers read the whole name from `filename*`. A
- *  client that reads only `filename`, as `curl -OJ` does, gets its ASCII as it is and the rest percent-encoded, quotes
- *  and backslashes too, so two names never come out as one, as they would with the package's own stand-in: "?" for
- *  each such character. */
+ *  client that reads only `filename`, as `curl -OJ` does, gets `asciiName`, where the package's own stand-in has a "?"
+ *  for each such character. One too long for a disk once encoded keeps as much of the name as fits, whole characters,
+ *  then a tag from the whole name, so two long names stay two, and its extension. */
 export function attachmentDisposition(name: string): string {
   // Half a surrogate pair, which a name from a JSON body can hold, can't be encoded: it goes out as U+FFFD.
   const whole = name.replace(/\p{Cs}/gu, "\ufffd");
-  const ascii = whole.replace(/[^\x20-\x7e]|["\\]/gu, (char) => encodeURIComponent(char));
+  let ascii = asciiName(whole);
+  if (ascii.length > NAME_MAX_BYTES) {
+    const { stem, ext } = splitName(whole);
+    const tail = `~${crypto.createHash("sha256").update(whole).digest("hex").slice(0, 8)}${asciiName(ext)}`;
+    const chars = [...stem];
+    let kept = chars.length;
+    while (kept > 0 && asciiName(chars.slice(0, kept).join("")).length + tail.length > NAME_MAX_BYTES) kept--;
+    ascii = asciiName(chars.slice(0, kept).join("")) + tail;
+  }
   return createDisposition(whole, ascii === whole ? undefined : { fallback: ascii });
 }
 
