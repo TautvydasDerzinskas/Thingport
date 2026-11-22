@@ -8,7 +8,8 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { IMPORT_ALLOWED_EXTS, PARAMETRIC_SOURCE_EXTS, IMPORT_MAX_BYTES } from "../config";
-import { HttpError, guessMimeFromPath, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError, guessMimeFromPath } from "../utils/fileUtils";
+import { isJunk, normalizeFileName } from "../files/names";
 
 import { createKeyedLock } from "../utils/concurrency";
 
@@ -40,14 +41,7 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
  *  down. */
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 import { extractZipEntryToFile, listZipEntries, type ZipEntryInfo } from "../utils/zipReader";
-import {
-  isZipJunk,
-  joinFolders,
-  normalizeFolder,
-  sharedTopLevels,
-  withoutSharedTop,
-  withoutTopLevels,
-} from "../utils/fileFolder";
+import { joinFolders, normalizeFolder, sharedTopLevels, withoutSharedTop, withoutTopLevels } from "../utils/fileFolder";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { importedLicenseData } from "./licenseService";
 import { upsertAuthorFromImport } from "./authorService";
@@ -152,7 +146,7 @@ function profileFilename(filename: string, profileTitle: string): string {
   const ext = path.extname(filename);
   const stem = path.basename(filename, ext);
   // A title that already holds the file's name ("vase_2_1plates" for "vase_2") says it all on its own.
-  return sanitizeFilename(
+  return normalizeFileName(
     looseName(profileTitle).includes(looseName(stem)) ? `${profileTitle}${ext}` : `${stem} - ${profileTitle}${ext}`,
   );
 }
@@ -176,7 +170,7 @@ function profilePlateNaming(
 ): { filename: string; renames: { plate: Plate; filename: string }[] } {
   const title = titles?.[instanceId];
   if (!title) return { filename, renames: [] };
-  const name = sanitizeFilename(filename).toLowerCase();
+  const name = normalizeFileName(filename).toLowerCase();
   const ext = path.extname(name);
   // Earlier profiles of the file that were already named apart count as the same name.
   const namedApart = `${path.basename(name, ext)} - `;
@@ -204,7 +198,7 @@ function profilePlateNaming(
 function nameInputsApart(inputs: NewPlateInput[], titles: Record<string, string> | undefined): NewPlateInput[] {
   if (!titles) return inputs;
   const titleOf = (input: NewPlateInput) => (input.sourceInstanceId ? titles[input.sourceInstanceId] : undefined);
-  const key = (input: NewPlateInput) => sanitizeFilename(input.filename).toLowerCase();
+  const key = (input: NewPlateInput) => normalizeFileName(input.filename).toLowerCase();
   // Per file name, how many profiles have it, and how many of those share each title.
   const counts = new Map<string, number>();
   for (const input of inputs) {
@@ -548,7 +542,7 @@ async function filesFromNestedZips(
   budget: NestedZipBudget,
 ): Promise<NewPlateInput[]> {
   const nested = (await listZipEntries(zipPath)).filter(
-    (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
+    (entry) => !entry.isDirectory && !isJunk(entry.name) && entryExtension(entry.name) === ".zip",
   );
   const inputs: NewPlateInput[] = [];
   // Every importable file's folder, of both kinds whichever this call takes, so the plates and the scripts of a zip
@@ -645,14 +639,19 @@ async function placedZipEntries(
   return withoutSharedTop(await zipEntriesInFolders(zipPath));
 }
 
+/** A zip entry's extension by its name as it will be kept, so "part.STL " is an STL. */
+function entryExtension(entryPath: string): string {
+  return path.extname(normalizeFileName(entryPath.replace(/\\/g, "/").split("/").pop())).toLowerCase();
+}
+
 /** A zip's plates and scripts, each with the folder it's in, as the zip has it. */
 async function zipEntriesInFolders(
   zipPath: string,
 ): Promise<{ entry: ZipEntryInfo; parts: string[]; folder: string | null }[]> {
   return (await listZipEntries(zipPath))
-    .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
+    .filter((entry) => !entry.isDirectory && !isJunk(entry.name))
     .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
+    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(entryExtension(parts.at(-1)!)))
     .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
 }
 
@@ -668,11 +667,9 @@ async function filesFromZip(
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
-    const entries = (await placedZipEntries(zipPath)).filter(({ parts }) =>
-      exts.has(path.extname(parts.at(-1)!).toLowerCase()),
-    );
+    const entries = (await placedZipEntries(zipPath)).filter(({ parts }) => exts.has(entryExtension(parts.at(-1)!)));
     for (const { entry, parts, folder } of entries) {
-      const filename = sanitizeFilename(parts.at(-1)!);
+      const filename = normalizeFileName(parts.at(-1)!);
       const tempFilePath = path.join(
         os.tmpdir(),
         `thingport-zip-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
@@ -796,10 +793,12 @@ async function createSourcedPrint(
 const IMPORT_KIT: PipelineKit = {
   downloadSignedFile,
   downloadFile: downloadPlainFileToTemp,
-  isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()),
-  isImportableFile: (name) =>
-    MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
-    PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
+  // By the name as it will be kept, so "part.STL " is an STL.
+  isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(normalizeFileName(name)).toLowerCase()),
+  isImportableFile: (name) => {
+    const ext = path.extname(normalizeFileName(name)).toLowerCase();
+    return MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext);
+  },
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {

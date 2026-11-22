@@ -10,7 +10,8 @@ import { MANIFESTS } from "../providers/index.generated";
 import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { IMPORT_MAX_BYTES } from "../config";
 import type { McpAccess } from "../services/settingsService";
 import {
@@ -609,7 +610,7 @@ function decodeUploads<F extends { name: string; base64: string }>(
 ): { files: (Omit<F, "base64"> & DecodedFile)[]; images: Buffer[] } {
   const decoded = files.map(({ base64, ...file }) => ({
     ...file,
-    name: sanitizeFilename(file.name) || "model",
+    name: normalizeFileName(file.name),
     buffer: decodeBase64(base64, file.name),
   }));
   const pictures = images.map((image, i) => decodeBase64(image, `Image ${i + 1}`));

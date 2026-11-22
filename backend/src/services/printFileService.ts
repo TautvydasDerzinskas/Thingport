@@ -4,7 +4,8 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES } from "../config";
 import { withStorageLock } from "../utils/storageLock";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
 import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
@@ -70,7 +71,7 @@ export async function saveFileFromTemp(
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
 
-  const safeName = sanitizeFilename(originalFilename || "supporting-file");
+  const safeName = normalizeFileName(originalFilename || "supporting-file");
   let role: "SUPPORTING" | "PREPARED" = givenRole ?? (isPreparedPrintFilename(safeName) ? "PREPARED" : "SUPPORTING");
   const mime = mimeFromContentType(contentType, safeName);
   const folder = normalizeFolder(givenFolder);

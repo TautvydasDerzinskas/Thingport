@@ -16,7 +16,8 @@ import type { Prisma, Role, Tool } from "@prisma/client";
 import { z } from "zod";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError } from "../utils/fileUtils";
+import { normalizeFileName, numberedName, type NormalName } from "../files/names";
 import { importQuietly } from "../utils/quietImport";
 import { readCapped } from "../utils/readCapped";
 import { TtlCache } from "../utils/ttlCache";
@@ -653,7 +654,7 @@ async function downloadRepoFiles(slug: string, modelsSha: string, manifest: Tool
         total += content.length;
         if (total > TOOL_FILES_MAX_BYTES)
           throw new HttpError(502, `The tool's files are larger than ${TOOL_FILES_MAX_BYTES / 1048576} MB`);
-        const name = uniqueName(names, sanitizeFilename(path.basename(file)));
+        const name = uniqueName(names, normalizeFileName(path.basename(file)));
         await fs.mkdir(path.join(staging, model.key, "files"), { recursive: true });
         await fs.writeFile(path.join(staging, model.key, "files", name), content);
         names.push(name);
@@ -670,12 +671,11 @@ async function downloadRepoFiles(slug: string, modelsSha: string, manifest: Tool
   }
 }
 
-function uniqueName(taken: string[], name: string): string {
+function uniqueName(taken: string[], name: NormalName): NormalName {
   if (!taken.includes(name)) return name;
-  const { name: base, ext } = path.parse(name);
   let n = 2;
-  while (taken.includes(`${base}-${n}${ext}`)) n++;
-  return `${base}-${n}${ext}`;
+  while (taken.includes(numberedName(name, n))) n++;
+  return numberedName(name, n);
 }
 
 /** Fetches the models that aren't in yet (imports of their pages, as the admin), then gives everyone their copies.
@@ -753,7 +753,7 @@ async function importToolModel(adminId: string, model: ToolModelSpec, target: st
     for (const plate of result.plates.toSorted((a, b) => a.position - b.position)) {
       const from = resolvePlateFilePath(plate);
       if (!from) continue;
-      const name = uniqueName(files, sanitizeFilename(plate.filename));
+      const name = uniqueName(files, normalizeFileName(plate.filename));
       await fs.copyFile(from, path.join(staging, "files", name));
       files.push(name);
     }

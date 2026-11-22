@@ -4,7 +4,8 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
-import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { nameKey, normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
 import { inspectPreparedPrint } from "./preparedPrint";
@@ -194,7 +195,7 @@ async function createPlateAtPosition(
   input: NewPlateInput,
   position: number,
 ): Promise<CreatedPlate> {
-  const sanitized = sanitizeFilename(input.filename);
+  const sanitized = normalizeFileName(input.filename);
   const folder = normalizeFolder(input.folder);
   const desiredFilename = await availablePlateFilename(print.id, sanitized, undefined, folder);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position, folder);
@@ -247,7 +248,7 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
   const keyOf = (filename: string, folder: string | null | undefined) =>
-    `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
+    nameKey(normalizeFolder(folder), normalizeFileName(filename));
   const stored = new Set(
     (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
       keyOf(file.filename, file.folder),
@@ -261,7 +262,7 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
       continue;
     }
     // Compared as it will be stored, since that is the name a second copy would collide with.
-    const key = keyOf(sanitizeFilename(input.filename), input.folder);
+    const key = keyOf(input.filename, input.folder);
     if (stored.has(key)) continue;
     try {
       // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
@@ -459,7 +460,7 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId } });
   if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id, plate.folder);
+  const nextFilename = await availablePlateFilename(print.id, normalizeFileName(filename), plate.id, plate.folder);
   if (nextFilename !== plate.filename) {
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);

@@ -29,6 +29,11 @@ Select several files in the picker. Thingport asks how to import them:
   like the parts of one print. STL, 3MF, STEP, OBJ and glTF files are added in the order you picked them, and
   anything else, such as a photo or a PDF, is attached to the model.
 
+Files a computer leaves behind (`.DS_Store`, the `._` files a Mac adds, `Thumbs.db`, `desktop.ini` and other hidden
+files) are left out: they never become a model, nor part of one. A name keeps what you gave it, less what a disk can't hold: spaces and dots at its end, and
+anything past 240 bytes, taken from before the extension. When a model already has a file of that name, the new one is
+numbered, as in `Part (2).stl` or `job (2).gcode.3mf`.
+
 Close the dialog to cancel without uploading anything.
 
 ## Upload a glTF model

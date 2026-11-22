@@ -53,6 +53,7 @@ import { HttpError } from "../utils/fileUtils";
 import { prisma } from "../db";
 import type { ImportJob, Prisma } from "@prisma/client";
 import { createLogger } from "../logger";
+import { isJunk } from "../files/names";
 
 const log = createLogger("import");
 const syncLog = createLogger("sync");
@@ -432,16 +433,18 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     tempPath = downloaded.tempPath;
     const { filename, meta } = downloaded;
     if (path.extname(filename).toLowerCase() !== ".zip") throw new HttpError(415, "Imported file is not a zip");
+    // A job stored before requests dropped junk can still list it.
+    const entries = body.entries.filter((entry) => !isJunk(entry));
 
-    await updateJob(jobId, { sourceLabel: filename, total: body.entries.length });
-    log.info("zip job started", { job: jobId, file: filename, entries: body.entries.length });
+    await updateJob(jobId, { sourceLabel: filename, total: entries.length });
+    log.info("zip job started", { job: jobId, file: filename, entries: entries.length });
 
     const author = await upsertAuthorFromImport(meta.author);
     const progress = jobProgress(jobId);
     const { prints, failed } = await extractZipEntriesToPrints(
       userId,
       tempPath,
-      body.entries,
+      entries,
       {
         title: body.title ?? meta.title,
         notes: body.notes ?? meta.description,
@@ -462,7 +465,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     await updateJob(jobId, {
       status: "DONE",
       errorMessage: null,
-      processed: body.entries.length,
+      processed: entries.length,
       imported: prints.length,
       failedCount: failed.length,
       resultPrintId: prints.length === 1 ? prints[0].id : null,
@@ -478,7 +481,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     await noteFailureSummary(jobId, bodyParts);
     await createNotification(userId, {
       type: "import",
-      title: `Imported ${prints.length} of ${body.entries.length} models from ${filename}`,
+      title: `Imported ${prints.length} of ${entries.length} models from ${filename}`,
       body: bodyParts.length ? `${bodyParts.join(", ")}.` : null,
       externalUrl: body.url,
       internalPath: null,

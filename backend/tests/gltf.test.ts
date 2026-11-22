@@ -226,6 +226,28 @@ describe("finding what a .gltf points at among files", () => {
     expect(json.images[0].uri).toBeUndefined();
   });
 
+  it("finds a file whose name the scene writes decomposed, now that names are kept composed", async () => {
+    // The scene says "cafe" and a combining accent; the file came in named with the one composed "é".
+    const { gltf, bin } = cubeGltf({ binUri: "cafe%CC%81.bin", imageUri: "base.png" });
+    const files = [write("scene.gltf", gltf), write("caf\u00e9.bin", bin), write("base.png", await png())];
+    const { files: left, packed } = await packGltfFiles(files, tempPath, made);
+    expect(left.map((f) => f.name)).toEqual(["scene.glb"]);
+    expect(packed.map((f) => f.name)).toContain("caf\u00e9.bin");
+  });
+
+  it("takes the file named exactly as the scene writes it over one that only composes the same", async () => {
+    const { gltf, bin } = cubeGltf({ binUri: "cafe%CC%81.bin", imageUri: "base.png" });
+    const composed = write("caf\u00e9.bin", Buffer.alloc(bin.length));
+    const decomposed = write("cafe\u0301.bin", bin);
+    const { packed } = await packGltfFiles(
+      [write("scene.gltf", gltf), composed, decomposed, write("base.png", await png())],
+      tempPath,
+      made,
+    );
+    expect(packed).toContain(decomposed);
+    expect(packed).not.toContain(composed);
+  });
+
   it("matches by file name alone when the files came without folders, as an upload's do", async () => {
     const { gltf, bin } = cubeGltf();
     const files = [write("scene.gltf", gltf), write("scene.bin", bin), write("base.png", await png())];

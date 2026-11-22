@@ -53,14 +53,6 @@ export function folderPath(folder: string | null | undefined, filename: string):
   return folder ? `${folder}/${filename}` : filename;
 }
 
-/** What macOS leaves in a zip it made, never meant as content: its `__MACOSX` resource forks, `._` files beside each
- *  real one, and `.DS_Store`. */
-export function isZipJunk(entryPath: string): boolean {
-  const levels = entryPath.split(/[\\/]+/).filter(Boolean);
-  const name = levels.at(-1) ?? "";
-  return levels.includes("__MACOSX") || name.startsWith("._") || name === ".DS_Store";
-}
-
 /**
  * The folders of a set of files with the top levels they all share taken off: a zip named after its model that holds
  * one folder named after it again, or a site that keeps everything in "STL", says nothing about which file is which.

@@ -5,7 +5,8 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "../db";
 import { CONSUME_DIR, IMPORT_MAX_BYTES, RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
-import { HttpError, guessMimeFromPath, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError, guessMimeFromPath } from "../utils/fileUtils";
+import { isJunk, normalizeFileName } from "../files/names";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { normalizeZipEntryPath, resolveZipCategoryId } from "./zipService";
 import { createPrint, type NewPlateInput } from "./printCreation";
@@ -27,8 +28,6 @@ const POLL_MS = 2000;
 const PREVIEW_IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 // As for uploads: a bigger image is attached as a file instead of being read in as a preview.
 const PREVIEW_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
-// OS metadata a copied folder drags along.
-const SYSTEM_FILES = new Set(["thumbs.db", "desktop.ini"]);
 
 export function consumeAvailable(dir = CONSUME_DIR): boolean {
   try {
@@ -69,13 +68,9 @@ export async function setConsumeSettings(patch: { mode?: ConsumeMode; userId?: s
 
 type FoundFile = { abs: string; rel: string; size: number; mtimeMs: number };
 
-function isSystemName(name: string) {
-  return name.startsWith(".") || SYSTEM_FILES.has(name.toLowerCase());
-}
-
 async function walk(root: string, dir = root, out: FoundFile[] = []): Promise<FoundFile[]> {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    if (isSystemName(entry.name)) continue;
+    if (isJunk(entry.name)) continue;
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (dir === root && entry.name === NOT_IMPORTED_DIR) continue;
@@ -108,7 +103,8 @@ type Item = { rel: string; path: string; size: number };
 
 export type ConsumeSummary = { models: number; files: number; failed: string[]; printIds: string[] };
 
-const extOf = (name: string) => path.extname(name).toLowerCase();
+/** A file's extension by its name as it will be kept, so "part.STL " is an STL here as well. */
+const extOf = (rel: string) => path.extname(normalizeFileName(path.basename(rel))).toLowerCase();
 const foldersOf = (rel: string) => rel.split("/").slice(0, -1);
 const byName = (a: Item, b: Item) =>
   path.basename(a.rel).localeCompare(path.basename(b.rel), undefined, { numeric: true, sensitivity: "base" });
@@ -144,7 +140,7 @@ async function expandZip(file: FoundFile): Promise<Item[]> {
   const entries = (await listZipEntries(file.abs))
     .filter((e) => !e.isDirectory)
     .map((e) => ({ rawName: e.name, name: normalizeZipEntryPath(e.name) }))
-    .filter((e): e is { rawName: string; name: string } => Boolean(e.name) && !e.name!.split("/").some(isSystemName));
+    .filter((e): e is { rawName: string; name: string } => Boolean(e.name) && !isJunk(e.name!));
   const parent = path.posix.dirname(file.rel) === "." ? "" : path.posix.dirname(file.rel);
   const tops = new Set(entries.map((e) => e.name.split("/")[0]));
   const selfFoldered = tops.size === 1 && entries.every((e) => e.name.includes("/"));
@@ -296,7 +292,7 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   const importEach = async (item: Item) => {
     if (!UPLOADABLE_EXTS.has(extOf(item.rel))) return notImported(item);
     try {
-      const filename = sanitizeFilename(path.basename(item.rel));
+      const filename = normalizeFileName(path.basename(item.rel));
       const { print } = await createPrint(
         userId,
         {
@@ -327,7 +323,7 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
     let firstPlateId: string | undefined;
     try {
       const inputs: NewPlateInput[] = plates.map((i) => {
-        const filename = sanitizeFilename(path.basename(i.rel));
+        const filename = normalizeFileName(path.basename(i.rel));
         return { filename, mime: guessMimeFromPath(filename), copyFromPath: i.path };
       });
       const { print, plates: created } = await createPrint(
@@ -443,7 +439,7 @@ async function removeEmptyFolders(root: string, files: FoundFile[]) {
   // Deepest first, so a parent is checked after its children are gone.
   for (const dir of [...dirs].toSorted((a, b) => b.length - a.length)) {
     try {
-      const left = (await fs.readdir(dir)).filter((name) => !isSystemName(name));
+      const left = (await fs.readdir(dir)).filter((name) => !isJunk(name));
       if (left.length) continue;
       await fs.rm(dir, { recursive: true, force: true });
     } catch {}

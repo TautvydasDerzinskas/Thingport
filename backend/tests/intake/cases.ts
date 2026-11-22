@@ -74,6 +74,8 @@ export const SHAPES = {
   "13": { "Frog.stl": null, "LICENSE.txt": null },
   /** A model file and the system files a copy from another computer brings. */
   "14": { "Frog.stl": null, "__MACOSX/._Frog.stl": null, ".DS_Store": null, "Thumbs.db": null, "desktop.ini": null },
+  /** A model file and one whose name ends in a space, which some tools leave and no file system shows. */
+  "15": { "Benchy.stl": null, "part.STL ": null },
 } satisfies Record<string, FileTree>;
 
 /** What a link (family L) points at. A page lists links to its other files, in this order. */
@@ -94,7 +96,6 @@ export const LINKS = {
 
 /** The steps of the supporting-files work expected to change cells, by name. */
 export const STEP = {
-  names: "one rule for file names and one table of file kinds",
   repair: "a repair keeps the files it didn't lose",
   whole: "a new model is stored whole or not at all",
   addFiles: "add, rename and remove a model's files, one request each",
@@ -131,7 +132,8 @@ export const CASES: Case[] = [
   { family: "A", shape: "11", way: "upload", today: ["Design: P Design.zip"], changes: [STEP.serverPlans] },
   { family: "A", shape: "12", way: "upload", today: ["scene: P scene.glb"] },
   { family: "A", shape: "13", way: "upload", today: ["Frog: P Frog.stl, S LICENSE.txt"], changes: [STEP.addFiles] },
-  { family: "A", shape: "14", way: "upload", today: ["Frog: P Frog.stl, P ._Frog.stl, S .DS_Store, S Thumbs.db, S desktop.ini"], changes: [STEP.names] },
+  { family: "A", shape: "14", way: "upload", today: ["Frog: P Frog.stl"] },
+  { family: "A", shape: "15", way: "upload", today: ["Benchy: P Benchy.stl, P part.STL"] },
   { family: "A", shape: "1", way: "mcp-upload", today: ["Benchy: P Benchy.stl"] },
   { family: "A", shape: "2", way: "mcp-upload", today: ["Lid: P Lid.stl, P Base.3mf"] },
   { family: "A", shape: "3", way: "mcp-upload", today: ["Frog: P Frog.stl, S Assembly.pdf, S notes.txt"] },
@@ -146,6 +148,7 @@ export const CASES: Case[] = [
   { family: "A", shape: "12", way: "mcp-upload", today: ["scene: P scene.glb"] },
   { family: "A", shape: "13", way: "mcp-upload", today: ["Frog: P Frog.stl, S LICENSE.txt"], changes: [STEP.addFiles] },
   { family: "A", shape: "14", way: "mcp-upload", today: ["Frog: P Frog.stl, P ._Frog.stl, S .DS_Store, S Thumbs.db, S desktop.ini"], changes: [STEP.serverPlans] },
+  { family: "A", shape: "15", way: "mcp-upload", today: ["Benchy: P Benchy.stl, P part.STL"] },
 
   // B: a model per folder: the consume folder in folder mode, with each design in a folder of its own. The
   // web app's folder upload plans its folders in the browser: uploadTree.test.ts.
@@ -165,6 +168,7 @@ export const CASES: Case[] = [
   { family: "B", shape: "12", way: "consume-folders", today: ["Design: P scene.glb"] },
   { family: "B", shape: "13", way: "consume-folders", today: ["Design: P Frog.stl, S LICENSE.txt"], changes: [STEP.addFiles] },
   { family: "B", shape: "14", way: "consume-folders", today: ["Design: P Frog.stl"] },
+  { family: "B", shape: "15", way: "consume-folders", today: ["Design: P Benchy.stl, P part.STL"] },
 
   // C: a model per file: an upload of separate files (the web app sends one request per file instead,
   // planned in the browser: uploadTree.test.ts), and the consume folder in file mode.
@@ -181,7 +185,8 @@ export const CASES: Case[] = [
   { family: "C", shape: "11", way: "upload-separate", today: ["Design: P Design.zip"], changes: [STEP.serverPlans] },
   { family: "C", shape: "12", way: "upload-separate", today: ["✕ 400 scene.gltf needs scene.bin, which wasn't uploaded with it"], changes: [STEP.serverPlans] },
   { family: "C", shape: "13", way: "upload-separate", today: ["Frog: P Frog.stl", "LICENSE: P LICENSE.txt"], changes: [STEP.alone] },
-  { family: "C", shape: "14", way: "upload-separate", today: ["Frog: P Frog.stl", "_Frog: P ._Frog.stl", "DS_Store: P .DS_Store", "Thumbs: P Thumbs.db", "desktop: P desktop.ini"], changes: [STEP.names] },
+  { family: "C", shape: "14", way: "upload-separate", today: ["Frog: P Frog.stl"] },
+  { family: "C", shape: "15", way: "upload-separate", today: ["Benchy: P Benchy.stl", "part: P part.STL"] },
   { family: "C", shape: "1", way: "consume-files", today: ["Benchy: P Benchy.stl"] },
   { family: "C", shape: "2", way: "consume-files", today: ["Base: P Base.3mf", "Lid: P Lid.stl"] },
   { family: "C", shape: "3", way: "consume-files", today: ["Frog: P Frog.stl", "left: Assembly.pdf, notes.txt"] },
@@ -196,6 +201,7 @@ export const CASES: Case[] = [
   { family: "C", shape: "12", way: "consume-files", today: ["scene: P scene.glb"] },
   { family: "C", shape: "13", way: "consume-files", today: ["Frog: P Frog.stl", "left: LICENSE.txt"] },
   { family: "C", shape: "14", way: "consume-files", today: ["Frog: P Frog.stl"] },
+  { family: "C", shape: "15", way: "consume-files", today: ["Benchy: P Benchy.stl", "part: P part.STL"] },
   { family: "C", shape: "4", way: "consume-files", today: ["frog (in Frog): P frog.stl", "a (in Frog/photos): P a.jpg", "vase (in Vase): P vase.stl", "left: Frog/docs/guide.pdf"], changes: [STEP.serverPlans] },
 
   // D: added to a model that has Base.stl: Edit model's Add files and the SDK's addFiles (POST /print/:id/plates),
@@ -213,6 +219,7 @@ export const CASES: Case[] = [
   { family: "D", shape: "12", way: "add-plates", today: ["Base: P Base.stl, P scene.gltf, P scene.bin, P wood.png"], changes: [STEP.addFiles] },
   { family: "D", shape: "13", way: "add-plates", today: ["Base: P Base.stl, P Frog.stl, P LICENSE.txt"], changes: [STEP.addFiles] },
   { family: "D", shape: "14", way: "add-plates", today: ["Base: P Base.stl, P Frog.stl, P ._Frog.stl, P .DS_Store, P Thumbs.db, P desktop.ini"], changes: [STEP.manage] },
+  { family: "D", shape: "15", way: "add-plates", today: ["Base: P Base.stl, P Benchy.stl, P part.STL"] },
   { family: "D", shape: "1", way: "add-file", today: ["Base: P Base.stl, S Benchy.stl"], changes: [STEP.addFiles] },
   { family: "D", shape: "2", way: "add-file", today: ["Base: P Base.stl, S Base.3mf, S Lid.stl"], changes: [STEP.addFiles] },
   { family: "D", shape: "3", way: "add-file", today: ["Base: P Base.stl, S Assembly.pdf, S Frog.stl, S notes.txt"], changes: [STEP.addFiles] },
@@ -226,6 +233,7 @@ export const CASES: Case[] = [
   { family: "D", shape: "12", way: "add-file", today: ["Base: P Base.stl, S scene.bin, S scene.gltf, S wood.png"], changes: [STEP.addFiles] },
   { family: "D", shape: "13", way: "add-file", today: ["Base: P Base.stl, S Frog.stl, S LICENSE.txt"], changes: [STEP.addFiles] },
   { family: "D", shape: "14", way: "add-file", today: ["Base: P Base.stl, S .DS_Store, S ._Frog.stl, S Frog.stl, S Thumbs.db, S desktop.ini"], changes: [STEP.addFiles] },
+  { family: "D", shape: "15", way: "add-file", today: ["Base: P Base.stl, S Benchy.stl, S part.STL"], changes: [STEP.addFiles] },
   { family: "D", shape: "1", way: "mcp-add", today: ["Base: P Base.stl, P Benchy.stl"] },
   { family: "D", shape: "2", way: "mcp-add", today: ["Base: P Base.stl, P Lid.stl, P Base.3mf"] },
   { family: "D", shape: "3", way: "mcp-add", today: ["Base: P Base.stl, P Frog.stl, S Assembly.pdf, S notes.txt"] },
@@ -239,6 +247,7 @@ export const CASES: Case[] = [
   { family: "D", shape: "12", way: "mcp-add", today: ["Base: P Base.stl, P scene.glb"] },
   { family: "D", shape: "13", way: "mcp-add", today: ["Base: P Base.stl, P Frog.stl, S LICENSE.txt"], changes: [STEP.addFiles] },
   { family: "D", shape: "14", way: "mcp-add", today: ["Base: P Base.stl, P Frog.stl, P ._Frog.stl, S .DS_Store, S Thumbs.db, S desktop.ini"], changes: [STEP.addFiles] },
+  { family: "D", shape: "15", way: "mcp-add", today: ["Base: P Base.stl, P Benchy.stl, P part.STL"] },
 
   // E: a site's page, one model per page: a Thing on Thingiverse, which lists its files by name.
   { family: "E", shape: "1", way: "site", today: ["Thing: P Benchy.stl, 2 photos"] },
@@ -255,6 +264,7 @@ export const CASES: Case[] = [
   { family: "E", shape: "12", way: "site", today: ["✕ 400 None of this Thing's files could be downloaded."], changes: [STEP.siteFiles] },
   { family: "E", shape: "13", way: "site", today: ["Thing: P Frog.stl, 2 photos"], changes: [STEP.siteFiles] },
   { family: "E", shape: "14", way: "site", today: ["Thing: P Frog.stl, P ._Frog.stl, 2 photos"], changes: [STEP.siteFiles] },
+  { family: "E", shape: "15", way: "site", today: ["Thing: P Benchy.stl, P part.STL, 2 photos"] },
 
   // F: repair: a model imported from its site, with a text file its owner added, whose plates' files are gone from
   // the disk, downloaded again (Repair, "Download the missing files again").
@@ -281,7 +291,8 @@ export const CASES: Case[] = [
   { family: "G", shape: "11", way: "copy", today: ["Design: P Design.zip"] },
   { family: "G", shape: "12", way: "copy", today: ["scene: P scene.glb"] },
   { family: "G", shape: "13", way: "copy", today: ["Frog: P Frog.stl, S LICENSE.txt"], changes: [STEP.addFiles] },
-  { family: "G", shape: "14", way: "copy", today: ["Frog: P Frog.stl, P ._Frog.stl, S .DS_Store, S Thumbs.db, S desktop.ini"], changes: [STEP.names] },
+  { family: "G", shape: "14", way: "copy", today: ["Frog: P Frog.stl"] },
+  { family: "G", shape: "15", way: "copy", today: ["Benchy: P Benchy.stl, P part.STL"] },
 
   // L: a link to one file, or to a page that links files: POST /import, as the web app, MCP import_model, the
   // queue and the bookmarklet send it.
@@ -314,6 +325,7 @@ export const CASES: Case[] = [
   { family: "Z", shape: "12", way: "zip-link", today: ["Design: P Design.zip"], changes: [STEP.serverPlans] },
   { family: "Z", shape: "13", way: "zip-link", today: ["Design: P Design.zip"], changes: [STEP.serverPlans] },
   { family: "Z", shape: "14", way: "zip-link", today: ["Design: P Design.zip"], changes: [STEP.serverPlans] },
+  { family: "Z", shape: "15", way: "zip-link", today: ["Design: P Design.zip"], changes: [STEP.serverPlans] },
   { family: "Z", shape: "1", way: "zip-entries", today: ["Benchy: P Benchy.stl"], changes: [STEP.serverPlans] },
   { family: "Z", shape: "2", way: "zip-entries", today: ["Base: P Base.3mf", "Lid: P Lid.stl"], changes: [STEP.serverPlans] },
   { family: "Z", shape: "3", way: "zip-entries", today: ["Assembly: P Assembly.pdf", "Frog: P Frog.stl", "notes: P notes.txt"], changes: [STEP.serverPlans] },
@@ -327,7 +339,8 @@ export const CASES: Case[] = [
   { family: "Z", shape: "11", way: "zip-entries", today: ["Design: P Design.zip"], changes: [STEP.serverPlans] },
   { family: "Z", shape: "12", way: "zip-entries", today: ["scene: P scene.bin", "scene (2): P scene.gltf", "wood (in textures): P wood.png"], changes: [STEP.serverPlans] },
   { family: "Z", shape: "13", way: "zip-entries", today: ["Frog: P Frog.stl", "LICENSE: P LICENSE.txt"], changes: [STEP.serverPlans] },
-  { family: "Z", shape: "14", way: "zip-entries", today: ["DS_Store: P .DS_Store", "Frog: P Frog.stl", "Thumbs: P Thumbs.db", "_Frog (in __MACOSX): P ._Frog.stl", "desktop: P desktop.ini"], changes: [STEP.names, STEP.serverPlans] },
+  { family: "Z", shape: "14", way: "zip-entries", today: ["Frog: P Frog.stl"], changes: [STEP.serverPlans] },
+  { family: "Z", shape: "15", way: "zip-entries", today: ["Benchy: P Benchy.stl", "part: P part.STL"], changes: [STEP.serverPlans] },
 ];
 
 export const caseName = (cell: Case) => `${cell.family}${cell.shape} ${cell.way}`;

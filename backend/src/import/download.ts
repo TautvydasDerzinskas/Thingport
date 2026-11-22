@@ -15,8 +15,8 @@ import {
   guessMimeFromPath,
   isHtmlContentType,
   mimeFromContentType,
-  sanitizeFilename,
 } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { validateRemoteUrl } from "../utils/urlUtils";
 import { readCapped, readChunk } from "../utils/readCapped";
 import { fetchWithGuard, rawFetch } from "../services/guardedFetch";
@@ -392,7 +392,7 @@ export async function downloadPlainFileToTemp(url: string, suggestedName: string
       await res.body?.cancel().catch(() => undefined);
       return null;
     }
-    const filename = sanitizeFilename(suggestedName);
+    const filename = normalizeFileName(suggestedName);
     tempFilePath = path.join(
       os.tmpdir(),
       `thingport-thingiverse-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,

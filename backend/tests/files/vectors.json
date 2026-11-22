@@ -1,0 +1,141 @@
+{
+  "normalized": [
+    ["part.stl ", "part.stl", "a trailing space hid the extension"],
+    ["part.STL ", "part.STL", "case is kept"],
+    ["stl ", "stl", "a name with no extension"],
+    [".gltf ", ".gltf", "a dot and a word is all stem"],
+    ["job.gcode.3mf ", "job.gcode.3mf", "a compound extension"],
+    ["Frog.zip ", "Frog.zip", ""],
+    ["photo.png\u0001", "photo.png", "a control character"],
+    ["line.stl", "line.stl", "a C1 control character, as a mis-decoded header leaves"],
+    ["x.stl", "x.stl", "DEL"],
+    [".pdf", ".pdf", "a hidden file stays one"],
+    ["..", "imported-file", "nothing left"],
+    [".", "imported-file", ""],
+    ["", "imported-file", ""],
+    ["   ", "imported-file", ""],
+    ["docs/.manual", "docs_.manual", "a slash isn't a folder here"],
+    ["a\\b/c.stl", "a_b_c.stl", ""],
+    [
+      "組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組.pdf",
+      "組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組組.pdf",
+      "cut to 240 UTF-8 bytes from the stem"
+    ],
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      ""
+    ],
+    [
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      ""
+    ],
+    [
+      "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc ddddd.stl",
+      "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.stl",
+      "what a cut leaves at the end is trimmed"
+    ],
+    [
+      "👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽.stl",
+      "👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽👍🏽.stl",
+      "never half a character"
+    ],
+    ["CON.txt", "CON_.txt", "a name Windows reserves"],
+    ["con", "con_", ""],
+    ["LPT1.stl", "LPT1_.stl", ""],
+    ["aux.tar.gz", "aux_.tar.gz", ""],
+    ["COM10.stl", "COM10.stl", "only COM1 to COM9 are reserved"],
+    ["console.stl", "console.stl", ""],
+    ["name...", "name", "Windows drops trailing dots"],
+    ["name. . .", "name", ""],
+    ["  spaced  .stl", "spaced  .stl", "only the ends are trimmed"],
+    ["été.stl", "été.stl", "composed (NFC)"],
+    ["Benchy.GCODE.3MF", "Benchy.GCODE.3MF", ""],
+    ["archive.tar.gz", "archive.tar.gz", ""],
+    ["Model v1.2 final", "Model v1.2 final", ""],
+    ["LICENSE", "LICENSE", ""],
+    ["__MACOSX", "__MACOSX", "junk is still a name; isJunk tells it"],
+    ["Ünïcödé Ñame.stl", "Ünïcödé Ñame.stl", ""],
+    ["e\u0001́.stl", "é.stl", "a control character between a letter and its accent doesn't keep them apart"],
+    ["a　.", "a", "whitespace before a trailing dot goes with it"],
+    ["a. ", "a", "a no-break space at the end too"],
+    ["notes　　.txt", "notes　　.txt", "whitespace inside a name stays"],
+    [
+      "CON　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　.stl",
+      "CON_.stl",
+      "a cut that leaves a reserved name still gets the _"
+    ],
+    ["NUL.backup.stl", "NUL_.backup.stl", "a device name before more than one extension is reserved too"],
+    ["con.tar.gz", "con_.tar.gz", ""],
+    ["á́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́́", "imported-file", "one character bigger than a name may be leaves the fallback"]
+  ],
+  "split": [
+    ["job.gcode.3mf", "job", ".gcode.3mf"],
+    ["JOB.GCODE.3MF", "JOB", ".GCODE.3MF"],
+    ["archive.tar.gz", "archive", ".tar.gz"],
+    ["part.stl", "part", ".stl"],
+    [".gltf", ".gltf", ""],
+    [".gcode.3mf", ".gcode", ".3mf"],
+    ["Model v1.2 final", "Model v1.2 final", ""],
+    ["part.x_t", "part", ".x_t"],
+    ["LICENSE", "LICENSE", ""]
+  ],
+  "numbered": [
+    ["job.gcode.3mf", 2, "job (2).gcode.3mf"],
+    ["Notes.pdf", 2, "Notes (2).pdf"],
+    ["archive.tar.gz", 3, "archive (3).tar.gz"],
+    ["LICENSE", 2, "LICENSE (2)"],
+    [".gltf", 2, ".gltf (2)"],
+    ["Model v1.2 final", 2, "Model v1.2 final (2)"],
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      2,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (2).stl"
+    ],
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      1000,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (1000).stl"
+    ],
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      2,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (2).stl"
+    ]
+  ],
+  "junk": [
+    ["__MACOSX/._frog.stl", true],
+    ["Design/__MACOSX/Design/frog.stl", true],
+    ["._frog.stl", true],
+    [".DS_Store", true],
+    ["Frog/.DS_Store", true],
+    ["Thumbs.db", true],
+    ["THUMBS.DB", true],
+    ["docs\\desktop.ini", true],
+    [".gitignore", true],
+    ["frog.stl", false],
+    ["Frog/frog.stl", false],
+    ["MACOSX/frog.stl", false],
+    ["thumbs.db.stl", false],
+    ["notes.txt", false],
+    ["./Dotted/hull.stl", false],
+    [".hidden/part.stl", true],
+    ["Design/.git/config", true]
+  ],
+  "numberedWithin": [
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.stl",
+      2,
+      120,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (2).stl"
+    ],
+    [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.gcode.3mf",
+      10,
+      120,
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (10).gcode.3mf"
+    ],
+    ["Notes.pdf", 2, 120, "Notes (2).pdf"]
+  ]
+}

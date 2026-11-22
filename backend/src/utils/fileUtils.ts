@@ -2,18 +2,7 @@ import path from "node:path";
 import { decodeExtended, parse as parseDisposition } from "content-disposition";
 import mimeTypes from "mime-types";
 import { IMPORT_ALLOWED_EXTS } from "../config";
-
-// The whole C0 and C1 range: C1 is what a mis-decoded header leaves behind, and downstream systems
-// (e.g. OneDrive backups) reject some of those characters.
-// oxlint-disable-next-line no-control-regex -- stripping control chars is the point here.
-const CONTROL_CHARS_RE = /[\u0000-\u001f\u007f-\u009f]/g;
-
-export function sanitizeFilename(name: string | null | undefined): string {
-  let cleaned = (name || "").replace(CONTROL_CHARS_RE, "").trim();
-  cleaned = cleaned.replace(/\//g, "_").replace(/\\/g, "_");
-  cleaned = path.basename(cleaned);
-  return cleaned || "imported-file";
-}
+import { normalizeFileName } from "../files/names";
 
 /**
  * Header values are ISO-8859-1, so a server putting raw UTF-8 in `filename=` (MakerWorld's CDN
@@ -74,7 +63,7 @@ export class HttpError extends Error {
 export function buildImportFilename(url: string, headers: Headers, override?: string | null): string {
   let name: string;
   if (override) {
-    name = sanitizeFilename(override);
+    name = normalizeFileName(override);
   } else {
     const disposition = headers.get("content-disposition");
     name = parseContentDisposition(disposition) || "";
@@ -85,7 +74,7 @@ export function buildImportFilename(url: string, headers: Headers, override?: st
         name = "";
       }
     }
-    name = sanitizeFilename(name);
+    name = normalizeFileName(name);
   }
 
   const contentType = headers.get("content-type") || "";
@@ -111,7 +100,8 @@ export function buildImportFilename(url: string, headers: Headers, override?: st
   if (!IMPORT_ALLOWED_EXTS.has(ext)) {
     throw new HttpError(415, `Unsupported file type: ${ext}`);
   }
-  return name;
+  // Again, as an extension added from the link or its type can take the name past the limit.
+  return normalizeFileName(name);
 }
 
 export function mimeFromContentType(contentType: string | null | undefined, filename: string): string {

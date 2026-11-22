@@ -3,6 +3,7 @@ import { withStorageLock } from "../utils/storageLock";
 import fsSync from "node:fs";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
+import { normalizeFileName, numberedName } from "../files/names";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
@@ -38,6 +39,7 @@ import {
   validateStorageTemplate,
   type PrintLike,
   type PrintTemplateValues,
+  PATH_SEGMENT_MAX,
 } from "../modelFiles/template";
 import { printTemplateValues } from "../modelFiles/templateValues";
 
@@ -99,12 +101,11 @@ async function freePlatePath(relative: string, printId: string, owner: PathOwner
 /** A supporting or prepared file's place: beside the plates, numbered like "Notes (2).pdf" when one of the model's
  *  files already has its name. */
 async function freePrintFilePath(relative: string, printFileId?: string): Promise<string> {
-  const ext = path.extname(relative);
-  const stem = relative.slice(0, relative.length - ext.length);
+  const name = normalizeFileName(path.basename(relative));
   let candidate = relative;
   for (let suffix = 2; await pathTaken(candidate, { printFileId }); suffix++) {
     if (suffix > 1000) throw new HttpError(409, `Storage path already exists: ${relative}`);
-    candidate = `${stem} (${suffix})${ext}`;
+    candidate = path.join(path.dirname(relative), numberedName(name, suffix, PATH_SEGMENT_MAX));
   }
   return candidate;
 }
@@ -221,13 +222,10 @@ export async function availablePlateFilename(
 /** `desiredFilename`, or "name (2).ext" and on where it's in `taken`, which holds lowercased names. */
 export function freePlateFilename(desiredFilename: string, taken: ReadonlySet<string>): string {
   if (!taken.has(desiredFilename.toLowerCase())) return desiredFilename;
-  const ext = path.extname(desiredFilename);
-  const stem = path.basename(desiredFilename, ext);
-  let suffix = 2;
-  for (;;) {
-    const candidate = `${stem} (${suffix})${ext}`;
+  const name = normalizeFileName(desiredFilename);
+  for (let suffix = 2; ; suffix++) {
+    const candidate = numberedName(name, suffix);
     if (!taken.has(candidate.toLowerCase())) return candidate;
-    suffix += 1;
   }
 }
 

@@ -4,7 +4,8 @@ import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError } from "../utils/fileUtils";
+import { isJunk, normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
 import { parseSortDirection } from "../utils/sortDirection";
@@ -93,7 +94,9 @@ router.post(
   "/upload",
   modelUpload.array("files"),
   asyncHandler(async (req, res) => {
-    const files = (req.files as Express.Multer.File[]) || [];
+    const uploaded = (req.files as Express.Multer.File[]) || [];
+    // What a computer leaves among files (".DS_Store", a "._" fork, Thumbs.db) is never a model or part of one.
+    const files = uploaded.filter((f) => !isJunk(f.originalname));
     const body = req.body as Record<string, string | undefined>;
     // A browser uploading a batch one request at a time sends notify=false, then one summary at the end.
     const notify = body.notify !== "false";
@@ -139,7 +142,7 @@ router.post(
       res.json({ prints: printsOut });
     } catch (err) {
       if (notify && files.length) {
-        const names = [...pending].map((f) => sanitizeFilename(f.originalname));
+        const names = [...pending].map((f) => normalizeFileName(f.originalname));
         await notifyUpload(
           req.userId!,
           created,
@@ -155,7 +158,7 @@ router.post(
       }
       throw err;
     } finally {
-      for (const f of files) {
+      for (const f of uploaded) {
         if (fs.existsSync(f.path)) fs.rmSync(f.path, { force: true });
       }
     }
