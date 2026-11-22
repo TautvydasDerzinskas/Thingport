@@ -96,7 +96,6 @@ export const LINKS = {
 
 /** The steps of the supporting-files work expected to change cells, by name. */
 export const STEP = {
-  repair: "a repair keeps the files it didn't lose",
   whole: "a new model is stored whole or not at all",
   addFiles: "add, rename and remove a model's files, one request each",
   manage: "manage supporting files on the model page and in Edit model",
@@ -269,14 +268,14 @@ export const CASES: Case[] = [
   // F: repair: a model imported from its site with its licence, and a text file and a sliced print its owner added,
   // whose plates' files and LICENSE.txt are gone from the disk, downloaded again (Repair, "Download the missing files
   // again").
-  { family: "F", shape: "1", way: "repair", today: ["Thing: P Benchy.stl, 2 photos"], changes: [STEP.repair] },
-  { family: "F", shape: "2", way: "repair", today: ["Thing: P Lid.stl, P Base.3mf, 2 photos"], changes: [STEP.repair] },
-  { family: "F", shape: "3", way: "repair", today: ["Thing: P Frog.stl, 2 photos"], changes: [STEP.repair] },
-  { family: "F", shape: "8", way: "repair", today: ["Thing: P Benchy.gcode.3mf, 2 photos"], changes: [STEP.repair] },
-  { family: "F", shape: "9", way: "repair", today: ["Thing: P Benchy.stl, P Benchy.gcode.3mf, 2 photos"], changes: [STEP.repair] },
-  { family: "F", shape: "12", way: "repair", today: ["✕ import: 400 None of this Thing's files could be downloaded."] },
-  { family: "F", shape: "13", way: "repair", today: ["Thing: P Frog.stl, 2 photos"], changes: [STEP.repair] },
-  { family: "F", shape: "14", way: "repair", today: ["Thing: P Frog.stl, P ._Frog.stl, 2 photos"], changes: [STEP.repair, STEP.siteFiles] },
+  { family: "F", shape: "1", way: "repair", today: ["Thing: P Benchy.stl, L LICENSE.txt, PP My print.gcode, S My notes.txt, 2 photos"] },
+  { family: "F", shape: "2", way: "repair", today: ["Thing: P Lid.stl, P Base.3mf, L LICENSE.txt, PP My print.gcode, S My notes.txt, 2 photos"] },
+  { family: "F", shape: "3", way: "repair", today: ["Thing: P Frog.stl, L LICENSE.txt, PP My print.gcode, S My notes.txt, 2 photos"], changes: [STEP.siteFiles] },
+  { family: "F", shape: "8", way: "repair", today: ["Thing: P Benchy.gcode.3mf, L LICENSE.txt, PP My print.gcode, S My notes.txt, 2 photos"], changes: [STEP.alone] },
+  { family: "F", shape: "9", way: "repair", today: ["Thing: P Benchy.stl, P Benchy.gcode.3mf, L LICENSE.txt, PP My print.gcode, S My notes.txt, 2 photos"], changes: [STEP.siteFiles] },
+  { family: "F", shape: "12", way: "repair", today: ["✕ import: 400 None of this Thing's files could be downloaded."], changes: [STEP.siteFiles] },
+  { family: "F", shape: "13", way: "repair", today: ["Thing: P Frog.stl, L LICENSE.txt, PP My print.gcode, S My notes.txt, 2 photos"], changes: [STEP.siteFiles] },
+  { family: "F", shape: "14", way: "repair", today: ["Thing: P Frog.stl, P ._Frog.stl, L LICENSE.txt, PP My print.gcode, S My notes.txt, 2 photos"], changes: [STEP.siteFiles] },
 
   // G: a copy of another user's model from their public collection; the model is their upload of the files.
   { family: "G", shape: "1", way: "copy", today: ["Benchy: P Benchy.stl"] },

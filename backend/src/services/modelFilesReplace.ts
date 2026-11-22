@@ -1,7 +1,11 @@
 import { prisma } from "../db";
 import { createLogger } from "../logger";
+import { fileState } from "../modelFiles/storageFs";
 import { HttpError } from "../utils/fileUtils";
-import { assetExists, galleryImageFile } from "./modelAssets";
+import { withStorageLock } from "../utils/storageLock";
+import { afterLicenseChange } from "./licenseService";
+import { modelFilesMissing } from "./missingFilesService";
+import { assetTarget, galleryImageFile, legacyAssetPath, type AssetFile, type AssetHome } from "./modelAssets";
 import {
   addPlatesToPrint,
   deletePlateFiles,
@@ -10,7 +14,7 @@ import {
   refreshAutoPreparedMetadata,
   type NewPlateInput,
 } from "./printCreation";
-import { deleteAllPrintFiles } from "./printFileService";
+import { lookAtPrintFiles, removeMissingPrintFiles } from "./printFileService";
 import { removePlatePictures } from "./printService";
 import { Prisma, type Plate } from "@prisma/client";
 
@@ -18,7 +22,8 @@ const log = createLogger("model-files");
 
 // Swapping a model's files for freshly downloaded ones, for a model whose own are gone (see
 // services/missingFilesService.ts). The rows that pointed at the missing files go and the new files take their
-// place, so everything else about the model -- its name, tags, collections, favourite, counts -- is untouched.
+// place, so everything else about the model -- its name, tags, collections, favourite, counts, and the files it still
+// has -- is untouched.
 //
 // Only the files: the pictures are importService's to put back, since it is what fetches them.
 
@@ -28,10 +33,26 @@ export type ReplacedPlates = {
   galleryWhole: boolean;
 };
 
-/** Replaces every plate and supporting file of the model with `inputs`. Throws when the download holds nothing to
- *  print, before anything is removed, so a model is never left with less than it had -- and a replacement that
- *  fails halfway puts the plate rows back, since a model with no plates at all is one the scan passes over and
- *  could never offer a repair again. */
+/** Whether the model still needs its files: none of its plates' files is there. Looked at in one storage-lock turn
+ *  with every other file of the model, so a move can't carry one away under the look, and a disk that can't answer
+ *  for any of them throws here, before the repair has removed anything. */
+export function modelStillBroken(userId: string, printId: string): Promise<boolean> {
+  return withStorageLock(async () => {
+    const recorded = await prisma.plate.findMany({
+      where: { printId, print: { userId } },
+      select: { storagePath: true, sourcePath: true },
+    });
+    // A model with no plates at all has nothing to take away, so it is always worth the files.
+    if (recorded.length > 0 && !(await modelFilesMissing(recorded))) return false;
+    await lookAtPrintFiles(printId);
+    return true;
+  });
+}
+
+/** Replaces every plate of the model with `inputs`, and drops the rows of its other files that are gone too. Throws
+ *  when the download holds nothing to print, before anything is removed, so a model is never left with less than it
+ *  had -- and a replacement that fails halfway puts the plate rows back, since a model with no plates at all is one
+ *  the scan passes over and could never offer a repair again. */
 export async function replaceModelPlates(
   userId: string,
   printId: string,
@@ -63,28 +84,49 @@ export async function replaceModelPlates(
     throw error;
   }
 
-  // Everything else the model had goes once the new files are stored, not before: a model can have lost its plate
-  // files alone and still hold its supporting files and its old plates' pictures, which an attempt that threw
-  // halfway would otherwise have taken with it for nothing. A new plate whose name one of those files holds lands
-  // beside it rather than over it (printService's freePlatePath reads them too).
+  // The old plates' pictures go once the new files are stored, not before, so an attempt that threw halfway takes
+  // nothing with it.
   for (const plate of print.plates) await removePlatePictures(plate.id, print.assetsPath);
-  // The prepared file is one of the supporting files about to go, and its metadata describes plates that have gone
-  // too: emptied here rather than left for the refresh below, which would leave the old reading behind if it threw.
-  await prisma.print.update({
-    where: { id: printId },
-    data: {
-      preparedMetadata: Prisma.JsonNull,
-      ...(print.preparedFileId ? { preparedFile: { disconnect: true } } : {}),
-    },
-  });
-  await deleteAllPrintFiles(printId);
+  // The reading of plate 0 describes a plate that has gone: emptied here rather than left for the refresh below, which
+  // would leave the old reading behind if it threw. The prepared print keeps its place: its row goes below only when
+  // its file went too, and the slot empties with it.
+  await prisma.print.update({ where: { id: printId }, data: { preparedMetadata: Prisma.JsonNull } });
+  // Of the other files, only those that are gone go. A supporting file, prepared print or LICENSE.txt still on disk
+  // stays -- the owner's own among them, which no source can give back -- and a new plate whose name one of them holds
+  // landed beside it rather than over it (printService's freePlatePath reads them too). Best-effort: the plates are in,
+  // so the scan won't offer this model again, and the steps after it must still run.
+  await removeMissingPrintFiles(printId).catch((error: unknown) =>
+    log.error("couldn't sweep a repaired model's missing files", { print: printId, error }),
+  );
+  // After the sweep, so a script whose file went comes back, and one still there isn't stored twice.
   await keepGeneratorScripts(userId, printId, scripts);
   await refreshAutoPreparedMetadata(printId);
+  // LICENSE.txt is written again when it went too.
+  await afterLicenseChange(printId);
 
-  const galleryWhole =
-    print.previewImages.length > 0 &&
-    print.previewImages.every((image) => assetExists(print.assetsPath, galleryImageFile(image.id)));
-  return { plates, galleryWhole };
+  return { plates, galleryWhole: await galleryWhole(printId, print.assetsPath, print.previewImages) };
+}
+
+/** Whether every picture of the gallery is on disk, in the model's folder or the old shared one. One the disk can't
+ *  answer for counts as there: a gallery that isn't whole is replaced, the owner's own photos with it, and a photo that
+ *  only couldn't be read may well be fine. */
+async function galleryWhole(printId: string, home: AssetHome, images: { id: string }[]): Promise<boolean> {
+  if (!images.length) return false;
+  let whole = true;
+  for (const image of images) {
+    try {
+      if (!(await pictureThere(home, galleryImageFile(image.id)))) whole = false;
+    } catch (error) {
+      log.warn("couldn't look at a repaired model's gallery, so it stays", { print: printId, image: image.id, error });
+      return true;
+    }
+  }
+  return whole;
+}
+
+async function pictureThere(home: AssetHome, file: AssetFile): Promise<boolean> {
+  if (home && (await fileState(assetTarget(home, file), "repair.gallery")).state === "file") return true;
+  return (await fileState(legacyAssetPath(file), "repair.gallery")).state === "file";
 }
 
 /** The plates as they were before a replacement that didn't finish: whatever it managed to store goes, files and
