@@ -236,11 +236,11 @@ last imports, and the last 10 models you opened on any of those sites, each with
 models are listed before you connect too, and they stay in this browser. Click the instance's address under the title
 to open it.
 
-**Appearance** starts with Grab's **Language**, for its popup and for what it adds to pages: the browser's language
-(the default), or English, Русский, Українська, Беларуская, Español, Français, Lietuvių or 简体中文, each named as it
-writes itself. Below that, it sets how the floating icon on model pages looks and where it sits. Its styles are the white
-**Bubble** (the default), **Pill** (the icon with a word: "Grab", or what clicking it does), **Mini** (smaller, and
-half see-through until the mouse comes near), **Brand** (solid green), **Glass** (frosted, the page showing through)
+**Appearance** starts with Grab's **Language**, for its popup and for what it adds to pages: the browser's language (the
+default), or English, Русский, Українська, Беларуская, Deutsch, Español, Français, Lietuvių or 简体中文, each named as it
+writes itself. Below that, it sets how the floating icon on model pages looks and where it sits. Its styles are the
+white **Bubble** (the default), **Pill** (the icon with a word: "Grab", or what clicking it does), **Mini** (smaller,
+and half see-through until the mouse comes near), **Brand** (solid green), **Glass** (frosted, the page showing through)
 and **Edge tab** (docked to the window's side). It can sit in any corner: bottom right (the default), bottom left, or
 the top ones, which sit below a site's own header. A change shows at once, on pages already open too, and the import
 panel opens from wherever the icon is.

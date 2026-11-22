@@ -83,6 +83,7 @@
   "instancePermission": "Thingport Grab потрібен дозвіл на доступ до цього екземпляра.",
   "saveFailed": "Не вдалося зберегти",
   "backgroundUnavailable": "Фоновий процес розширення не відповідає",
+  "pageChangedDuringAction": "Сторінка змінилася під час виконання дії.",
   "disconnectFailed": "Не вдалося від’єднатися",
   "openThingportFailed": "Не вдалося відкрити Thingport",
   "clearFailed": "Не вдалося очистити",

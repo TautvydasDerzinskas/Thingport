@@ -24,7 +24,9 @@ import "./styles/popup.scss";
 const returnTabId = Number.parseInt(new URLSearchParams(location.search).get("returnTab") ?? "", 10);
 
 fillIcons(document);
-setLocale(detectLocale());
+const browserLocale = detectLocale();
+setLocale(browserLocale);
+document.documentElement.lang = browserLocale;
 applyTranslations();
 dressMark(els.headerIcon, seasonalIcon(), "header__season");
 // Room above for a hat.
@@ -66,6 +68,7 @@ function localizeDynamicContent(): void {
   els.enabledToggle.dataset.tooltip = t("extensionEnabled");
   els.viewedClearWrap.dataset.tooltip = t("clearRecentlyViewed");
   els.pairNote.textContent = t(pairNoteKey);
+  localizeInstanceLink();
   refreshAppearance();
   renderAdapt();
   void loadRecentlyViewed();
@@ -154,6 +157,11 @@ async function chooseLanguage(choice: Locale | null): Promise<void> {
 setUpLanguage((choice) => void chooseLanguage(choice));
 renderLanguage(null);
 
+function localizeInstanceLink(): void {
+  const instance = els.instanceLink.getAttribute("href");
+  if (instance) els.instanceLink.title = t("openInstance", { instance });
+}
+
 function showConfiguredView(state: ExtensionState): void {
   labelTabs(true);
   els.configuredView.hidden = false;
@@ -162,7 +170,7 @@ function showConfiguredView(state: ExtensionState): void {
   els.enabledToggle.hidden = false;
   els.instanceLink.textContent = displayInstanceUrl(state.instanceUrl);
   els.instanceLink.href = state.instanceUrl;
-  els.instanceLink.title = t("openInstance", { instance: state.instanceUrl });
+  localizeInstanceLink();
   els.enabledSwitch.checked = !state.disabled;
   clearError(els.configuredError);
   void loadRecentImports();

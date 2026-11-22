@@ -83,6 +83,7 @@
   "instancePermission": "Thingport Grab needs permission to reach this instance to work.",
   "saveFailed": "Couldn't save",
   "backgroundUnavailable": "The extension background isn't responding",
+  "pageChangedDuringAction": "The page changed while this was running.",
   "disconnectFailed": "Couldn't disconnect",
   "openThingportFailed": "Couldn't open Thingport",
   "clearFailed": "Couldn't clear",

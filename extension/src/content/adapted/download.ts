@@ -4,7 +4,7 @@
 
 import { adaptBytes } from "../../adapting/adapt";
 import type { AdaptTarget } from "../../shared/adaptTargets";
-import { t } from "../../shared/i18n";
+import { formatDecimal, t } from "../../shared/i18n";
 import { request } from "../../shared/messages";
 import { adaptingPhrases, rotatePhrases } from "../panels/funStatus";
 import type { AdaptFile, AdaptSite } from "./site";
@@ -40,10 +40,10 @@ export async function readBody(
       throw tooBig(declared ?? received, site);
     }
     chunks.push(value);
-    const got = (received / MB).toFixed(1);
+    const got = formatDecimal(received / MB, 1);
     onProgress(
       declared
-        ? t("adaptedDownloadProgress", { received: got, total: (declared / MB).toFixed(1) })
+        ? t("adaptedDownloadProgress", { received: got, total: formatDecimal(declared / MB, 1) })
         : t("adaptedDownloadProgressUnknown", { received: got }),
     );
   }

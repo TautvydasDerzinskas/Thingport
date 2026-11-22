@@ -83,6 +83,7 @@
   "instancePermission": "Thingport Grab нужно разрешение для доступа к этому экземпляру.",
   "saveFailed": "Не удалось сохранить",
   "backgroundUnavailable": "Фоновая часть расширения не отвечает",
+  "pageChangedDuringAction": "Страница изменилась во время выполнения действия.",
   "disconnectFailed": "Не удалось отключиться",
   "openThingportFailed": "Не удалось открыть Thingport",
   "clearFailed": "Не удалось очистить",
