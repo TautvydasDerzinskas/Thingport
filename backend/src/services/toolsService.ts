@@ -16,6 +16,7 @@ import type { Prisma, Role, Tool } from "@prisma/client";
 import { z } from "zod";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
+import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { normalizeFileName, numberedName, type NormalName } from "../files/names";
 import { importQuietly } from "../utils/quietImport";
@@ -555,6 +556,14 @@ export async function installRepoTool(
   { withModels: asked = true }: { withModels?: boolean } = {},
 ): Promise<AdminTool["installed"]> {
   if (!SLUG.test(slug)) throw new HttpError(400, "Not a tool name");
+  return oneChangeAtATime(slug, () => installNow(slug, adminId, asked));
+}
+
+// Installs, updates and uninstalls of one tool go one at a time. Each reads the tool and then writes it, so one that
+// read it before another wrote would undo that: an update asked without models, say, written over an import of them.
+const oneChangeAtATime = createKeyedLock();
+
+async function installNow(slug: string, adminId: string, asked: boolean): Promise<AdminTool["installed"]> {
   const repo = await fetchRepoTool(slug, true);
   const files = toolModelFiles(repo.manifest);
   const existing = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
@@ -818,16 +827,18 @@ export async function setRepoToolEnabled(slug: string, enabled: boolean, adminId
   });
 }
 
-export async function uninstallRepoTool(slug: string, adminId: string): Promise<void> {
-  const tool = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
-  if (!tool) throw new HttpError(404, "That tool isn't installed");
-  await whileNotCopying(tool.id, async () => {
-    await removeToolModels(tool.id);
-    // Its collections and the data it kept go with it.
-    await prisma.tool.delete({ where: { id: tool.id } });
+export function uninstallRepoTool(slug: string, adminId: string): Promise<void> {
+  return oneChangeAtATime(slug, async () => {
+    const tool = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
+    if (!tool) throw new HttpError(404, "That tool isn't installed");
+    await whileNotCopying(tool.id, async () => {
+      await removeToolModels(tool.id);
+      // Its collections and the data it kept go with it.
+      await prisma.tool.delete({ where: { id: tool.id } });
+    });
+    await fs.rm(path.join(TOOLS_STORAGE, slug), { recursive: true, force: true });
+    void createLog({ userId: adminId, action: "tool_uninstalled", targetId: tool.id, details: { slug } });
   });
-  await fs.rm(path.join(TOOLS_STORAGE, slug), { recursive: true, force: true });
-  void createLog({ userId: adminId, action: "tool_uninstalled", targetId: tool.id, details: { slug } });
 }
 
 export type OwnToolInUse = {

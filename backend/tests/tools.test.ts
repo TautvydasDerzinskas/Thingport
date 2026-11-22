@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import type { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { STORAGE } from "../src/config";
@@ -559,6 +560,50 @@ describe("installing", () => {
       .send({ models: false });
     expect(updated.status).toBe(200);
     expect(updated.body).toMatchObject({ version: "1.0.1", models: { total: 2, imported: true } });
+    await toolFetchSettled(toolId);
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
+  });
+
+  it("keeps models another admin imports while an update without them is being written", async () => {
+    writeRepo();
+    const admin = auth(adminToken);
+    const first = await request(app).post("/api/admin/tools/planner/install").set(admin).send({ models: false });
+    expect(first.status).toBe(200);
+    const toolId = first.body.id as string;
+
+    writeRepo("1.0.1");
+    const upsert = prisma.tool.upsert.bind(prisma.tool);
+    let reached!: () => void;
+    const updateWriting = new Promise<void>((resolve) => (reached = resolve));
+    let importWritten!: () => void;
+    const imported = new Promise<void>((resolve) => (importWritten = resolve));
+    // The update has read the tool, still without models, and the import comes before it writes. Once they go one
+    // at a time the import never writes in between, so the update stops waiting for it after a while.
+    const spy = vi.spyOn(prisma.tool, "upsert").mockImplementation((async (args: Prisma.ToolUpsertArgs) => {
+      if (args.update.modelsSha !== null) {
+        const written = await upsert(args);
+        importWritten();
+        return written;
+      }
+      reached();
+      await Promise.race([imported, new Promise((resolve) => setTimeout(resolve, 1000))]);
+      return upsert(args);
+    }) as never);
+    try {
+      const update = request(app)
+        .post("/api/admin/tools/planner/install")
+        .set(admin)
+        .send({ models: false })
+        .then((res) => res);
+      await updateWriting;
+      const importing = await request(app).post("/api/admin/tools/planner/import-models").set(admin);
+      expect(importing.status).toBe(200);
+      expect((await update).status).toBe(200);
+    } finally {
+      spy.mockRestore();
+    }
+    expect((await prisma.tool.findUniqueOrThrow({ where: { id: toolId } })).modelsSha).not.toBeNull();
     await toolFetchSettled(toolId);
     await syncToolModels({ id: memberId, role: "MEMBER" });
     expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
