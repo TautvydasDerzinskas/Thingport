@@ -643,7 +643,7 @@ describe("Studio", () => {
     // An assistant's change says so, and the design tells it what to warn about.
     await callTool(token, "studio_set_print_profile", {
       design_id: hook,
-      profile: { settings: { seam_position: "back", layer_height: null } },
+      profile: { settings: { seam_position: "back", layer_height: null, outer_wall_speed: 150 } },
     });
     const read = await callTool(token, "studio_get_design", { design_id: hook });
     expect(read.data.print_profile).toMatchObject({ by: "mcp", settings: { seam_position: "back" } });
@@ -667,12 +667,15 @@ describe("Studio", () => {
       brim_type: "outer_only",
       brim_width: "5",
       seam_position: "back",
+      // Bambu Studio keeps speeds per nozzle, as a list.
+      outer_wall_speed: ["150"],
     });
     expect(config.layer_height).toBeUndefined();
     expect(String(config.different_settings_to_system[0]).split(";").toSorted()).toEqual([
       "bottom_shell_layers",
       "brim_type",
       "brim_width",
+      "outer_wall_speed",
       "seam_position",
       "sparse_infill_density",
       "sparse_infill_pattern",

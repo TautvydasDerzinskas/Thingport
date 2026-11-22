@@ -4781,7 +4781,10 @@
         "material": "材料",
         "anyMaterial": "任意材料",
         "settings": "设置",
-        "addSetting": "添加设置",
+        "slicerDefault": "切片软件默认",
+        "setIt": "设置",
+        "noneCarried": "{{slicer}} 不会从 3MF 读取这些设置。",
+        "setCount_other": "已设置 {{count}} 项",
         "reset": "使用切片软件自己的值",
         "nativeName": "在 {{slicer}} 中：{{name}}",
         "notCarried": "{{slicer}} 不会从 3MF 读取此项：请在其中设置。",
@@ -4791,13 +4794,12 @@
         "aiPrompt": "根据这个设计的用途为它选择打印配置：参考我的要求，以及它所来源的模型的描述。用打印配置工具设置好，并用一句话告诉我原因。",
         "aiPromptSlicer": "我用 {{name}} 切片（切片软件 id {{id}}）。",
         "aiPromptPrinter": "我的打印机是 {{name}}（打印机 id {{id}}），喷嘴 {{nozzle}} mm。",
-        "group": {
-          "layers": "层",
-          "walls": "墙与外壳",
-          "infill": "填充",
+        "category": {
+          "quality": "质量",
+          "strength": "强度",
+          "speed": "速度",
           "support": "支撑",
-          "adhesion": "热床附着",
-          "finish": "表面"
+          "others": "其他"
         },
         "setting": {
           "layer_height": "层高",
@@ -4808,6 +4810,10 @@
           "wall_generator": "墙生成器",
           "sparse_infill_density": "填充密度",
           "sparse_infill_pattern": "填充图案",
+          "initial_layer_speed": "首层速度",
+          "outer_wall_speed": "外墙速度",
+          "inner_wall_speed": "内墙速度",
+          "sparse_infill_speed": "填充速度",
           "enable_support": "支撑",
           "support_type": "支撑类型",
           "support_threshold_angle": "支撑角度",

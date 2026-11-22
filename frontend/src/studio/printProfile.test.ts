@@ -6,10 +6,12 @@ import { emptyDocument, type StudioDocument } from "./document";
 import {
   checkProfile,
   PRINT_PRESETS,
+  PROFILE_CATEGORIES,
   PROFILE_SETTINGS,
   PROFILE_SLICERS,
   profileMatchesPreset,
   profileProjectSettings,
+  profileSetting,
   profileSummary,
   settingProjectValue,
   settingValueError,
@@ -122,6 +124,19 @@ describe("print profiles", () => {
     });
   });
 
+  it("writes a per-nozzle setting as a list, as Bambu Studio keeps speeds, and sorts every setting into a category", () => {
+    expect(
+      profileProjectSettings({ preset: null, settings: { outer_wall_speed: 150, wall_loops: 3 } }).settings,
+    ).toEqual({
+      wall_loops: "3",
+      outer_wall_speed: ["150"],
+    });
+    for (const setting of PROFILE_SETTINGS as readonly ProfileSettingDef[])
+      expect(PROFILE_CATEGORIES).toContain(setting.category);
+    // Speeds reach only Bambu Studio's family; PrusaSlicer and Cura keep their own.
+    expect(profileSetting("outer_wall_speed")?.carries).toEqual(["bambu"]);
+  });
+
   it("starts from a preset, changes single settings, and keeps what it isn't told to change", () => {
     let doc = cmd(emptyDocument(), { profile: { preset: "outdoor", slicer: "prusaslicer", reason: "Garden" } });
     expect(profileOf(doc)).toMatchObject({ preset: "outdoor", material: "ASA", slicer: "prusaslicer", by: "person" });
@@ -159,7 +174,7 @@ describe("print profiles", () => {
     // Cura has no honeycomb: that choice stays behind.
     doc = cmd(doc, { profile: { slicer: "cura" } });
     expect(checkProfile(doc, profileOf(doc)).find((check) => check.code === "not_carried")?.params?.keys).toBe(
-      "sparse_infill_pattern, seam_position",
+      "seam_position, sparse_infill_pattern",
     );
     doc = cmd(doc, { profile: { preset: "water", slicer: "orcaslicer" } });
     expect(checkProfile(doc, profileOf(doc)).map((check) => check.code)).toEqual(["material", "food_contact"]);

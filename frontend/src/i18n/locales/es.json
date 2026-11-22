@@ -5174,7 +5174,12 @@
         "material": "Material",
         "anyMaterial": "Cualquier material",
         "settings": "Ajustes",
-        "addSetting": "Añadir un ajuste",
+        "slicerDefault": "Predeterminado del laminador",
+        "setIt": "Definir",
+        "noneCarried": "{{slicer}} no lee ninguno de estos ajustes de un 3MF.",
+        "setCount_one": "{{count}} definido",
+        "setCount_many": "{{count}} definidos",
+        "setCount_other": "{{count}} definidos",
         "reset": "Usar el valor del laminador",
         "nativeName": "En {{slicer}}: {{name}}",
         "notCarried": "{{slicer}} no lee esto de un 3MF: ajústalo allí.",
@@ -5184,13 +5189,12 @@
         "aiPrompt": "Elige un perfil de impresión para este diseño según su uso: lo que te pedí y las descripciones de los modelos de los que se hizo. Aplícalo con la herramienta de perfil de impresión y dime por qué en una frase.",
         "aiPromptSlicer": "Lamino con {{name}} (id de laminador {{id}}).",
         "aiPromptPrinter": "Mi impresora es la {{name}} (id de impresora {{id}}) con una boquilla de {{nozzle}} mm.",
-        "group": {
-          "layers": "Capas",
-          "walls": "Paredes y cubiertas",
-          "infill": "Relleno",
+        "category": {
+          "quality": "Calidad",
+          "strength": "Resistencia",
+          "speed": "Velocidad",
           "support": "Soportes",
-          "adhesion": "Adherencia a la cama",
-          "finish": "Acabado"
+          "others": "Otros"
         },
         "setting": {
           "layer_height": "Altura de capa",
@@ -5201,6 +5205,10 @@
           "wall_generator": "Generador de paredes",
           "sparse_infill_density": "Densidad de relleno",
           "sparse_infill_pattern": "Patrón de relleno",
+          "initial_layer_speed": "Velocidad de la primera capa",
+          "outer_wall_speed": "Velocidad de pared exterior",
+          "inner_wall_speed": "Velocidad de paredes interiores",
+          "sparse_infill_speed": "Velocidad de relleno",
           "enable_support": "Soportes",
           "support_type": "Tipo de soporte",
           "support_threshold_angle": "Ángulo de soporte",

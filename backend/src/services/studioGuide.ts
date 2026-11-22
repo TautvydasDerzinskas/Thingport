@@ -163,7 +163,8 @@ own preset for the printer covers what they leave out):
 
 Choose from what the design is for: the user's requests, and the descriptions of the models it was made from
 (made_from in studio_get_design). Prefer the person's slicer and printer when they're known, and keep the material in
-step with the filament slots. profile_checks lists what to tell the person, such as a material that doesn't suit the
+step with the filament slots. Speeds (initial_layer_speed, outer_wall_speed, inner_wall_speed, sparse_infill_speed, in
+mm/s) reach only Bambu Studio and the slicers built on it. profile_checks lists what to tell the person, such as a material that doesn't suit the
 preset or settings their slicer won't take from a 3MF. studio_save_to_library with model_id adds the design to one
 of the user's models as one more print profile.
 `;

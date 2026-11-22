@@ -4980,7 +4980,11 @@
         "material": "Material",
         "anyMaterial": "Beliebiges Material",
         "settings": "Einstellungen",
-        "addSetting": "Einstellung hinzufügen",
+        "slicerDefault": "Slicer-Standard",
+        "setIt": "Festlegen",
+        "noneCarried": "{{slicer}} liest keine dieser Einstellungen aus einer 3MF.",
+        "setCount_one": "{{count}} festgelegt",
+        "setCount_other": "{{count}} festgelegt",
         "reset": "Wert des Slicers verwenden",
         "nativeName": "In {{slicer}}: {{name}}",
         "notCarried": "{{slicer}} liest das nicht aus einer 3MF: dort einstellen.",
@@ -4990,13 +4994,12 @@
         "aiPrompt": "Wähle ein Druckprofil für dieses Design anhand seines Zwecks: was ich mir gewünscht habe und die Beschreibungen der Modelle, aus denen es entstanden ist. Lege es mit dem Druckprofil-Werkzeug fest und sag mir in einem Satz, warum.",
         "aiPromptSlicer": "Ich slice mit {{name}} (Slicer-ID {{id}}).",
         "aiPromptPrinter": "Mein Drucker ist der {{name}} (Drucker-ID {{id}}) mit einer {{nozzle}}-mm-Düse.",
-        "group": {
-          "layers": "Schichten",
-          "walls": "Wände und Hüllen",
-          "infill": "Füllung",
+        "category": {
+          "quality": "Qualität",
+          "strength": "Festigkeit",
+          "speed": "Geschwindigkeit",
           "support": "Stützen",
-          "adhesion": "Betthaftung",
-          "finish": "Oberfläche"
+          "others": "Sonstiges"
         },
         "setting": {
           "layer_height": "Schichthöhe",
@@ -5007,6 +5010,10 @@
           "wall_generator": "Wandgenerator",
           "sparse_infill_density": "Fülldichte",
           "sparse_infill_pattern": "Füllmuster",
+          "initial_layer_speed": "Geschwindigkeit erste Schicht",
+          "outer_wall_speed": "Geschwindigkeit Außenwand",
+          "inner_wall_speed": "Geschwindigkeit Innenwände",
+          "sparse_infill_speed": "Füllgeschwindigkeit",
           "enable_support": "Stützen",
           "support_type": "Stützentyp",
           "support_threshold_angle": "Stützwinkel",

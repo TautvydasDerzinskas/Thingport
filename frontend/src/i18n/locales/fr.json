@@ -5187,7 +5187,12 @@
         "material": "Matériau",
         "anyMaterial": "N’importe quel matériau",
         "settings": "Réglages",
-        "addSetting": "Ajouter un réglage",
+        "slicerDefault": "Valeur du trancheur",
+        "setIt": "Définir",
+        "noneCarried": "{{slicer}} ne lit aucun de ces réglages dans un 3MF.",
+        "setCount_one": "{{count}} défini",
+        "setCount_many": "{{count}} définis",
+        "setCount_other": "{{count}} définis",
         "reset": "Utiliser la valeur du trancheur",
         "nativeName": "Dans {{slicer}} : {{name}}",
         "notCarried": "{{slicer}} ne lit pas ce réglage dans un 3MF : réglez-le là-bas.",
@@ -5197,13 +5202,12 @@
         "aiPrompt": "Choisis un profil d’impression pour cette conception selon son usage : ce que j’ai demandé et les descriptions des modèles dont elle est issue. Applique-le avec l’outil de profil d’impression et dis-moi pourquoi en une phrase.",
         "aiPromptSlicer": "Je tranche avec {{name}} (identifiant de trancheur {{id}}).",
         "aiPromptPrinter": "Mon imprimante est la {{name}} (identifiant d’imprimante {{id}}) avec une buse de {{nozzle}} mm.",
-        "group": {
-          "layers": "Couches",
-          "walls": "Parois et coques",
-          "infill": "Remplissage",
+        "category": {
+          "quality": "Qualité",
+          "strength": "Solidité",
+          "speed": "Vitesse",
           "support": "Supports",
-          "adhesion": "Adhérence au plateau",
-          "finish": "Finition"
+          "others": "Autres"
         },
         "setting": {
           "layer_height": "Hauteur de couche",
@@ -5214,6 +5218,10 @@
           "wall_generator": "Générateur de parois",
           "sparse_infill_density": "Densité de remplissage",
           "sparse_infill_pattern": "Motif de remplissage",
+          "initial_layer_speed": "Vitesse de la première couche",
+          "outer_wall_speed": "Vitesse de la paroi extérieure",
+          "inner_wall_speed": "Vitesse des parois intérieures",
+          "sparse_infill_speed": "Vitesse du remplissage",
           "enable_support": "Supports",
           "support_type": "Type de support",
           "support_threshold_angle": "Angle de support",

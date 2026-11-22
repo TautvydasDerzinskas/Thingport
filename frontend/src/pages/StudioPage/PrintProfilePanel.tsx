@@ -1,23 +1,16 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import IconButton from "@mui/material/IconButton";
-import ListSubheader from "@mui/material/ListSubheader";
-import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
-import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import type { StudioDesign } from "../../api/studio";
@@ -26,38 +19,28 @@ import { useUserPrinters } from "../../hooks/useUserPrinters";
 import { STUDIO_FILAMENT_MATERIALS } from "../../studio/document";
 import {
   checkProfile,
-  PROFILE_SETTINGS,
   printPreset,
   profileMatchesPreset,
-  settingsNotCarried,
   slicerFamily,
   suggestPresets,
-  type ProfileSettingDef,
-  type ProfileSettingGroup,
   type ProfileSettingKey,
   type ProfileValue,
   type PrintPresetId,
 } from "../../studio/printProfile";
-import { NumberField } from "./fields";
 import {
   checkText,
-  choiceKey,
   defaultPrinter,
   defaultSlicer,
   PRESET_ICONS,
   PresetGrid,
   printerChoices,
   profileSlicers,
-  settingLabel,
-  slicerName,
-  startingValue,
 } from "./printProfileUi";
+import PrintProfileSettings from "./PrintProfileSettings";
 import type { RunCommand } from "./useStudioDesign";
 
 // The Print tab: the design's print profile, set from a preset and changed setting by setting, for the person's slicer
 // and printer. Every change is a set_print_profile command, as an AI's is.
-
-const GROUPS: ProfileSettingGroup[] = ["layers", "walls", "infill", "support", "adhesion", "finish"];
 
 type Props = {
   design: StudioDesign;
@@ -77,7 +60,6 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
   const settings = useSlicerSettings();
   const { printers } = useUserPrinters();
   const [presetsAt, setPresetsAt] = useState<HTMLElement | null>(null);
-  const [addAt, setAddAt] = useState<HTMLElement | null>(null);
   const profile = design.document.print_profile;
   const suggested = suggestPresets(about)
     .slice(0, 2)
@@ -173,43 +155,7 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
   const printerKey = profile.printer ? `${profile.printer.id}/${profile.printer.nozzle}` : "";
   const setSetting = (key: ProfileSettingKey, value: ProfileValue | null) =>
     void run("set_print_profile", { profile: { settings: { [key]: value } } });
-  const notCarried = new Set(settingsNotCarried(profile, family));
   const checks = checkProfile(design.document, profile);
-  const set = (PROFILE_SETTINGS as readonly ProfileSettingDef[]).filter(
-    (setting) => profile.settings[setting.key as ProfileSettingKey] !== undefined,
-  );
-  const addable = (PROFILE_SETTINGS as readonly ProfileSettingDef[]).filter(
-    (setting) => setting.carries.includes(family) && profile.settings[setting.key as ProfileSettingKey] === undefined,
-  );
-  const native = (setting: ProfileSettingDef) => {
-    const name = slicerName(slicer);
-    return name ? t("studio.printProfile.nativeName", { slicer: name, name: setting.names[family] }) : "";
-  };
-
-  // The settings the slicer takes that aren't set yet, under their group's heading.
-  const menuItems: ReactNode[] = [];
-  for (const group of GROUPS) {
-    const inGroup = addable.filter((setting) => setting.group === group);
-    if (!inGroup.length) continue;
-    menuItems.push(
-      <ListSubheader key={group} sx={{ lineHeight: "32px" }}>
-        {t(`studio.printProfile.group.${group}`)}
-      </ListSubheader>,
-    );
-    for (const setting of inGroup)
-      menuItems.push(
-        <MenuItem
-          key={setting.key}
-          dense
-          onClick={() => {
-            setAddAt(null);
-            setSetting(setting.key as ProfileSettingKey, startingValue(setting.key as ProfileSettingKey));
-          }}
-        >
-          {settingLabel(t, setting.key)}
-        </MenuItem>,
-      );
-  }
 
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, pt: 1 }}>
@@ -341,103 +287,7 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
         >
           {t("studio.printProfile.settings")}
         </Typography>
-        <Stack spacing={1.25}>
-          {set.map((setting) => {
-            const key = setting.key as ProfileSettingKey;
-            const value = profile.settings[key]!;
-            const label = settingLabel(t, key);
-            const reset = (
-              <Tooltip title={t("studio.printProfile.reset")}>
-                <IconButton
-                  size="small"
-                  aria-label={`${t("studio.printProfile.reset")}: ${label}`}
-                  onClick={() => setSetting(key, null)}
-                  sx={{ p: 0.25 }}
-                >
-                  <CloseRoundedIcon sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Tooltip>
-            );
-            let field;
-            if (setting.kind === "switch")
-              field = (
-                <FormControlLabel
-                  sx={{ flex: 1, m: 0, justifyContent: "space-between" }}
-                  labelPlacement="start"
-                  label={<Typography variant="body2">{label}</Typography>}
-                  control={<Switch size="small" checked={Boolean(value)} onChange={(_, on) => setSetting(key, on)} />}
-                />
-              );
-            else if (setting.kind === "choice")
-              field = (
-                <TextField
-                  select
-                  size="small"
-                  label={label}
-                  value={String(value)}
-                  onChange={(event) => setSetting(key, event.target.value)}
-                  sx={{ flex: 1 }}
-                >
-                  {setting.options
-                    .filter((choice) => choice.carries.includes(family) || choice.value === value)
-                    .map((choice) => (
-                      <MenuItem key={choice.value} value={choice.value}>
-                        {t(`studio.printProfile.choice.${choiceKey(choice.value)}`)}
-                      </MenuItem>
-                    ))}
-                </TextField>
-              );
-            else
-              field = (
-                <Box sx={{ flex: 1, "& .MuiFormControl-root": { width: "100%" } }}>
-                  <NumberField
-                    label={label}
-                    value={Number(value)}
-                    unit={setting.unit ?? undefined}
-                    fixedUnit
-                    validate={(next) =>
-                      next >= setting.min && next <= setting.max && (setting.step < 1 || Number.isInteger(next))
-                    }
-                    onCommit={(next) => setSetting(key, next)}
-                  />
-                </Box>
-              );
-            return (
-              <Tooltip key={key} title={native(setting)} placement="left" enterDelay={600} disableFocusListener>
-                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                  {field}
-                  {notCarried.has(key) && (
-                    <Tooltip title={t("studio.printProfile.notCarried", { slicer: slicerName(slicer) ?? "" })}>
-                      <Typography component="span" color="warning.main" sx={{ fontWeight: 700, px: 0.25 }}>
-                        !
-                      </Typography>
-                    </Tooltip>
-                  )}
-                  {reset}
-                </Stack>
-              </Tooltip>
-            );
-          })}
-        </Stack>
-        {addable.length > 0 && (
-          <Button
-            size="small"
-            startIcon={<AddRoundedIcon />}
-            onClick={(event) => setAddAt(event.currentTarget)}
-            aria-haspopup="menu"
-            sx={{ mt: 1 }}
-          >
-            {t("studio.printProfile.addSetting")}
-          </Button>
-        )}
-        <Menu
-          anchorEl={addAt}
-          open={Boolean(addAt)}
-          onClose={() => setAddAt(null)}
-          slotProps={{ paper: { sx: { maxHeight: 360 } } }}
-        >
-          {menuItems}
-        </Menu>
+        <PrintProfileSettings profile={profile} slicer={slicer} family={family} onSet={setSetting} />
       </Box>
 
       <Button

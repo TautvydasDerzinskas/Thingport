@@ -93,6 +93,10 @@ export function startingValue(key: ProfileSettingKey): ProfileValue {
     support_threshold_angle: 30,
     brim_width: 5,
     raft_layers: 2,
+    initial_layer_speed: 50,
+    outer_wall_speed: 150,
+    inner_wall_speed: 200,
+    sparse_infill_speed: 200,
   };
   return common[key] ?? setting.min;
 }

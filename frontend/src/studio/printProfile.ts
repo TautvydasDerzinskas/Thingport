@@ -32,10 +32,12 @@ export function slicerFamily(slicer: string | undefined | null): SlicerFamily | 
   return slicer && Object.hasOwn(PROFILE_SLICERS, slicer) ? PROFILE_SLICERS[slicer] : null;
 }
 
-export type ProfileSettingGroup = "layers" | "walls" | "infill" | "support" | "adhesion" | "finish";
+/** Where a setting sits, as Bambu Studio's process tabs sort them. */
+export const PROFILE_CATEGORIES = ["quality", "strength", "speed", "support", "others"] as const;
+export type ProfileCategory = (typeof PROFILE_CATEGORIES)[number];
 type Common = {
   key: string;
-  group: ProfileSettingGroup;
+  category: ProfileCategory;
   /** The kinds of slicer it reaches. */
   carries: SlicerFamily[];
   /** What each kind of slicer calls it, for a person reading a guide written for it. */
@@ -43,7 +45,9 @@ type Common = {
 };
 export type NumberSetting = Common & {
   kind: "number";
-  unit: "mm" | "%" | "°" | null;
+  unit: "mm" | "%" | "°" | "mm/s" | null;
+  /** Kept per nozzle as a list (Bambu Studio's speeds), written as one. */
+  list?: boolean;
   min: number;
   max: number;
   step: number;
@@ -59,13 +63,13 @@ export type ProfileSettingDef = NumberSetting | ChoiceSetting | SwitchSetting;
 const names = (bambu: string, prusa: string, cura: string) => ({ bambu, prusa, cura });
 const option = (value: string, label: string, carries: SlicerFamily[] = ALL) => ({ value, label, carries });
 
-/** In the order a slicer shows them. Each `carries` follows the adapter's tables (PRUSA_OBJECT_SETTINGS and the Cura
- *  ones); a setting only Bambu Studio's family takes is one of its extras. */
+/** By category, in the order Bambu Studio shows them. Each `carries` follows the adapter's tables
+ *  (PRUSA_OBJECT_SETTINGS and the Cura ones); a setting only Bambu Studio's family takes is one of its extras. */
 export const PROFILE_SETTINGS = [
   {
     key: "layer_height",
     kind: "number",
-    group: "layers",
+    category: "quality",
     unit: "mm",
     min: 0.04,
     max: 1,
@@ -74,9 +78,67 @@ export const PROFILE_SETTINGS = [
     names: names("Layer height", "Layer height", "Layer Height"),
   },
   {
+    key: "seam_position",
+    kind: "choice",
+    category: "quality",
+    carries: ["bambu"],
+    names: names("Seam position", "Seam position", "Z Seam Alignment"),
+    options: [
+      option("aligned", "Aligned", ["bambu"]),
+      option("nearest", "Nearest", ["bambu"]),
+      option("back", "Back", ["bambu"]),
+      option("random", "Random", ["bambu"]),
+    ],
+  },
+  {
+    key: "seam_slope_type",
+    kind: "choice",
+    category: "quality",
+    carries: ["bambu"],
+    names: names("Scarf joint seam", "Scarf joint seam", "Scarf seam"),
+    options: [
+      option("none", "None", ["bambu"]),
+      option("external", "Contour", ["bambu"]),
+      option("all", "Contour and hole", ["bambu"]),
+    ],
+  },
+  {
+    key: "wall_sequence",
+    kind: "choice",
+    category: "quality",
+    carries: ["bambu"],
+    names: names("Order of walls", "Wall order", "Wall Ordering"),
+    options: [
+      option("inner wall/outer wall", "Inner, then outer", ["bambu"]),
+      option("outer wall/inner wall", "Outer, then inner", ["bambu"]),
+      option("inner-outer-inner wall", "Inner, outer, inner", ["bambu"]),
+    ],
+  },
+  {
+    key: "wall_generator",
+    kind: "choice",
+    category: "quality",
+    carries: ["bambu", "prusa"],
+    names: names("Wall generator", "Perimeter generator", "Wall generator"),
+    options: [option("arachne", "Arachne", ["bambu", "prusa"]), option("classic", "Classic", ["bambu", "prusa"])],
+  },
+  {
+    key: "ironing_type",
+    kind: "choice",
+    category: "quality",
+    carries: ["bambu", "prusa"],
+    names: names("Ironing type", "Enable ironing", "Enable Ironing"),
+    options: [
+      option("no ironing", "None", ["bambu", "prusa"]),
+      option("topmost", "Topmost surface", ["bambu", "prusa"]),
+      option("top", "All top surfaces", ["bambu", "prusa"]),
+      option("solid", "All solid layers", ["bambu", "prusa"]),
+    ],
+  },
+  {
     key: "wall_loops",
     kind: "number",
-    group: "walls",
+    category: "strength",
     unit: null,
     min: 0,
     max: 30,
@@ -87,7 +149,7 @@ export const PROFILE_SETTINGS = [
   {
     key: "top_shell_layers",
     kind: "number",
-    group: "walls",
+    category: "strength",
     unit: null,
     min: 0,
     max: 50,
@@ -98,7 +160,7 @@ export const PROFILE_SETTINGS = [
   {
     key: "bottom_shell_layers",
     kind: "number",
-    group: "walls",
+    category: "strength",
     unit: null,
     min: 0,
     max: 50,
@@ -109,7 +171,7 @@ export const PROFILE_SETTINGS = [
   {
     key: "top_shell_thickness",
     kind: "number",
-    group: "walls",
+    category: "strength",
     unit: "mm",
     min: 0,
     max: 10,
@@ -118,17 +180,22 @@ export const PROFILE_SETTINGS = [
     names: names("Top shell thickness", "Minimum shell thickness · Top", "Top Thickness"),
   },
   {
-    key: "wall_generator",
+    key: "top_surface_pattern",
     kind: "choice",
-    group: "walls",
+    category: "strength",
     carries: ["bambu", "prusa"],
-    names: names("Wall generator", "Perimeter generator", "Wall generator"),
-    options: [option("arachne", "Arachne", ["bambu", "prusa"]), option("classic", "Classic", ["bambu", "prusa"])],
+    names: names("Top surface pattern", "Top fill pattern", "Top/Bottom Pattern"),
+    options: [
+      option("monotonic", "Monotonic", ["bambu", "prusa"]),
+      option("monotonicline", "Monotonic line", ["bambu", "prusa"]),
+      option("zig-zag", "Rectilinear", ["bambu", "prusa"]),
+      option("concentric", "Concentric", ["bambu", "prusa"]),
+    ],
   },
   {
     key: "sparse_infill_density",
     kind: "number",
-    group: "infill",
+    category: "strength",
     unit: "%",
     min: 0,
     max: 100,
@@ -139,7 +206,7 @@ export const PROFILE_SETTINGS = [
   {
     key: "sparse_infill_pattern",
     kind: "choice",
-    group: "infill",
+    category: "strength",
     carries: ALL,
     names: names("Sparse infill pattern", "Fill pattern", "Infill Pattern"),
     options: [
@@ -155,16 +222,64 @@ export const PROFILE_SETTINGS = [
     ],
   },
   {
+    key: "initial_layer_speed",
+    kind: "number",
+    category: "speed",
+    unit: "mm/s",
+    list: true,
+    min: 1,
+    max: 1000,
+    step: 1,
+    carries: ["bambu"],
+    names: names("Initial layer", "First layer speed", "Initial Layer Speed"),
+  },
+  {
+    key: "outer_wall_speed",
+    kind: "number",
+    category: "speed",
+    unit: "mm/s",
+    list: true,
+    min: 1,
+    max: 1000,
+    step: 1,
+    carries: ["bambu"],
+    names: names("Outer wall", "External perimeters", "Outer Wall Speed"),
+  },
+  {
+    key: "inner_wall_speed",
+    kind: "number",
+    category: "speed",
+    unit: "mm/s",
+    list: true,
+    min: 1,
+    max: 1000,
+    step: 1,
+    carries: ["bambu"],
+    names: names("Inner wall", "Perimeters", "Inner Wall Speed"),
+  },
+  {
+    key: "sparse_infill_speed",
+    kind: "number",
+    category: "speed",
+    unit: "mm/s",
+    list: true,
+    min: 1,
+    max: 1000,
+    step: 1,
+    carries: ["bambu"],
+    names: names("Sparse infill", "Infill", "Infill Speed"),
+  },
+  {
     key: "enable_support",
     kind: "switch",
-    group: "support",
+    category: "support",
     carries: ALL,
     names: names("Enable support", "Generate support material", "Generate Support"),
   },
   {
     key: "support_type",
     kind: "choice",
-    group: "support",
+    category: "support",
     carries: ["bambu", "cura"],
     names: names("Support type", "Style", "Support Structure"),
     options: [option("normal(auto)", "Normal", ["bambu", "cura"]), option("tree(auto)", "Tree", ["bambu", "cura"])],
@@ -172,7 +287,7 @@ export const PROFILE_SETTINGS = [
   {
     key: "support_threshold_angle",
     kind: "number",
-    group: "support",
+    category: "support",
     unit: "°",
     min: 0,
     max: 90,
@@ -183,14 +298,25 @@ export const PROFILE_SETTINGS = [
   {
     key: "support_on_build_plate_only",
     kind: "switch",
-    group: "support",
+    category: "support",
     carries: ALL,
     names: names("On build plate only", "Support on build plate only", "Support Placement · Touching Buildplate"),
   },
   {
+    key: "raft_layers",
+    kind: "number",
+    category: "support",
+    unit: null,
+    min: 0,
+    max: 10,
+    step: 1,
+    carries: ALL,
+    names: names("Raft layers", "Raft layers", "Build Plate Adhesion Type · Raft"),
+  },
+  {
     key: "brim_type",
     kind: "choice",
-    group: "adhesion",
+    category: "others",
     carries: ALL,
     names: names("Brim type", "Brim type", "Build Plate Adhesion Type"),
     options: [
@@ -203,7 +329,7 @@ export const PROFILE_SETTINGS = [
   {
     key: "brim_width",
     kind: "number",
-    group: "adhesion",
+    category: "others",
     unit: "mm",
     min: 0,
     max: 50,
@@ -212,83 +338,16 @@ export const PROFILE_SETTINGS = [
     names: names("Brim width", "Brim width", "Brim Width"),
   },
   {
-    key: "raft_layers",
-    kind: "number",
-    group: "adhesion",
-    unit: null,
-    min: 0,
-    max: 10,
-    step: 1,
-    carries: ALL,
-    names: names("Raft layers", "Raft layers", "Build Plate Adhesion Type · Raft"),
-  },
-  {
-    key: "seam_position",
-    kind: "choice",
-    group: "finish",
+    key: "spiral_mode",
+    kind: "switch",
+    category: "others",
     carries: ["bambu"],
-    names: names("Seam position", "Seam position", "Z Seam Alignment"),
-    options: [
-      option("aligned", "Aligned", ["bambu"]),
-      option("nearest", "Nearest", ["bambu"]),
-      option("back", "Back", ["bambu"]),
-      option("random", "Random", ["bambu"]),
-    ],
-  },
-  {
-    key: "seam_slope_type",
-    kind: "choice",
-    group: "finish",
-    carries: ["bambu"],
-    names: names("Scarf joint seam", "Scarf joint seam", "Scarf seam"),
-    options: [
-      option("none", "None", ["bambu"]),
-      option("external", "Contour", ["bambu"]),
-      option("all", "Contour and hole", ["bambu"]),
-    ],
-  },
-  {
-    key: "wall_sequence",
-    kind: "choice",
-    group: "finish",
-    carries: ["bambu"],
-    names: names("Order of walls", "Wall order", "Wall Ordering"),
-    options: [
-      option("inner wall/outer wall", "Inner, then outer", ["bambu"]),
-      option("outer wall/inner wall", "Outer, then inner", ["bambu"]),
-      option("inner-outer-inner wall", "Inner, outer, inner", ["bambu"]),
-    ],
-  },
-  {
-    key: "top_surface_pattern",
-    kind: "choice",
-    group: "finish",
-    carries: ["bambu", "prusa"],
-    names: names("Top surface pattern", "Top fill pattern", "Top/Bottom Pattern"),
-    options: [
-      option("monotonic", "Monotonic", ["bambu", "prusa"]),
-      option("monotonicline", "Monotonic line", ["bambu", "prusa"]),
-      option("zig-zag", "Rectilinear", ["bambu", "prusa"]),
-      option("concentric", "Concentric", ["bambu", "prusa"]),
-    ],
-  },
-  {
-    key: "ironing_type",
-    kind: "choice",
-    group: "finish",
-    carries: ["bambu", "prusa"],
-    names: names("Ironing type", "Enable ironing", "Enable Ironing"),
-    options: [
-      option("no ironing", "None", ["bambu", "prusa"]),
-      option("topmost", "Topmost surface", ["bambu", "prusa"]),
-      option("top", "All top surfaces", ["bambu", "prusa"]),
-      option("solid", "All solid layers", ["bambu", "prusa"]),
-    ],
+    names: names("Spiral vase", "Spiral vase", "Spiralize Outer Contour"),
   },
   {
     key: "fuzzy_skin",
     kind: "choice",
-    group: "finish",
+    category: "others",
     carries: ["bambu"],
     names: names("Fuzzy skin", "Fuzzy skin", "Fuzzy Skin"),
     options: [
@@ -296,13 +355,6 @@ export const PROFILE_SETTINGS = [
       option("external", "Contour", ["bambu"]),
       option("all", "Contour and hole", ["bambu"]),
     ],
-  },
-  {
-    key: "spiral_mode",
-    kind: "switch",
-    group: "finish",
-    carries: ["bambu"],
-    names: names("Spiral vase", "Spiral vase", "Spiralize Outer Contour"),
   },
 ] as const satisfies readonly ProfileSettingDef[];
 
@@ -653,14 +705,16 @@ export function settingProjectValue(key: ProfileSettingKey, value: ProfileValue)
 /** The profile's settings for the 3MF's project_settings.config, and their keys, which go in the project's list of
  *  changes to the process preset (different_settings_to_system) so the slicer keeps them. */
 export function profileProjectSettings(profile: StudioPrintProfile): {
-  settings: Record<string, string>;
+  settings: Record<string, string | string[]>;
   keys: string[];
 } {
-  const settings: Record<string, string> = {};
+  const settings: Record<string, string | string[]> = {};
   for (const key of PROFILE_SETTING_KEYS) {
     const value = profile.settings[key];
     if (value === undefined) continue;
-    settings[key] = settingProjectValue(key, value);
+    const written = settingProjectValue(key, value);
+    const setting = profileSetting(key)!;
+    settings[key] = setting.kind === "number" && setting.list ? [written] : written;
   }
   return { settings, keys: Object.keys(settings) };
 }

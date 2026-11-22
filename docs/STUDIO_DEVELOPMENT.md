@@ -85,7 +85,8 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   (`plainThreads` in `geometry.ts`), as CAD analyses cosmetic threads. `measureBetween` in `geometry.ts` is
   `studio_measure`.
 - **`printProfile.ts`** — a design's print profile (`print_profile`, set by `set_print_profile`): presets, and the
-  settings changed on them, under Bambu Studio's key names, each saying which kinds of slicer it reaches through the
+  settings changed on them, under Bambu Studio's key names and in its categories (a per-nozzle setting, such as a
+  speed, is written as a list), each saying which kinds of slicer it reaches through the
   slicer adapter (a test checks that against `backend/src/adapter/settings.ts`) and what each kind calls it.
   `studioThreeMf.ts` writes the settings into the 3MF's `project_settings.config` and lists their keys in
   `different_settings_to_system`, so Bambu Studio's family keeps them over its process preset and the adapter carries

@@ -4976,7 +4976,11 @@
         "material": "Material",
         "anyMaterial": "Any material",
         "settings": "Settings",
-        "addSetting": "Add a setting",
+        "slicerDefault": "Slicer default",
+        "setIt": "Set",
+        "noneCarried": "{{slicer}} reads none of these from a 3MF.",
+        "setCount_one": "{{count}} set",
+        "setCount_other": "{{count}} set",
         "reset": "Use the slicer's own",
         "nativeName": "In {{slicer}}: {{name}}",
         "notCarried": "{{slicer}} doesn't read this from a 3MF: set it there.",
@@ -4986,13 +4990,12 @@
         "aiPrompt": "Choose a print profile for this design from what it's for: what I asked for and the descriptions of the models it was made from. Set it with the print profile tool, and tell me why in one sentence.",
         "aiPromptSlicer": "I slice with {{name}} (slicer id {{id}}).",
         "aiPromptPrinter": "My printer is the {{name}} (printer id {{id}}) with a {{nozzle}} mm nozzle.",
-        "group": {
-          "layers": "Layers",
-          "walls": "Walls and shells",
-          "infill": "Infill",
-          "support": "Supports",
-          "adhesion": "Bed adhesion",
-          "finish": "Finish"
+        "category": {
+          "quality": "Quality",
+          "strength": "Strength",
+          "speed": "Speed",
+          "support": "Support",
+          "others": "Others"
         },
         "setting": {
           "layer_height": "Layer height",
@@ -5003,6 +5006,10 @@
           "wall_generator": "Wall generator",
           "sparse_infill_density": "Infill density",
           "sparse_infill_pattern": "Infill pattern",
+          "initial_layer_speed": "First layer speed",
+          "outer_wall_speed": "Outer wall speed",
+          "inner_wall_speed": "Inner wall speed",
+          "sparse_infill_speed": "Infill speed",
           "enable_support": "Supports",
           "support_type": "Support type",
           "support_threshold_angle": "Support angle",
