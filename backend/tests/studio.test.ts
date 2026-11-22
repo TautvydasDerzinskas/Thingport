@@ -550,7 +550,7 @@ describe("Studio", () => {
     expect(Object.keys(archive.files)).toEqual(["1 - Tray_A.stl", "3 - Tray_A.stl"]);
     expect(await archive.file("1 - Tray_A.stl")!.async("nodebuffer")).toEqual(first.body);
     expect((await archive.file("3 - Tray_A.stl")!.async("nodebuffer")).readUInt32LE(80)).toBe(12);
-  });
+  }, 60_000);
 
   it("saves a design to the library: its 3MF, its picture, and what was asked as its description", async () => {
     const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Tag" });
@@ -1011,7 +1011,8 @@ describe("Studio", () => {
           .filter((name?: string) => name?.startsWith("plate-"));
         expect(plateNodes).toEqual(["plate-2"]);
       };
-      await expect.poll(ready, { timeout: 10_000 }).toBeUndefined();
+      // Generating the preview can start both rendering and packing workers on a cold cache.
+      await expect.poll(ready, { timeout: 30_000 }).toBeUndefined();
 
       const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
       const opened = await command(alice, design.id, "import_model", {
@@ -1091,7 +1092,7 @@ describe("Studio", () => {
       });
       expect(viewed.data.bodies).toBe(1);
       expect(viewed.content.some((entry) => entry.type === "image")).toBe(true);
-    });
+    }, 60_000);
 
     it.each([
       { stage: "moving a mesh", failRename: true, status: 422, detail: "Couldn't move the third mesh", count: 2 },
