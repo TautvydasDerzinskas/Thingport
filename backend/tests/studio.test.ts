@@ -512,6 +512,46 @@ describe("Studio", () => {
     expect(mesh).not.toMatch(/#ff0000/i);
   });
 
+  it("exports a plate as STL and packages each populated plate into an STL ZIP", async () => {
+    const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Test STL" });
+    const base = `/api/studio/designs/${design.id}/export`;
+    const download = (format: string, plate = "-", token = alice) =>
+      request(app).get(`${base}/${format}/-/-/-/${plate}/Test`).set(auth(token)).buffer(true).parse(readBinary);
+    const box = { width: 12, depth: 12, height: 5 };
+    expect((await command(alice, design.id, "rename_plate", { plate_id: "plate-1", name: "Tray/A" })).status).toBe(200);
+    expect((await command(alice, design.id, "add_box", { ...box, color: "#ff0000" })).status).toBe(200);
+    const one = await download("stl-zip");
+    expect(one.status).toBe(200);
+    expect(one.headers["content-type"]).toBe("application/zip");
+    expect(Object.keys((await JSZip.loadAsync(one.body)).files)).toEqual(["1 - Tray_A.stl"]);
+
+    const spare = (await command(alice, design.id, "create_plate", { name: "Spare" })).body.created[0];
+    const second = (await command(alice, design.id, "create_plate", { name: "Tray/A" })).body.created[0];
+    expect((await command(alice, design.id, "add_box", { ...box, position: [20, 0, 0] })).status).toBe(200);
+    expect((await command(alice, design.id, "add_box", { ...box, plate_id: second })).status).toBe(200);
+    const hidden = (await command(alice, design.id, "add_box", { ...box, plate_id: second })).body.created[0];
+    expect((await command(alice, design.id, "set_visibility", { feature_id: hidden, visible: false })).status).toBe(
+      200,
+    );
+
+    const first = await download("stl", "plate-1");
+    expect(first.status).toBe(200);
+    expect(first.headers["content-type"]).toBe("model/stl");
+    expect(first.headers["content-disposition"]).toContain("Test STL - Tray_A.stl");
+    expect(first.body.readUInt32LE(80)).toBe(24);
+    expect((await download("stl", spare)).status).toBe(400);
+    expect((await download("stl", "plate-999")).status).toBe(400);
+    expect((await download("stl-zip", "-", bob)).status).toBe(404);
+
+    const zipped = await download("stl-zip");
+    expect(zipped.status).toBe(200);
+    expect(zipped.headers["content-disposition"]).toContain("Test STL.zip");
+    const archive = await JSZip.loadAsync(zipped.body);
+    expect(Object.keys(archive.files)).toEqual(["1 - Tray_A.stl", "3 - Tray_A.stl"]);
+    expect(await archive.file("1 - Tray_A.stl")!.async("nodebuffer")).toEqual(first.body);
+    expect((await archive.file("3 - Tray_A.stl")!.async("nodebuffer")).readUInt32LE(80)).toBe(12);
+  });
+
   it("saves a design to the library: its 3MF, its picture, and what was asked as its description", async () => {
     const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Tag" });
     const empty = await request(app).post(`/api/studio/designs/${design.id}/save-to-library`).set(auth(alice)).send({});
@@ -1007,6 +1047,14 @@ describe("Studio", () => {
       const archive = await JSZip.loadAsync(exported.body);
       const settings = await archive.file("Metadata/model_settings.config")!.async("string");
       expect(settings.match(/<plate>/g)).toHaveLength(2);
+      const stls = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/stl-zip/-/-/-/-/Lazy.zip`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse(readBinary);
+      expect(stls.status).toBe(200);
+      const stlArchive = await JSZip.loadAsync(stls.body);
+      expect(Object.keys(stlArchive.files)).toEqual(["1 - Plate 1.stl", "2 - Plate 2.stl"]);
       const afterExport = await request(app).get(`/api/studio/designs/${design.id}`).set(auth(alice));
       expect(afterExport.body.document.features).toEqual([]);
       expect(afterExport.body.version).toBe(opened.body.design.version);

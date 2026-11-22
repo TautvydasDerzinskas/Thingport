@@ -4382,6 +4382,7 @@
         "color": "Body color",
         "clearColor": "Clear",
         "applyColor": "Apply",
+        "exportStl": "Export as STL",
         "openSlicer": "Open with slicer",
         "slicer": "Slicer",
         "printer": "Printer and nozzle",
@@ -4392,12 +4393,17 @@
         "open": "Open"
       },
       "design": {
-        "none": "No design",
         "new": "New design",
         "open": "Open…",
         "openTitle": "Open a design",
         "rename": "Rename design",
-        "export": "Download design",
+        "save": "Save design",
+        "export": {
+          "title": "Export",
+          "format": "File format",
+          "threeMf": "Download one 3MF with all populated plates and their colors.",
+          "stlZip": "Download a ZIP with one STL per populated plate."
+        },
         "delete": "Delete design",
         "deleteTitle": "Delete “{{name}}”?",
         "deleteMessage": "The design and its history are deleted for good.",
@@ -4409,6 +4415,7 @@
         "features_one": "{{count}} feature",
         "features_other": "{{count}} features",
         "saveToLibrary": "Save to Thingport",
+        "libraryModelName": "Model name",
         "saving": "Saving to Thingport…",
         "saved": "Saved “{{name}}” to your library",
         "openSaved": "Open"

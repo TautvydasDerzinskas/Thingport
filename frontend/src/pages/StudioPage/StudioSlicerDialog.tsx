@@ -33,8 +33,8 @@ import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import type { RunCommand } from "./useStudioDesign";
 import { plateLabel } from "./labels";
 
-export function studioExportName(name: string) {
-  return `${name.replace(/[\\/:*?"<>|]+/g, "-") || "design"}.3mf`;
+export function studioExportName(name: string, extension: "3mf" | "stl" | "zip" = "3mf") {
+  return `${name.replace(/[\\/:*?"<>|]+/g, "-") || "design"}.${extension}`;
 }
 
 export default function StudioSlicerDialog({

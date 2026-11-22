@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parentPort, workerData } from "node:worker_threads";
+import JSZip from "jszip";
 import sharp from "sharp";
 import type { ManifoldToplevel } from "manifold-3d";
+import { normalizeFileName } from "../files/names";
 import {
   LIMITS,
   MAX_PLATES,
@@ -52,6 +54,7 @@ import {
 
 export const STUDIO_VIEWS = ["iso", "top", "front", "right", "back", "left", "bottom"] as const;
 export type StudioView = (typeof STUDIO_VIEWS)[number];
+export type StudioExportFormat = "auto" | "3mf" | "stl" | "stl-zip";
 
 // Z is up. The front is -Y, so "iso" looks from the front right, above, as the page opens.
 const CAMERAS: Record<StudioView, RenderCamera> = {
@@ -86,7 +89,7 @@ export type StudioWorkerInput =
       document: StudioDocument;
       assetDir: string;
       name: string;
-      format: "auto" | "3mf";
+      format: StudioExportFormat;
       plate?: string;
       target?: StudioExportTarget;
     }
@@ -124,7 +127,7 @@ export type StudioWorkerResult =
   | { status: "checked"; check: PrintCheck }
   | { status: "between"; between: ReturnType<typeof measureBetween> }
   | { status: "traced"; traced: Traced }
-  | { status: "exported"; bytes: Uint8Array; format: "stl" | "3mf" }
+  | { status: "exported"; bytes: Uint8Array; format: "stl" | "3mf" | "zip" }
   | { status: "empty" }
   /** A file that can't come in, and why, in words for whoever asked. */
   | { status: "refused"; reason: string; code?: string }
@@ -430,9 +433,29 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
       : [];
   });
   if (!parts.length) return { status: "empty" };
-  if (input.format === "auto" && parts.length === 1 && !parts[0].color && studioPlates(input.document).length === 1) {
-    const bytes = binaryStl([worldTriangles(parts[0].body)]);
+  const platesInDesign = studioPlates(input.document);
+  const autoStl = input.format === "auto" && parts.length === 1 && !parts[0].color && platesInDesign.length === 1;
+  if (input.format === "stl" || autoStl) {
+    const bytes = binaryStl(parts.map(({ body }) => worldTriangles(body)));
     return bytes ? { status: "exported", bytes, format: "stl" } : { status: "empty" };
+  }
+  if (input.format === "stl-zip") {
+    const zip = new JSZip();
+    for (const [index, plate] of platesInDesign.entries()) {
+      const onPlate = parts.filter((part) => part.plateId === plate.id);
+      const bytes = binaryStl(onPlate.map(({ body }) => worldTriangles(body)));
+      if (!bytes) continue;
+      // The number keeps same-named plates distinct, even on case-insensitive file systems.
+      const name = normalizeFileName(`${index + 1} - ${plate.name}.stl`).replace(/[:*?"<>|]+/g, "-");
+      zip.file(name, bytes);
+    }
+    if (!Object.keys(zip.files).length) return { status: "empty" };
+    const archive = await zip.generateAsync({
+      type: "uint8array",
+      compression: "DEFLATE",
+      compressionOptions: { level: 1 },
+    });
+    return { status: "exported", format: "zip", bytes: archive };
   }
   const tooDetailed = parts.find(({ body }) => body.triangles > maxBodyTriangles);
   if (tooDetailed)
@@ -447,7 +470,7 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     if (bad) return { status: "refused", reason: `${bad.name} is outside the build volume for ${recipe.preset}.` };
   }
   const plates = [];
-  for (const plate of studioPlates(input.document)) {
+  for (const plate of platesInDesign) {
     const onPlate = parts.filter((part) => part.plateId === plate.id);
     if (!onPlate.length) continue;
     const thumbnail = await studioPngRenderer(onPlate, 256, STUDIO_3MF_DEFAULT_COLOR)("iso");

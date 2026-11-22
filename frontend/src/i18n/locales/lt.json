@@ -4677,6 +4677,7 @@
         "color": "Kūno spalva",
         "clearColor": "Išvalyti",
         "applyColor": "Taikyti",
+        "exportStl": "Eksportuoti kaip STL",
         "openSlicer": "Atidaryti pjaustyklėje",
         "slicer": "Pjaustyklė",
         "printer": "Spausdintuvas ir antgalis",
@@ -4687,12 +4688,17 @@
         "open": "Atidaryti"
       },
       "design": {
-        "none": "Nėra projekto",
         "new": "Naujas projektas",
         "open": "Atidaryti…",
         "openTitle": "Atidaryti projektą",
         "rename": "Pervadinti projektą",
-        "export": "Atsisiųsti dizainą",
+        "save": "Išsaugoti dizainą",
+        "export": {
+          "title": "Eksportuoti",
+          "format": "Failo formatas",
+          "threeMf": "Atsisiųskite vieną 3MF failą su visomis užpildytomis plokštėmis ir jų spalvomis.",
+          "stlZip": "Atsisiųskite ZIP archyvą su vienu STL failu kiekvienai užpildytai plokštei."
+        },
         "delete": "Ištrinti projektą",
         "deleteTitle": "Ištrinti „{{name}}“?",
         "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
@@ -4705,6 +4711,7 @@
         "features_few": "{{count}} elementai",
         "features_other": "{{count}} elementų",
         "saveToLibrary": "Išsaugoti į Thingport",
+        "libraryModelName": "Modelio pavadinimas",
         "saving": "Išsaugoma į Thingport…",
         "saved": "„{{name}}“ išsaugotas jūsų bibliotekoje",
         "openSaved": "Atidaryti"

@@ -4580,6 +4580,7 @@
         "color": "Couleur du corps",
         "clearColor": "Effacer",
         "applyColor": "Appliquer",
+        "exportStl": "Exporter en STL",
         "openSlicer": "Ouvrir dans le trancheur",
         "slicer": "Trancheur",
         "printer": "Imprimante et buse",
@@ -4590,12 +4591,17 @@
         "open": "Ouvrir"
       },
       "design": {
-        "none": "Aucune conception",
         "new": "Nouvelle conception",
         "open": "Ouvrir…",
         "openTitle": "Ouvrir une conception",
         "rename": "Renommer la conception",
-        "export": "Télécharger le modèle",
+        "save": "Enregistrer le modèle",
+        "export": {
+          "title": "Exporter",
+          "format": "Format de fichier",
+          "threeMf": "Téléchargez un fichier 3MF avec tous les plateaux occupés et leurs couleurs.",
+          "stlZip": "Téléchargez une archive ZIP avec un fichier STL par plateau occupé."
+        },
         "delete": "Supprimer la conception",
         "deleteTitle": "Supprimer « {{name}} » ?",
         "deleteMessage": "La conception et son historique sont supprimés définitivement.",
@@ -4608,6 +4614,7 @@
         "features_many": "{{count}} éléments",
         "features_other": "{{count}} éléments",
         "saveToLibrary": "Enregistrer dans Thingport",
+        "libraryModelName": "Nom du modèle",
         "saving": "Enregistrement dans Thingport…",
         "saved": "« {{name}} » enregistré dans votre bibliothèque",
         "openSaved": "Ouvrir"

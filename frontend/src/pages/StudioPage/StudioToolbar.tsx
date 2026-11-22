@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { keyframes } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
@@ -12,17 +12,13 @@ import MenuItem from "@mui/material/MenuItem";
 import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
 import AlignHorizontalCenterIcon from "@mui/icons-material/AlignHorizontalCenter";
 import AspectRatioIcon from "@mui/icons-material/AspectRatio";
 import CenterFocusStrongOutlinedIcon from "@mui/icons-material/CenterFocusStrongOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
-import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import HighlightAltOutlinedIcon from "@mui/icons-material/HighlightAltOutlined";
@@ -31,6 +27,7 @@ import PanToolOutlinedIcon from "@mui/icons-material/PanToolOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
 import RedoIcon from "@mui/icons-material/Redo";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import GestureOutlinedIcon from "@mui/icons-material/GestureOutlined";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import WallpaperOutlinedIcon from "@mui/icons-material/WallpaperOutlined";
@@ -86,7 +83,7 @@ type Props = {
   handMode: boolean;
   handModeSuspended: boolean;
   onToggleHandMode: () => void;
-  designName: string | null;
+  hasDesign: boolean;
   canUndo: boolean;
   canRedo: boolean;
   /** Booleans need two bodies or more, selected; the first is the one the others act on. */
@@ -102,19 +99,15 @@ type Props = {
   /** While a sketch is being drawn: its plane, and the tool drawing it. */
   sketch: { plane: SketchPlane; tool: SketchTool } | null;
   busy: boolean;
-  onNewDesign: () => void;
-  onOpenDesign: () => void;
-  onRenameDesign: () => void;
-  onExport: () => void;
-  onOpenSlicer: () => void;
+  exporting: boolean;
+  saving: boolean;
+  onSaveDesign: () => void;
   /** Saves the design to the library as a model. */
   onSaveToLibrary: () => void;
-  /** Opens the design's parameters, the named numbers its sizes can follow. */
   onParameters: () => void;
   /** Whether the measure tool is on, and turns it on or off. */
   measuring: boolean;
   onMeasure: () => void;
-  onDeleteDesign: () => void;
   onAdd: (primitive: Primitive) => void;
   onStartSketch: (plane: Exclude<SketchPlane, "FACE">) => void;
   onSketchTool: (tool: SketchTool) => void;
@@ -208,26 +201,20 @@ const Gap = () => <Divider orientation="vertical" flexItem sx={{ mx: 0.75, my: 0
 const slideIn = keyframes`from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; }`;
 
 export default function StudioToolbar(props: Props) {
-  const { t } = useTranslation("app");
-  const [designMenu, setDesignMenu] = useState<HTMLElement | null>(null);
+  const { t } = useTranslation(["app", "common"]);
+  const saveMenuId = useId();
+  const [saveMenu, setSaveMenu] = useState<HTMLElement | null>(null);
   const [sketchMenu, setSketchMenu] = useState<HTMLElement | null>(null);
   const [viewMenu, setViewMenu] = useState<HTMLElement | null>(null);
   const [shapesMenu, setShapesMenu] = useState<HTMLElement | null>(null);
   const [modifyMenu, setModifyMenu] = useState<HTMLElement | null>(null);
-  const noDesign = props.designName === null;
+  const noDesign = !props.hasDesign;
+  const saveLabel = t("common:save");
 
-  const menuItem = (icon: React.ReactNode, label: string, onClick: () => void, close: () => void) => (
-    <MenuItem
-      onClick={() => {
-        close();
-        onClick();
-      }}
-    >
-      <ListItemIcon>{icon}</ListItemIcon>
-      <ListItemText>{label}</ListItemText>
-    </MenuItem>
-  );
-  const closeDesign = () => setDesignMenu(null);
+  const save = (action: () => void) => () => {
+    setSaveMenu(null);
+    action();
+  };
 
   return (
     <Box
@@ -241,7 +228,7 @@ export default function StudioToolbar(props: Props) {
         py: 0.5,
         minHeight: 48,
         borderBottom: 1,
-        // The design menu and Edit button sit on the view in browse mode.
+        // The Edit and Save buttons sit on the view in browse mode.
         borderColor: props.editing ? "divider" : "transparent",
         transition: "border-color 200ms",
         "@media (prefers-reduced-motion: reduce)": { transition: "none" },
@@ -261,77 +248,41 @@ export default function StudioToolbar(props: Props) {
           <EditOutlinedIcon />
         </ToggleButton>
       </Tooltip>
-      <Button
-        size="small"
-        color="inherit"
-        endIcon={<KeyboardArrowDownIcon />}
-        onClick={(event) => setDesignMenu(event.currentTarget)}
-        aria-haspopup="menu"
-        aria-expanded={Boolean(designMenu)}
-        sx={{ textTransform: "none", fontWeight: 600, maxWidth: 220, flexShrink: 0 }}
-      >
-        <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-          {props.designName ?? t("studio.design.none")}
-        </Typography>
-      </Button>
-      <Menu anchorEl={designMenu} open={Boolean(designMenu)} onClose={closeDesign}>
-        {menuItem(<AddBoxOutlinedIcon fontSize="small" />, t("studio.design.new"), props.onNewDesign, closeDesign)}
-        {menuItem(
-          <FolderOpenOutlinedIcon fontSize="small" />,
-          t("studio.design.open"),
-          props.onOpenDesign,
-          closeDesign,
-        )}
-        {!noDesign &&
-          menuItem(
-            <DriveFileRenameOutlineOutlinedIcon fontSize="small" />,
-            t("studio.design.rename"),
-            props.onRenameDesign,
-            closeDesign,
-          )}
-        {!noDesign &&
-          menuItem(
-            <TuneOutlinedIcon fontSize="small" />,
-            t("studio.parameters.title"),
-            props.onParameters,
-            closeDesign,
-          )}
-        {!noDesign &&
-          menuItem(
-            <FileDownloadOutlinedIcon fontSize="small" />,
-            t("studio.design.export"),
-            props.onExport,
-            closeDesign,
-          )}
-        {!noDesign &&
-          menuItem(
-            <VideocamOutlinedIcon fontSize="small" />,
-            t("studio.plates.openSlicer"),
-            props.onOpenSlicer,
-            closeDesign,
-          )}
-        {!noDesign &&
-          menuItem(
-            <LibraryAddOutlinedIcon fontSize="small" />,
-            t("studio.design.saveToLibrary"),
-            props.onSaveToLibrary,
-            closeDesign,
-          )}
-        {!noDesign && <Divider />}
-        {!noDesign && (
-          <MenuItem
-            onClick={() => {
-              closeDesign();
-              props.onDeleteDesign();
-            }}
-            sx={{ color: "error.main" }}
+      <Tooltip title={saveLabel}>
+        <span>
+          <IconButton
+            size="small"
+            onClick={(event) => setSaveMenu(event.currentTarget)}
+            disabled={noDesign}
+            aria-label={saveLabel}
+            aria-haspopup="menu"
+            aria-expanded={Boolean(saveMenu)}
+            aria-controls={saveMenu ? saveMenuId : undefined}
+            sx={{ borderRadius: 1.5 }}
           >
-            <ListItemIcon sx={{ color: "inherit" }}>
-              <DeleteOutlineIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t("studio.design.delete")}</ListItemText>
-          </MenuItem>
-        )}
+            <SaveOutlinedIcon />
+            <KeyboardArrowDownIcon sx={{ fontSize: "14px !important", ml: -0.25 }} />
+          </IconButton>
+        </span>
+      </Tooltip>
+      <Menu
+        anchorEl={saveMenu}
+        open={Boolean(saveMenu)}
+        onClose={() => setSaveMenu(null)}
+        slotProps={{ list: { id: saveMenuId, "aria-label": saveLabel } }}
+      >
+        <MenuItem onClick={save(props.onSaveDesign)} disabled={noDesign || props.exporting}>
+          <ListItemIcon>
+            <FileDownloadOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("studio.design.save")}</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={save(props.onSaveToLibrary)} disabled={noDesign || props.saving}>
+          <ListItemIcon>
+            <LibraryAddOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("studio.design.saveToLibrary")}</ListItemText>
+        </MenuItem>
       </Menu>
       {props.editing && (
         <Box
@@ -356,6 +307,10 @@ export default function StudioToolbar(props: Props) {
             onClick={props.onRedo}
           >
             <RedoIcon />
+          </Tool>
+          <Gap />
+          <Tool label={t("studio.parameters.title")} disabled={noDesign} onClick={props.onParameters}>
+            <TuneOutlinedIcon />
           </Tool>
           <Gap />
 

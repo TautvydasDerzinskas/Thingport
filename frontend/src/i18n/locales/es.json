@@ -4567,6 +4567,7 @@
         "color": "Color del cuerpo",
         "clearColor": "Quitar",
         "applyColor": "Aplicar",
+        "exportStl": "Exportar como STL",
         "openSlicer": "Abrir con laminador",
         "slicer": "Laminador",
         "printer": "Impresora y boquilla",
@@ -4577,12 +4578,17 @@
         "open": "Abrir"
       },
       "design": {
-        "none": "Sin diseño",
         "new": "Nuevo diseño",
         "open": "Abrir…",
         "openTitle": "Abrir un diseño",
         "rename": "Cambiar nombre del diseño",
-        "export": "Descargar diseño",
+        "save": "Guardar diseño",
+        "export": {
+          "title": "Exportar",
+          "format": "Formato de archivo",
+          "threeMf": "Descarga un archivo 3MF con todas las placas ocupadas y sus colores.",
+          "stlZip": "Descarga un ZIP con un archivo STL por cada placa ocupada."
+        },
         "delete": "Eliminar diseño",
         "deleteTitle": "¿Eliminar «{{name}}»?",
         "deleteMessage": "El diseño y su historial se eliminan para siempre.",
@@ -4595,6 +4601,7 @@
         "features_many": "{{count}} elementos",
         "features_other": "{{count}} elementos",
         "saveToLibrary": "Guardar en Thingport",
+        "libraryModelName": "Nombre del modelo",
         "saving": "Guardando en Thingport…",
         "saved": "«{{name}}» guardado en tu biblioteca",
         "openSaved": "Abrir"

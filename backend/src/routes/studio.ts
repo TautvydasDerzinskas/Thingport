@@ -198,7 +198,7 @@ router.get(
 );
 
 const exportSchema = z.object({
-  format: z.enum(["auto", "3mf"]),
+  format: z.enum(["auto", "3mf", "stl", "stl-zip"]),
   slicer: z.string().regex(/^[a-z0-9-]{1,40}$/),
   printer: z.string().regex(/^[a-z0-9-]{1,120}$/),
   nozzle: z.string().regex(/^(?:-|[A-Za-z]{0,3}\d+(?:\.\d+)?)$/),
