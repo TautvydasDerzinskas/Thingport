@@ -1,11 +1,12 @@
-import path from "node:path";
-import { Router, type Request } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { prisma } from "../db";
+import type { OpenedFile } from "../modelFiles/storageFs";
 import { asyncHandler } from "../utils/asyncHandler";
 import { attachmentDisposition, HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
+import { handlePath } from "../services/fileReuse";
 import { getPublicUrl } from "../services/settingsService";
 import { sendPlacementSchema, sendTargetInputSchema, sendTargetUpdateSchema } from "../services/sendTargetFormat";
 import {
@@ -14,6 +15,7 @@ import {
   exportSendTargets,
   fileFromGrant,
   importSendTargets,
+  openFileToSend,
   placeSendTarget,
   listSendTargets,
   sendToTarget,
@@ -31,18 +33,28 @@ async function instanceOrigin(req: Request): Promise<string> {
   return `${req.protocol}://${req.get("host")}`;
 }
 
+/** Sends an open file by its handle (Fs 2): the bytes that were opened, whatever is at their path by now, with send's
+ *  Range, ETag and 304 kept. Closes the handle once it's sent; errors go on as sendFile's own do. */
+function sendOpened(res: Response, next: NextFunction, opened: OpenedFile): void {
+  res.sendFile(handlePath(opened.handle), (err?: NodeJS.ErrnoException) => {
+    void opened.handle.close().catch(() => undefined);
+    if (err && err.code !== "ECONNABORTED" && err.syscall !== "write") next(err);
+  });
+}
+
 // A file a Send to link names, by its signed grant: no sign-in, as whatever follows the link has none. Mounted before
 // the routers that sign every path in.
 export const sendFileRoutes = Router();
 sendFileRoutes.get(
   "/send-file/:grant/:filename",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     const file = await fileFromGrant(String(req.params.grant));
+    const opened = await openFileToSend(file, "Not found");
     res.setHeader("Content-Type", file.mime);
     // A plain name where it is one, and the whole name as UTF-8 beside it where it isn't.
     res.setHeader("Content-Disposition", attachmentDisposition(file.filename));
     res.setHeader("Cache-Control", "private, no-store");
-    res.sendFile(path.resolve(file.path));
+    sendOpened(res, next, opened);
   }),
 );
 
