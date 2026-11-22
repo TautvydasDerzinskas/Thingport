@@ -104,5 +104,17 @@
   "unused.title": "Невыкарыстаная прастора",
   "wall.height": "Вышыня",
   "wall.title": "Памер сцяны",
-  "wall.width": "Шырыня"
+  "wall.width": "Шырыня",
+  "parts.tiles": "Пліткі",
+  "parts.optional": "Неабавязкова",
+  "parts.count": "Плітак: {count}",
+  "parts.empty": "Дэталяў пакуль няма.",
+  "error.largeTitle": "Сцяна завялікая",
+  "error.large": "Спатрэбіцца каля {estimate} плітак. Праверце памеры і адзінкі вымярэння або выберыце большую плітку (мяжа: {limit} плітак).",
+  "error.dimensionsTitle": "Няправільныя памеры",
+  "error.dimensions": "Увядзіце шырыню і вышыню больш за нуль.",
+  "error.smallTitle": "Плітка замалая",
+  "error.small": "Для гэтага мацавання патрэбны пліткі большыя за {size}×{size}.",
+  "error.noFitTitle": "Ніводная плітка не змяшчаецца",
+  "error.noFit": "Для плітак {size}×{size} шырыня і вышыня сцяны павінны быць не менш за {required}. Выберыце меншую плітку."
 }

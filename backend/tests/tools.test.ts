@@ -320,6 +320,54 @@ describe("installing", () => {
     expect((await request(app).get("/api/admin/tools").set(auth(memberToken))).status).toBe(403);
   });
 
+  it("disables a repository tool without removing its data or model copies, even across updates", async () => {
+    writeRepo();
+    const admin = auth(adminToken);
+    const member = auth(memberToken);
+    const availability = "/api/admin/tools/planner/availability";
+    const catalog = async () => (await request(app).get("/api/admin/tools").set(admin)).body.tools[0].installed;
+    expect((await request(app).patch(availability).set(admin).send({ enabled: false })).status).toBe(404);
+    const toolId = await install();
+    const storage = `/api/tools/${toolId}/storage/preferences`;
+    const collection = await prisma.collection.findFirstOrThrow({ where: { userId: memberId, toolId } });
+    expect(await catalog()).toMatchObject({ id: toolId, enabled: true });
+    expect((await request(app).get("/api/tools/status").set(member)).body.ids).toEqual([toolId]);
+    expect(
+      (
+        await request(app)
+          .put(storage)
+          .set(member)
+          .send({ value: { layout: "wide" } })
+      ).status,
+    ).toBe(204);
+    expect((await request(app).patch(availability).set(member).send({ enabled: false })).status).toBe(403);
+    expect((await request(app).patch(availability).set(admin).send({ enabled: "false" })).status).toBe(400);
+
+    expect((await request(app).patch(availability).set(admin).send({ enabled: false })).status).toBe(204);
+    expect(await catalog()).toMatchObject({ id: toolId, enabled: false, models: { ready: 2 } });
+    expect((await request(app).get("/api/tools/status").set(member)).body.ids).toEqual([]);
+    for (const headers of [member, admin]) {
+      expect((await request(app).get("/api/tools").set(headers)).body.tools).toEqual([]);
+      const read = await request(app).get(storage).set(headers);
+      expect(read.status).toBe(403);
+      expect(read.body.code).toBe("TOOL_DISABLED");
+      expect((await request(app).get(`/api/tools/${toolId}/shared`).set(headers)).status).toBe(403);
+      expect((await request(app).get(`/api/tools/${toolId}/models`).set(headers)).status).toBe(403);
+    }
+    expect((await request(app).get(`/api/prints?collection_id=${collection.id}`).set(member)).body).toHaveLength(2);
+
+    writeRepo("1.0.1");
+    expect(await install()).toBe(toolId);
+    expect(await catalog()).toMatchObject({ id: toolId, enabled: false, version: "1.0.1" });
+
+    expect((await request(app).patch(availability).set(admin).send({ enabled: true })).status).toBe(204);
+    expect((await request(app).get("/api/tools").set(member)).body.tools[0]).toMatchObject({
+      id: toolId,
+      collectionId: collection.id,
+    });
+    expect((await request(app).get(storage).set(member)).body).toMatchObject({ value: { layout: "wide" } });
+  });
+
   it("gives every user a fixed collection of the tool's models, listed last", async () => {
     writeRepo();
     const toolId = await install();

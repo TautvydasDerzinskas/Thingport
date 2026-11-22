@@ -1493,7 +1493,7 @@
                 bambuSettings = extractBambuSettings(parsed);
                 logLine(
                     log,
-                    `Extracted walls=${bambuSettings.wall_loops || "default"}, layer=${bambuSettings.layer_height || "default"}, line width=${bambuSettings.line_width || "default"}, infill=${bambuSettings.sparse_infill_density || "default"}`
+                    { key: "log.extracted", vars: { walls: bambuSettings.wall_loops || null, layer: bambuSettings.layer_height || null, width: bambuSettings.line_width || null, infill: bambuSettings.sparse_infill_density || null } }
                 );
             } catch (e) {
                 logLine(log, { key: "log.badProjectSettings" });
@@ -1574,7 +1574,7 @@
             );
             logLine(
                 log,
-                `Wrote per-object filament/extruder assignments and ${flattened.plates.length} plate(s).`
+                { key: "log.wroteAssignments", vars: { plates: flattened.plates.length } }
             );
         }
 

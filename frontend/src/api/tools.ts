@@ -129,6 +129,7 @@ export type AdminTool = {
   installed: {
     id: string;
     version: string;
+    enabled: boolean;
     installedAt: string;
     updatedAt: string;
     updateAvailable: boolean;
@@ -170,6 +171,12 @@ export const toolsApi = {
   list: async (): Promise<{ access: ToolAccess; tools: Tool[] }> => {
     const res = await fetch(`${apiBase()}/tools`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to load the tools");
+    return res.json();
+  },
+
+  status: async (): Promise<{ access: ToolAccess; ids: string[] }> => {
+    const res = await fetch(`${apiBase()}/tools/status`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to check tool availability");
     return res.json();
   },
 
@@ -334,6 +341,14 @@ export const toolsApi = {
     });
     if (!res.ok) return failed(res, "Failed to import the tool's models");
     return res.json();
+  },
+
+  setEnabled: async (slug: string, enabled: boolean): Promise<void> => {
+    const res = await fetch(`${apiBase()}/admin/tools/${encodeURIComponent(slug)}/availability`, {
+      method: "PATCH",
+      ...json({ enabled }),
+    });
+    if (!res.ok) return failed(res, "Failed to change tool availability");
   },
 
   uninstall: async (slug: string): Promise<void> => {

@@ -41,9 +41,9 @@
   "list.and": " y ",
   "list.biggestFirst": "los más grandes primero",
   "list.board": "Panel {cols} × {rows}",
+  "list.boardLabel": "{cols} × {rows} agujeros, {size}",
   "list.boardWord.one": "panel",
   "list.boardWord.other": "paneles",
-  "list.boardLabel": "{cols} × {rows} agujeros, {size}",
   "list.boards": "Paneles",
   "list.boardsFrom": "Paneles",
   "list.buy": "Comprar",
@@ -104,6 +104,7 @@
   "plans.kept": "Guardado en la herramienta, para ti",
   "plans.nameThis": "Dale nombre a esta pared",
   "plans.open": "Abrirlo",
+  "plans.opened": "Abierto «{name}»",
   "plans.save": "Guardarlo",
   "plans.saveThe": "Guardar el plano",
   "plans.savedInTool": "El plano está guardado en la herramienta",
@@ -130,5 +131,6 @@
   "view.mountsAria": "Mostrar los puntos de anclaje",
   "view.plan": "El plano",
   "view.zoomIn": "Acercar",
-  "view.zoomOut": "Alejar"
+  "view.zoomOut": "Alejar",
+  "plans.deleteBody": "«{name}» se eliminará de la herramienta. Lo guardado en la biblioteca permanecerá."
 }

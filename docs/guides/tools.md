@@ -97,6 +97,23 @@ to open it; its **⋮** menu, or a right-click, also deletes the note.
   chip means the repository has a newer version, which one click takes, and a green **Latest** that it hasn't; neither
   shows while the repository can't be read. Right-click an installed tool to **Open** it, **Fetch missing models** when
   some haven't come in, or **Uninstall** it.
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:367b8bd27f1de72a23cd173ae7dc80ab5a343c916382c26774e57bc401be6ad3 -->
+
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:de070da617eb8f94630643c703223eb5c1f774d650131d921c0177b7fd1b13b1 -->
+
+- **Enable or disable a tool**: choose **Disable tool** from its right-click menu or its details. Its icon stays
+  coloured with a pause badge. Disabled tools stay installed, with their saved data and imported models intact. Choose
+  **Enable tool** to make one available again.
+
+<!-- /coderabbit-ai-generated:v1 -->
+
+<!-- /coderabbit-ai-generated:v1 -->
+
 - **Users' own tools**: the tools users made, and whose they are.
 
 ### Tools that bring models

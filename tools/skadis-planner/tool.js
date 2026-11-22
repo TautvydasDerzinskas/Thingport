@@ -1719,7 +1719,7 @@ export default async function mount(thingport) {
           userView = false;
           sheets.projects.close();
           update();
-          ui.toast(`Opened “${project.name}”`, "success");
+          ui.toast(t("plans.opened", { name: project.name }), "success");
         });
         button(t("plans.duplicate"), ICONS.copy, async () => {
           projects.unshift({
@@ -1738,7 +1738,7 @@ export default async function mount(thingport) {
           async () => {
             const yes = await ui.confirm({
               title: t("plans.deleteTitle"),
-              message: `“${project.name}” goes from the tool. Anything you saved to your library stays.`,
+              message: t("plans.deleteBody", { name: project.name }),
               confirmLabel: t("plans.delete"),
               destructive: true,
             });

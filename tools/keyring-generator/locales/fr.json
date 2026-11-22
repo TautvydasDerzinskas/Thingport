@@ -253,5 +253,12 @@
   "view.placeRing": "Faites glisser un anneau où vous le voulez",
   "view.side": "Côté",
   "view.top": "Dessus",
-  "view.which": "De quel côté le regarder"
+  "view.which": "De quel côté le regarder",
+  "warning.pieces": "Le bord comporte {count} pièces séparées. Élargissez la liaison ou remplissez l’intérieur.",
+  "warning.borderHigh": "Le bord dépasse les lettres. Regardez-le de côté.",
+  "warning.thinJoin": "La liaison entre les lettres fait moins de 1,6 mm et peut être fragile.",
+  "warning.thinRing": "La paroi d’un anneau fait moins de 0,8 mm. Réduisez le trou ou agrandissez l’anneau.",
+  "error.noSafeRing": "Il n’y a pas d’emplacement sûr pour cet anneau. Élargissez le bord ou réduisez l’anneau.",
+  "error.noRingJoin": "Il n’y a pas de place pour relier cet anneau. Élargissez le bord ou réduisez l’anneau.",
+  "error.noMagnetSpace": "Il n’y a pas de place pour cet aimant. Utilisez moins d’aimants, des aimants plus petits ou agrandissez le porte-clés."
 }

@@ -238,6 +238,17 @@ describe("decodePaintState", () => {
 });
 
 describe("sanitize3mf", () => {
+  test("reports localizable diagnostics with their values", async () => {
+    const log = [];
+    await sanitizer.sanitize3mf(JSZip, await makeBambuZip(), { log: (entry) => log.push(entry) });
+    assert.ok(log.length > 0);
+    assert.ok(log.every((entry) => typeof entry === "object" && typeof entry.key === "string"));
+    const extracted = log.find((entry) => entry.key === "log.extracted");
+    assert.equal(extracted.vars.walls, "3");
+    assert.equal(extracted.vars.layer, "0.2");
+    assert.ok(log.some((entry) => entry.key === "log.wroteAssignments" && entry.vars.plates === 1));
+  });
+
   test("flattens production extension and drops requiredextensions", async () => {
     const result = await sanitizeBytes(await makeBambuZip());
     const out = await loadOutput(result);

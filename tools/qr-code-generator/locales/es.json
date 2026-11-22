@@ -330,5 +330,8 @@
   "toast.logoPartly": "{count} cosa(s) de ese archivo no son contornos y se han dejado fuera.",
   "toast.projectOpened": "Diseño abierto.",
   "toast.projectFailed": "Ese no es un diseño escrito por esta herramienta.",
-  "toast.noWebgl": "Este navegador no tiene 3D, así que solo queda la vista plana."
+  "toast.noWebgl": "Este navegador no tiene 3D, así que solo queda la vista plana.",
+  "error.badSvg": "Este archivo no es un SVG legible.",
+  "error.noSvg": "Este archivo no contiene un elemento SVG.",
+  "error.noOutline": "Este archivo no contiene contornos imprimibles."
 }
