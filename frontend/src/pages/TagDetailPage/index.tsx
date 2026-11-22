@@ -31,6 +31,7 @@ import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
 import { useToast } from "../../components/ToastProvider";
+import LoadMoreFailed from "../../components/LoadMoreFailed";
 
 const PAGE_SIZE = 24;
 
@@ -48,6 +49,8 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   const tag = tagName ? decodeURIComponent(tagName) : "";
   const { t } = useTranslation(["models", "common"]);
   const showToast = useToast();
+  // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
+  const [moreFailed, setMoreFailed] = useState(false);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
     loadingAtFirst: true,
   });
@@ -104,6 +107,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     if (!tag) return;
     let cancelled = false;
     listRun.current += 1;
+    setMoreFailed(false);
     setLoadingMore(false);
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
     const kept = returning();
@@ -205,13 +209,16 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
-      if (run === listRun.current) handleError(err, t("models:errors.loadFailed"));
+      if (run === listRun.current) {
+        handleError(err);
+        setMoreFailed(true);
+      }
     } finally {
       if (run === listRun.current) setLoadingMore(false);
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore);
 
   return (
     <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
@@ -281,7 +288,12 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
             ))}
             {loadingMore && <CardSkeletons count={6} />}
           </Box>
-          {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
+          {hasMore &&
+            (moreFailed ? (
+              <LoadMoreFailed message={t("models:errors.loadFailed")} onRetry={() => setMoreFailed(false)} />
+            ) : (
+              <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />
+            ))}
         </Stack>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>

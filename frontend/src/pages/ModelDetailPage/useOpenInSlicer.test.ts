@@ -116,12 +116,12 @@ describe("the files a slicer is offered", () => {
   });
 
   it("are the ones the server says Bridge opens, from every file of the model", () => {
-    const print = {
+    const print: Parameters<typeof modelFiles>[0] = {
       plates: [on("Part.stl", 0, offer(true)), on("Part.f3d", 1, offer(false)), on("Photo.png", 2, offer(false))],
       slicer_url: "/print/1/plate/plate-0/file/Part.stl",
       slicer_filename: "Part.stl",
       prepared_print: null,
-    } as unknown as Parameters<typeof modelFiles>[0];
+    };
     const files = modelFiles(print);
 
     expect(files.map((entry) => entry.filename)).toEqual(["Part.stl", "Part.f3d", "Photo.png"]);
@@ -129,12 +129,12 @@ describe("the files a slicer is offered", () => {
   });
 
   it("are a prepared print of its own as the server says, and every file of an older backend's model", () => {
-    const print = {
+    const print: Parameters<typeof modelFiles>[0] = {
       plates: [on("Part.f3d", 0)],
       slicer_url: "/print/1/prepared-print",
       slicer_filename: "Tower.gco",
       prepared_print: { removable: true, caps: offer(false) },
-    } as unknown as Parameters<typeof modelFiles>[0];
+    };
 
     expect(slicerFilesOf(modelFiles(print)).map((entry) => entry.filename)).toEqual(["Part.f3d"]);
   });

@@ -36,6 +36,7 @@ import { replacePrints, useModelSelection } from "../../hooks/useModelSelection"
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { useToast } from "../../components/ToastProvider";
+import LoadMoreFailed from "../../components/LoadMoreFailed";
 
 const PAGE_SIZE = 24;
 
@@ -63,6 +64,8 @@ function CollectionDetail({
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common"]);
   const showToast = useToast();
+  // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
+  const [moreFailed, setMoreFailed] = useState(false);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
     Print,
     Collection | null
@@ -148,6 +151,7 @@ function CollectionDetail({
     if (!collectionId) return;
     let cancelled = false;
     listRun.current += 1;
+    setMoreFailed(false);
     setLoadingMore(false);
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
     const kept = returning();
@@ -189,6 +193,7 @@ function CollectionDetail({
     return () => {
       cancelled = true;
       listRun.current += 1;
+      setMoreFailed(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionId, sortMode, direction, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
@@ -214,13 +219,16 @@ function CollectionDetail({
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
-      if (run === listRun.current) handleError(err, t("models:errors.loadFailed"));
+      if (run === listRun.current) {
+        handleError(err);
+        setMoreFailed(true);
+      }
     } finally {
       if (run === listRun.current) setLoadingMore(false);
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore);
 
   if (loading && !collection) {
     return (
@@ -315,7 +323,12 @@ function CollectionDetail({
             ))}
             {loadingMore && <CardSkeletons count={6} />}
           </Box>
-          {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
+          {hasMore &&
+            (moreFailed ? (
+              <LoadMoreFailed message={t("models:errors.loadFailed")} onRetry={() => setMoreFailed(false)} />
+            ) : (
+              <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />
+            ))}
         </Stack>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>

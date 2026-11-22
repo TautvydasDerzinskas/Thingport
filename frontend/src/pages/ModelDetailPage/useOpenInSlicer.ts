@@ -59,7 +59,9 @@ function isAdaptable3mf(filename: string): boolean {
 }
 
 /** The prepared print first, when it isn't a plate, then the plates in order. */
-export function modelFiles(print: Print): ModelFile[] {
+export function modelFiles(
+  print: Pick<Print, "plates" | "slicer_url" | "slicer_filename" | "prepared_print">,
+): ModelFile[] {
   const sortedPlates = print.plates.toSorted((a, b) => a.position - b.position);
   const out: ModelFile[] = [];
   if (print.slicer_url && !sortedPlates.some((p) => p.url === print.slicer_url)) {
