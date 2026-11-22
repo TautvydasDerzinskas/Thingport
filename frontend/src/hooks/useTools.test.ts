@@ -73,6 +73,35 @@ describe("tool availability refresh", () => {
     expect(calls.list).toHaveBeenCalledTimes(2);
   });
 
+  it("loads the list again when the first load failed", async () => {
+    vi.resetModules();
+    calls.list.mockRejectedValueOnce(new Error("offline"));
+    const hooks = await import("./useTools");
+    hooks.useTools();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mounted.value).toEqual({ access: { canUse: false, canCreate: false }, tools: [] });
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(mounted.value).toEqual(state);
+    expect(calls.list).toHaveBeenCalledTimes(2);
+    expect(calls.status).not.toHaveBeenCalled();
+  });
+
+  it("loads the list again when a failed reload superseded the first load", async () => {
+    vi.resetModules();
+    let finish!: (result: typeof state) => void;
+    calls.list.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+    const hooks = await import("./useTools");
+    hooks.useTools();
+    calls.list.mockRejectedValueOnce(new Error("offline"));
+    await expect(hooks.reloadTools()).rejects.toThrow("offline");
+    finish(state);
+    await vi.advanceTimersByTimeAsync(0);
+    calls.list.mockResolvedValue({ access, tools: [] });
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(mounted.value).toEqual({ access, tools: [] });
+    expect(calls.list).toHaveBeenCalledTimes(3);
+  });
+
   it("keeps the last list and retries when the availability check fails", async () => {
     await mount();
     calls.status.mockRejectedValueOnce(new Error("offline")).mockResolvedValue({ access, ids: [tool.id] });

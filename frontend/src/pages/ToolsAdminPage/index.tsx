@@ -294,6 +294,8 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   // that entry, so its buttons act on it too -- models imported while it stood open are in it, and an update
   // mustn't then be taken as one that wants none, which would throw them away again.
   const current = details && (catalog?.tools.find((one) => one.slug === details.slug) ?? details);
+  // The same for the tile menu: another admin may disable, enable or update the tool while it stands open.
+  const menuTool = menu && (catalog?.tools.find((one) => one.slug === menu.tool.slug) ?? menu.tool);
 
   return (
     <Stack spacing={4}>
@@ -557,10 +559,10 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
       </Stack>
 
       <Menu anchorEl={menu?.anchor} open={Boolean(menu)} onClose={() => setMenu(null)}>
-        {menu && openable(menu.tool) && (
+        {menuTool && openable(menuTool) && (
           <MenuItem
             onClick={() => {
-              const open = openable(menu.tool);
+              const open = openable(menuTool);
               setMenu(null);
               setRunning(open);
             }}
@@ -571,12 +573,12 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
             <ListItemText>{t("adminSettings.tools.repo.open")}</ListItemText>
           </MenuItem>
         )}
-        {menu && openable(menu.tool) && <Divider />}
-        {menu?.tool.installed?.models && menu.tool.installed.models.ready < menu.tool.installed.models.total && (
+        {menuTool && openable(menuTool) && <Divider />}
+        {menuTool?.installed?.models && menuTool.installed.models.ready < menuTool.installed.models.total && (
           <MenuItem
-            disabled={menu.tool.installed.models.fetching}
+            disabled={menuTool.installed.models.fetching}
             onClick={() => {
-              const tool = menu.tool;
+              const tool = menuTool;
               setMenu(null);
               void retry(tool);
             }}
@@ -587,17 +589,17 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
             <ListItemText>{t("adminSettings.tools.repo.retry")}</ListItemText>
           </MenuItem>
         )}
-        {menu?.tool.installed && (
+        {menuTool?.installed && (
           <MenuItem
-            disabled={busy.has(menu.tool.slug)}
+            disabled={busy.has(menuTool.slug)}
             onClick={() => {
-              const tool = menu.tool;
+              const tool = menuTool;
               setMenu(null);
               void changeAvailability(tool);
             }}
           >
             <ListItemIcon>
-              {menu.tool.installed.enabled === false ? (
+              {menuTool.installed.enabled === false ? (
                 <PlayCircleOutlineIcon fontSize="small" />
               ) : (
                 <PauseCircleOutlineIcon fontSize="small" />
@@ -605,7 +607,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
             </ListItemIcon>
             <ListItemText>
               {t(
-                menu.tool.installed.enabled === false
+                menuTool.installed.enabled === false
                   ? "adminSettings.tools.repo.enable"
                   : "adminSettings.tools.repo.disable",
               )}
@@ -615,7 +617,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
         <Divider />
         <MenuItem
           onClick={() => {
-            const tool = menu!.tool;
+            const tool = menuTool!;
             setMenu(null);
             void uninstall(tool);
           }}

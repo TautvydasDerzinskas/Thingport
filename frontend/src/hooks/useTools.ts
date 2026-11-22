@@ -62,7 +62,13 @@ export async function reloadTools(): Promise<void> {
 // Check only IDs, not the potentially large scripts, while a tab is active. A failed check keeps the last list and
 // tries again later; server-side calls still enforce availability.
 function checkAvailability() {
-  if (document.visibilityState !== "visible" || !cached || statusInFlight) return;
+  if (document.visibilityState !== "visible") return;
+  // No list yet: the first load failed, or a reload that superseded it did. Load it again instead.
+  if (!cached) {
+    void load();
+    return;
+  }
+  if (statusInFlight) return;
   const current = cached;
   const forAccount = account;
   const forGeneration = generation;
