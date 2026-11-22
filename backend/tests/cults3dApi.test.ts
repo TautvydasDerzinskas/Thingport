@@ -24,7 +24,7 @@ import {
 } from "../src/providers/cults3d/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
 import { normalizeCults3dBrowser } from "../src/providers/cults3d/session";
-import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
+import { buildImportSourceUrl, identifySourceModel } from "../src/sources/sourceUrls";
 import { syncLikesUsername } from "../src/dto";
 
 // The Cults3D client against the shapes its API and site give back, with fetch mocked. No database.

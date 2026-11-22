@@ -12,7 +12,7 @@ import { API_TOKEN_SCOPES, scopeForPath } from "../src/services/apiTokenScopes";
 import importsRoutes from "../src/routes/imports";
 import settingsRoutes from "../src/routes/settings";
 import providerCollectionsRoutes from "../src/routes/providerCollections";
-import { identifySourceModel } from "../src/services/importService";
+import { identifySourceModel } from "../src/sources/sourceUrls";
 import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
 import { PROFILE_PROVIDERS } from "../src/providers/registry";
 

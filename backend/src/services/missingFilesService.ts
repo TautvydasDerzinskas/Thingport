@@ -6,7 +6,7 @@ import { createLogger } from "../logger";
 import { mapWithConcurrency } from "../utils/concurrency";
 import { isProviderId } from "../providers/index.generated";
 import { PROVIDERS } from "../providers/registry";
-import { buildImportSourceUrl } from "./importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 
 // Finding the models whose files are gone. An instance moved without its storage volume, or a deleted folder,
 // leaves every row in place with nothing behind it: the library lists models that can't be opened, printed or

@@ -32,7 +32,7 @@ import {
   modelPreviewGlbExists,
   modelPreviewGlbPath,
 } from "./services/modelPreviewCache";
-import { buildImportSourceUrl } from "./services/importService";
+import { buildImportSourceUrl } from "./sources/sourceUrls";
 import { openSourceGaps, type SourceGap } from "./services/sourceGaps";
 import { licenseOut, type LicenseOut } from "./services/licenseService";
 import { profileOut, type PublicProfileOut } from "./services/publicProfileService";
