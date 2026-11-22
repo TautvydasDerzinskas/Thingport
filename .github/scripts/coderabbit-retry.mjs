@@ -59,6 +59,9 @@ const SETTLE_MS = 3 * MINUTE;
 // A waiting run looks again just after the time it waited for, and never sooner than this after its last look.
 const WAKE_MARGIN_MS = 1000;
 const MIN_PAUSE_MS = 30_000;
+// How a CodeRabbit check ends when the review finished, or was skipped on purpose: neither comes out differently asked
+// again. Rate-limited checks end "neutral" too, and are told apart by their title.
+const SETTLED = new Set(["success", "skipped", "neutral"]);
 // How often a waiting run looks for a newer one to leave the rest to.
 const HANDOVER_POLL_MS = 60_000;
 
@@ -255,8 +258,9 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], r
   const summary = comments.find(isSummary);
   const limited = check ? rateLimited(check) : Boolean(summary?.body.includes(RATE_LIMIT_MARKER));
   const said = check ? `CodeRabbit's check on the push says "${check.output?.title ?? check.conclusion}"` : "";
-  // Finished or skipped without a review, and not for its limit: asking again would get the same.
-  if (check?.status === "completed" && !limited) return no(said);
+  // Finished, or skipped on purpose, and not for its limit: asking again would get the same. One that ended any
+  // other way (cancelled, failed, timed out) reviewed nothing, so it's still owed.
+  if (check?.status === "completed" && !limited && SETTLED.has(check.conclusion)) return no(said);
   const own = limited ? noticesFrom(comments, now).filter((n) => n.kind === "summary" && n.at >= headDate) : [];
   const notBefore = own.length
     ? Math.max(...own.map((n) => n.until))

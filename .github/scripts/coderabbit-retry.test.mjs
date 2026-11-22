@@ -220,6 +220,13 @@ test("a first review that was rate limited, got stuck or never started is asked 
   assert.equal(stuck.ask, ASK);
   // Finished or skipped without a review, and not for the limit: asking would get the same.
   assert.match(state({ reviews: [], comments: [], checkRuns: FINISHED }).reason, /says "Finished"/);
+  // Ended any other way, it reviewed nothing: asked for again.
+  for (const conclusion of ["cancelled", "failure", "timed_out"]) {
+    const ended = state({ reviews: [], comments: [], checkRuns: check("Review cancelled", conclusion, 15) });
+    assert.equal(ended.waiting, true, conclusion);
+    assert.equal(ended.ask, ASK, conclusion);
+    assert.match(ended.why, /says "Review cancelled"/);
+  }
   const stacked = { ...PULL, base: { ref: "feat/x", repo: { default_branch: "develop" } } };
   const skipped = state({ pull: stacked, checkRuns: SKIPPED, comments: [], reviews: [] });
   assert.equal(skipped.waiting, false);

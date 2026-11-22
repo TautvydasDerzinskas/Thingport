@@ -52,6 +52,9 @@ describe("i18n checker", () => {
     expect(strict.output).toContain("missing  b");
     expect(strict.output).toContain("unused   old");
     expect(check(locales, []).status).toBe(0);
+    // Either alone fails it as well.
+    expect(check({ en: { a: "A", b: "B" }, de: { a: "A" } }, ["--strict"]).status).toBe(1);
+    expect(check({ en: { a: "A" }, de: { a: "A", old: "Alt" } }, ["--strict"]).status).toBe(1);
   });
 
   it("passes with --strict when every locale has every key", () => {

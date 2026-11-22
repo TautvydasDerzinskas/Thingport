@@ -22,10 +22,12 @@ regression or a bug in what it does, is a finding as usual.
   (`storageTemplateRules.ts`), so the library stays browsable on disk. A model's rows:
   - `Plate`: its model files;
   - `PrintFile`: supporting files, the prepared print and `LICENSE.txt` (roles `SUPPORTING`, `PREPARED`, `LICENSE`);
-  - `PreviewImage`: its pictures, in the model's pictures folder.
+  - `PreviewImage`: its pictures, in the model's pictures folder. A model from before those folders keeps its pictures
+    in the shared `previews` folder until the storage move reaches it, and `assetPath` (`modelAssets.ts`) reads a
+    picture from there while it hasn't moved.
 
   `Plate` and `PrintFile` rows each keep a `storagePath`, unique within its table. A picture has none: its file is
-  named after its row's id, in the model's pictures folder, and its row is unique by model and position.
+  named after its row's id, and its row is unique by model and position.
 
 - **One process.** One backend process writes storage. Its worker threads (previews, adapting, Studio) never touch the
   database. Migrate's `pg_restore` writes only its staging database, and its `pg_dump` (the export another instance
