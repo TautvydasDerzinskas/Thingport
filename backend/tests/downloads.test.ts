@@ -48,7 +48,8 @@ async function attach(printId: string, name: string) {
 }
 
 /** The zip a download makes, as its entries' names. */
-async function zipOf(body: Record<string, unknown>): Promise<string[]> {
+/** The zip a download makes, saved, and its entries' names in the order they're written. */
+async function fetchZip(body: Record<string, unknown>): Promise<{ file: string; names: string[] }> {
   const res = await request(app)
     .post("/api/download/zip")
     .set(auth())
@@ -62,7 +63,12 @@ async function zipOf(body: Record<string, unknown>): Promise<string[]> {
   expect(res.status).toBe(200);
   const file = path.join(tmp, `${Math.random().toString(36).slice(2)}.zip`);
   fs.writeFileSync(file, res.body as Buffer);
-  return (await listZipEntries(file)).filter((entry) => !entry.isDirectory).map((entry) => entry.name);
+  const names = (await listZipEntries(file)).filter((entry) => !entry.isDirectory).map((entry) => entry.name);
+  return { file, names };
+}
+
+async function zipOf(body: Record<string, unknown>): Promise<string[]> {
+  return (await fetchZip(body)).names;
 }
 
 beforeAll(async () => {
@@ -73,25 +79,47 @@ beforeAll(async () => {
   userId = res.body.user.id;
 });
 
-describe("a file's download", () => {
-  it.each(["Parts list.csv", "a;b,c.txt", 'say "hi".txt', "Ünïcödé notes.pdf", "plain.txt"])(
-    "is called %s",
-    async (name) => {
-      const printId = await upload([{ name: `Holder ${name}.stl`, body: STL(name) }]);
-      await attach(printId, name);
-      const [file] = (await request(app).get(`/api/print/${printId}/files`).set(auth())).body as { id: string }[];
-      const res = await request(app).get(`/api/print/${printId}/files/${file.id}`).set(auth());
-      expect(res.status).toBe(200);
-      expect(parseDisposition(res.headers["content-disposition"]).parameters.filename).toBe(name);
-    },
-  );
+// Names a download has to carry whole: what separates a header's parts, a quote, and names beyond ASCII and Latin-1.
+const STEMS = ["Parts list", "a;b,c", 'say "hi"', "Ünïcödé notes", "Šuniukas", "零件", "plain"];
 
-  it("names a plate as it's called, spaces and all", async () => {
-    const printId = await upload([{ name: "Parts list.stl", body: STL("plate") }]);
+/** What a download says it's called: as a browser reads it (`filename*` first), and as a client that reads only
+ *  `filename` does, as `curl -OJ` does, which has to be ASCII that decodes to the name, so two names never come out as
+ *  one. */
+function namedAs(res: request.Response) {
+  const header = String(res.headers["content-disposition"]);
+  const plain = /;\s*filename=(?:"([^"]*)"|([^;\s]*))/i.exec(header);
+  const fallback = plain?.[1] ?? plain?.[2] ?? "";
+  return {
+    status: res.status,
+    browser: parseDisposition(header).parameters.filename,
+    plain: decodeURIComponent(fallback),
+    ascii: /^[\x20-\x7e]+$/.test(fallback),
+  };
+}
+
+const named = (name: string) => ({ status: 200, browser: name, plain: name, ascii: true });
+
+describe("a file's download", () => {
+  it.each(STEMS)("of a supporting file is called %s", async (stem) => {
+    const printId = await upload([{ name: `Holder ${stem}.stl`, body: STL(stem) }]);
+    await attach(printId, `${stem}.txt`);
+    const [file] = (await request(app).get(`/api/print/${printId}/files`).set(auth())).body as { id: string }[];
+    const res = await request(app).get(`/api/print/${printId}/files/${file.id}`).set(auth());
+    expect(namedAs(res)).toEqual(named(`${stem}.txt`));
+  });
+
+  it.each(STEMS)("of a plate is called %s", async (stem) => {
+    const printId = await upload([{ name: `${stem}.stl`, body: STL(stem) }]);
     const [plate] = await prisma.plate.findMany({ where: { printId } });
     const res = await request(app).get(`/api/print/${printId}/plate/${plate.id}/file/download`).set(auth());
-    expect(res.status).toBe(200);
-    expect(parseDisposition(res.headers["content-disposition"]).parameters.filename).toBe("Parts list.stl");
+    expect(namedAs(res)).toEqual(named(`${stem}.stl`));
+  });
+
+  it.each(STEMS)("of a prepared print is called %s", async (stem) => {
+    const printId = await upload([{ name: `Tower ${stem}.stl`, body: STL(stem) }]);
+    await attach(printId, `${stem}.gcode`);
+    const res = await request(app).get(`/api/print/${printId}/prepared-print`).set(auth());
+    expect(namedAs(res)).toEqual(named(`${stem}.gcode`));
   });
 
   it("never breaks its header on a name stored with a line break, from before names were cleaned", async () => {
@@ -135,6 +163,7 @@ describe("a zip of models", () => {
       { filename: "part.stl", tempFilePath: tempFile(STL("part")) },
       { filename: "part.stl", tempFilePath: tempFile(STL("other")), folder: "supporting" },
       { filename: "LICENSE.txt", tempFilePath: tempFile("a creator's own licence\n") },
+      { filename: "part.stl", tempFilePath: tempFile(STL("third")), folder: "prepared" },
     ]);
     await attach(print.id, "notes.txt");
     const estimate = async () =>
@@ -150,16 +179,20 @@ describe("a zip of models", () => {
     expect((await estimate()) - before).toBe(Buffer.byteLength("Tower.gcode\n"));
     await request(app).post(`/api/print/${print.id}/meta`).set(auth()).send({ license: "CC0-1.0" });
     const prefix = `unassigned/${print.name}`;
-    expect((await zipOf({ print_ids: [print.id] })).toSorted()).toEqual(
-      [
-        `${prefix}/LICENSE (2).txt`,
-        `${prefix}/LICENSE.txt`,
-        `${prefix}/part.stl`,
-        `${prefix}/prepared/Tower.gcode`,
-        `${prefix}/supporting (2)/part.stl`,
-        `${prefix}/supporting/notes.txt`,
-      ].toSorted(),
-    );
+    const zip = await fetchZip({ print_ids: [print.id] });
+    // The plates first, as they're ordered, then the licence, the supporting files and the prepared print.
+    expect(zip.names).toEqual([
+      `${prefix}/part.stl`,
+      `${prefix}/supporting (2)/part.stl`,
+      `${prefix}/LICENSE (2).txt`,
+      `${prefix}/prepared (2)/part.stl`,
+      `${prefix}/LICENSE.txt`,
+      `${prefix}/supporting/notes.txt`,
+      `${prefix}/prepared/Tower.gcode`,
+    ]);
+    const text = async (name: string) => (await readZipEntry(zip.file, `${prefix}/${name}`, 100_000))?.toString();
+    expect(await text("LICENSE.txt")).toContain("CC0");
+    expect(await text("LICENSE (2).txt")).toBe("a creator's own licence\n");
   });
 
   it("unzips whole into a folder that ignores case", async () => {
@@ -167,22 +200,10 @@ describe("a zip of models", () => {
       { filename: "part.stl", tempFilePath: tempFile(STL("upper")), folder: "STL" },
       { filename: "part.stl", tempFilePath: tempFile(STL("lower")), folder: "stl" },
     ]);
-    const entries = await zipOf({ print_ids: [print.id] });
+    const { file: zipFile, names: entries } = await fetchZip({ print_ids: [print.id] });
     expect(new Set(entries.map((name) => name.toLowerCase())).size).toBe(entries.length);
     // Written out one by one, as an unzip tool does: none lands on another, whatever the disk folds.
     const out = fs.mkdtempSync(path.join(tmp, "unzipped-"));
-    const res = await request(app)
-      .post("/api/download/zip")
-      .set(auth())
-      .send({ print_ids: [print.id] })
-      .buffer(true)
-      .parse((stream, done) => {
-        const chunks: Buffer[] = [];
-        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-        stream.on("end", () => done(null, Buffer.concat(chunks)));
-      });
-    const zipFile = path.join(tmp, `cases-${stamp}.zip`);
-    fs.writeFileSync(zipFile, res.body as Buffer);
     for (const name of entries) {
       const target = path.join(out, name);
       fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -215,6 +236,9 @@ describe("a zip of models", () => {
 });
 
 describe("ZipPaths", () => {
+  /** A path as a disk that ignores case compares it: "ΦΙΛΟΣ" and "φιλος" are one name on a Mac and on Windows, as are
+   *  "µ" (micro) and "μ" (mu). */
+  const onDisk = (at: string) => at.toUpperCase().toLowerCase().normalize("NFD");
   type Step = { folder: boolean; parent: number; name: string; owner: string };
   const step = fc.record({
     folder: fc.boolean(),
@@ -231,6 +255,10 @@ describe("ZipPaths", () => {
       "..",
       "a/b",
       " ",
+      "ΦΙΛΟΣ",
+      "φιλος",
+      "µ",
+      "μ",
     ),
     owner: fc.constantFrom("one", "two"),
   });
@@ -246,10 +274,10 @@ describe("ZipPaths", () => {
           if (folder) folders.push(zip.folder(at, name, owner));
           else files.push(zip.file(at, name));
         }
-        const lower = files.map((file) => file.toLowerCase());
-        expect(new Set(lower).size).toBe(lower.length);
-        const folderPaths = new Set(folders.slice(1).map((folder) => folder.toLowerCase()));
-        for (const file of lower) expect(folderPaths.has(file)).toBe(false);
+        const folded = files.map(onDisk);
+        expect(new Set(folded).size).toBe(folded.length);
+        const folderPaths = new Set(folders.slice(1).map(onDisk));
+        for (const file of folded) expect(folderPaths.has(file)).toBe(false);
         // Every level a name of its own: none empty, none "." or "..".
         for (const at of [...files, ...folders.slice(1)]) {
           expect(at.split("/").filter((level) => ["", ".", ".."].includes(level.trim()))).toEqual([]);
@@ -266,6 +294,23 @@ describe("ZipPaths", () => {
     expect(zip.folder("", "Base", "two")).toBe("Base (2)");
     expect(zip.file("Base", "part.stl")).toBe("Base/part.stl");
     expect(zip.file("Base", "PART.stl")).toBe("Base/PART (2).stl");
+  });
+
+  it.each([
+    ["ΦΙΛΟΣ.stl", "φιλος.stl", "M/φιλος (2).stl"],
+    ["Filter 5µm.stl", "Filter 5μm.stl", "M/Filter 5μm (2).stl"],
+    ["Clasp ſ.stl", "Clasp s.stl", "M/Clasp s (2).stl"],
+    ["J\u030Cig.stl", "\u01F0ig.stl", "M/\u01F0ig (2).stl"],
+  ])("numbers %s and %s apart, as a Mac or Windows takes them as one name", (first, second, numbered) => {
+    const zip = new ZipPaths();
+    expect(zip.file("M", first)).toBe(`M/${first}`);
+    expect(zip.file("M", second)).toBe(numbered);
+  });
+
+  it("never lets a folder take a file's name in another case", () => {
+    const zip = new ZipPaths();
+    expect(zip.file("M", "ΒΑΣΗ ΦΑΚΟΣ")).toBe("M/ΒΑΣΗ ΦΑΚΟΣ");
+    expect(zip.folder("M", "βαση φακοσ", "model")).toBe("M/βαση φακοσ (2)");
   });
 
   it("makes a category's name one folder, by the name rule", () => {

@@ -6,7 +6,10 @@ import { normalizeFileName, numberedName } from "./names";
 // can't be taken over by a plate named like them. Folder names go through the name rule as file names do, so a
 // category called "Tools/Parts" is one folder and one called ".." leads nowhere outside the zip.
 
-const key = (path: string) => path.toLowerCase();
+// Compared as a disk that ignores case compares names: upper case, then lower, decomposed. Lower case alone keeps
+// "ΦΙΛΟΣ" and "φιλος", or "µ" and "μ", apart, which a Mac or Windows takes as one name. Folding more than a disk does
+// only numbers a name that needn't be.
+const key = (path: string) => path.toUpperCase().toLowerCase().normalize("NFD");
 const join = (folder: string, name: string) => (folder ? `${folder}/${name}` : name);
 
 export class ZipPaths {

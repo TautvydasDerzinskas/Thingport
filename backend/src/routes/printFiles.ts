@@ -1,10 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { create as contentDisposition } from "content-disposition";
 import { Router } from "express";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { HttpError } from "../utils/fileUtils";
+import { attachmentDisposition, HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
 import {
@@ -64,7 +63,7 @@ router.get(
     const filePath = managedPrintFilePath(record);
     if (!fs.existsSync(filePath)) throw new HttpError(404, "Not found");
     res.setHeader("Content-Type", record.mime || "application/octet-stream");
-    res.setHeader("Content-Disposition", contentDisposition(record.filename));
+    res.setHeader("Content-Disposition", attachmentDisposition(record.filename));
     res.sendFile(path.resolve(filePath));
   }),
 );
@@ -89,7 +88,7 @@ router.get(
     const filePath = managedPrintFilePath(record);
     if (!fs.existsSync(filePath)) throw new HttpError(404, "Not found");
     res.setHeader("Content-Type", record.mime || "application/octet-stream");
-    res.setHeader("Content-Disposition", contentDisposition(record.filename));
+    res.setHeader("Content-Disposition", attachmentDisposition(record.filename));
     res.sendFile(path.resolve(filePath));
   }),
 );

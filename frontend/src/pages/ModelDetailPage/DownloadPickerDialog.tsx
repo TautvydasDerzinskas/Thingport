@@ -20,6 +20,7 @@ import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
 import type { Plate } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import { useToastHost } from "../../components/ToastProvider";
 import { fileRowText } from "./fileRowText";
 import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
@@ -51,6 +52,8 @@ export default function DownloadPickerDialog({
   downloadPlate,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  // A download that fails says so in here, where a screen reader and the keyboard can reach it.
+  const toastHost = useToastHost(open);
   const grouped = hasFolders(sortedPlates, folderOf);
   const names = useMemo(
     () =>
@@ -88,7 +91,13 @@ export default function DownloadPickerDialog({
     </ListItemButton>
   );
   return (
-    <Dialog open={open} onClose={() => !downloading && onClose()} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={() => !downloading && onClose()}
+      fullWidth
+      maxWidth="xs"
+      slotProps={{ paper: { ref: toastHost } }}
+    >
       <DialogTitle>{t("models:detail.downloadPickerTitle")}</DialogTitle>
       <DialogContent>
         <Stack spacing={1.5}>

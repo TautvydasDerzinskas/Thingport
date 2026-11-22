@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UnauthorizedError } from "./client";
-import { BULK_LIMIT, printsApi } from "./prints";
+import { BULK_LIMIT, printsApi, ZipTooLargeError } from "./prints";
 
 /** Answers each batch in turn; a model in `prints` went through, a status is that batch failing. */
 function answerBatches(...answers: (number | { prints: { id: string }[]; skipped?: number; failed?: number })[]) {
@@ -56,5 +56,25 @@ describe("printsApi.bulkAssignCategory", () => {
   it("throws a 401 even after a batch went through, for the session to be renewed", async () => {
     answerBatches({ prints: [{ id: "a" }] }, 401);
     await expect(printsApi.bulkAssignCategory(ids, "category")).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+});
+
+describe("printsApi.downloadZip", () => {
+  beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  const answer = (body: string, status: number) =>
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(body, { status }))),
+    );
+
+  it("tells a zip too big to make from any other refusal", async () => {
+    answer(JSON.stringify({ detail: "Too much", code: "zip_too_large" }), 413);
+    await expect(printsApi.downloadZip({ print_ids: ["a"] })).rejects.toBeInstanceOf(ZipTooLargeError);
+    // A 413 from something in front of the server, with no code: an ordinary failure.
+    answer("Request Entity Too Large", 413);
+    await expect(printsApi.downloadZip({ print_ids: ["a"] })).rejects.not.toBeInstanceOf(ZipTooLargeError);
   });
 });

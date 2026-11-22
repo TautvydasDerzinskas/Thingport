@@ -11,7 +11,8 @@ import { saveResponseToDisk } from "../../utils/downloadResponse";
 export function zipFileCount(
   print: Pick<Print, "plates" | "supporting_file_count" | "prepared_print" | "license">,
 ): number {
-  const own = print.plates.length + (print.supporting_file_count ?? 0) + (print.prepared_print ? 1 : 0);
+  // A prepared print that isn't removable is the first plate itself, sliced: already counted, and not in prepared/.
+  const own = print.plates.length + (print.supporting_file_count ?? 0) + (print.prepared_print?.removable ? 1 : 0);
   return own > 1 ? own + (print.license ? 1 : 0) : 0;
 }
 
@@ -57,7 +58,8 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   const downloadFile = async (file: Pick<Plate, "url" | "filename">) => {
     setDownloading(true);
     try {
-      const res = await fetch(printsApi.fileUrl(file.url));
+      // Asked again rather than taken from the cache the 3D viewer filled, which may hold an older name for it.
+      const res = await fetch(printsApi.fileUrl(file.url), { cache: "no-cache" });
       if (res.status === 401) throw new UnauthorizedError();
       if (!res.ok) throw new Error("Download failed");
       await saveResponseToDisk(res, file.filename || "download");

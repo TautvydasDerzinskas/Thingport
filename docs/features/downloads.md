@@ -15,7 +15,7 @@ and names that differ only in case count as one, as they do on Windows and macOS
 its name too, spaces and accents included.
 
 Before a big download starts, Thingport shows how many models it holds and roughly how large it will be. One ZIP holds
-at most 65,534 files and about 4 GB; for more, download fewer models at once.
+at most 65,534 files and about 4 GB; for more, download fewer models at once, or a model's files one by one.
 
 Downloading a model counts towards its prints on the [dashboard](dashboard.md) and shows up in your
 [activity](profile-and-activity.md).

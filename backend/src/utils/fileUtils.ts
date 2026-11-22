@@ -1,5 +1,5 @@
 import path from "node:path";
-import { decodeExtended, parse as parseDisposition } from "content-disposition";
+import { create as createDisposition, decodeExtended, parse as parseDisposition } from "content-disposition";
 import mimeTypes from "mime-types";
 import { IMPORT_ALLOWED_EXTS } from "../config";
 import { normalizeFileName } from "../files/names";
@@ -30,6 +30,17 @@ export function parseContentDisposition(cd: string | null | undefined): string |
   if (extended) return extended;
   if (parameters.filename) return decodeLatin1AsUtf8(parameters.filename);
   return matchLooseFilename(cd);
+}
+
+/** The Content-Disposition a download named `name` goes out with. Browsers read the whole name from `filename*`. A
+ *  client that reads only `filename`, as `curl -OJ` does, gets its ASCII as it is and the rest percent-encoded, quotes
+ *  and backslashes too, so two names never come out as one, as they would with the package's own stand-in: "?" for
+ *  each such character. */
+export function attachmentDisposition(name: string): string {
+  // Half a surrogate pair, which a name from a JSON body can hold, can't be encoded: it goes out as U+FFFD.
+  const whole = name.replace(/\p{Cs}/gu, "\ufffd");
+  const ascii = whole.replace(/[^\x20-\x7e]|["\\]/gu, (char) => encodeURIComponent(char));
+  return createDisposition(whole, ascii === whole ? undefined : { fallback: ascii });
 }
 
 /** For headers the parser finds no filename in, such as `filename=x.stl` with no disposition type. */

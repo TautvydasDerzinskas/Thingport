@@ -1,11 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { create as contentDisposition } from "content-disposition";
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { HttpError } from "../utils/fileUtils";
+import { attachmentDisposition, HttpError } from "../utils/fileUtils";
 import { isJunk, normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -545,7 +544,7 @@ const NORMALIZED_FOR = "prusaslicer";
 
 function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
   res.setHeader("Content-Type", plate.mime || "application/octet-stream");
-  res.setHeader("Content-Disposition", contentDisposition(plate.filename));
+  res.setHeader("Content-Disposition", attachmentDisposition(plate.filename));
   res.setHeader("Cache-Control", "private, max-age=86400");
   res.sendFile(path.resolve(filePath));
 }
