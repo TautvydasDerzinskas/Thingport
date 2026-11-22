@@ -10,7 +10,7 @@ The settings guides include controlled Bambu Studio 02.09.01.70 slice comparison
 
 The [Top 3D Shop FDM overview](https://top3dshop.com/blog/fused-deposition-modeling-all-you-need-to-know-about-fdm-3d-printing-technology#anchor23) and the [r/3DPrinting community wiki](https://www.reddit.com/r/3Dprinting/wiki/index/) informed the topics. The articles link to the slicer or material maker’s documentation for technical settings.
 
-A passing attempt requests **FDM Fundamentals** through Thingport’s existing `achievements.unlock("fundamentals")` SDK method. The host must know the badge and have achievements enabled. This award is for practice and uses the SDK’s client-triggered badge mechanism.
+A passing attempt requests **FDM Fundamentals** through Thingport’s achievements SDK. With a status-aware host, a learner can retry an unconfirmed claim from the same result. Hosts with the older boolean SDK still support the initial claim. This award uses the SDK’s client-triggered badge mechanism.
 
 ## Packaging
 

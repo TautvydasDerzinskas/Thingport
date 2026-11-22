@@ -100,7 +100,14 @@ test("grades a multi-select only when the selected set matches and passes at 36/
   assert.equal(gradeQuiz(attempt, answers).score, 45);
 
   const weighted = attempt.flatMap((item, index) => (item.points === 3 ? [index] : []));
-  const [partial, extra, none] = weighted;
+  const [partial, extra, none, wrong] = weighted;
+  const correct = answers[wrong];
+  const distractor = attempt[wrong].options.findIndex((_, index) => !correct.has(index));
+  answers[wrong] = new Set([...correct].slice(1).concat(distractor));
+  assert.equal(answers[wrong].size, correct.size);
+  assert.equal(gradeQuiz(attempt, answers).items[wrong].earned, 0);
+  answers[wrong] = correct;
+
   answers[partial].delete(attempt[partial].correct[0]);
   answers[extra].add(attempt[extra].options.findIndex((_, index) => !answers[extra].has(index)));
   answers[none] = new Set();

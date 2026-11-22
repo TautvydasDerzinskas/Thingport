@@ -3529,7 +3529,7 @@ export function pageTitle(title, intro) {
 // ---- exam.js ----
 
 export function newExam() {
-  return { questions: [], answers: [], index: 0, result: null, earned: false, message: "" };
+  return { questions: [], answers: [], index: 0, result: null, awardStatus: null, checking: false };
 }
 
 function start(exam, render) {
@@ -3542,11 +3542,18 @@ function isAnswered(exam, index) {
   return exam.answers[index]?.size === exam.questions[index].correct.length;
 }
 
+function answerWarning(required, selected) {
+  if (selected < required) return "Complete this question before grading the quiz.";
+  if (selected === required) return "";
+  const extra = selected - required;
+  return `Select ${required} answers. You selected ${selected}. Remove ${extra} ${extra === 1 ? "choice" : "choices"} before grading the quiz.`;
+}
+
 function submitExam(exam, { render, unlock }) {
   const missing = exam.questions.findIndex((_, index) => !isAnswered(exam, index));
   if (missing !== -1) {
     exam.index = missing;
-    exam.message = "Complete this question before grading the quiz.";
+    exam.checking = true;
     render(true);
     return;
   }
@@ -3564,7 +3571,7 @@ function quizFigure(entry, image, caption) {
 
 function review(exam, open, image) {
   const rows = node("ol", "wiki-review");
-  for (const item of exam.result.items) {
+  for (const [index, item] of exam.result.items.entries()) {
     const row = node("li");
     const toggle = node("details");
     const summary = node("summary");
@@ -3587,7 +3594,9 @@ function review(exam, open, image) {
       figure.firstChild.loading = "lazy";
       explanation.append(figure, node("p", "wiki-muted", visual.check));
     }
-    explanation.append(button(`Read ${article.title}`, () => open(article), "wiki-button wiki-chip"));
+    const read = button(`Read ${article.title}`, () => open(article, index), "wiki-button wiki-chip");
+    read.dataset.wikiReviewArticle = String(index);
+    explanation.append(read);
     toggle.append(summary, explanation);
     row.append(toggle);
     rows.append(row);
@@ -3595,8 +3604,24 @@ function review(exam, open, image) {
   return rows;
 }
 
+export function updateAward(award, status) {
+  const notice = award.querySelector("[role='status']");
+  const retry = award.querySelector("button");
+  const wasFocused = retry === award.ownerDocument.activeElement;
+  retry.hidden = status !== "retry" && !(status === "pending" && !retry.hidden);
+  retry.setAttribute("aria-disabled", String(status === "pending"));
+  notice.textContent =
+    {
+      pending: "Checking the FDM Fundamentals achievement…",
+      earned: "Achievement earned · FDM Fundamentals",
+      retry: "The badge claim couldn’t be confirmed.",
+    }[status] ?? "";
+  award.hidden = !notice.textContent;
+  if (wasFocused && retry.hidden && !award.hidden) notice.focus({ preventScroll: true });
+}
+
 export function showExam(exam, actions) {
-  const { open, render, navigate, image } = actions;
+  const { open, render, navigate, image, unlock } = actions;
   const page = node("section", "wiki-flow wiki-exam");
   if (!exam.questions.length) {
     const intro = node("div", "wiki-exam-card");
@@ -3618,10 +3643,8 @@ export function showExam(exam, actions) {
   }
 
   if (exam.result) {
-    const { score, passed } = exam.result;
-    const award = node("p", "wiki-award", exam.earned ? "Achievement earned · FDM Fundamentals" : "");
-    award.dataset.wikiAward = "";
-    award.setAttribute("aria-live", "polite");
+    const completed = exam.result;
+    const { score, passed } = completed;
     const controls = node("div", "wiki-actions");
     controls.append(
       button("Try a new set", () => start(exam, render), "wiki-button wiki-primary"),
@@ -3640,9 +3663,20 @@ export function showExam(exam, actions) {
           ? "You reached the 80% pass mark."
           : `The pass mark is ${passingPoints} points. Review your answers below before trying another set.`,
       ),
-      award,
-      controls,
     );
+    if (passed) {
+      const award = node("div", "wiki-award");
+      award.dataset.wikiAward = "";
+      const notice = node("p");
+      notice.setAttribute("role", "status");
+      notice.tabIndex = -1;
+      const retry = button("Retry achievement", () => unlock(completed));
+      retry.hidden = true;
+      award.append(notice, retry);
+      updateAward(award, exam.awardStatus);
+      result.append(award);
+    }
+    result.append(controls);
     page.append(result, node("h2", null, "Review answers"), review(exam, open, image));
     return page;
   }
@@ -3657,16 +3691,23 @@ export function showExam(exam, actions) {
   progress.max = questionCount;
   progress.setAttribute("aria-label", "Questions answered");
   const progressText = node("span", "wiki-muted");
+  const warning = exam.checking ? node("p", "wiki-notice") : null;
+  warning?.setAttribute("role", "alert");
   function updateProgress() {
     const count = exam.questions.filter((_, questionIndex) => isAnswered(exam, questionIndex)).length;
     progress.value = count;
     progressText.textContent = `${count} of ${questionCount} answered`;
+    if (warning) {
+      warning.textContent = answerWarning(item.correct.length, exam.answers[index]?.size ?? 0);
+      warning.hidden = !warning.textContent;
+    }
   }
   updateProgress();
   meta.append(progressText, node("span", "wiki-points", `${item.points} ${item.points === 1 ? "point" : "points"}`));
   panel.append(pageTitle(`Question ${index + 1} of ${questionCount}`), meta, progress);
   const options = node("fieldset", "wiki-options");
   options.append(node("legend", null, item.prompt));
+  if (warning) options.append(warning);
   if (item.picture) options.append(quizFigure(byId.get(item.picture), image, "AI-generated practice image."));
   options.append(node("p", "wiki-muted", multiple ? `Select ${item.correct.length} answers.` : "Select one answer."));
   item.options.forEach((answer, choice) => {
@@ -3689,7 +3730,7 @@ export function showExam(exam, actions) {
 
   function goTo(next) {
     exam.index = next;
-    exam.message = "";
+    exam.checking = false;
     render(true);
   }
 
@@ -3697,18 +3738,12 @@ export function showExam(exam, actions) {
   const previous = button("← Previous", () => goTo(index - 1));
   previous.disabled = index === 0;
   controls.append(previous);
-  if (index < questionCount - 1 && !exam.message) {
+  if (index < questionCount - 1 && !exam.checking) {
     controls.append(button("Next →", () => goTo(index + 1), "wiki-button wiki-primary"));
   } else {
     controls.append(button("Grade quiz", () => submitExam(exam, actions), "wiki-button wiki-primary"));
   }
-  panel.append(options);
-  if (exam.message) {
-    const warning = node("p", "wiki-notice", exam.message);
-    warning.setAttribute("role", "alert");
-    panel.append(warning);
-  }
-  panel.append(controls);
+  panel.append(options, controls);
   page.append(panel);
   return page;
 }
@@ -3962,7 +3997,8 @@ export default function mount(thingport) {
   const status = root.querySelector("[data-wiki-status]");
   const nav = root.querySelector("[data-wiki-nav]");
   const pane = root.querySelector("[data-wiki-pane]");
-  if (!input || !clear || !status || !nav || !pane) return;
+  const scroller = root.querySelector("[data-wiki-scroll]");
+  if (!input || !clear || !status || !nav || !pane || !scroller) return;
   const template = root.querySelector("[data-wiki-images]");
   const markupImages = new Map(
     Array.from(template?.content.querySelectorAll("img") ?? [], (img) => [img.dataset.case, img.getAttribute("src")]),
@@ -3991,8 +4027,8 @@ export default function mount(thingport) {
     render(true);
   }
 
-  function open(target) {
-    history.push({ entry, query });
+  function open(target, reviewIndex) {
+    history.push({ entry, query, reviewIndex });
     entry = target;
     updateQuery("");
     render(true);
@@ -4002,7 +4038,7 @@ export default function mount(thingport) {
     const previous = history.pop();
     entry = previous?.entry ?? null;
     updateQuery(previous?.query ?? "");
-    render(true);
+    render(true, previous?.reviewIndex);
   }
 
   function updateQuery(value) {
@@ -4017,8 +4053,7 @@ export default function mount(thingport) {
     pane.querySelector(".wiki-filter[aria-pressed='true']")?.focus({ preventScroll: true });
   }
 
-  function render(focus = false) {
-    root.scrollTop = 0;
+  function render(focus = false, reviewIndex) {
     const current = query ? "" : (entry?.section ?? shelf);
     for (const [name, link] of navigation) {
       if (name === current) link.setAttribute("aria-current", "page");
@@ -4050,18 +4085,49 @@ export default function mount(thingport) {
       }
     }
     pane.replaceChildren(display);
+    scroller.scrollTop = 0;
+    if (reviewIndex !== undefined) {
+      const article = pane.querySelector(`[data-wiki-review-article="${reviewIndex}"]`);
+      const row = article?.closest("details");
+      if (row) {
+        row.open = true;
+        article.focus({ preventScroll: true });
+        scroller.scrollTop =
+          article.getBoundingClientRect().top - scroller.getBoundingClientRect().top - scroller.clientHeight / 2;
+        return;
+      }
+    }
     if (focus) pane.querySelector("h1")?.focus({ preventScroll: true });
   }
 
   async function unlock(result) {
-    const earned = await thingport.achievements?.unlock("fundamentals");
-    if (earned && !signal.aborted && exam.result === result) {
-      exam.earned = true;
-      if (shelf === "Quiz" && !entry && !query) {
-        const award = pane.querySelector("[data-wiki-award]");
-        if (award) award.textContent = "Achievement earned · FDM Fundamentals";
-      }
+    const { achievements } = thingport;
+    if (
+      !achievements ||
+      signal.aborted ||
+      exam.result !== result ||
+      exam.awardStatus === "pending" ||
+      exam.awardStatus === "earned"
+    )
+      return;
+    setAwardStatus("pending");
+    let outcome;
+    try {
+      outcome = achievements.unlockWithStatus
+        ? await achievements.unlockWithStatus("fundamentals")
+        : (await achievements.unlock("fundamentals"))
+          ? "earned"
+          : "unavailable";
+    } catch {
+      outcome = "retry";
     }
+    if (!signal.aborted && exam.result === result) setAwardStatus(outcome);
+  }
+
+  function setAwardStatus(outcome) {
+    exam.awardStatus = outcome;
+    const award = pane.querySelector("[data-wiki-award]");
+    if (award) updateAward(award, outcome);
   }
 
   input.addEventListener(

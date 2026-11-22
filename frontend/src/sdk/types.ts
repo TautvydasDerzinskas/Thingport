@@ -1074,6 +1074,15 @@ export interface SdkAchievements {
    * root.addEventListener("dblclick", () => thingport.achievements?.unlock("guest"));
    */
   unlock(key: string): Promise<boolean>;
+  /**
+   * Requests a secret badge and reports the outcome. Use `thingport.achievements?.unlockWithStatus?.(key)` when
+   * supporting hosts with an older SDK.
+   *
+   * @param key The secret's name, as Thingport's catalogue has it for this script.
+   * @returns `"earned"` when the user has it, `"unavailable"` when achievements are off, the secret is unknown, or the
+   * script is an unsaved draft, and `"retry"` when the request could not be confirmed. Repeating a claim is safe.
+   */
+  unlockWithStatus(key: string): Promise<"earned" | "unavailable" | "retry">;
 }
 
 /** The `thingport` object a dashboard widget's default export is called with. */

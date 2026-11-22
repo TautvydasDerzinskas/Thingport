@@ -1,5 +1,5 @@
 import { byId, guides, materials, searchWiki, terms } from "./articles.js";
-import { showExam, newExam } from "./exam.js";
+import { showExam, newExam, updateAward } from "./exam.js";
 import { history } from "./history.js";
 import { printers } from "./printers.js";
 import { issueGroups } from "./troubleshooting.js";
@@ -240,7 +240,8 @@ export default function mount(thingport) {
   const status = root.querySelector("[data-wiki-status]");
   const nav = root.querySelector("[data-wiki-nav]");
   const pane = root.querySelector("[data-wiki-pane]");
-  if (!input || !clear || !status || !nav || !pane) return;
+  const scroller = root.querySelector("[data-wiki-scroll]");
+  if (!input || !clear || !status || !nav || !pane || !scroller) return;
   const template = root.querySelector("[data-wiki-images]");
   const markupImages = new Map(
     Array.from(template?.content.querySelectorAll("img") ?? [], (img) => [img.dataset.case, img.getAttribute("src")]),
@@ -269,8 +270,8 @@ export default function mount(thingport) {
     render(true);
   }
 
-  function open(target) {
-    history.push({ entry, query });
+  function open(target, reviewIndex) {
+    history.push({ entry, query, reviewIndex });
     entry = target;
     updateQuery("");
     render(true);
@@ -280,7 +281,7 @@ export default function mount(thingport) {
     const previous = history.pop();
     entry = previous?.entry ?? null;
     updateQuery(previous?.query ?? "");
-    render(true);
+    render(true, previous?.reviewIndex);
   }
 
   function updateQuery(value) {
@@ -295,8 +296,7 @@ export default function mount(thingport) {
     pane.querySelector(".wiki-filter[aria-pressed='true']")?.focus({ preventScroll: true });
   }
 
-  function render(focus = false) {
-    root.scrollTop = 0;
+  function render(focus = false, reviewIndex) {
     const current = query ? "" : (entry?.section ?? shelf);
     for (const [name, link] of navigation) {
       if (name === current) link.setAttribute("aria-current", "page");
@@ -328,18 +328,49 @@ export default function mount(thingport) {
       }
     }
     pane.replaceChildren(display);
+    scroller.scrollTop = 0;
+    if (reviewIndex !== undefined) {
+      const article = pane.querySelector(`[data-wiki-review-article="${reviewIndex}"]`);
+      const row = article?.closest("details");
+      if (row) {
+        row.open = true;
+        article.focus({ preventScroll: true });
+        scroller.scrollTop =
+          article.getBoundingClientRect().top - scroller.getBoundingClientRect().top - scroller.clientHeight / 2;
+        return;
+      }
+    }
     if (focus) pane.querySelector("h1")?.focus({ preventScroll: true });
   }
 
   async function unlock(result) {
-    const earned = await thingport.achievements?.unlock("fundamentals");
-    if (earned && !signal.aborted && exam.result === result) {
-      exam.earned = true;
-      if (shelf === "Quiz" && !entry && !query) {
-        const award = pane.querySelector("[data-wiki-award]");
-        if (award) award.textContent = "Achievement earned · FDM Fundamentals";
-      }
+    const { achievements } = thingport;
+    if (
+      !achievements ||
+      signal.aborted ||
+      exam.result !== result ||
+      exam.awardStatus === "pending" ||
+      exam.awardStatus === "earned"
+    )
+      return;
+    setAwardStatus("pending");
+    let outcome;
+    try {
+      outcome = achievements.unlockWithStatus
+        ? await achievements.unlockWithStatus("fundamentals")
+        : (await achievements.unlock("fundamentals"))
+          ? "earned"
+          : "unavailable";
+    } catch {
+      outcome = "retry";
     }
+    if (!signal.aborted && exam.result === result) setAwardStatus(outcome);
+  }
+
+  function setAwardStatus(outcome) {
+    exam.awardStatus = outcome;
+    const award = pane.querySelector("[data-wiki-award]");
+    if (award) updateAward(award, outcome);
   }
 
   input.addEventListener(
