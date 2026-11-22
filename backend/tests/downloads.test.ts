@@ -287,6 +287,8 @@ describe("ZipPaths", () => {
       "x".repeat(130),
       "é".repeat(130),
       "零".repeat(90),
+      `${".".repeat(120)}x`,
+      `${".".repeat(120)}abcdefghijklmnop`,
     ),
     owner: fc.constantFrom("one", "two"),
   });
@@ -359,6 +361,13 @@ describe("ZipPaths", () => {
     // A folder has no extension: its number goes at the end.
     expect(zip.folder("", "Benchy v1.2", "one")).toBe("Benchy v1.2");
     expect(zip.folder("", "Benchy v1.2", "two")).toBe("Benchy v1.2 (2)");
+  });
+
+  it("never leaves a level empty when a cut takes all of a name", () => {
+    const zip = new ZipPaths();
+    const folder = zip.folder("C", `${".".repeat(120)}x`, "one");
+    expect(folder).toBe("C/imported-file");
+    expect(zip.file(folder, `${".".repeat(120)}abcdefghijklmnop`)).toBe("C/imported-file/imported-file");
   });
 
   it("makes a category's name one folder, by the name rule", () => {

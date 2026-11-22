@@ -11,6 +11,8 @@ import { cutName, normalizeFileName, numberedFolderName, numberedName, PATH_SEGM
 // "ΦΙΛΟΣ" and "φιλος", or "µ" and "μ", apart, which a Mac or Windows takes as one name. Folding more than a disk does
 // only numbers a name that needn't be.
 const key = (path: string) => path.toUpperCase().toLowerCase().normalize("NFD");
+// What a name that a cut leaves nothing of (120 dots and an "x") goes by: the name rule's own fallback.
+const FALLBACK = normalizeFileName("");
 const join = (folder: string, name: string) => (folder ? `${folder}/${name}` : name);
 
 export class ZipPaths {
@@ -25,7 +27,8 @@ export class ZipPaths {
   /** The folder `name` inside `parent` for `owner`: its own if it already claimed one, else the first free
    *  "name", "name (2)", ... A folder another owner has, or a file, is passed over. */
   folder(parent: string, name: string, owner: string): string {
-    const normal = normalizeFileName(name);
+    const given = normalizeFileName(name);
+    const normal = numberedFolderName(given, 1, PATH_SEGMENT_MAX) ? given : FALLBACK;
     for (let n = 1; ; n++) {
       const candidate = join(parent, numberedFolderName(normal, n, PATH_SEGMENT_MAX));
       const holder = this.folders.get(key(candidate));
@@ -45,7 +48,8 @@ export class ZipPaths {
 
   /** A file named `name` in `folder`: that name if it's free, else numbered apart ("Base (2).stl"). */
   file(folder: string, name: string): string {
-    const normal = normalizeFileName(name);
+    const given = normalizeFileName(name);
+    const normal = cutName(given, PATH_SEGMENT_MAX) ? given : FALLBACK;
     for (let n = 1; ; n++) {
       const candidate = join(
         folder,
