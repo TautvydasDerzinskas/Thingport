@@ -5457,6 +5457,11 @@
           "rule": "Synchronisez des collections depuis {{count}} sites différents",
           "stat": "Synchronisé depuis {{count}} sites"
         },
+        "fdmFundamentals": {
+          "name": "Les bases du FDM",
+          "rule": "Obtenez au moins 80 % au quiz du wiki de l’impression 3D.",
+          "stat": "Quiz FDM réussi"
+        },
         "weatherGuest": {
           "name": "A rencontré l’invité",
           "rule": "Un secret. Vous l’avez trouvé.",

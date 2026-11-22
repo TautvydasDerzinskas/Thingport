@@ -5571,6 +5571,11 @@
           "rule": "Sinchronizuokite kolekcijas iš {{count}} skirtingų svetainių",
           "stat": "Sinchronizuojama iš {{count}} svetainių"
         },
+        "fdmFundamentals": {
+          "name": "FDM pagrindai",
+          "rule": "3D spausdinimo vikio viktorinoje surinkite bent 80 % taškų.",
+          "stat": "Išlaikyta FDM viktorina"
+        },
         "weatherGuest": {
           "name": "Sutiko svečią",
           "rule": "Paslaptis. Jūs ją radote.",

@@ -1,0 +1,37 @@
+{
+  "name": "3D Printing Wiki",
+  "description": "An FDM printing reference for materials, slicers, CAD and printer makers. Diagnose defects from illustrated examples, search the glossary and practice with a randomized 30-question quiz.",
+  "version": "1.2.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": { "width": 1160, "height": 800 },
+  "hosts": [],
+  "category": "other",
+  "screenshots": [
+    {
+      "file": "screenshots/overview-light.webp",
+      "caption": "The overview links new makers to the first-print guide, defect gallery and practical slicer settings."
+    },
+    {
+      "file": "screenshots/troubleshooting-dark.webp",
+      "caption": "The walls and motion filter shows illustrated examples of layer shift, ringing, Z banding and seam defects."
+    },
+    {
+      "file": "screenshots/layer-height-light.webp",
+      "caption": "The layer-height article compares layer counts and estimated print times for the same PLA block at four heights."
+    },
+    {
+      "file": "screenshots/filament-drying-light.webp",
+      "caption": "The filament-drying guide compares the manufacturer’s temperature and time for eight named products."
+    },
+    {
+      "file": "screenshots/search-light.webp",
+      "caption": "Searching for stringing brings up the defect alongside related material, drying and travel-move articles."
+    },
+    {
+      "file": "screenshots/quiz-dark.webp",
+      "caption": "An illustrated quiz question asks the reader to identify a defect from a printed example."
+    }
+  ],
+  "iconUrl": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='15'%20fill='%23181c26'/%3E%3Cpath%20d='M32%2019c-5-5-12-6-20-4v31c8-2%2015-1%2020%204%205-5%2012-6%2020-4V15c-8-2-15-1-20%204Zm0%200v31M18%2025l8%201m-8%206%208%201m12-7%208-1m-8%208%208-1'%20fill='none'%20stroke='%23ff885e'%20stroke-width='3'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3C/svg%3E"
+}

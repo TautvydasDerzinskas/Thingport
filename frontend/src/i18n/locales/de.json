@@ -5228,6 +5228,11 @@
           "rule": "Halte Sammlungen von {{count}} verschiedenen Plattformen synchron",
           "stat": "Synchronisiert von {{count}} Plattformen"
         },
+        "fdmFundamentals": {
+          "name": "FDM-Grundlagen",
+          "rule": "Erreiche mindestens 80 % im Quiz des 3D-Druck-Wikis.",
+          "stat": "FDM-Quiz bestanden"
+        },
         "weatherGuest": {
           "name": "Wetterspürnase",
           "rule": "Ein Geheimnis. Du hast es gefunden.",

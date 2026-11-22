@@ -5224,6 +5224,11 @@
           "rule": "Keep collections in sync from {{count}} different sites",
           "stat": "Synced from {{count}} sites"
         },
+        "fdmFundamentals": {
+          "name": "FDM Fundamentals",
+          "rule": "Score at least 80% on the 3D Printing Wiki quiz.",
+          "stat": "Passed the FDM quiz"
+        },
         "weatherGuest": {
           "name": "Met the guest",
           "rule": "A secret. You found it.",
