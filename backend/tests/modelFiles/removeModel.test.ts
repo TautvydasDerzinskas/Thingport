@@ -9,6 +9,7 @@ import { removeModel } from "../../src/modelFiles/removeModel";
 import { deleteAllPrintsForUser } from "../../src/services/adminService";
 import { discardPrintOrThrow } from "../../src/services/printCreation";
 import { deletePrint } from "../../src/services/printEditService";
+import { deleteUser } from "../../src/services/userAdminService";
 import { checkLibraryInvariants, faults, pauseAt, useStorageKit, type KitModel, type KitUser } from "../harness";
 
 // The one delete (src/modelFiles/removeModel.ts): every way a model goes leaves nothing of it, a tool's file stays, a
@@ -148,5 +149,21 @@ describe("removing a model", () => {
     await discardPrintOrThrow(model.print.id);
 
     expect(await prisma.author.count({ where: { id: author.id } })).toBe(0);
+  });
+
+  it("takes an author only a deleted account's tool model named, and the tool's file stays", async () => {
+    const actor = await kit.user();
+    const owner = await kit.user();
+    const tool = await kit.toolModel(owner);
+    const author = await prisma.author.create({
+      data: { id: kit.nonce(), provider: "test", externalId: kit.nonce(), name: "Maker" },
+    });
+    await prisma.print.update({ where: { id: tool.print.id }, data: { authorId: author.id } });
+
+    await deleteUser(actor.id, owner.id);
+
+    expect(await prisma.print.count({ where: { id: tool.print.id } })).toBe(0);
+    expect(await prisma.author.count({ where: { id: author.id } })).toBe(0);
+    for (const source of tool.sources) expect(fs.readFileSync(source.path)).toEqual(source.bytes);
   });
 });
