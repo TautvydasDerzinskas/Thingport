@@ -32,6 +32,15 @@ import { featureLabel, plateLabel } from "./labels";
 import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
 import type { RunCommand } from "./useStudioDesign";
+import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import type { MenuAnchor } from "../../components/menus/menuAction";
+
+/** Where a right-click happened, or the row itself for one from the keyboard, which has no point. */
+function contextAnchor(event: React.MouseEvent<HTMLElement>): MenuAnchor {
+  const { clientX, clientY } = event;
+  if (!clientX && !clientY) return event.currentTarget;
+  return { nodeType: 1, getBoundingClientRect: () => new DOMRect(clientX, clientY, 0, 0) };
+}
 
 type Props = {
   document: StudioDocument | null;
@@ -78,7 +87,7 @@ export default function ObjectsPanel({
   const title = t("studio.panels.features");
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [plateExpansion, setPlateExpansion] = useState<Partial<Record<string, boolean>>>({});
-  const [plateMenu, setPlateMenu] = useState<{ id: string; anchor: HTMLElement } | null>(null);
+  const [plateMenu, setPlateMenu] = useState<{ id: string; anchor: MenuAnchor } | null>(null);
   const [plateDialog, setPlateDialog] = useState<{ kind: "create" } | { kind: "rename"; id: string } | null>(null);
   const plates = document ? studioPlates(document) : [];
   const rootsByPlate = new Map<string, Feature[]>();
@@ -285,6 +294,7 @@ export default function ObjectsPanel({
           const expanded = plateExpansion[plate.id] ?? active;
           const roots = rootsByPlate.get(plate.id) ?? [];
           const name = plateLabel(plate, t);
+          const hasActions = canEditPlates || canExportPlate(plate);
           return (
             <Box key={plate.id} role="treeitem" aria-label={name} aria-expanded={expanded} aria-current={active}>
               <ListItemButton
@@ -292,6 +302,14 @@ export default function ObjectsPanel({
                 selected={active}
                 aria-label={name}
                 onClick={() => activatePlate(plate.id)}
+                onContextMenu={
+                  hasActions
+                    ? (event) => {
+                        event.preventDefault();
+                        setPlateMenu({ id: plate.id, anchor: contextAnchor(event) });
+                      }
+                    : undefined
+                }
                 onKeyDown={(event) => {
                   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
                   event.preventDefault();
@@ -316,7 +334,7 @@ export default function ObjectsPanel({
                 <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0, fontWeight: active ? 600 : 500 }}>
                   {name}
                 </Typography>
-                {(canEditPlates || canExportPlate(plate)) && (
+                {hasActions && (
                   <Tooltip title={t("studio.plates.actions")}>
                     <IconButton
                       size="small"
@@ -349,7 +367,12 @@ export default function ObjectsPanel({
           );
         })}
       </Box>
-      <Menu anchorEl={plateMenu?.anchor} open={Boolean(menuPlate)} onClose={() => setPlateMenu(null)}>
+      <Menu
+        anchorEl={plateMenu?.anchor}
+        open={Boolean(menuPlate)}
+        onClose={() => setPlateMenu(null)}
+        onContextMenu={(event) => reopenContextMenuBelow(event, () => setPlateMenu(null))}
+      >
         <MenuItem
           disabled={exporting || !menuPlate || !canExportPlate(menuPlate)}
           onClick={() => {
