@@ -2211,7 +2211,19 @@ export default async function mount(thingport) {
   };
 
   /** An engine refusal in the user's own language, falling back to the English it came with. */
-  const reason = (error) => (error?.code ? t(`error.${error.code}`, error.vars) : error?.message || String(error));
+  const reason = (error) => {
+    if (error?.code) return t(`error.${error.code}`, error.vars);
+    const message = error?.message || String(error);
+    const keys = new Map([
+      ["There's nowhere safe to put that ring. Widen the border, or make the ring smaller.", "error.noSafeRing"],
+      ["There's no room to join that ring. Widen the border, or make the ring smaller.", "error.noRingJoin"],
+      [
+        "There's no room for that magnet. Use fewer or smaller ones, or make the keyring bigger.",
+        "error.noMagnetSpace",
+      ],
+    ]);
+    return keys.has(message) ? t(keys.get(message)) : message;
+  };
 
   // ---- what the window is showing ------------------------------------------------------------------------------
 
@@ -2419,7 +2431,7 @@ export default async function mount(thingport) {
       }
       if (!result.connected) bits.push(`<span class="krg-chip">⚠ <b>${escapeHtml(t("view.notJoined"))}</b></span>`);
       for (const warning of result.warnings.slice(0, 2))
-        bits.push(`<span class="krg-chip">${escapeHtml(warning)}</span>`);
+        bits.push(`<span class="krg-chip">${escapeHtml(translatedWarning(warning))}</span>`);
     }
     host.innerHTML = bits.join("");
     host.hidden = !bits.length;
@@ -3284,7 +3296,7 @@ export default async function mount(thingport) {
       );
     }
     if (result.warnings.length)
-      lines.push("", t("notes.worthKnowing"), ...result.warnings.map((warning) => `  - ${warning}`));
+      lines.push("", t("notes.worthKnowing"), ...result.warnings.map((warning) => `  - ${translatedWarning(warning)}`));
     if (!result.connected) lines.push("", `  ${t("notes.inPieces")}`);
     lines.push("", t("notes.madeWith", { version: tool.version }));
     return lines.join("\n");
@@ -3645,6 +3657,17 @@ export default async function mount(thingport) {
       }
     });
     input.click();
+  }
+
+  function translatedWarning(warning) {
+    const pieces = /^The border is in (\d+) separate pieces\. Widen the join, or fill the inside\.$/.exec(warning);
+    if (pieces) return t("warning.pieces", { count: Number(pieces[1]) });
+    const keys = {
+      "The border stands higher than the letters. Look at it from the side.": "warning.borderHigh",
+      "The join between letters is under 1.6 mm. It may be fragile.": "warning.thinJoin",
+      "A ring's wall is under 0.8 mm. Make the hole smaller, or the ring bigger.": "warning.thinRing",
+    };
+    return keys[warning] ? t(keys[warning]) : warning;
   }
 
   // ---- getting going -------------------------------------------------------------------------------------------

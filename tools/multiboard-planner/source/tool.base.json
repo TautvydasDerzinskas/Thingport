@@ -1,7 +1,7 @@
 {
   "name": "Multiboard planner",
   "description": "Plans a Multiboard wall: the layout, and every tile and mount to print it, from your own library.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {
@@ -10,7 +10,7 @@
   },
   "hosts": [],
   "category": "planners",
-  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be"],
+  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be", "de", "zh"],
   "screenshots": [
     {
       "file": "screenshots/grid-tiles.webp",

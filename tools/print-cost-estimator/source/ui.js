@@ -39,13 +39,6 @@ const clean = (value, fallback = 0) => (Number.isFinite(Number(value)) ? Number(
 
 /** "3 h 24 min", "48 min", "35 s": short enough for a table, exact enough to compare. */
 
-/** "2nd", "3rd", "11th": only ever seen on a mesh too big to draw whole. */
-const ordinal = (n) => {
-  const tens = n % 100;
-  const suffix = tens >= 11 && tens <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] ?? "th");
-  return `${n}${suffix}`;
-};
-
 const sizeText = (bytes) => {
   if (!Number.isFinite(bytes)) return "";
   if (bytes < 1024) return `${bytes} B`;
@@ -102,7 +95,7 @@ export default async function mount(thingport) {
 
   /** Setup: the printers and filaments the person keeps, and their rates. Saved under one key. */
   let setup = {
-    printers: [{ ...PRINTER }],
+    printers: [{ ...PRINTER, name: t("money.printer") }],
     printer: 0,
     materials: [{ ...MATERIAL }],
     material: 0,
@@ -111,7 +104,7 @@ export default async function mount(thingport) {
   let saved = [];
 
   const selected = () => items.find((item) => item.id === selectedId) ?? null;
-  const printer = () => setup.printers[setup.printer] ?? setup.printers[0] ?? { ...PRINTER };
+  const printer = () => setup.printers[setup.printer] ?? setup.printers[0] ?? { ...PRINTER, name: t("money.printer") };
   const material = () => setup.materials[setup.material] ?? setup.materials[0] ?? { ...MATERIAL };
   const business = () => setup.business;
   const money = (value) => `${business().currency}${(Number.isFinite(value) ? value : 0).toFixed(2)}`;
@@ -138,7 +131,7 @@ export default async function mount(thingport) {
       setup = {
         printers:
           Array.isArray(kept.printers) && kept.printers.length
-            ? kept.printers.map((p) => ({ ...PRINTER, ...p }))
+            ? kept.printers.map((p) => ({ ...PRINTER, name: t("money.printer"), ...p }))
             : setup.printers,
         printer: clean(kept.printer, 0),
         materials:
@@ -229,6 +222,40 @@ export default async function mount(thingport) {
     }
   }
 
+  function localizedFileError(error) {
+    const message = error?.message || String(error);
+    const fixed = new Map([
+      ["This STL has no triangles in it.", "error.stlEmpty"],
+      ["This STL can't be read: it's neither a binary nor a text STL.", "error.stlInvalid"],
+      ["This OBJ has no faces in it.", "error.objEmpty"],
+      ["This OBJ points at vertices it doesn't have.", "error.objVertices"],
+      ["This 3MF has no model in it.", "error.noModel"],
+      ["This 3MF has no triangles in it: it may hold only a sliced plate.", "error.noTriangles"],
+      ["This file is empty.", "error.empty"],
+      ["STEP files hold shapes, not triangles. Export the part as an STL or 3MF and drop that.", "error.step"],
+      [
+        "No print time or filament weight in this file. If it's the G-code your slicer exported, type the two figures in by hand.",
+        "error.noSlicerData",
+      ],
+      ["This isn't a 3MF: it isn't a ZIP archive.", "error.notZip"],
+      ["The 3MF's ZIP64 directory is damaged.", "error.badDirectory"],
+      ["The 3MF's ZIP directory is damaged.", "error.badDirectory"],
+    ]);
+    if (fixed.has(message)) return t(fixed.get(message));
+    for (const [pattern, key] of [
+      [/^(.*) in the 3MF is encrypted\.$/, "error.encrypted"],
+      [/^(.*) in the 3MF is packed in a way this can't read\.$/, "error.compression"],
+      [/^(.*) in the 3MF is damaged\.$/, "error.damagedEntry"],
+    ]) {
+      const match = pattern.exec(message);
+      if (match) return t(key, { name: match[1] });
+    }
+    if (/can't be measured\. Drop an STL, OBJ or 3MF/.test(message)) return t("error.unsupported");
+    return error instanceof MeshError || error instanceof SlicerError
+      ? message
+      : t("error.readFailed", { error: message });
+  }
+
   async function run(item) {
     try {
       const bytes = await item.read();
@@ -274,10 +301,7 @@ export default async function mount(thingport) {
       item.error = null;
     } catch (error) {
       item.status = "failed";
-      item.error =
-        error instanceof MeshError || error instanceof SlicerError
-          ? error.message
-          : `Couldn't read it: ${error?.message || error}`;
+      item.error = localizedFileError(error);
     }
   }
 
@@ -368,7 +392,7 @@ export default async function mount(thingport) {
   function renderList() {
     const list = $("list");
     if (!items.length) {
-      list.innerHTML = '<li class="pce-empty">Nothing yet. Drop a model, or take one from your library.</li>';
+      list.innerHTML = `<li class="pce-empty">${escapeHtml(t("parts.empty"))}</li>`;
       return;
     }
     list.replaceChildren(
@@ -393,7 +417,7 @@ export default async function mount(thingport) {
             item.status === "done"
               ? `<span class="pce-tag ${item.kind === "sliced" ? "pce-tag-exact" : "pce-tag-guess"}">${item.kind === "sliced" ? t("kind.sliced") : t("csv.estimate")}</span>`
               : item.status === "failed"
-                ? '<span class="pce-tag">Failed</span>'
+                ? `<span class="pce-tag">${escapeHtml(t("status.failed"))}</span>`
                 : '<span class="pce-spin" role="presentation"></span>'
           }
           <div class="pce-item-sum">${summary}</div>`;
@@ -448,9 +472,9 @@ export default async function mount(thingport) {
       <div><span>${escapeHtml(t("batch.parts", { parts: b.parts }))}${b.units !== b.parts ? escapeHtml(t("batch.toPrint", { units: b.units })) : ""}</span><b>${timeText(b.hours)}</b></div>
       <div><span>${escapeHtml(t("money.filament"))}</span><b>${b.grams.toFixed(0)} g</b></div>
       <div><span>${escapeHtml(t("csv.cost"))}</span><b>${money(b.cost)}</b></div>
-      <div><span>Recommended</span><b>${money(b.price)}</b></div>`;
+      <div><span>${escapeHtml(t("batch.recommended"))}</span><b>${money(b.price)}</b></div>`;
     totals.hidden = false;
-    totals.innerHTML = `<span>${b.units} to print</span><b>${timeText(b.hours)}</b><span>·</span><b>${money(b.price)}</b>`;
+    totals.innerHTML = `<span>${escapeHtml(t("batch.units", { count: b.units }))}</span><b>${timeText(b.hours)}</b><span>·</span><b>${money(b.price)}</b>`;
   }
 
   /* ------------------------------------------------------------ the part */
@@ -607,7 +631,7 @@ export default async function mount(thingport) {
       messages.innerHTML =
         item.status === "failed"
           ? `<div class="pce-note pce-note-bad">${escapeHtml(item.error)}</div>`
-          : '<div class="pce-note">Reading it…</div>';
+          : `<div class="pce-note">${escapeHtml(t("status.readingIt"))}</div>`;
       size.textContent = "";
       note.hidden = false;
       note.textContent = item.status === "failed" ? t("common.nothingToShow") : t("status.readingIt");
@@ -621,8 +645,8 @@ export default async function mount(thingport) {
     kind.className = `pce-tag ${item.kind === "sliced" ? "pce-tag-exact" : "pce-tag-guess"}`;
     kind.textContent =
       item.kind === "sliced"
-        ? `From ${item.sliced.slicer ?? t("source.theSlicer")}`
-        : `Estimated · ${item.mesh.format}`;
+        ? t("kind.fromNamed", { name: item.sliced.slicer ?? t("source.theSlicer") })
+        : t("kind.estimatedFormat", { format: item.mesh.format });
 
     renderView(item, figures);
     renderFacts(item, figures, facts);
@@ -663,7 +687,7 @@ export default async function mount(thingport) {
       }
     }
     const [x, y, z] = figures.measurement.box.size;
-    size.textContent = `${x.toFixed(1)} × ${y.toFixed(1)} × ${z.toFixed(1)} mm${item.drawnEvery > 1 ? ` · every ${ordinal(item.drawnEvery)} triangle drawn` : ""}`;
+    size.textContent = `${x.toFixed(1)} × ${y.toFixed(1)} × ${z.toFixed(1)} mm${item.drawnEvery > 1 ? ` · ${t("view.decimated", { count: item.drawnEvery })}` : ""}`;
   }
 
   function renderFacts(item, figures, into) {
@@ -719,13 +743,17 @@ export default async function mount(thingport) {
     if (item.kind === "mesh") {
       notes.push({
         tone: "",
-        html: `Estimated from the shape at <b>${clean(printer().infill, 15)}% infill</b>, ${clean(printer().walls, 2)} walls and ${clean(printer().layerHeight, 0.2)} mm layers. Slice it and type the two figures in for an exact price.`,
+        html: t("note.meshEstimate", {
+          infill: clean(printer().infill, 15),
+          walls: clean(printer().walls, 2),
+          height: clean(printer().layerHeight, 0.2),
+        }),
       });
     }
     if (m && m.closed === false) {
       notes.push({
         tone: "bad",
-        html: "This mesh isn't closed, so its volume — and everything worked out from it — may be wrong. Repairing it in your slicer first is worth the minute.",
+        html: t("note.openMesh"),
       });
     }
     if (m && m.inverted) {
@@ -740,7 +768,10 @@ export default async function mount(thingport) {
       if (!room.fits) {
         notes.push({
           tone: "bad",
-          html: `It doesn't fit the bed (${bed.x} × ${bed.y} × ${bed.z} mm). It would at <b>${Math.floor(room.room * item.scale * 0.995)}%</b>, or cut into parts.`,
+          html: t("note.notFit", {
+            bed: `${bed.x} × ${bed.y} × ${bed.z}`,
+            scale: Math.floor(room.room * item.scale * 0.995),
+          }),
         });
       }
     }
@@ -766,7 +797,7 @@ export default async function mount(thingport) {
       ...notes.map(({ tone, html }) => {
         const box = document.createElement("div");
         box.className = `pce-note${tone ? ` pce-note-${tone}` : ""}`;
-        box.innerHTML = html;
+        box.textContent = html;
         return box;
       }),
     );
@@ -813,14 +844,18 @@ export default async function mount(thingport) {
     const figures = figuresOf(item);
     if (!figures) {
       hint.textContent = "";
-      into.innerHTML = '<p class="pce-empty">Add a part and its price shows up here.</p>';
+      into.innerHTML = `<p class="pce-empty">${escapeHtml(t("price.addPart"))}</p>`;
       return;
     }
     const { priced } = figures;
     hint.textContent = item.kind === "sliced" ? t("kind.fromSlicer") : t("kind.estimate");
 
     const total = Math.max(priced.cost, 0.0001);
-    const segments = LAYERS.map((layer) => ({ ...layer, value: priced.parts[layer.key] ?? 0 }));
+    const segments = LAYERS.map((layer) => ({
+      ...layer,
+      name: t(`layer.${layer.key}`),
+      value: priced.parts[layer.key] ?? 0,
+    }));
     const bar = segments
       .map((segment) => {
         const share = (segment.value / total) * 100;
@@ -843,26 +878,26 @@ export default async function mount(thingport) {
     const profitable = priced.profit >= 0;
     into.innerHTML = `
       <div class="pce-hero">
-        <span>Charge, for a ${clean(business().margin, 40)}% margin</span>
+        <span>${escapeHtml(t("price.charge", { margin: clean(business().margin, 40) }))}</span>
         <strong>${money(priced.recommended)}</strong>
-        <em>${money(priced.cost)} to make · you keep ${money(priced.kept)}</em>
+        <em>${escapeHtml(t("price.keep", { cost: money(priced.cost), kept: money(priced.kept) }))}</em>
       </div>
-      <h3 class="pce-hint" style="margin-top:10px">What the ${money(priced.cost)} is</h3>
-      <div class="pce-bar-chart" role="img" aria-label="${escapeHtml(`The cost: ${segments.map((segment) => `${segment.name} ${money(segment.value)}`).join(", ")}`)}">${bar}</div>
+      <h3 class="pce-hint" style="margin-top:10px">${escapeHtml(t("price.breakdown", { cost: money(priced.cost) }))}</h3>
+      <div class="pce-bar-chart" role="img" aria-label="${escapeHtml(t("price.chart", { segments: segments.map((segment) => `${segment.name} ${money(segment.value)}`).join(", ") }))}">${bar}</div>
       <ul class="pce-legend">${legend}</ul>
       <div class="pce-rows">
-        <div><span>Filament is</span><b>${priced.materialShare.toFixed(0)}% of it</b></div>
-        <div><span>Time on the printer</span><b>${timeText(figures.hours)}</b></div>
+        <div><span>${escapeHtml(t("price.filamentShare"))}</span><b>${escapeHtml(t("price.filamentPercent", { share: priced.materialShare.toFixed(0) }))}</b></div>
+        <div><span>${escapeHtml(t("price.printerTime"))}</span><b>${timeText(figures.hours)}</b></div>
         ${
           priced.charged > 0
-            ? `<div><span>At ${money(priced.charged)} you make</span><b class="${profitable ? "pce-good" : "pce-bad"}">${money(priced.profit)}</b></div>
-               <div><span>Which is</span><b class="${profitable ? "pce-good" : "pce-bad"}">${priced.margin.toFixed(0)}% · ${money(priced.perHour)}/h</b></div>`
+            ? `<div><span>${escapeHtml(t("price.profitAt", { price: money(priced.charged) }))}</span><b class="${profitable ? "pce-good" : "pce-bad"}">${money(priced.profit)}</b></div>
+               <div><span>${escapeHtml(t("price.whichIs"))}</span><b class="${profitable ? "pce-good" : "pce-bad"}">${priced.margin.toFixed(0)}% · ${money(priced.perHour)}/h</b></div>`
             : ""
         }
         ${
           priced.quantity > 1
-            ? `<div><span>${priced.quantity} of them</span><b>${money(priced.orderPrice)}</b></div>
-               <div><span>Costing</span><b>${money(priced.orderCost)}</b></div>`
+            ? `<div><span>${escapeHtml(t("price.quantity", { count: priced.quantity }))}</span><b>${money(priced.orderPrice)}</b></div>
+               <div><span>${escapeHtml(t("price.orderCost"))}</span><b>${money(priced.orderCost)}</b></div>`
             : ""
         }
       </div>`;
@@ -945,10 +980,10 @@ export default async function mount(thingport) {
     const figures = figuresOf(item);
     const text = [
       item.name,
-      `Print time: ${timeText(figures.hours)}`,
-      `Filament: ${figures.grams.toFixed(1)} g${figures.purgeGrams ? ` + ${figures.purgeGrams.toFixed(1)} g purge` : ""}`,
-      `Cost: ${money(figures.priced.cost)}`,
-      `Price: ${money(figures.priced.recommended)} (${clean(business().margin, 40)}% margin)`,
+      `${t("field.hours")}: ${timeText(figures.hours)}`,
+      `${t("field.grams")}: ${figures.grams.toFixed(1)} g${figures.purgeGrams ? ` + ${figures.purgeGrams.toFixed(1)} g ${t("field.purgeGrams")}` : ""}`,
+      `${t("csv.cost")}: ${money(figures.priced.cost)}`,
+      `${t("csv.price")}: ${money(figures.priced.recommended)} (${clean(business().margin, 40)}% ${t("price.margin")})`,
     ].join("\n");
     await writeClipboard(text);
     ui.toast(t("toast.copied"), "success");
@@ -963,7 +998,7 @@ export default async function mount(thingport) {
     };
     document.addEventListener("copy", onCopy);
     try {
-      if (!document.execCommand("copy")) throw new Error("The browser didn't allow copying");
+      if (!document.execCommand("copy")) throw new Error(t("error.copyFailed"));
     } finally {
       document.removeEventListener("copy", onCopy);
     }
@@ -996,10 +1031,19 @@ export default async function mount(thingport) {
   /** Writes the estimate into the model's notes, under a line of its own, leaving what's there alone. */
   async function noteOnModel(item) {
     const figures = figuresOf(item);
-    const text = `Print cost estimate (${new Date().toLocaleDateString()}): ${timeText(figures.hours)}, ${figures.grams.toFixed(1)} g, ${money(figures.priced.cost)} to make, ${money(figures.priced.recommended)} to charge — ${printer().name}, ${material().name}, ${item.kind === "sliced" ? t("source.fromSliced") : t("source.estimated")}.`;
+    const text = t("notes.summary", {
+      date: new Date().toLocaleDateString(),
+      time: timeText(figures.hours),
+      grams: figures.grams.toFixed(1),
+      cost: money(figures.priced.cost),
+      price: money(figures.priced.recommended),
+      printer: printer().name,
+      material: material().name,
+      source: item.kind === "sliced" ? t("source.fromSliced") : t("source.estimated"),
+    });
     const yes = await ui.confirm({
       title: t("notes.confirmTitle"),
-      message: `This is added to the end of “${item.source.modelName}”'s notes:\n\n${text}`,
+      message: t("notes.confirmBody", { name: item.source.modelName, text }),
       confirmLabel: t("notes.addShort"),
     });
     if (!yes) return;
@@ -1027,10 +1071,10 @@ export default async function mount(thingport) {
         t("csv.hours"),
         t("csv.filament"),
         t("csv.purge"),
-        `Cost (${b.currency})`,
-        `Price (${b.currency})`,
+        `${t("csv.cost")} (${b.currency})`,
+        `${t("csv.price")} (${b.currency})`,
         t("csv.quantity"),
-        `Order (${b.currency})`,
+        `${t("field.quantity")} (${b.currency})`,
         t("money.printer"),
         t("money.filament"),
         t("csv.margin"),
@@ -1352,9 +1396,9 @@ export default async function mount(thingport) {
           <div class="pce-in" style="flex:1 1 140px"><select id="pce-which" aria-label="${setupTab === "printer" ? t("setup.whichPrinter") : t("setup.whichFilament")}">
             ${list.map((entry, index) => `<option value="${index}"${index === (setupTab === "printer" ? setup.printer : setup.material) ? " selected" : ""}>${escapeHtml(entry.name || t("common.unnamed"))}</option>`).join("")}
           </select></div>
-          <div class="pce-in" style="flex:1 1 140px"><input id="pce-which-name" value="${escapeHtml(target.name ?? "")}" aria-label=t("setup.itsName") placeholder=t("setup.itsName") /></div>
-          <button type="button" class="pce-btn" id="pce-which-add">Add another</button>
-          <button type="button" class="pce-btn" id="pce-which-drop"${list.length < 2 ? " disabled" : ""}>Remove</button>
+          <div class="pce-in" style="flex:1 1 140px"><input id="pce-which-name" value="${escapeHtml(target.name ?? "")}" aria-label="${escapeHtml(t("setup.itsName"))}" placeholder="${escapeHtml(t("setup.itsName"))}" /></div>
+          <button type="button" class="pce-btn" id="pce-which-add">${escapeHtml(t("setup.addAnother"))}</button>
+          <button type="button" class="pce-btn" id="pce-which-drop"${list.length < 2 ? " disabled" : ""}>${escapeHtml(t("setup.remove"))}</button>
         </div>`;
       body.append(chooser);
       chooser.querySelector("#pce-which").addEventListener("change", (event) => {
@@ -1402,7 +1446,7 @@ export default async function mount(thingport) {
     if (setupTab === "material") {
       const presets = document.createElement("div");
       presets.className = "pce-group";
-      presets.innerHTML = `<h3>From the common ones</h3><div class="pce-actions" id="pce-presets"></div>`;
+      presets.innerHTML = `<h3>${escapeHtml(t("setup.presets"))}</h3><div class="pce-actions" id="pce-presets"></div>`;
       const row = presets.querySelector("#pce-presets");
       for (const [name, density] of Object.entries(DENSITIES)) {
         const button = document.createElement("button");
@@ -1504,7 +1548,7 @@ export default async function mount(thingport) {
             const button = document.createElement("button");
             button.type = "button";
             button.textContent = `${file.name}${file.size ? ` · ${sizeText(file.size)}` : ""}`;
-            button.setAttribute("aria-label", `Measure ${file.name} from ${model.name}`);
+            button.setAttribute("aria-label", t("library.measureFile", { file: file.name, model: model.name }));
             button.addEventListener("click", () => {
               sheets.picker.close();
               add([
@@ -1532,7 +1576,7 @@ export default async function mount(thingport) {
   function renderSaved() {
     const list = $("saved-list");
     if (!saved.length) {
-      list.innerHTML = '<li class="pce-empty">Nothing saved yet. A part\'s ⋮ menu has “Save this estimate”.</li>';
+      list.innerHTML = `<li class="pce-empty">${escapeHtml(t("saved.emptyHint"))}</li>`;
       return;
     }
     list.replaceChildren(
@@ -1553,8 +1597,8 @@ export default async function mount(thingport) {
           const open = document.createElement("button");
           open.type = "button";
           open.className = "pce-btn pce-icon";
-          open.title = `Open ${entry.modelName ?? t("source.model")}`;
-          open.setAttribute("aria-label", `Open ${entry.modelName ?? t("source.model")} in Thingport`);
+          open.title = t("saved.openModel", { name: entry.modelName ?? t("source.model") });
+          open.setAttribute("aria-label", open.title);
           open.innerHTML = ICONS.open;
           open.addEventListener("click", () => models.open(entry.modelId));
           actions.append(open);
@@ -1563,7 +1607,7 @@ export default async function mount(thingport) {
         drop.type = "button";
         drop.className = "pce-btn pce-icon pce-danger";
         drop.title = t("saved.forget");
-        drop.setAttribute("aria-label", `Forget the estimate for ${entry.name}`);
+        drop.setAttribute("aria-label", t("saved.forgetNamed", { name: entry.name }));
         drop.innerHTML = ICONS.remove;
         drop.addEventListener(
           "click",
@@ -1652,7 +1696,7 @@ export default async function mount(thingport) {
       if (!items.length) return;
       const yes = await ui.confirm({
         title: t("parts.clearTitle"),
-        message: `${items.length} ${items.length === 1 ? t("order.partGoes") : t("order.partsGo")} from the list. Saved estimates stay.`,
+        message: t("parts.clearBody", { count: items.length }),
         confirmLabel: t("parts.clearConfirm"),
         destructive: true,
       });
@@ -1679,7 +1723,7 @@ export default async function mount(thingport) {
       });
       if (!yes) return;
       setup = {
-        printers: [{ ...PRINTER }],
+        printers: [{ ...PRINTER, name: t("money.printer") }],
         printer: 0,
         materials: [{ ...MATERIAL }],
         material: 0,

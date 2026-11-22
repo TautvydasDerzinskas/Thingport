@@ -104,5 +104,17 @@
   "unused.title": "Неиспользованное пространство",
   "wall.height": "Высота",
   "wall.title": "Размер стены",
-  "wall.width": "Ширина"
+  "wall.width": "Ширина",
+  "parts.tiles": "Плитки",
+  "parts.optional": "Необязательно",
+  "parts.count": "Плиток: {count}",
+  "parts.empty": "Деталей пока нет.",
+  "error.largeTitle": "Стена слишком большая",
+  "error.large": "Потребуется около {estimate} плиток. Проверьте размеры и единицы измерения или выберите плитку больше (предел: {limit} плиток).",
+  "error.dimensionsTitle": "Неверные размеры",
+  "error.dimensions": "Введите ширину и высоту больше нуля.",
+  "error.smallTitle": "Плитка слишком мала",
+  "error.small": "Для этого крепления нужны плитки больше {size}×{size}.",
+  "error.noFitTitle": "Плитки не помещаются",
+  "error.noFit": "Для плиток {size}×{size} ширина и высота стены должны быть не менее {required}. Выберите плитку меньше."
 }
