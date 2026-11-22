@@ -11,10 +11,11 @@ import { normalizeTags } from "../utils/tagNormalization";
 import { parseSortDirection } from "../utils/sortDirection";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
+import { sendStored } from "../utils/sendStored";
 import { modelUpload } from "../uploadMiddleware";
 import { resolvePlateFilePath } from "../services/printCreation";
 import { createUploadedModel } from "../services/uploadService";
-import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
+import { plateStillNames, plateThumbPath, relocatePrintsForToken } from "../services/printService";
 import { assignCategory, setPrintCategory } from "../services/printCategoryService";
 import { mergeModels } from "../services/modelMergeService";
 import { galleryCardPicture, previewImagePath } from "../services/previewImageService";
@@ -542,11 +543,20 @@ const printerAskedSchema = z
 // it, for the same files (a Bambu layout project, never a print).
 const NORMALIZED_FOR = "prusaslicer";
 
-function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
-  res.setHeader("Content-Type", plate.mime || "application/octet-stream");
-  res.setHeader("Content-Disposition", attachmentDisposition(plate.filename));
-  res.setHeader("Cache-Control", "private, max-age=86400");
-  res.sendFile(path.resolve(filePath));
+/** The plate's own file goes out from the handle opened on it (utils/sendStored.ts). The adapted copy made of it is
+ *  derived data, which Fs 2 doesn't cover yet, so it still goes out by its path. */
+async function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string, adapted: string | null) {
+  const headers = () => {
+    res.setHeader("Content-Type", plate.mime || "application/octet-stream");
+    res.setHeader("Content-Disposition", attachmentDisposition(plate.filename));
+    res.setHeader("Cache-Control", "private, max-age=86400");
+  };
+  if (adapted) {
+    headers();
+    res.sendFile(path.resolve(adapted));
+    return;
+  }
+  await sendStored(res, { filePath, site: "serve.plate", stillNames: () => plateStillNames(plate), headers });
 }
 
 router.get(
@@ -555,7 +565,7 @@ router.get(
     const { plate, filePath } = await readablePlate(req);
     const adapt = req.query.normalize === "1" ? await adaptPlanFor(plate, filePath, NORMALIZED_FOR) : null;
     const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan) : null;
-    sendPlateFile(res, plate, adapted ?? filePath);
+    await sendPlateFile(res, plate, filePath, adapted);
   }),
 );
 
@@ -563,7 +573,7 @@ async function sendAdapted(req: Request, res: Response, printer: PrinterAsked) {
   const { plate, filePath } = await readablePlate(req);
   const adapt = await adaptPlanFor(plate, filePath, req.params.slicer, printer);
   const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan, adapt.printer) : null;
-  sendPlateFile(res, plate, adapted ?? filePath);
+  await sendPlateFile(res, plate, filePath, adapted);
 }
 
 // The plate as `slicer` opens it best: the adapted copy, waited for if needed, or the plate itself when it needs none

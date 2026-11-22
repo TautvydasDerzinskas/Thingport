@@ -235,6 +235,15 @@ export function managedPlatePath(plate: Pick<Plate, "storagePath">): string {
   return path.join(STORAGE, plate.storagePath);
 }
 
+/** Whether the plate's row, read again by id, still names the file it did: what a download asks once the file is
+ *  open (utils/sendStored.ts). */
+export async function plateStillNames(plate: Pick<Plate, "id" | "storagePath" | "sourcePath">): Promise<boolean> {
+  const count = await prisma.plate.count({
+    where: { id: plate.id, storagePath: plate.storagePath, sourcePath: plate.sourcePath },
+  });
+  return count > 0;
+}
+
 export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   const root = path.resolve(STORAGE);
   let current = start;

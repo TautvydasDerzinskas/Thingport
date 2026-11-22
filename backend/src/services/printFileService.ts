@@ -23,6 +23,17 @@ export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">):
   return candidate;
 }
 
+/** Whether the file's row, read again by id, is still the model's, in its role, at its path: what a download asks
+ *  once the file is open (utils/sendStored.ts). */
+export async function printFileStillNames(
+  file: Pick<PrintFile, "id" | "printId" | "role" | "storagePath">,
+): Promise<boolean> {
+  const count = await prisma.printFile.count({
+    where: { id: file.id, printId: file.printId, role: file.role, storagePath: file.storagePath },
+  });
+  return count > 0;
+}
+
 export async function listSupportingFiles(printId: string): Promise<PrintFile[]> {
   return prisma.printFile.findMany({
     where: { printId, role: "SUPPORTING" },

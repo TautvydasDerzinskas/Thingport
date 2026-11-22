@@ -1,16 +1,18 @@
 import fs from "node:fs";
-import path from "node:path";
-import { Router } from "express";
+import { Router, type Response } from "express";
+import type { PrintFile } from "@prisma/client";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { attachmentDisposition, HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
+import { sendStored } from "../utils/sendStored";
 import { modelUpload } from "../uploadMiddleware";
 import {
   deletePreparedFile,
   deleteSupportingFile,
   listSupportingFiles,
   managedPrintFilePath,
+  printFileStillNames,
   saveFileFromTemp,
 } from "../services/printFileService";
 import { toPrintFileOut } from "../dto";
@@ -19,6 +21,11 @@ import { readablePrintWhere } from "../services/socialService";
 
 const router = Router();
 router.use(requireAuth);
+
+function fileHeaders(res: Response, record: PrintFile): void {
+  res.setHeader("Content-Type", record.mime || "application/octet-stream");
+  res.setHeader("Content-Disposition", attachmentDisposition(record.filename));
+}
 
 router.get(
   "/print/:id/files",
@@ -60,11 +67,12 @@ router.get(
     if (!record || record.printId !== print.id || record.role !== "SUPPORTING") {
       throw new HttpError(404, "Not found");
     }
-    const filePath = managedPrintFilePath(record);
-    if (!fs.existsSync(filePath)) throw new HttpError(404, "Not found");
-    res.setHeader("Content-Type", record.mime || "application/octet-stream");
-    res.setHeader("Content-Disposition", attachmentDisposition(record.filename));
-    res.sendFile(path.resolve(filePath));
+    await sendStored(res, {
+      filePath: managedPrintFilePath(record),
+      site: "serve.supporting",
+      stillNames: () => printFileStillNames(record),
+      headers: () => fileHeaders(res, record),
+    });
   }),
 );
 
@@ -85,11 +93,15 @@ router.get(
     if (!print || !print.preparedFileId) throw new HttpError(404, "Not found");
     const record = await prisma.printFile.findUnique({ where: { id: print.preparedFileId } });
     if (!record || record.printId !== print.id || record.role !== "PREPARED") throw new HttpError(404, "Not found");
-    const filePath = managedPrintFilePath(record);
-    if (!fs.existsSync(filePath)) throw new HttpError(404, "Not found");
-    res.setHeader("Content-Type", record.mime || "application/octet-stream");
-    res.setHeader("Content-Disposition", attachmentDisposition(record.filename));
-    res.sendFile(path.resolve(filePath));
+    await sendStored(res, {
+      filePath: managedPrintFilePath(record),
+      site: "serve.prepared",
+      // And still the model's prepared print: another may have taken its place.
+      stillNames: async () =>
+        (await printFileStillNames(record)) &&
+        (await prisma.print.count({ where: { id: print.id, preparedFileId: record.id } })) > 0,
+      headers: () => fileHeaders(res, record),
+    });
   }),
 );
 
