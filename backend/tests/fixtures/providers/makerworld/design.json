@@ -1,0 +1,39 @@
+{
+  "id": 1452153,
+  "modelId": "US1452153",
+  "title": "Articulated Phoenix",
+  "summary": "<p>A phoenix.</p>",
+  "tags": ["phoenix"],
+  "coverUrl": "https://makerworld.bblmw.com/phoenix/cover.jpg",
+  "designCreator": { "uid": 1692606088, "name": "Deus Cat" },
+  "categories": [{ "id": 603, "name": "Creatures" }],
+  "defaultInstanceId": 2,
+  "instances": [
+    {
+      "id": 1,
+      "profileId": 101,
+      "title": "Single-colour version",
+      "instanceCreator": { "uid": 1692606088, "name": "Deus Cat" },
+      "cover": "https://makerworld.bblmw.com/phoenix/101/instance/red.png"
+    },
+    {
+      "id": 2,
+      "profileId": 102,
+      "title": "multi-colored version",
+      "instanceCreator": { "uid": 1692606088, "name": "Deus Cat" },
+      "pictures": [{ "url": "https://makerworld.bblmw.com/phoenix/102/instance/blue.png" }]
+    },
+    {
+      "id": 3,
+      "profileId": 103,
+      "title": "Tail Color",
+      "instanceCreator": { "uid": 740193827, "name": "BlomsD" }
+    },
+    {
+      "id": 4,
+      "profileId": 104,
+      "title": "0.16mm layer",
+      "instanceCreator": { "uid": 356629145, "name": "gekkoace" }
+    }
+  ]
+}
