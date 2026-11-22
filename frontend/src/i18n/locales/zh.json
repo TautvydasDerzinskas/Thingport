@@ -2303,6 +2303,9 @@
         "empty": "这里没有存储任何内容。",
         "folderSummary_other": "{{count}} 个文件 · {{size}}",
         "ofModel": "模型“{{name}}”",
+        "cantRead": "无法读取",
+        "cantReadFolder": "无法读取此文件夹",
+        "unreadable_other": "磁盘无法读取这里的 {{count}} 项内容，它们可能仍在原处。",
         "kind": {
           "plate": "模型文件",
           "file": "附属文件",

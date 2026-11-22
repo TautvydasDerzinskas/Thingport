@@ -3,6 +3,7 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { ADAPTED_3MFS, DESCRIPTION_IMAGES, MODEL_PREVIEWS, PREVIEWS, STORAGE, THUMBS } from "../config";
 import { prisma } from "../db";
+import { isMissingError } from "../modelFiles/storageFs";
 
 // Everything Thingport makes for a model -- its gallery and description images, and each plate's thumbnail, render,
 // 3D preview and slicer copies -- lives in an "Images" folder beside its files, at Print.assetsPath, so it moves and
@@ -231,15 +232,25 @@ export async function ownedAssetFiles(home: string, ids: Iterable<string>): Prom
   return found;
 }
 
-/** Every file under a model's pictures folder, relative to it with "/" separators. */
-export async function listAssetFiles(home: string): Promise<{ path: string; size: number }[]> {
+/** Every file under a model's pictures folder, and each folder there the disk couldn't list, with the error's code;
+ *  relative to it with "/" separators, "" being the pictures folder itself. */
+export async function listAssetFiles(home: string): Promise<{
+  files: { path: string; size: number }[];
+  unreadable: { path: string; code: string }[];
+}> {
   const root = path.join(STORAGE, home);
-  const found: { path: string; size: number }[] = [];
+  const relative = (full: string) => path.relative(root, full).split(path.sep).join("/");
+  const files: { path: string; size: number }[] = [];
+  const unreadable: { path: string; code: string }[] = [];
   const walk = async (dir: string): Promise<void> => {
     let entries: fsSync.Dirent[];
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
-    } catch {
+    } catch (err) {
+      // A folder that isn't there has nothing to list. One the disk couldn't list may still hold pictures.
+      if (!isMissingError(err)) {
+        unreadable.push({ path: relative(dir), code: (err as NodeJS.ErrnoException).code ?? "UNKNOWN" });
+      }
       return;
     }
     for (const entry of entries) {
@@ -251,12 +262,12 @@ export async function listAssetFiles(home: string): Promise<{ path: string; size
           (stats) => stats.size,
           () => null,
         );
-        if (size !== null) found.push({ path: path.relative(root, full).split(path.sep).join("/"), size });
+        if (size !== null) files.push({ path: relative(full), size });
       }
     }
   };
   await walk(root);
-  return found;
+  return { files, unreadable };
 }
 
 /** Which kind a file in a model's pictures folder is, from the subfolder it's in. */

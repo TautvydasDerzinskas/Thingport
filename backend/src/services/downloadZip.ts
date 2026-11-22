@@ -7,12 +7,14 @@ import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { folderLevels, isInFolder } from "../utils/fileFolder";
 import { ZipPaths } from "../files/zipPaths";
+import { fileState } from "../modelFiles/storageFs";
 import { writeZip, zipFits, type ZipEntryDescriptor } from "../utils/zipWriter";
 import { resolvePlateFilePath } from "./printCreation";
-import { managedPrintFilePath } from "./printFileService";
+import { managedPrintFilePath, printFileStillNames } from "./printFileService";
+import { plateStillNames } from "./printService";
 import { LICENSE_FILENAME, licenseFileText } from "./licenseFile";
 import { readableCollection, readablePrintWhere } from "./socialService";
-import type { Category, Plate, Print, Prisma } from "@prisma/client";
+import type { Category, Plate, Print, PrintFile, Prisma } from "@prisma/client";
 
 type PrintWithPlatesAndCategory = Print & { plates: Plate[]; category: Category | null };
 
@@ -83,9 +85,8 @@ export async function buildZipEntries(
   opts: ZipOptions = {},
 ): Promise<ZipEntryDescriptor[]> {
   const printIds = prints.map((p) => p.id);
-  type Kept = { filename: string; folder: string | null; storagePath: string };
-  const supportingByPrint = new Map<string, Kept[]>();
-  const preparedByPrint = new Map<string, Kept>();
+  const supportingByPrint = new Map<string, PrintFile[]>();
+  const preparedByPrint = new Map<string, PrintFile>();
   if (printIds.length) {
     const files = await prisma.printFile.findMany({
       where: { printId: { in: printIds }, role: { in: ["SUPPORTING", "PREPARED"] } },
@@ -93,9 +94,12 @@ export async function buildZipEntries(
     });
     const preparedIds = new Set(prints.flatMap((print) => (print.preparedFileId ? [print.preparedFileId] : [])));
     for (const file of files) {
-      if (!isInFolder(file.folder, opts.folder) || !fs.existsSync(managedPrintFilePath(file))) continue;
-      if (preparedIds.has(file.id)) preparedByPrint.set(file.printId, file);
-      else if (file.role === "SUPPORTING") {
+      const isPrepared = preparedIds.has(file.id);
+      if (!isInFolder(file.folder, opts.folder) || (!isPrepared && file.role !== "SUPPORTING")) continue;
+      // Fs 1: only a file that's gone, or a folder in its place, is left out; one that can't be looked at fails the zip.
+      if ((await fileState(managedPrintFilePath(file), "zip.entry")).state !== "file") continue;
+      if (isPrepared) preparedByPrint.set(file.printId, file);
+      else {
         const list = supportingByPrint.get(file.printId) ?? [];
         list.push(file);
         supportingByPrint.set(file.printId, list);
@@ -134,12 +138,15 @@ export async function buildZipEntries(
     const sortedPlates = print.plates
       .filter((plate) => isInFolder(plate.folder, opts.folder))
       .toSorted((a, b) => a.position - b.position);
+    // Each file from storage is written from the handle it's opened with, while its row still names it (Fs 2).
     for (const plate of sortedPlates) {
       const filePath = resolvePlateFilePath(plate);
       if (filePath) {
         entries.push({
           arcname: zip.file(zip.nested(home, folderLevels(plate.folder), owner), plate.filename),
           filePath,
+          site: "zip.entry",
+          stillNames: () => plateStillNames(plate),
         });
       }
     }
@@ -153,11 +160,21 @@ export async function buildZipEntries(
     if (supportingHome) {
       for (const file of supporting) {
         const folder = zip.nested(supportingHome, folderLevels(file.folder), `supporting:${print.id}`);
-        entries.push({ arcname: zip.file(folder, file.filename), filePath: managedPrintFilePath(file) });
+        entries.push({
+          arcname: zip.file(folder, file.filename),
+          filePath: managedPrintFilePath(file),
+          site: "zip.entry",
+          stillNames: () => printFileStillNames(file),
+        });
       }
     }
     if (prepared && preparedHome) {
-      entries.push({ arcname: zip.file(preparedHome, prepared.filename), filePath: managedPrintFilePath(prepared) });
+      entries.push({
+        arcname: zip.file(preparedHome, prepared.filename),
+        filePath: managedPrintFilePath(prepared),
+        site: "zip.entry",
+        stillNames: () => printFileStillNames(prepared, { prepared: true }),
+      });
     }
   }
   return entries;
@@ -181,7 +198,13 @@ export async function sendPrintsZip(
   }
 
   const tmpPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
-  await writeZip(tmpPath, entries);
+  try {
+    await writeZip(tmpPath, entries);
+  } catch (err) {
+    // Failed half-written, it isn't left behind.
+    await fs.promises.rm(tmpPath, { force: true });
+    throw err;
+  }
   res.download(tmpPath, downloadName, (err) => {
     fs.rm(tmpPath, { force: true }, () => undefined);
     if (err && !res.headersSent) {

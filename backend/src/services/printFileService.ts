@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
+import { createLogger } from "../logger";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES } from "../config";
 import { withStorageLock } from "../utils/storageLock";
@@ -12,7 +13,13 @@ import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printServic
 import { reuseMarker, shareStoredCopy } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { normalizeGeneratorScript } from "../utils/scriptLineEndings";
+import { fileState, type StorageSite } from "../modelFiles/storageFs";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
+
+const log = createLogger("model-files");
+
+// The storagePath a file's row has from when it's made until its place is claimed.
+const PENDING_STORAGE_PATH = "pending";
 
 export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">): string {
   const candidate = path.resolve(STORAGE, printFile.storagePath);
@@ -21,6 +28,25 @@ export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">):
     throw new HttpError(400, "Related file resolved outside storage");
   }
   return candidate;
+}
+
+/** Whether the file's row, read again by id, is still the model's, in its role, at its path, and with `prepared` still
+ *  its prepared print, as another may have taken its place: what a download asks once the file is open
+ *  (utils/sendStored.ts). */
+export async function printFileStillNames(
+  file: Pick<PrintFile, "id" | "printId" | "role" | "storagePath">,
+  { prepared = false } = {},
+): Promise<boolean> {
+  const count = await prisma.printFile.count({
+    where: {
+      id: file.id,
+      printId: file.printId,
+      role: file.role,
+      storagePath: file.storagePath,
+      ...(prepared ? { preparedFor: { is: { id: file.printId } } } : {}),
+    },
+  });
+  return count > 0;
 }
 
 export async function listSupportingFiles(printId: string): Promise<PrintFile[]> {
@@ -83,7 +109,7 @@ export async function saveFileFromTemp(
       folder,
       mime,
       role,
-      storagePath: "pending",
+      storagePath: PENDING_STORAGE_PATH,
     },
   });
   let destination: string | null = null;
@@ -180,6 +206,59 @@ export async function deleteSupportingFile(userId: string, printId: string, file
   await fs.rm(filePath, { force: true }).catch(() => undefined);
   await pruneEmptyStorageDirs(path.dirname(filePath));
   return prisma.print.findUniqueOrThrow({ where: { id: printId } });
+}
+
+/** Where the row's file is, or null for a path that leads out of storage: nothing to keep, and nothing to look for. */
+function printFilePathOrNull(row: Pick<PrintFile, "storagePath">): string | null {
+  try {
+    return managedPrintFilePath(row);
+  } catch {
+    return null;
+  }
+}
+
+/** Whether the row's file is there. Only a regular file is: a folder at its path, or a path out of storage, is gone.
+ *  A disk that can't answer throws (Fs 1), since that says nothing about the file. */
+async function printFileThere(row: Pick<PrintFile, "storagePath">, site: StorageSite): Promise<boolean> {
+  const where = printFilePathOrNull(row);
+  if (where === null) return false;
+  return (await fileState(where, site)).state === "file";
+}
+
+/** A repair's first look at the model's other files, before it removes anything: throws when the disk can't answer
+ *  for one of them. Which of them are gone is removeMissingPrintFiles' to decide, once the plates are swapped. */
+export async function lookAtPrintFiles(printId: string): Promise<void> {
+  const rows = await prisma.printFile.findMany({ where: { printId }, orderBy: { id: "asc" } });
+  // A file still being saved has no place yet to look at.
+  for (const row of rows) if (row.storagePath !== PENDING_STORAGE_PATH) await printFileThere(row, "repair.look");
+}
+
+/** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are gone, and keeps the rest.
+ *  A folder at a row's path counts as gone, and stays where it is. Deleting a prepared print's row empties the model's
+ *  prepared slot (Print.preparedFile is SetNull). A file the disk can't answer for keeps its row, and the others'
+ *  answers still count: an error on one file says nothing about another, and a script whose file went must go, or its
+ *  download is taken for one still there. */
+export function removeMissingPrintFiles(printId: string): Promise<void> {
+  // Rows read, looked at and dropped in one storage-lock turn: a move renames a file and then saves its new path under
+  // the lock, so a path read outside it could be one the file has just left.
+  return withStorageLock(async () => {
+    const rows = await prisma.printFile.findMany({ where: { printId }, orderBy: { id: "asc" } });
+    const gone: PrintFile[] = [];
+    for (const row of rows) {
+      if (row.storagePath === PENDING_STORAGE_PATH) continue;
+      try {
+        if (!(await printFileThere(row, "repair.sweep"))) gone.push(row);
+      } catch (error) {
+        log.warn("couldn't look at a repaired model's file, so its row stays", { print: printId, file: row.id, error });
+      }
+    }
+    if (!gone.length) return;
+    await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });
+    for (const row of gone) {
+      const where = printFilePathOrNull(row);
+      if (where) await pruneEmptyStorageDirs(path.dirname(where));
+    }
+  });
 }
 
 export async function deleteAllPrintFiles(printId: string): Promise<void> {

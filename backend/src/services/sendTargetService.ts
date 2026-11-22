@@ -7,12 +7,15 @@ import fs from "node:fs";
 import type { Prisma } from "@prisma/client";
 import { AUTH_SECRET } from "../config";
 import { prisma } from "../db";
+import { fileState, type OpenedFile } from "../modelFiles/storageFs";
 import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
 import { blockedByLookup, metadataHost, widgetDispatcher } from "./customWidgetsService";
 import { buildImportSourceUrl } from "../sources/sourceUrls";
 import { resolvePlateFilePath } from "./printCreation";
-import { managedPrintFilePath } from "./printFileService";
+import { managedPrintFilePath, printFileStillNames } from "./printFileService";
+import { plateStillNames } from "./printService";
+import { openedPath, openRowFile } from "../utils/sendStored";
 import {
   SEND_EXPORT_KIND,
   fillIn,
@@ -216,9 +219,12 @@ type FileToSend = {
   /** The prepared print's file record: what a link to it is bound to, so a replaced one isn't served in its place. */
   preparedId: string | null;
   print: { id: string; name: string; sourceUrl: string | null };
+  /** Whether its row, read again once the file is open, still names `path` (Fs 2). */
+  stillNames: () => Promise<boolean>;
 };
 
-/** One of the model's files the user may read: a plate, or the prepared print. */
+/** One of the model's files the user may read: a plate, or the prepared print. Only a file that's gone, or a folder in
+ *  its place, is "No such file" (Fs 1): one that can't be looked at is an error. */
 async function fileToSend(userId: string, printId: string, fileKey: string): Promise<FileToSend> {
   const print = await prisma.print.findFirst({
     where: { AND: [{ id: printId }, await readablePrintWhere(userId)] },
@@ -236,7 +242,7 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
       : null;
     if (!record || record.printId !== print.id || record.role !== "PREPARED") throw new HttpError(404, "No such file");
     const filePath = managedPrintFilePath(record);
-    if (!fs.existsSync(filePath)) throw new HttpError(404, "No such file");
+    if ((await fileState(filePath, "send.file")).state !== "file") throw new HttpError(404, "No such file");
     const mime = record.mime || "application/octet-stream";
     return {
       path: filePath,
@@ -246,11 +252,13 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
       plateId: null,
       preparedId: record.id,
       print: model,
+      stillNames: () => printFileStillNames(record, { prepared: true }),
     };
   }
   const plate = await prisma.plate.findFirst({ where: { id: fileKey, printId: print.id } });
+  // resolvePlateFilePath has looked at the file already.
   const filePath = plate ? resolvePlateFilePath(plate) : null;
-  if (!plate || !filePath || !fs.existsSync(filePath)) throw new HttpError(404, "No such file");
+  if (!plate || !filePath) throw new HttpError(404, "No such file");
   const mime = plate.mime || "application/octet-stream";
   return {
     path: filePath,
@@ -260,7 +268,19 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
     plateId: plate.id,
     preparedId: null,
     print: model,
+    stillNames: () => plateStillNames(plate),
   };
+}
+
+/** The file opened to be sent (Fs 2): what its row names now, never a file put at its path since it was looked at.
+ *  404 when it's gone by now or its row no longer names it. The caller closes the handle. */
+export async function openFileToSend(
+  file: Pick<FileToSend, "path" | "stillNames">,
+  notFound = "No such file",
+): Promise<OpenedFile> {
+  const opened = await openRowFile({ filePath: file.path, site: "send.file", stillNames: file.stillNames });
+  if (!opened) throw new HttpError(404, notFound);
+  return opened;
 }
 
 // A link to one file, for an hour, that needs no sign-in: what a link or a webhook hands on. Signed with a key of its
@@ -296,13 +316,18 @@ export function readFileGrant(
 }
 
 /** The file a link names, while its user may still read it. A prepared print's link names its file record, so it
- *  opens nothing once that's replaced. */
-export async function fileFromGrant(grant: string): Promise<{ path: string; filename: string; mime: string }> {
+ *  opens nothing once that's replaced. A look at the file that fails is an error, not "Not found". */
+export async function fileFromGrant(
+  grant: string,
+): Promise<Pick<FileToSend, "path" | "filename" | "mime" | "stillNames">> {
   const granted = readFileGrant(grant);
   const user = granted ? await prisma.user.findUnique({ where: { id: granted.userId }, select: { id: true } }) : null;
   if (!granted || !user) throw new HttpError(404, "Not found");
   const [fileKey, preparedId] = granted.fileKey.split(":");
-  const file = await fileToSend(user.id, granted.printId, fileKey).catch(() => null);
+  const file = await fileToSend(user.id, granted.printId, fileKey).catch((err: unknown) => {
+    if (err instanceof HttpError && err.status === 404) return null;
+    throw err;
+  });
   if (!file || (file.kind === "prepared" && file.preparedId !== preparedId)) throw new HttpError(404, "Not found");
   return file;
 }
@@ -416,33 +441,40 @@ export async function sendToTarget(
 
   const req = request!;
   const headers = Object.fromEntries(req.headers.map((header) => [header.name, header.value]));
-  let body: RequestInit["body"];
-  if (req.body === "json") {
-    headers["Content-Type"] = "application/json";
-    body = JSON.stringify({
-      event: "thingport.send",
-      file_url: values.file_url,
-      filename: file.filename,
-      file_kind: file.kind,
-      plate_id: file.plateId,
-      model: { id: file.print.id, name: file.print.name, url: values.model_url, source_url: file.print.sourceUrl },
-      sent_by: user.displayName,
-      sent_at: new Date().toISOString(),
-    });
-  } else {
-    const blob = await fs.openAsBlob(file.path, { type: file.mime });
-    if (req.body === "raw") {
-      headers["Content-Type"] = "application/octet-stream";
-      body = blob;
+  // The file goes from the handle it's opened with, kept open until the destination answers: the Blob reads it as the
+  // request is sent.
+  const opened = req.body === "json" ? null : await openFileToSend(file);
+  try {
+    let body: RequestInit["body"];
+    if (!opened) {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify({
+        event: "thingport.send",
+        file_url: values.file_url,
+        filename: file.filename,
+        file_kind: file.kind,
+        plate_id: file.plateId,
+        model: { id: file.print.id, name: file.print.name, url: values.model_url, source_url: file.print.sourceUrl },
+        sent_by: user.displayName,
+        sent_at: new Date().toISOString(),
+      });
     } else {
-      const form = new FormData();
-      for (const field of req.fields) form.append(field.name, fillIn(field.value, values, false));
-      form.append(req.fileField, blob, file.filename);
-      body = form;
+      const blob = await fs.openAsBlob(await openedPath(opened, file.path), { type: file.mime });
+      if (req.body === "raw") {
+        headers["Content-Type"] = "application/octet-stream";
+        body = blob;
+      } else {
+        const form = new FormData();
+        for (const field of req.fields) form.append(field.name, fillIn(field.value, values, false));
+        form.append(req.fileField, blob, file.filename);
+        body = form;
+      }
     }
+    const result = await reach(fillIn(req.url, values), { method: req.method, headers, body }, SEND_TIMEOUT_MS);
+    return result.ok && req.thenOpen ? { ...result, then_open: fillIn(req.thenOpen, values) } : result;
+  } finally {
+    await opened?.handle.close();
   }
-  const result = await reach(fillIn(req.url, values), { method: req.method, headers, body }, SEND_TIMEOUT_MS);
-  return result.ok && req.thenOpen ? { ...result, then_open: fillIn(req.thenOpen, values) } : result;
 }
 
 /** Whether a destination answers, without sending a file: a printer's version, a webhook's test event, or a custom

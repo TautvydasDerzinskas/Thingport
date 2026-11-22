@@ -8,7 +8,7 @@ import { prisma } from "../../src/db";
 import { DEFAULT_MCP_TOOL_NAMES } from "../../src/mcp/tools";
 import { consumeFolder, NOT_IMPORTED_DIR, setConsumeSettings } from "../../src/services/consumeService";
 import { binary, html, json, type FetchHandler } from "../providers/support";
-import { filesOf, type FileTree } from "./files";
+import { contentOf, filesOf, type FileTree } from "./files";
 import type { Way } from "./cases";
 
 // Each way in, driven as its callers drive it: the routes a client calls, the MCP tools, the consume folder on a
@@ -194,7 +194,8 @@ async function serveFiles(ctx: WayContext, tree: FileTree, seed: string) {
 export const THINGIVERSE_TOKEN = "intake-access-token";
 let things = 0;
 
-async function serveThing(ctx: WayContext, tree: FileTree, seed: string): Promise<string> {
+/** `license` is the name Thingiverse's API gives a Thing's licence; without it, the Thing names none. */
+async function serveThing(ctx: WayContext, tree: FileTree, seed: string, license?: string): Promise<string> {
   const thingId = String(9_400_000 + things++);
   const cdn = (name: string) => `https://cdn.thingiverse.com/assets/intake/${thingId}/${encodeURIComponent(name)}`;
   const files = await filesOf(tree, seed);
@@ -202,6 +203,7 @@ async function serveThing(ctx: WayContext, tree: FileTree, seed: string): Promis
     id: Number(thingId),
     name: "Thing",
     description: "A Thing for the intake cases.",
+    ...(license ? { license } : {}),
     tags: [],
     thumbnail: `https://cdn.thingiverse.com/renders/intake/${thingId}/thumb.png`,
     default_image: { url: `https://cdn.thingiverse.com/renders/intake/${thingId}/cover.png` },
@@ -343,17 +345,29 @@ export async function runWay(ctx: WayContext, way: Way, tree: FileTree, seed: st
     }
 
     case "repair": {
-      const url = await serveThing(ctx, tree, seed);
+      // A Thing with a licence, so the model has a LICENSE.txt for the repair to write again.
+      const url = await serveThing(ctx, tree, seed, "Creative Commons - Attribution");
       const imported = await importLink(ctx, account, url);
       if (imported.status !== 200) return { refused: `import: ${refusal(imported)}`, models: await made() };
-      const [print] = await prisma.print.findMany({ where: { userId: account.id }, include: { plates: true } });
-      // The owner's own document beside the site's files, then every plate's file gone from the disk.
-      const notes = await request(app)
-        .post(`/api/print/${print.id}/files`)
-        .set(auth(account))
-        .attach("file", Buffer.from(`my notes ${seed}\n`), { filename: "My notes.txt" });
-      if (notes.status !== 200) throw new Error(`notes: ${refusal(notes)}`);
-      for (const plate of print.plates) fs.rmSync(path.join(STORAGE, plate.storagePath), { force: true });
+      const [print] = await prisma.print.findMany({
+        where: { userId: account.id },
+        include: { plates: true, files: { where: { role: "LICENSE" } } },
+      });
+      // The owner's own document and sliced print beside the site's files, the print taking the model's empty prepared
+      // slot; then every plate's file gone from the disk, and LICENSE.txt with them.
+      for (const [filename, bytes] of [
+        ["My notes.txt", Buffer.from(`my notes ${seed}\n`)],
+        ["My print.gcode", await contentOf("My print.gcode", seed)],
+      ] as const) {
+        const added = await request(app)
+          .post(`/api/print/${print.id}/files`)
+          .set(auth(account))
+          .attach("file", bytes, { filename });
+        if (added.status !== 200) throw new Error(`${filename}: ${refusal(added)}`);
+      }
+      for (const lost of [...print.plates, ...print.files]) {
+        fs.rmSync(path.join(STORAGE, lost.storagePath), { force: true });
+      }
       const started = await request(app).post("/api/prints/repair").set(auth(account)).send({ action: "reimport" });
       if (started.status !== 200) return answer(started);
       const run = await waitForRepair(ctx, account);

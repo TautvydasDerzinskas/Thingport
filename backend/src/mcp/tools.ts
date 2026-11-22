@@ -11,6 +11,8 @@ import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
 import { HttpError } from "../utils/fileUtils";
+import { openRowFile } from "../utils/sendStored";
+import type { OpenedFile } from "../modelFiles/storageFs";
 import { normalizeFileName } from "../files/names";
 import { IMPORT_MAX_BYTES } from "../config";
 import type { McpAccess } from "../services/settingsService";
@@ -45,7 +47,12 @@ import { parseToolManifest, toolLocalesSchema, validateToolManifest } from "../s
 import { TOOL_GUIDE } from "../services/toolGuide";
 import { ICON_MAX_BYTES, listIcons as listUserIcons, saveIcon } from "../services/iconService";
 import { removePlate, renamePlate, resolvePlateFilePath } from "../services/printCreation";
-import { deletePreparedFile, deleteSupportingFile, managedPrintFilePath } from "../services/printFileService";
+import {
+  deletePreparedFile,
+  deleteSupportingFile,
+  managedPrintFilePath,
+  printFileStillNames,
+} from "../services/printFileService";
 import { notifyUpload } from "../services/modelNotifications";
 import {
   addUploadedFiles,
@@ -57,7 +64,7 @@ import {
 import { previewImagePath, removePreviewImage, reorderPreviewImages } from "../services/previewImageService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { setPrintCategory } from "../services/printCategoryService";
-import { uniqueModelName } from "../services/printService";
+import { plateStillNames, uniqueModelName } from "../services/printService";
 import { CATEGORY_KINDS, createCategory, type CategoryKind } from "../services/categoryService";
 import { createLog } from "../services/auditLog";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -838,7 +845,8 @@ type ModelFile = {
   size_bytes: number;
   /** Under /api; read with the token when it may read Model files. */
   apiPath: string;
-  diskPath: () => string | null;
+  /** The file opened, once its row still names it (utils/sendStored.ts), or null when it isn't there. */
+  open: () => Promise<OpenedFile | null>;
 };
 
 /** Every file of one of the user's models: its plates, supporting files and sliced print. */
@@ -860,7 +868,10 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     mime: plate.mime || "application/octet-stream",
     size_bytes: plate.size,
     apiPath: `/print/${print.id}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
-    diskPath: () => resolvePlateFilePath(plate),
+    open: async () => {
+      const filePath = resolvePlateFilePath(plate);
+      return filePath ? openRowFile({ filePath, site: "mcp.file", stillNames: () => plateStillNames(plate) }) : null;
+    },
   }));
   const others = print.files.map((file): ModelFile => ({
     id: file.id,
@@ -870,7 +881,12 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     mime: file.mime || "application/octet-stream",
     size_bytes: file.size,
     apiPath: file.role === "PREPARED" ? `/print/${print.id}/prepared-print` : `/print/${print.id}/files/${file.id}`,
-    diskPath: () => managedPrintFilePath(file),
+    open: async () =>
+      openRowFile({
+        filePath: managedPrintFilePath(file),
+        site: "mcp.file",
+        stillNames: () => printFileStillNames(file),
+      }),
   }));
   return [...plates, ...others];
 }
@@ -921,18 +937,22 @@ const getModelFile: McpToolDefinition = {
     const files = await modelFiles(ctx.userId, args.model_id as string);
     const file = files.find((f) => f.id === args.file_id);
     if (!file) throw new HttpError(404, "File not found");
-    const diskPath = file.diskPath();
-    const stat = diskPath ? await fs.stat(diskPath).catch(() => null) : null;
-    if (!diskPath || !stat?.isFile()) throw new HttpError(404, "The file is missing from storage");
-    const out = { ...fileOut(ctx, file), size_bytes: stat.size };
-    if (stat.size > MCP_FILE_MAX_BYTES) {
-      return {
-        ...out,
-        base64: null,
-        note: `Over ${MCP_FILE_MAX_BYTES / MB} MB: fetch it by its download_url or api_path.`,
-      };
+    // Only a file that isn't there is missing: an error opening it is the server's.
+    const opened = await file.open();
+    if (!opened) throw new HttpError(404, "The file is missing from storage");
+    try {
+      const out = { ...fileOut(ctx, file), size_bytes: opened.size };
+      if (opened.size > MCP_FILE_MAX_BYTES) {
+        return {
+          ...out,
+          base64: null,
+          note: `Over ${MCP_FILE_MAX_BYTES / MB} MB: fetch it by its download_url or api_path.`,
+        };
+      }
+      return { ...out, base64: (await opened.handle.readFile()).toString("base64") };
+    } finally {
+      await opened.handle.close();
     }
-    return { ...out, base64: (await fs.readFile(diskPath)).toString("base64") };
   },
 };
 

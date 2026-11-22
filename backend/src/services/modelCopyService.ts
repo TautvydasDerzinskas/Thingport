@@ -1,10 +1,10 @@
-import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { Prisma, type Print, type PrintFile } from "@prisma/client";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
+import { fileState } from "../modelFiles/storageFs";
 import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { createLog } from "./auditLog";
@@ -70,15 +70,15 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
 
   // A model left without a file to its name (a replacement of its files that failed halfway) has nothing to copy.
   if (!source.plates.length) throw new HttpError(409, "This model can't be copied: it has no files", "copy_no_plates");
-  // All of it or nothing: a copy missing a file would quietly be a different model.
+  // All of it or nothing: a copy missing a file would quietly be a different model. Only a file that's gone refuses
+  // it; a look that fails throws, rather than call a file that may well be there missing.
   const plates = source.plates.map((plate) => ({ plate, from: resolvePlateFilePath(plate) }));
-  const missing = [
-    ...plates.flatMap(({ plate, from }) => (from ? [] : [plate.filename])),
+  const missing = plates.flatMap(({ plate, from }) => (from ? [] : [plate.filename]));
+  for (const file of source.files) {
     // Not its LICENSE.txt, which the copy writes for itself.
-    ...source.files.flatMap((file) =>
-      file.role === "LICENSE" || fsSync.existsSync(managedPrintFilePath(file)) ? [] : [file.filename],
-    ),
-  ];
+    if (file.role === "LICENSE") continue;
+    if ((await fileState(managedPrintFilePath(file), "copy.source")).state !== "file") missing.push(file.filename);
+  }
   if (missing.length) {
     throw new HttpError(
       409,

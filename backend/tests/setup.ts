@@ -3,7 +3,8 @@ import type { Server } from "node:http";
 import os from "node:os";
 import { join } from "node:path";
 import { Test } from "supertest";
-import { vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
+import { beginTest, endTest } from "./harness/lifecycle";
 
 // backend/.env is the dev instance's: its database, its storage folder and its FlareSolverr. config.ts loads it, but
 // never over a variable already set, so the suite sets its own first. The database has to be given, as CI does: the
@@ -18,6 +19,11 @@ fs.mkdirSync(storage, { recursive: true });
 // By its real path: services compare the real paths of what they move, and macOS's temp folders are behind links.
 process.env.FILE_STORAGE = fs.realpathSync(storage);
 process.env.FLARESOLVERR_URL ??= "";
+
+// Each test's storage faults and pauses (tests/harness): none unless it asks for them, and one it asked for and never
+// met fails it. A file's own afterEach runs before this one, so it mustn't wait on an operation its test paused.
+beforeEach(beginTest);
+afterEach(endTest);
 
 // supertest's request(app) listens on port 0 on every interface, then connects to 127.0.0.1 on the
 // port it got. On macOS a wildcard bind succeeds even when another program already holds that port

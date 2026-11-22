@@ -2474,6 +2474,11 @@
         "folderSummary_one": "{{count}} archivo · {{size}}",
         "folderSummary_other": "{{count}} archivos · {{size}}",
         "ofModel": "modelo «{{name}}»",
+        "cantRead": "No se puede leer",
+        "cantReadFolder": "No se puede leer esta carpeta",
+        "unreadable_one": "El disco no pudo leer {{count}} elemento aquí. Puede que siga ahí.",
+        "unreadable_many": "El disco no pudo leer {{count}} elementos aquí. Puede que sigan ahí.",
+        "unreadable_other": "El disco no pudo leer {{count}} elementos aquí. Puede que sigan ahí.",
         "kind": {
           "plate": "Archivo del modelo",
           "file": "Archivo adjunto",

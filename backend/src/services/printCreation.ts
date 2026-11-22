@@ -9,6 +9,7 @@ import { LEGACY } from "../files/kinds";
 import { nameKey, normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
+import { fileStateSync, type StorageSite } from "../modelFiles/storageFs";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
@@ -166,18 +167,29 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
   }
 }
 
-export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourcePath">): string | null {
-  const managed = managedPlatePath(plate);
-  if (fsSync.existsSync(managed)) return managed;
-  if (plate.sourcePath && fsSync.existsSync(plate.sourcePath)) return plate.sourcePath;
-  return null;
+/** The plate's file, or null when no file is there. A plate with a sourcePath (a tool's) is read there only: the file
+ *  is the tool's, and its path under storage is only reserved. An error other than a missing file throws (Fs 1), so a
+ *  caller never takes a disk that failed to answer for a file that's gone. */
+export function resolvePlateFilePath(
+  plate: Pick<Plate, "storagePath" | "sourcePath">,
+  site: StorageSite = "plate.file",
+): string | null {
+  const abs = plate.sourcePath ?? managedPlatePath(plate);
+  return fileStateSync(abs, site).state === "file" ? abs : null;
 }
 
 export async function refreshAutoPreparedMetadata(printId: string): Promise<void> {
   const plate0 = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
   let metadata: Prisma.InputJsonValue | null = null;
   if (plate0) {
-    const filePath = resolvePlateFilePath(plate0);
+    let filePath: string | null;
+    try {
+      filePath = resolvePlateFilePath(plate0);
+    } catch (err) {
+      // An error says nothing of what the file holds, so the reading stays. The caller's change is saved already.
+      console.warn(`Couldn't look at plate ${plate0.id}'s file; the model's print facts stay as they were:`, err);
+      return;
+    }
     if (filePath) {
       const sniffed = await inspectPreparedPrint(filePath, plate0.filename);
       if (sniffed) metadata = sniffed as unknown as Prisma.InputJsonValue;

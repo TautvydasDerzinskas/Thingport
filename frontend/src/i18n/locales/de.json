@@ -2389,6 +2389,10 @@
         "folderSummary_one": "{{count}} Datei · {{size}}",
         "folderSummary_other": "{{count}} Dateien · {{size}}",
         "ofModel": "Modell „{{name}}“",
+        "cantRead": "Nicht lesbar",
+        "cantReadFolder": "Ordner nicht lesbar",
+        "unreadable_one": "Der Datenträger konnte hier {{count}} Element nicht lesen. Es ist vielleicht noch da.",
+        "unreadable_other": "Der Datenträger konnte hier {{count}} Elemente nicht lesen. Sie sind vielleicht noch da.",
         "kind": {
           "plate": "Modelldatei",
           "file": "Zusatzdatei",
