@@ -203,6 +203,17 @@ describe("sendStored", () => {
     const gone = response({ code: "ENOENT", syscall: "stat" });
     await expect(sendStored(gone as never, row)).rejects.toMatchObject({ status: 404 });
     expect(gone.removed).toEqual(["Content-Disposition"]);
+    // A handle path the disk can't answer for stops the download: it isn't a system without one.
+    const failing = vi
+      .spyOn(fsp, "stat")
+      .mockImplementation(((target: string, options?: never) =>
+        /^\/(dev|proc\/self)\/fd\//.test(String(target))
+          ? Promise.reject(Object.assign(new Error("EIO"), { code: "EIO" }))
+          : realStat(target, options)) as typeof fsp.stat);
+    const refused = response();
+    await expect(sendStored(refused as never, row)).rejects.toMatchObject({ code: "EIO" });
+    failing.mockRestore();
+    expect(refused.sentFrom).toBe("");
   });
 
   it("closes the file it opened: once sent, when its row changed, and when reading the row failed", async () => {

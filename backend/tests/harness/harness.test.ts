@@ -124,6 +124,18 @@ describe("pauses", () => {
     beginTest();
   });
 
+  it("park at the calls they name when two wait at one checkpoint", async () => {
+    const abs = file("two.stl");
+    const first = pauseAt("fileState:scan.plate", 1);
+    const second = pauseAt("fileState:scan.plate", 2);
+    const op = track(fileState(abs, "scan.plate").then(() => fileState(abs, "scan.plate")));
+    await first.reachedBy(op);
+    first.release();
+    await second.reachedBy(op);
+    second.release();
+    expect((await op).state).toBe("file");
+  });
+
   it("refuse one an operation reaches once the test is ending, which then rejects", async () => {
     const abs = file("late.stl");
     pauseAt("fileState:repair.sweep", 2);

@@ -7,6 +7,7 @@ import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 import { replaceModelFiles, type DownloadedModelFiles } from "../src/services/importService";
+import { afterLicenseChange } from "../src/services/licenseService";
 import { scanMissingFiles } from "../src/services/missingFilesService";
 import { currentModelRepairRun, modelRepairRunSettled } from "../src/services/modelRepairService";
 import { removeMissingPrintFiles } from "../src/services/printFileService";
@@ -124,6 +125,20 @@ describe("a repair keeps what it didn't lose", () => {
     expect(await prisma.printFile.findUnique({ where: { id: sliced.id } })).toBeNull();
     expect(await prisma.printFile.findUnique({ where: { id: note.id } })).not.toBeNull();
     expect(await libraryOf(owner)).toEqual([]);
+  });
+
+  it.skipIf(process.getuid?.() === 0)("keeps a LICENSE.txt it can't read, rather than write over it", async () => {
+    const owner = await kit.user();
+    const model = await kit.model(owner, { license: "CC-BY-4.0" });
+    const license = model.files[0];
+    fs.writeFileSync(at(license.storagePath), "the owner's own words");
+    fs.chmodSync(at(license.storagePath), 0o000);
+    try {
+      await afterLicenseChange(model.print.id);
+    } finally {
+      fs.chmodSync(at(license.storagePath), 0o644);
+    }
+    expect(fs.readFileSync(at(license.storagePath), "utf8")).toBe("the owner's own words");
   });
 
   it("keeps a LICENSE.txt still on disk, row and all", async () => {

@@ -61,17 +61,20 @@ function hook(name: string, detail: { path?: string }): Promise<void> | void {
     due.fired = true;
     throw errnoError(due.code, name, detail.path);
   }
+  // As with faults, every pause for this call counts it before one parks.
+  let parkAt: Pause | undefined;
   for (const pause of pauses) {
     if (pause.reached || pause.name !== name) continue;
     pause.seen += 1;
-    if (pause.seen === pause.nth) {
-      // Reached while the test is ending, nothing would ever release it.
-      if (ending) throw new HarnessAborted(`The test ended before ${name} #${pause.nth} was reached`);
-      pause.reached = true;
-      pause.parked = true;
-      pause.onReached();
-      return pause.wait;
-    }
+    if (pause.seen === pause.nth) parkAt ??= pause;
+  }
+  if (parkAt) {
+    // Reached while the test is ending, nothing would ever release it.
+    if (ending) throw new HarnessAborted(`The test ended before ${name} #${parkAt.nth} was reached`);
+    parkAt.reached = true;
+    parkAt.parked = true;
+    parkAt.onReached();
+    return parkAt.wait;
   }
 }
 

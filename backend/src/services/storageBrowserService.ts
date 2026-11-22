@@ -47,6 +47,8 @@ export type StorageListing = {
   crumbs: { name: string; path: string; label: string | null }[];
   folders: StorageFolder[];
   files: StorageFile[];
+  /** The folder's own: the disk couldn't list all of it, so it may hold more than shown. */
+  error_code: string | null;
 };
 
 type ModelRef = { id: string; name: string; userId: string };
@@ -252,5 +254,6 @@ export async function listStorageFolder(rawFolder: string): Promise<StorageListi
     })),
     folders: [...folders.values()].toSorted(byName),
     files: files.toSorted(byName),
+    error_code: ownError ?? null,
   };
 }

@@ -178,7 +178,9 @@ export function StorageListingView({
   onOpenModel: (printId: string) => void;
 }) {
   const { t } = useTranslation("app");
+  // The folder itself counts when the disk couldn't list all of it.
   const unreadable =
+    (listing.error_code ? 1 : 0) +
     listing.folders.filter((entry) => entry.error_code !== null).length +
     listing.files.filter((file) => file.location === "unreadable").length;
   return (

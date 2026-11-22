@@ -45,8 +45,13 @@ const file = (name: string, fields: Partial<StorageFile> = {}): StorageFile => (
   ...fields,
 });
 
-function render(folders: StorageFolder[], files: StorageFile[], theme: "light" | "dark" = "light"): string {
-  const listing: StorageListing = { path: "u-1/Desk organiser", crumbs: [], folders, files };
+function render(
+  folders: StorageFolder[],
+  files: StorageFile[],
+  theme: "light" | "dark" = "light",
+  errorCode: string | null = null,
+): string {
+  const listing: StorageListing = { path: "u-1/Desk organiser", crumbs: [], folders, files, error_code: errorCode };
   return renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
       <ThemeProvider theme={buildTheme(theme)}>
@@ -104,6 +109,11 @@ describe("the storage browser's listing", () => {
     const text = textOf(render([], [file("Tower.gcode", { location: "unreadable", error_code: "EACCES" })]));
     expect(text).toContain("The disk couldn't read 1 thing here. It may still be there.");
     expect(text).toContain("Can't read · EACCES · 4.1 MB");
+  });
+
+  it("counts the folder itself when the disk couldn't list all of it", () => {
+    const text = textOf(render([], [file("Tower.gcode")], "light", "EACCES"));
+    expect(text).toContain("The disk couldn't read 1 thing here. It may still be there.");
   });
 
   it("warns of nothing when everything could be read", () => {

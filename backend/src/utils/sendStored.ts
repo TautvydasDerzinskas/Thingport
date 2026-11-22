@@ -40,12 +40,15 @@ const notFound = () => new HttpError(404, "Not found");
  *  a system that has neither (a backend run on Windows), the file's own path, which its row was checked against. */
 export async function openedPath(opened: OpenedFile, filePath: string): Promise<string> {
   const byHandle = handlePath(opened.handle);
-  return (await fs.stat(byHandle).then(
+  const reopens = await fs.stat(byHandle).then(
     () => true,
-    () => false,
-  ))
-    ? byHandle
-    : filePath;
+    (err: unknown) => {
+      // No such path: the system has none. Any other error stops the download, as for the file itself.
+      if (isMissingError(err)) return false;
+      throw err;
+    },
+  );
+  return reopens ? byHandle : filePath;
 }
 
 /** Serves the file a row names from its open handle, with send's Range, ETag and 304 as from a path. Throws the

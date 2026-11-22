@@ -225,6 +225,8 @@ export type StorageListing = {
   crumbs: { name: string; path: string; label: string | null }[];
   folders: StorageFolder[];
   files: StorageFile[];
+  /** The folder's own: the disk couldn't list all of it. */
+  error_code?: string | null;
 };
 
 /** Any user's batch import, as the admin import queue lists it. */

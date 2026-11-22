@@ -25,7 +25,8 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
 - **Fs 1: only a missing file counts as missing.** Whether a plate's or a `PrintFile`'s file is there is asked through
   the file door (`modelFiles/storageFs.ts`): `fileState` answers file, missing or not-a-file, `openStored` opens one.
   Only ENOENT and ENOTDIR mean missing, and a folder isn't a file. Any other error (EIO, EACCES, ELOOP) stops the
-  operation before it removes or records anything. It holds for downloads and the zip, copies, Send to, MCP's
+  operation before it removes or records anything, save in the repair's sweep, which runs once the plates are in: there
+  the row whose look failed stays, and the rest go on. It holds for downloads and the zip, copies, Send to, MCP's
   `get_model_file`, partners' downloads, Migrate's export, free paths, moves, the storage browser, the missing-files scan
   and the repair. A plate with a `sourcePath` is read there only. It doesn't hold yet for pictures and the files made
   from a model's files, an upload's temporary files, the prune, a profile plate's size before it's matched and a new
@@ -79,7 +80,7 @@ regression or a bug in what it does, is a finding as usual.
   filesystem than storage, so placing a file there falls back to a full copy, inside the lock.
 - **Repair** (`modelFilesReplace.ts`) replaces the model's plates. It looks at every file of the model first, in one
   storage-lock turn, so a disk error stops it with nothing removed. After the swap it drops only the rows whose files
-  are gone, in a second turn where an error drops nothing and is logged. The prepared print stays when its file is
+  are gone, in a second turn where a row whose look fails stays and is logged. The prepared print stays when its file is
   there, and `LICENSE.txt` is written again.
 - **Prepared print.** Saving a `PREPARED` file replaces the model's prepared print, so of two sliced files saved
   together only the last is kept.
