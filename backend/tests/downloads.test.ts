@@ -48,7 +48,6 @@ async function attach(printId: string, name: string) {
   expect(res.status).toBe(200);
 }
 
-/** The zip a download makes, as its entries' names. */
 /** The zip a download makes, saved, and its entries' names in the order they're written. */
 async function fetchZip(body: Record<string, unknown>): Promise<{ file: string; names: string[] }> {
   const res = await request(app)
@@ -68,6 +67,7 @@ async function fetchZip(body: Record<string, unknown>): Promise<{ file: string; 
   return { file, names };
 }
 
+/** The zip a download makes, as its entries' names. */
 async function zipOf(body: Record<string, unknown>): Promise<string[]> {
   return (await fetchZip(body)).names;
 }

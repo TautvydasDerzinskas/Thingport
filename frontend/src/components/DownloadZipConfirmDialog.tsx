@@ -79,12 +79,10 @@ export default function DownloadZipConfirmDialog({ open, onClose, filter, filena
         onUnauthorized?.();
         return;
       }
+      // The reason in the reader's language: an error's own message is English, or the browser's.
+      console.error(err);
       setDownloadError(
-        err instanceof ZipTooLargeError
-          ? t("models:downloadZip.tooLarge")
-          : err instanceof Error
-            ? err.message
-            : t("models:downloadZip.failed"),
+        err instanceof ZipTooLargeError ? t("models:downloadZip.tooLarge") : t("models:downloadZip.failed"),
       );
     } finally {
       setDownloading(false);
