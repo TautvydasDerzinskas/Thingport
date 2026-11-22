@@ -27,13 +27,16 @@ export const STORAGE_SITES = [
   "repair.sweep",
   "repair.gallery",
   "migrate.export",
+  "delete.look",
+  "delete.unlink",
 ] as const;
 export type StorageSite = (typeof STORAGE_SITES)[number];
 
-/** The checkpoints the door reaches: before each look, before each open, and once a file is open. */
-export type DoorCheckpoint = `fileState:${StorageSite}` | `open:${StorageSite}` | `opened:${StorageSite}`;
+/** The checkpoints the door reaches: before each look, before each open, once a file is open, and before each removal. */
+export type DoorCheckpoint =
+  `fileState:${StorageSite}` | `open:${StorageSite}` | `opened:${StorageSite}` | `remove:${StorageSite}`;
 export const DOOR_CHECKPOINTS: ReadonlySet<string> = new Set(
-  STORAGE_SITES.flatMap((site) => [`fileState:${site}`, `open:${site}`, `opened:${site}`]),
+  STORAGE_SITES.flatMap((site) => [`fileState:${site}`, `open:${site}`, `opened:${site}`, `remove:${site}`]),
 );
 
 export type FileState =
@@ -100,4 +103,14 @@ export async function openStored(abs: string, site: StorageSite): Promise<Opened
   }
   await handle.close();
   return null;
+}
+
+/** Removes the file at `abs`, as rm -f does: nothing there is fine, and any other error throws. */
+export async function removeFile(abs: string, site: StorageSite): Promise<void> {
+  try {
+    await checkpoint(`remove:${site}`, { path: abs });
+    await fs.rm(abs, { force: true });
+  } catch (err) {
+    if (!isMissingError(err)) throw err;
+  }
 }

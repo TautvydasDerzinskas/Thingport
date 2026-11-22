@@ -63,7 +63,7 @@ describe("the file door", () => {
     for (const file of sources(path.join(root, "tests"))) {
       const text = fs.readFileSync(file, "utf8");
       if (!file.endsWith(".test.ts") || !text.includes("faults.at(")) continue;
-      for (const match of text.matchAll(/["'`](?:fileState|open|opened):([a-z.]+)["'`]/g)) failed.add(match[1]);
+      for (const match of text.matchAll(/["'`](?:fileState|open|opened|remove):([a-z.]+)["'`]/g)) failed.add(match[1]);
     }
     expect(STORAGE_SITES.filter((site) => !failed.has(site))).toEqual([]);
   });

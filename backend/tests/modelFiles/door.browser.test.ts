@@ -123,6 +123,7 @@ describe("a tool's plate in the storage browser", () => {
 
     // A file at the path it was given isn't its file: with its own look failing it's unreadable, with its own gone
     // it's missing, whatever is there. One look each time, at its source.
+    fs.mkdirSync(path.dirname(stored(plate.storagePath)), { recursive: true });
     fs.writeFileSync(stored(plate.storagePath), "someone else's bytes");
     faults.at(LOOK, 1, "EIO", { path: source });
     const looked = hits(LOOK);

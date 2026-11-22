@@ -11,7 +11,7 @@ import { importPrintFromUrl } from "../../src/services/importService";
 import { modelFilesMissing, scanMissingFiles } from "../../src/services/missingFilesService";
 import { createPrint, resolvePlateFilePath } from "../../src/services/printCreation";
 import { PROFILE_FILE_VERSION } from "../../src/services/printProfileService";
-import { reorganizeManagedPrints } from "../../src/services/printService";
+import { reorganizeManagedPrints, storageOutOfPlace } from "../../src/services/printService";
 import {
   getPreviewMode,
   getQualityChecks,
@@ -504,6 +504,27 @@ describe("a move (move.target, move.source)", () => {
     const moved = await prisma.plate.findUniqueOrThrow({ where: { id: kept.id } });
     expect(moved.storagePath).toBe(path.join(path.dirname(kept.storagePath), print.id, kept.filename));
     expect(fs.readFileSync(abs(moved))).toEqual(bytes);
+  });
+
+  it("leaves a tool's plate alone: no folder made for it, and nothing moved from the path it reserves", async () => {
+    const owner = await user();
+    const before = await storageOutOfPlace(BY_ID);
+    const { plate, source, bytes } = await toolModel(owner);
+    expect(fs.existsSync(path.dirname(abs(plate)))).toBe(false);
+    // Something else at that path, a file left there, say: not the plate's to move.
+    fs.mkdirSync(path.dirname(abs(plate)), { recursive: true });
+    fs.writeFileSync(abs(plate), "solid stray endsolid");
+
+    expect(await reorganizeManagedPrints(BY_ID, owner.id)).toEqual({ moved: 0, skipped: 0 });
+
+    expect(await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).toMatchObject({
+      storagePath: plate.storagePath,
+      sourcePath: source,
+    });
+    expect(fs.readFileSync(abs(plate), "utf8")).toBe("solid stray endsolid");
+    expect(fs.readFileSync(source)).toEqual(bytes);
+    // Nor is it counted as out of place, which no move could clear.
+    expect(await storageOutOfPlace(BY_ID)).toEqual(before);
   });
 
   it.each([

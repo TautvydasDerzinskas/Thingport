@@ -423,6 +423,8 @@ export async function relocatePrint(
   const printValues = await printTemplateValues(print, safeTemplate);
   let moved = 0;
   for (const plate of plates) {
+    // A tool's plate reads the tool's file, which isn't the model's to move.
+    if (plate.sourcePath) continue;
     const oldPath = managedPlatePath(plate);
     const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
     // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
@@ -542,8 +544,10 @@ export async function storageOutOfPlace(template: string): Promise<{ files: numb
   let models = 0;
   for (const print of prints) {
     const values = await printTemplateValues(print, safeTemplate);
+    // A tool's plate reads the tool's file, which a move leaves where it is.
     let misplaced = print.plates.filter(
       (plate) =>
+        !plate.sourcePath &&
         !inPlace(
           plate.storagePath,
           renderFilePath(print, safeTemplate, values, plate.filename, plate.position, plate.folder),
