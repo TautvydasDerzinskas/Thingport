@@ -5,7 +5,7 @@ import Typography from "@mui/material/Typography";
 import { type Print, type Plate, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
-import { MODEL_EXTS, LIGHTBURN_EXTS } from "../../constants/fileTypes";
+import { LIGHTBURN_EXTS } from "../../constants/fileTypes";
 import { extOf } from "../../utils/fileExtensions";
 import ModelViewer from "./ModelViewer";
 import { ModelSnapshot } from "./ModelViewer/ModelSnapshot";
@@ -13,6 +13,7 @@ import LightBurnPreview from "./LightBurnPreview";
 import ModelRender from "./ModelRender";
 import { ownPictureUrl } from "./modelPicture";
 import { useCardPreview } from "../../hooks/useCardPreview";
+import { plateCaps } from "../../utils/fileCaps";
 
 export type PreviewVariant = "card" | "modal";
 
@@ -101,7 +102,7 @@ export function renderPreviewContent(
       : plate.thumb_url
         ? printsApi.fileUrl(plate.thumb_url)
         : null;
-  const is3d = MODEL_EXTS.has(ext);
+  const is3d = plateCaps(plate).preview3d;
   const isLightBurn = LIGHTBURN_EXTS.has(ext);
 
   if (variant === "card") {

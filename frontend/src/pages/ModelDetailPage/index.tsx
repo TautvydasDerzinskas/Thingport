@@ -20,7 +20,6 @@ import { collectionsApi } from "../../api/collections";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { dividerBorderColor } from "../../theme";
-import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf } from "../../utils/fileExtensions";
 import ProviderBadge from "../../components/ProviderBadge";
 import { renderPreviewContent } from "../../components/media/renderPreviewContent";
@@ -49,6 +48,7 @@ import QualityBadge from "./QualityCheck/QualityBadge";
 import { usePrintProfilesView } from "../../hooks/usePrintProfilesView";
 import { usePrintProfiles } from "./PrintProfiles/usePrintProfiles";
 import { profileEntries } from "./PrintProfiles/entries";
+import { plateCaps } from "../../utils/fileCaps";
 
 type Props = {
   theme: ResolvedTheme;
@@ -279,16 +279,11 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     }
   };
   const firstPlate = print.plates[0];
-  const canPreview3d = Boolean(firstPlate) && MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
+  const canPreview3d = firstPlate ? plateCaps(firstPlate).preview3d : false;
   // With no preview image yet, show the live 3D view and generate a snapshot in the background.
   // The server's render doesn't need one: it saves its own picture.
   // Only for the owner, whose picture it saves.
-  const needsGeneratedPreview =
-    !print.owner &&
-    print.preview_images.length === 0 &&
-    !showRender &&
-    Boolean(firstPlate) &&
-    MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
+  const needsGeneratedPreview = !print.owner && print.preview_images.length === 0 && !showRender && canPreview3d;
 
   const openPreview = (plateId: string | null, plateIndex: number | null = null) => {
     setPreviewStart({ plateId, plateIndex });

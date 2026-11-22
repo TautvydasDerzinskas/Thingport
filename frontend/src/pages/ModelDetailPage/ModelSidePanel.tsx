@@ -614,7 +614,7 @@ export default function ModelSidePanel({
           {selectedFile && (
             <OpenInSlicerButton
               file={selectedFile}
-              canOpen={canOpen}
+              canOpen={canOpen && selectedFile.caps.openInSlicer}
               slicerOption={slicerOption}
               slicerOptions={slicerOptions}
               onOpened={(slicerId) => {

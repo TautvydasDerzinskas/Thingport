@@ -41,6 +41,7 @@ vi.mock("../../utils/downloadResponse", () => ({
 }));
 
 const target: AdaptedTarget = {
+  caps: { preview3d: true, openInSlicer: true, openInStudio: true, customize: false },
   key: "plate-1",
   url: "/plate-1.3mf",
   filename: "benchy.3mf",

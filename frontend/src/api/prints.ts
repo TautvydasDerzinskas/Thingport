@@ -5,6 +5,27 @@ import type { SortDirection } from "../utils/sortDirection";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
 
+/** What a file is, by the server's kind table (backend/src/files/kinds.ts). */
+export type ContentKind =
+  | "mesh"
+  | "laser"
+  | "sliced"
+  | "cad"
+  | "script"
+  | "picture"
+  | "document"
+  | "licence"
+  | "archive"
+  | "scene-part"
+  | "cg-scene"
+  | "program"
+  | "junk"
+  | "other";
+
+/** What the app may offer of a file, as the server works it out (capsOf in backend/src/files/kinds.ts). Absent from
+ *  an older backend, where utils/fileCaps.ts's legacyCaps stands in. */
+export type FileCaps = { preview3d: boolean; openInSlicer: boolean; openInStudio: boolean; customize: boolean };
+
 export type PreparedPrint = {
   printer?: string | null;
   material?: string | null;
@@ -13,6 +34,9 @@ export type PreparedPrint = {
   estimated_seconds?: number | null;
   format?: string | null; // "gcode" | "bgcode" | "gcode_3mf"
   removable: boolean;
+  /** As a plate's, when the prepared print is a file of its own; null when the plates themselves are the sliced files. */
+  content_kind?: ContentKind | null;
+  caps?: FileCaps | null;
 };
 
 /** Where an adapted copy is: being made, made, failed (open the plate itself), or not needed for that slicer. */
@@ -42,6 +66,9 @@ export type Plate = {
   /** What kind of 3MF it is, from which the page tells which slicers get an adapted copy; null for other files, and
    *  absent from an older backend. */
   format?: ThreeMfFormat | null;
+  /** What the file is; named apart from MCP's `kind` and Send to's `file_kind`, which say what it is to its model. */
+  content_kind?: ContentKind;
+  caps?: FileCaps;
 };
 
 export type ProfileFilament = { type: string | null; color: string | null; grams: number | null };
@@ -94,6 +121,9 @@ export type PrintFile = {
   mime: string;
   size: number;
   url: string; // /print/{printId}/files/{fileId}
+  /** As Plate's. */
+  content_kind?: ContentKind;
+  caps?: FileCaps;
 };
 
 export type PreviewImage = {
@@ -167,6 +197,8 @@ export type Print = {
   render_url?: string | null; // the first plate's render_url that isn't null
   own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
+  /** The files kept beside its plates, by name, on the detail fetch only (a list of models has the count). */
+  supporting_files?: PrintFile[];
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
   generator_scripts?: { id: string; filename: string; folder?: string | null }[];
   /** The source had a script for it but its creator chose not to share it: there is none to open, and that is

@@ -24,6 +24,7 @@ import UserAvatar from "../../../components/UserAvatar";
 import { switchSlicer } from "../../../hooks/useSlicerPreference";
 import { saveResponseToDisk } from "../../../utils/downloadResponse";
 import { extOf } from "../../../utils/fileExtensions";
+import { legacyCaps } from "../../../utils/fileCaps";
 import ModelFileSelect from "../../ModelDetailPage/ModelFileSelect";
 import OpenInSlicerButton from "../../ModelDetailPage/OpenInSlicerButton";
 import { useSlicerChoice, type ModelFile } from "../../ModelDetailPage/useOpenInSlicer";
@@ -101,6 +102,8 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
                 plate: null,
                 size: file.size,
                 folder: file.folder ?? null,
+                // A partner's files come with no caps yet: what the app offered before.
+                caps: legacyCaps(file.name, "plate"),
               },
             ]
           : [],

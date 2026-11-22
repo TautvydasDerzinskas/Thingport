@@ -2,7 +2,9 @@
 
 **Open in Slicer** on a model page hands a file straight to the slicer on your computer, without saving it somewhere
 first. When a model has several files, pick one in the **Files** box above the button; opening and downloading both
-use it.
+use it. Only a file your slicer opens through Thingport Bridge is offered to it: a 3D file, a LightBurn project, or a
+sliced print in G-code, binary G-code or a sliced 3MF. Pick another, such as a ZIP, a Fusion file or a picture, and
+the button downloads it instead.
 
 The button opens the slicer you used last. Its arrow lists your other slicers, downloads the chosen file, and, for a
 model with several files, downloads them all as a zip. On a model that came with the script it was generated from,

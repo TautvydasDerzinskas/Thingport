@@ -11,7 +11,8 @@ vi.mock("../../api/prints", () => ({
   },
 }));
 
-const { adaptedTargetsFor, isAdaptedTarget, printersKnownFor, slicerHref } = await import("./useOpenInSlicer");
+const { adaptedTargetsFor, isAdaptedTarget, modelFiles, printersKnownFor, slicerFilesOf, slicerHref } =
+  await import("./useOpenInSlicer");
 
 const plate: Plate = {
   id: "plate-1",
@@ -34,7 +35,16 @@ const plate: Plate = {
     dialect: "bambu",
   },
 };
-const file = { key: plate.id, url: plate.url, filename: "model.3mf", launchFilename: "model.3mf", index: 0, plate };
+const caps = { preview3d: true, openInSlicer: true, openInStudio: true, customize: false };
+const file = {
+  key: plate.id,
+  url: plate.url,
+  filename: "model.3mf",
+  launchFilename: "model.3mf",
+  index: 0,
+  plate,
+  caps,
+};
 
 function printer(id: string, preset: string | null): UserPrinter {
   return {
@@ -90,5 +100,42 @@ describe("the copies a slicer gets", () => {
     expect(adaptedTargetsFor([qidiFile], "qidistudio", [], [q1], null)[0]).toMatchObject({ ask: true });
     const own = { ...qidiFile, plate: { ...forQ1, format: { ...forQ1.format, app: "QIDIStudio" } } };
     expect(adaptedTargetsFor([own], "qidistudio", [], [q1], q1)).toEqual([]);
+  });
+});
+
+describe("the files a slicer is offered", () => {
+  const offer = (openInSlicer: boolean) => ({ preview3d: false, openInSlicer, openInStudio: false, customize: false });
+  const on = (filename: string, position: number, given?: ReturnType<typeof offer>): Plate => ({
+    ...plate,
+    id: `plate-${position}`,
+    position,
+    filename,
+    url: `/print/1/plate/plate-${position}/file/${filename}`,
+    format: null,
+    ...(given ? { caps: given } : {}),
+  });
+
+  it("are the ones the server says Bridge opens, from every file of the model", () => {
+    const print = {
+      plates: [on("Part.stl", 0, offer(true)), on("Part.f3d", 1, offer(false)), on("Photo.png", 2, offer(false))],
+      slicer_url: "/print/1/plate/plate-0/file/Part.stl",
+      slicer_filename: "Part.stl",
+      prepared_print: null,
+    } as unknown as Parameters<typeof modelFiles>[0];
+    const files = modelFiles(print);
+
+    expect(files.map((entry) => entry.filename)).toEqual(["Part.stl", "Part.f3d", "Photo.png"]);
+    expect(slicerFilesOf(files).map((entry) => entry.filename)).toEqual(["Part.stl"]);
+  });
+
+  it("are a prepared print of its own as the server says, and every file of an older backend's model", () => {
+    const print = {
+      plates: [on("Part.f3d", 0)],
+      slicer_url: "/print/1/prepared-print",
+      slicer_filename: "Tower.gco",
+      prepared_print: { removable: true, caps: offer(false) },
+    } as unknown as Parameters<typeof modelFiles>[0];
+
+    expect(slicerFilesOf(modelFiles(print)).map((entry) => entry.filename)).toEqual(["Part.f3d"]);
   });
 });

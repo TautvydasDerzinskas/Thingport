@@ -11,6 +11,7 @@ import {
   useLocation,
   useNavigate,
   useNavigationType,
+  useParams,
   useSearchParams,
 } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
@@ -95,6 +96,13 @@ import ScrollReset from "./components/Layout/ScrollReset";
 
 // Heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
 const StudioPage = React.lazy(() => import("./pages/StudioPage"));
+
+/** A model's page made new for each model, so nothing of one (its state, or an answer still on its way) shows on the
+ *  next. */
+function ModelRoute(props: React.ComponentProps<typeof ModelDetailPage>) {
+  const { printId } = useParams();
+  return <ModelDetailPage key={printId} {...props} />;
+}
 
 /** /studio when the backend has Studio; home when it's older than Studio, once that's known. */
 function StudioRoute({ isAdmin, onUnauthorized }: { isAdmin: boolean; onUnauthorized: () => void }) {
@@ -297,7 +305,7 @@ function AppShell({
         <Route
           path="/models/:printId"
           element={
-            <ModelDetailPage
+            <ModelRoute
               theme={resolvedTheme}
               onSelectCategory={setCategoryId}
               onUnauthorized={onUnauthorized}
@@ -360,7 +368,7 @@ function AppShell({
         <Route
           path="/explore/models/:printId"
           element={
-            <ModelDetailPage
+            <ModelRoute
               theme={resolvedTheme}
               onSelectCategory={setCategoryId}
               onUnauthorized={onUnauthorized}
