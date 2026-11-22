@@ -5,6 +5,16 @@ import { type Plate, type Print, printsApi, ZipTooLargeError } from "../../api/p
 import { useToast } from "../../components/ToastProvider";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 
+/** How many files "Download all" puts in a model's zip: its plates, supporting files and prepared print, and the
+ *  LICENSE.txt written for its licence. None for a model with only one file of its own, as there's nothing to put with
+ *  it. */
+export function zipFileCount(
+  print: Pick<Print, "plates" | "supporting_file_count" | "prepared_print" | "license">,
+): number {
+  const own = print.plates.length + (print.supporting_file_count ?? 0) + (print.prepared_print ? 1 : 0);
+  return own > 1 ? own + (print.license ? 1 : 0) : 0;
+}
+
 /** A single-plate model downloads directly; multi-plate opens a picker. `recordUse` records an
  *  Open in {Slicer}. */
 export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRecorded?: (print: Print) => void) {
@@ -88,11 +98,6 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   };
 
   const sortedPlates = print.plates.toSorted((a, b) => a.position - b.position);
-  // What "Download all" puts in the zip: the plates, the supporting files, the prepared print and, with a licence, the
-  // LICENSE.txt written for it.
-  const zipFileCount =
-    print.plates.length + (print.supporting_file_count ?? 0) + (print.prepared_print ? 1 : 0) + (print.license ? 1 : 0);
-
   return {
     pickerOpen,
     setPickerOpen,
@@ -102,7 +107,7 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     downloadPlate: downloadFile,
     downloadAllZip,
     sortedPlates,
-    zipFileCount,
+    zipFileCount: zipFileCount(print),
     recordUse,
     recordDownload,
   };

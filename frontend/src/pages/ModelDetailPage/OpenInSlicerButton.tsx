@@ -36,7 +36,7 @@ type Props = {
   onOpened: (slicerId: string) => void;
   downloading: boolean;
   onDownload: () => void;
-  /** Offered with more than one file. */
+  /** How many files the zip holds: offered with more than one. */
   zipCount: number;
   onDownloadZip: () => void;
   /** Set for a model that came with its generator script, which then takes the main action. */
