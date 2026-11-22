@@ -37,7 +37,13 @@ function known(name: string): void {
 
 /** An error as Node reports one from the disk: its code, negative errno, system call and path. */
 function errnoError(code: ErrnoCode, name: string, path: string | undefined): NodeJS.ErrnoException {
-  const syscall = name.startsWith("fileState:") ? "stat" : name.startsWith("open:") ? "open" : "fstat";
+  const syscall = name.startsWith("fileState:")
+    ? "stat"
+    : name.startsWith("open:")
+      ? "open"
+      : name.startsWith("remove:")
+        ? "unlink"
+        : "fstat";
   const err = new Error(`${code}: put there by the test, ${syscall} '${path ?? ""}'`) as NodeJS.ErrnoException;
   err.code = code;
   err.errno = -os.constants.errno[code];

@@ -1,16 +1,11 @@
 import type { Dirent } from "node:fs";
+import { removeModel } from "../modelFiles/removeModel";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { STORAGE } from "../config";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { MANIFESTS } from "../providers/index.generated";
-import { deleteAllPrintFiles } from "./printFileService";
-import { deleteAllPreviewImages } from "./previewImageService";
-import { deleteAllDescriptionImages } from "./descriptionImageService";
-import { deletePlateFiles } from "./printCreation";
-import { assetOwnerIds, removeAssetHome, removePlatePictures } from "./printService";
-import { loadFullPrint } from "./printLoader";
 import { pruneWhatModelsLeft } from "./printEditService";
 import { removeUserTagMosaics } from "./tagMosaicService";
 import { takeInventory, type StorageInventory, type StorageKindBytes } from "./storageInventory";
@@ -124,19 +119,8 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
     where: { userId, toolId: null },
     select: { id: true, authorId: true, tags: true },
   });
-  for (const { id } of prints) {
-    const full = await loadFullPrint(userId, id);
-    const assetOwners = await assetOwnerIds(id);
-    await deleteAllPrintFiles(id);
-    await deleteAllPreviewImages(id);
-    await deleteAllDescriptionImages(id);
-    await prisma.print.delete({ where: { id } });
-    for (const plate of full.plates) {
-      await deletePlateFiles(plate);
-      await removePlatePictures(plate.id, full.print.assetsPath);
-    }
-    await removeAssetHome(full.print.assetsPath, assetOwners);
-  }
+  // One that went meanwhile is passed over, not a failure of the rest.
+  for (const { id } of prints) await removeModel(id);
   await pruneWhatModelsLeft(userId, prints);
   // Nothing of theirs left at all, not even a tool's: the whole folder of their tag pictures goes, including any
   // for a tag the database has since forgotten.

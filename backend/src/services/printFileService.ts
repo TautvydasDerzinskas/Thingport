@@ -19,7 +19,7 @@ import type { Prisma, Print, PrintFile } from "@prisma/client";
 const log = createLogger("model-files");
 
 // The storagePath a file's row has from when it's made until its place is claimed.
-const PENDING_STORAGE_PATH = "pending";
+export const PENDING_STORAGE_PATH = "pending";
 
 export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">): string {
   const candidate = path.resolve(STORAGE, printFile.storagePath);
@@ -209,7 +209,7 @@ export async function deleteSupportingFile(userId: string, printId: string, file
 }
 
 /** Where the row's file is, or null for a path that leads out of storage: nothing to keep, and nothing to look for. */
-function printFilePathOrNull(row: Pick<PrintFile, "storagePath">): string | null {
+export function printFilePathOrNull(row: Pick<PrintFile, "storagePath">): string | null {
   try {
     return managedPrintFilePath(row);
   } catch {
@@ -259,18 +259,6 @@ export function removeMissingPrintFiles(printId: string): Promise<void> {
       if (where) await pruneEmptyStorageDirs(path.dirname(where));
     }
   });
-}
-
-export async function deleteAllPrintFiles(printId: string): Promise<void> {
-  const rows = await prisma.printFile.findMany({ where: { printId } });
-  const paths = rows.map((r) => managedPrintFilePath(r));
-  // Print.preparedFileId FK will already be gone via cascade delete of the Print row itself,
-  // but this helper runs against a still-live print (e.g. before a full print delete elsewhere).
-  await prisma.printFile.deleteMany({ where: { printId } });
-  for (const p of paths) {
-    await fs.rm(p, { force: true }).catch(() => undefined);
-    await pruneEmptyStorageDirs(path.dirname(p));
-  }
 }
 
 export async function deletePreparedFile(userId: string, printId: string): Promise<Print> {
