@@ -1,7 +1,7 @@
 {
   "name": "Filament shelf",
   "description": "The household's filament spools on one shelf: everyone adds what they have, and each model's page shows which filaments it needs and who has them.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {
@@ -10,7 +10,7 @@
   },
   "hosts": [],
   "category": "planners",
-  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be", "zh"],
+  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be", "zh", "de"],
   "modelPage": {
     "tab": { "title": "Filaments" },
     "image": true

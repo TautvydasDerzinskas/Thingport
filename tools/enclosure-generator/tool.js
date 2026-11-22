@@ -2412,7 +2412,6 @@ const TABS = [
   ["vents", "vent.vents"],
   ["text", "text.title"],
 ];
-const UNTITLED = "projects.untitled";
 const BUILD_DELAY_MS = 180;
 const SAVE_DRAFT_MS = 600;
 
@@ -2473,6 +2472,8 @@ const el = (tag, props = {}, ...children) => {
 
 export default async function mount(thingport) {
   const { root, theme, storage, models, ui, t, labels } = thingport;
+  const UNTITLED = t("projects.untitled");
+  const projectName = (value) => (!value || value === "projects.untitled" ? UNTITLED : String(value));
   const shell = root.querySelector(".enc");
   const $ = (id) => root.querySelector(`#enc-${id}`);
   const colours = {
@@ -2504,11 +2505,11 @@ export default async function mount(thingport) {
     const draft = await storage.get("draft");
     if (draft && typeof draft === "object" && draft.params) {
       params = normalize(draft.params).params;
-      name = String(draft.name || UNTITLED);
+      name = projectName(draft.name);
       projectId = draft.projectId ?? null;
       // Compared as the settings are once filled in, as they're loaded.
       saved = draft.saved?.params
-        ? { name: String(draft.saved.name), params: normalize(draft.saved.params).params }
+        ? { name: projectName(draft.saved.name), params: normalize(draft.saved.params).params }
         : null;
       Object.assign(view, draft.view ?? {});
     }
@@ -2648,10 +2649,12 @@ export default async function mount(thingport) {
     const s = model.stats;
     if (s) {
       $("size").innerHTML = `<b>${s.outer.map(fmt).join(" × ")}</b><span>mm</span>`;
-      $("size").title = `Outside, with the lid. Inside: ${s.inner.map(fmt).join(" × ")} mm.`;
+      $("size").title = t("shell.sizeDetail", { size: s.inner.map(fmt).join(" × ") });
       $("weight").innerHTML = `<b>≈ ${Math.round(s.grams)} g</b><span>PLA</span>`;
-      $("weight").title =
-        `Base ${fmt(s.baseVolume)} cm³${hasLid ? `, lid ${fmt(s.lidVolume)} cm³` : ""}, printed solid.`;
+      $("weight").title = t(hasLid ? "shell.weightBoth" : "shell.weightBase", {
+        base: fmt(s.baseVolume),
+        lid: fmt(s.lidVolume),
+      });
     }
     updateBar();
     const warnings = model.warnings ?? [];
@@ -2659,7 +2662,23 @@ export default async function mount(thingport) {
     button.hidden = !warnings.length;
     button.textContent = t(warnings.length === 1 ? "notes.one" : "notes.many", { count: warnings.length });
     const list = $("warningList");
-    list.replaceChildren(...warnings.map((w) => el("li", {}, t(w))));
+    const localWarning = (warning) => {
+      const wallPatterns = [
+        [/^The (front|back|left|right) wall is too short for a flange\.$/, "warn.flangeShort"],
+        [/^The (front|back|left|right) wall has no room for vents\.$/, "warn.wallNoVents"],
+        [/^A cutout on the (front|back|left|right) wall reaches past its edge\.$/, "warn.wallCutoutEdge"],
+        [/^The text is bigger than the (front|back|left|right) wall\.$/, "warn.wallTextTooBig"],
+      ];
+      for (const [pattern, key] of wallPatterns) {
+        const match = pattern.exec(warning);
+        if (match) return t(key, { wall: t(WALL_NAMES[match[1]]) });
+      }
+      const outside = /^A standoff at ([\d.-]+), ([\d.-]+) mm is outside the box\.$/.exec(warning);
+      if (outside) return t("warn.standoffOutside", { x: outside[1], y: outside[2] });
+      if (warning === "A cutout in the lid reaches past its edge.") return t("warn.lidCutoutEdge");
+      return t(warning);
+    };
+    list.replaceChildren(...warnings.map((w) => el("li", {}, localWarning(w))));
     if (!warnings.length) {
       list.hidden = true;
       button.setAttribute("aria-expanded", "false");
@@ -2855,7 +2874,7 @@ export default async function mount(thingport) {
         ),
         grid(
           3,
-          numberField("thickness", t("part.walls"), { title: "1.6 to 4 mm prints well" }),
+          numberField("thickness", t("part.walls"), { title: t("shell.wallHint") }),
           numberField("radius", t("shell.corners")),
           numberField("tolerance", t("lid.fit"), { title: t("lid.fitHelp") }),
         ),
@@ -3139,7 +3158,7 @@ export default async function mount(thingport) {
           class: "enc-icon-btn enc-tiny",
           type: "button",
           title: t("act.remove"),
-          "aria-label": `Remove standoff ${i + 1}`,
+          "aria-label": t("pcb.removeStandoff", { number: i + 1 }),
           html: ICONS.close,
           onclick: () => {
             remember();
@@ -3294,7 +3313,7 @@ export default async function mount(thingport) {
           class: "enc-icon-btn enc-tiny",
           type: "button",
           title: t("act.more"),
-          "aria-label": `More for ${cutoutName(c)}`,
+          "aria-label": t("act.moreFor", { name: cutoutName(c) }),
           "aria-haspopup": "menu",
           html: ICONS.more,
           onclick: (event) => {
@@ -3570,17 +3589,17 @@ export default async function mount(thingport) {
     saved = JSON.parse(stateJson());
     persist();
     updateBar();
-    ui.toast(`Saved ${name}`, "success");
+    ui.toast(t("projects.saved", { name }), "success");
     if (!$("projectsDialog").hidden) await renderProjects();
   });
 
   const confirmLeave = async (what) =>
     !dirty() ||
-    ui.confirm({ title: t("projects.leaveTitle"), message: `${name} has changes that aren't saved. ${what} anyway?` });
+    ui.confirm({ title: t("projects.leaveTitle"), message: t("projects.leaveBody", { name, action: what }) });
 
   function load(record) {
     params = normalize(record.params).params;
-    name = record.name || UNTITLED;
+    name = projectName(record.name);
     projectId = record.id ?? null;
     saved = record.id ? JSON.parse(stateJson()) : null;
     nameInput.value = name;
@@ -3602,7 +3621,7 @@ export default async function mount(thingport) {
     }
     load(record);
     closeProjects();
-    ui.toast(`Opened ${record.name}`, "success");
+    ui.toast(t("projects.opened", { name: record.name }), "success");
   });
 
   const duplicateProject = safely(async (id) => {
@@ -3641,7 +3660,7 @@ export default async function mount(thingport) {
     const entry = index.find((p) => p.id === id);
     if (
       !(await ui.confirm({
-        title: `Delete ${entry?.name ?? t("projects.thisProject")}?`,
+        title: t("projects.deleteTitle", { name: entry?.name ?? t("projects.thisProject") }),
         message: t("projects.deleteBody"),
       }))
     )
@@ -3663,7 +3682,7 @@ export default async function mount(thingport) {
       row.classList.add("enc-leaving");
       row.addEventListener("animationend", finish, { once: true });
     } else finish();
-    ui.toast(`Deleted ${entry?.name ?? t("projects.theProject")}`, "success");
+    ui.toast(t("projects.deleted", { name: entry?.name ?? t("projects.theProject") }), "success");
   });
 
   const projectActions = (p) => [
@@ -3671,7 +3690,7 @@ export default async function mount(thingport) {
     { label: t("act.duplicate"), icon: ICONS.copy, run: () => duplicateProject(p.id) },
     { label: t("act.downloadJson"), icon: ICONS.json, run: () => exportProject(p.id) },
     "divider",
-    { label: "Delete", icon: ICONS.remove, danger: true, run: () => deleteProject(p.id) },
+    { label: t("act.delete"), icon: ICONS.remove, danger: true, run: () => deleteProject(p.id) },
   ];
 
   async function renderProjects() {
@@ -3742,7 +3761,7 @@ export default async function mount(thingport) {
               class: "enc-icon-btn",
               type: "button",
               title: t("act.more"),
-              "aria-label": `More for ${p.name}`,
+              "aria-label": t("act.moreFor", { name: p.name }),
               "aria-haspopup": "menu",
               html: ICONS.more,
               onclick: (event) => {
@@ -3799,17 +3818,17 @@ export default async function mount(thingport) {
       try {
         data = JSON.parse(await file.text());
       } catch {
-        throw new Error(`${file.name} isn't a project: it's not JSON`);
+        throw new Error(t("projects.notJson", { name: file.name }));
       }
       // Ours ({ name, params }), PrintCasing's ({ version, params }), or the settings alone.
       const raw =
         data && typeof data === "object" && data.params && typeof data.params === "object" ? data.params : data;
       if (!raw || typeof raw !== "object" || !("width" in raw || "height" in raw || "length" in raw))
-        throw new Error(`${file.name} doesn't look like an enclosure project`);
+        throw new Error(t("projects.invalid", { name: file.name }));
       if (!(await confirmLeave(t("act.import")))) return;
       load({ id: null, name: data.name || file.name.replace(/\.json$/i, ""), params: raw });
       closeProjects();
-      ui.toast(`Imported ${name}: save it to keep it here`, "success");
+      ui.toast(t("projects.imported", { name }), "success");
     }),
   );
 
@@ -3849,51 +3868,57 @@ export default async function mount(thingport) {
     const p = model.params;
     const s = model.stats;
     const parts = files();
+    const wall = (name) => t(WALL_NAMES[name] ?? name);
     const lines = [
-      `An enclosure ${s.outer.map(fmt).join(" × ")} mm outside${p.hasLid ? ", with its lid" : ""}, ${s.inner.map(fmt).join(" × ")} mm inside. Made with Thingport's enclosure generator.`,
+      `${t("shell.sizeOutside")}: ${s.outer.map(fmt).join(" × ")} mm · ${t("desc.inside")}: ${s.inner.map(fmt).join(" × ")} mm. ${t("desc.madeWith")}`,
       "",
-      "## What to print",
+      `## ${t("desc.print")}`,
       "",
-      "| Part | File | How |",
+      `| ${t("desc.part")} | ${t("desc.file")} | ${t("desc.how")} |`,
       "| --- | --- | --- |",
-      `| Base | \`${parts[0].name}\` | Open side up, no supports |`,
+      `| ${t("part.base")} | \`${parts[0].name}\` | ${t("desc.baseHow")} |`,
     ];
-    if (parts[1]) lines.push(`| Lid | \`${parts[1].name}\` | Turned over, its top on the bed |`);
-    lines.push("", `About ${Math.round(s.grams)} g of PLA in all, printed solid.`, "", "## Settings", "");
+    if (parts[1]) lines.push(`| ${t("part.lid")} | \`${parts[1].name}\` | ${t("desc.lidHow")} |`);
+    lines.push("", t("desc.pla", { grams: Math.round(s.grams) }), "", `## ${t("aria.settings")}`, "");
     lines.push(
-      `- Walls ${fmt(p.thickness)} mm, corners rounded ${fmt(p.radius)} mm${p.hasLid ? `, ${fmt(p.tolerance)} mm of room for the lid` : ""}`,
+      `- ${t("part.walls")}: ${fmt(p.thickness)} mm · ${t("desc.corners")}: ${fmt(p.radius)} mm${p.hasLid ? ` · ${t("lid.fit")}: ${fmt(p.tolerance)} mm` : ""}`,
     );
     if (p.hasLid) {
-      const lip = p.lidType === "lip" ? ` with a ${fmt(p.lidLipHeight)} mm lip` : "";
+      const lip = p.lidType === "lip" ? ` · ${t("lid.lipHeight")}: ${fmt(p.lidLipHeight)} mm` : "";
       const fixing =
         p.lidFixation === "snap"
-          ? `held by ${p.latchCount} snap latch${p.latchCount === 1 ? "" : "es"} on each of the ${(p.latchWalls.length ? p.latchWalls : ["left", "right"]).join(", ")} walls`
+          ? t("desc.snap", {
+              count: p.latchCount,
+              walls: (p.latchWalls.length ? p.latchWalls : ["left", "right"]).map(wall).join(", "),
+            })
           : p.lidFixation === "snapJoint"
             ? t("join.heldBySnap")
             : p.hasCornerScrews
-              ? `screwed at the corners: ${fmt(p.screwDiameter)} mm holes in the base, ${fmt(p.lidScrewDiameter)} mm in the lid, for heads up to ${fmt(p.screwHeadDiameter)} mm`
+              ? t("desc.screws", {
+                  base: fmt(p.screwDiameter),
+                  lid: fmt(p.lidScrewDiameter),
+                  head: fmt(p.screwHeadDiameter),
+                })
               : t("join.restingInPlace");
-      lines.push(`- Lid ${fmt(p.lidThickness)} mm${lip}, ${fixing}`);
+      lines.push(`- ${t("part.lid")}: ${fmt(p.lidThickness)} mm${lip} · ${fixing}`);
     }
     if (p.hasPcbStandoffs) {
       const board = BOARDS.find((b) => b.id === p.pcbPreset);
       const count = p.standoffMode === "list" ? p.pcbStandoffs.length : 4;
       lines.push(
-        `- ${count} PCB standoffs${board ? ` for a ${board.name}` : ""} on the ${p.pcbOnLid ? "lid" : "base"}`,
+        `- ${t("pcb.standoffs")}: ${count}${board ? ` · ${t("pcb.board")}: ${board.name}` : ""} · ${t("pcb.mountedOn")}: ${t(p.pcbOnLid ? "part.lid" : "part.base")}`,
       );
     }
     for (const c of p.cutouts) {
       const size = c.shape === "circle" ? `Ø ${fmt(c.diameter)} mm` : `${fmt(c.width)} × ${fmt(c.height)} mm`;
-      lines.push(`- ${cutoutName(c)} (${size}) in the ${c.wall === "lid" ? "lid" : `${c.wall} wall`}`);
+      lines.push(`- ${cutoutName(c)} (${size}) · ${wall(c.wall)}`);
     }
-    const ventsIn = [...(p.hasVentilation && p.hasLid ? ["lid"] : []), ...p.ventWalls.map((w) => `${w} wall`)];
+    const ventsIn = [...(p.hasVentilation && p.hasLid ? ["lid"] : []), ...p.ventWalls].map(wall);
     if (ventsIn.length)
-      lines.push(
-        `- ${p.ventPattern === "slots" ? t("vent.title") : `${p.ventPattern[0].toUpperCase()}${p.ventPattern.slice(1)} vents`} in the ${ventsIn.join(", ")}`,
-      );
+      lines.push(`- ${t(p.ventPattern === "slots" ? "vent.title" : `vent.${p.ventPattern}`)} · ${ventsIn.join(", ")}`);
     if (p.hasText && p.textString.trim())
       lines.push(
-        `- "${p.textString}" ${p.textType === "emboss" ? t("text.raisedOn") : t("text.cutIntoLower")} the ${p.textPlacement === "lid" ? "lid" : `${p.textPlacement} wall`}`,
+        `- "${p.textString}" · ${t(p.textType === "emboss" ? "text.raisedOn" : "text.cutIntoLower")} · ${wall(p.textPlacement)}`,
       );
     return lines.join("\n");
   }
@@ -3933,15 +3958,15 @@ export default async function mount(thingport) {
           if (record) await storage.set(`project:${projectId}`, { ...record, modelId: created.id });
         }
         ui.toast(t("save.done", { name: created.name }), "success", { openModel: created.id });
-        showStatus(`Saved as ${created.name}.`, [
+        showStatus(t("save.done", { name: created.name }), [
           [t("save.openIt"), () => models.open(created.id)],
           [
             t("save.addToCollection"),
             safely(async () => {
-              const collection = await ui.pickCollection({ title: `Add ${created.name} to` });
+              const collection = await ui.pickCollection({ title: t("save.addToCollection") });
               if (!collection) return;
               await thingport.collections.add(collection.id, [created.id]);
-              ui.toast(`Added to ${collection.name}`, "success");
+              ui.toast(t("save.addedTo", { name: collection.name }), "success");
             }),
           ],
         ]);

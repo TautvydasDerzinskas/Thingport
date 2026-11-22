@@ -253,5 +253,12 @@
   "view.placeRing": "Drag a ring where you want it",
   "view.side": "Side",
   "view.top": "Top",
-  "view.which": "Which way to look at it"
+  "view.which": "Which way to look at it",
+  "warning.pieces": "The border is in {count} separate pieces. Widen the join, or fill the inside.",
+  "warning.borderHigh": "The border stands higher than the letters. Look at it from the side.",
+  "warning.thinJoin": "The join between letters is under 1.6 mm. It may be fragile.",
+  "warning.thinRing": "A ring’s wall is under 0.8 mm. Make the hole smaller, or the ring bigger.",
+  "error.noSafeRing": "There is nowhere safe to put that ring. Widen the border, or make the ring smaller.",
+  "error.noRingJoin": "There is no room to join that ring. Widen the border, or make the ring smaller.",
+  "error.noMagnetSpace": "There is no room for that magnet. Use fewer or smaller ones, or make the keyring bigger."
 }
