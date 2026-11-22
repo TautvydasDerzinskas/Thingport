@@ -93,12 +93,12 @@ reviewer otherwise has to reconstruct your reasoning from scratch.
 
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
 
-CodeRabbit reviews pull requests into `develop`, and each push to them. An account kept for it watches CodeRabbit's
-checks and the pushes, and asks for what a pull request is still owed once it's due, so there's no need to ask yourself:
-`@coderabbitai review` for a push it didn't review (`full review` if it never reviewed the pull request, stacked ones
-included), the same ask again once a rate limit's wait is over, and `full review` when a review had nothing to say or
-CodeRabbit answers "Already reviewed the last commit". Comment `@coderabbitai pause` to stop its reviews of your pull
-request, and `@coderabbitai resume` to start them again.
+CodeRabbit reviews a pull request into `develop` when it's opened or marked ready for review, and after that only
+when someone asks: once you've pushed the fixes for a round, comment `@coderabbitai review`. It doesn't review pushes on
+its own or answer replies in its threads, so mention `@coderabbitai` only to ask it something. An account kept for it
+asks again when CodeRabbit refused an ask under its rate limit, once the wait is over, and for a first review that was
+rate limited or never came. It never asks for a full review by itself. Comment `@coderabbitai pause` to stop its
+reviews of your pull request, and `@coderabbitai resume` to start them again.
 
 ## Adding a provider
 
@@ -129,6 +129,12 @@ Connected Thingport instances see each other's people as if they were on one ins
 work for a partner's people too. Each social route says how it crosses to partners in
 `backend/src/federation/socialSurfaces.ts`, and a test fails for one that doesn't. How it's built, the security rules
 and the steps for a federating feature are in [docs/FEDERATION_DEVELOPMENT.md](docs/FEDERATION_DEVELOPMENT.md).
+
+## Working on model files and storage
+
+How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. The rules that
+code follows today, and how its reviews run, are in [docs/STORAGE_DEVELOPMENT.md](docs/STORAGE_DEVELOPMENT.md); a pull
+request that puts a new rule in force adds it there.
 
 ## Code style
 

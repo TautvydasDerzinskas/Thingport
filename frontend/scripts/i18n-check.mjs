@@ -1,4 +1,5 @@
-// Lists each locale's keys missing from, or no longer in, en.json: `npm run i18n:check [code]`.
+// Lists each locale's keys missing from, or no longer in, en.json: `npm run i18n:check [code]`. With --strict it
+// exits 1 when there is any, as Format runs it, so a translation can't fall behind unnoticed.
 // A plural key (key_one, key_other, ...) needs every form the locale uses for whole-number counts.
 import { readdirSync, readFileSync } from "node:fs";
 import { pluralForms } from "./plural-forms.mjs";
@@ -29,7 +30,9 @@ const pluralOnly = new Set([
   "models.selection.count",
 ]);
 
-const only = process.argv[2];
+const args = process.argv.slice(2);
+const strict = args.includes("--strict");
+const only = args.find((arg) => !arg.startsWith("--"));
 const codes = readdirSync(dir)
   .filter((file) => file.endsWith(".json") && file !== "en.json")
   .map((file) => file.slice(0, -".json".length))
@@ -40,6 +43,7 @@ if (only && codes.length === 0) {
   process.exit(1);
 }
 
+let problems = 0;
 for (const code of codes) {
   const forms = [...pluralForms(code)];
   const localeLeaves = read(code);
@@ -63,7 +67,13 @@ for (const code of codes) {
   const missing = [...en].filter((key) => !locale.has(key));
   const stale = [...locale].filter((key) => !en.has(key));
   const done = Math.floor(((en.size - missing.length) / en.size) * 100);
-  console.log(`${code}: ${done}% translated, ${missing.length} missing, ${stale.length} no longer used`);
+  console.log(`${code}: ${done}% of keys, ${missing.length} missing, ${stale.length} no longer used`);
   for (const key of missing) console.log(`  missing  ${key}`);
   for (const key of stale) console.log(`  unused   ${key}`);
+  problems += missing.length + stale.length;
+}
+
+if (strict && problems) {
+  console.error(`${problems} key(s) missing from a locale or no longer in en.json: add or remove them (see above).`);
+  process.exit(1);
 }
