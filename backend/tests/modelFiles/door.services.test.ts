@@ -506,6 +506,24 @@ describe("a move (move.target, move.source)", () => {
     expect(fs.readFileSync(abs(moved))).toEqual(bytes);
   });
 
+  it("leaves a tool's plate alone: no folder made for it, and nothing moved from the path it reserves", async () => {
+    const owner = await user();
+    const { plate, source, bytes } = await toolModel(owner);
+    expect(fs.existsSync(path.dirname(abs(plate)))).toBe(false);
+    // Something else at that path, a file left there, say: not the plate's to move.
+    fs.mkdirSync(path.dirname(abs(plate)), { recursive: true });
+    fs.writeFileSync(abs(plate), "solid stray endsolid");
+
+    expect(await reorganizeManagedPrints(BY_ID, owner.id)).toEqual({ moved: 0, skipped: 0 });
+
+    expect(await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).toMatchObject({
+      storagePath: plate.storagePath,
+      sourcePath: source,
+    });
+    expect(fs.readFileSync(abs(plate), "utf8")).toBe("solid stray endsolid");
+    expect(fs.readFileSync(source)).toEqual(bytes);
+  });
+
   it.each([
     ["a folder", (at: string) => fs.mkdirSync(at, { recursive: true })],
     // A rename replaces a pipe, where it can't a folder: only the look keeps it.

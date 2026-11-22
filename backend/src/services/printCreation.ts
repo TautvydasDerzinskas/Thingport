@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
-import { pruneWhatModelsLeft, removeModel } from "../modelFiles/removeModel";
 import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
+import { pruneWhatModelsLeft, removeModel } from "../modelFiles/removeModel";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
