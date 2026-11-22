@@ -2,7 +2,8 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, describe, expect, it } from "vitest";
+import fsp from "node:fs/promises";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../src/app";
 import { STORAGE } from "../../src/config";
 import { prisma } from "../../src/db";
@@ -172,6 +173,10 @@ describe("sendStored", () => {
       sentFrom: "",
       openWhileSent: 0,
       headersSent: false,
+      removed: [] as string[],
+      removeHeader(name: string) {
+        res.removed.push(name);
+      },
       sendFile(filePath: string, done: (err?: unknown) => void) {
         res.sentFrom = filePath;
         if (watched) res.openWhileSent = timesOpen(watched);
@@ -180,6 +185,25 @@ describe("sendStored", () => {
     };
     return res;
   };
+
+  it("reads by the file's own path where the system can't reopen a handle, and drops the attachment from a 404", async () => {
+    const abs = file("by-path");
+    const row = { filePath: abs, site: "serve.supporting" as const, stillNames: async () => true, headers: () => {} };
+    const realStat = fsp.stat.bind(fsp);
+    const noFdPaths = vi
+      .spyOn(fsp, "stat")
+      .mockImplementation(((target: string, options?: never) =>
+        /^\/(dev|proc\/self)\/fd\//.test(String(target))
+          ? Promise.reject(Object.assign(new Error("ENOENT"), { code: "ENOENT" }))
+          : realStat(target, options)) as typeof fsp.stat);
+    const byPath = response();
+    await sendStored(byPath as never, row);
+    noFdPaths.mockRestore();
+    expect(byPath.sentFrom).toBe(abs);
+    const gone = response({ code: "ENOENT", syscall: "stat" });
+    await expect(sendStored(gone as never, row)).rejects.toMatchObject({ status: 404 });
+    expect(gone.removed).toEqual(["Content-Disposition"]);
+  });
 
   it("closes the file it opened: once sent, when its row changed, and when reading the row failed", async () => {
     const abs = file("kept");

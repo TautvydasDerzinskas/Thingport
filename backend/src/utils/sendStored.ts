@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import type { Response } from "express";
 import { isMissingError, openStored, type OpenedFile, type StorageSite } from "../modelFiles/storageFs";
 import { handlePath } from "../services/fileReuse";
@@ -35,6 +36,18 @@ export async function openRowFile(row: StoredRow): Promise<OpenedFile | null> {
 
 const notFound = () => new HttpError(404, "Not found");
 
+/** The path to read an open file by: its handle's own (/proc/self/fd, /dev/fd), so what's read is what was opened. On
+ *  a system that has neither (a backend run on Windows), the file's own path, which its row was checked against. */
+export async function openedPath(opened: OpenedFile, filePath: string): Promise<string> {
+  const byHandle = handlePath(opened.handle);
+  return (await fs.stat(byHandle).then(
+    () => true,
+    () => false,
+  ))
+    ? byHandle
+    : filePath;
+}
+
 /** Serves the file a row names from its open handle, with send's Range, ETag and 304 as from a path. Throws the
  *  routes' 404 when no regular file is there or the row no longer names it: send's own 404 isn't exposed, so the
  *  error handler would answer it with a 500. Any other error is thrown as it is. `headers` are set only once there's
@@ -43,12 +56,17 @@ export async function sendStored(res: Response, row: StoredRow & { headers: () =
   const opened = await openRowFile(row);
   if (!opened) throw notFound();
   try {
+    const target = await openedPath(opened, row.filePath);
     row.headers();
     await new Promise<void>((resolve, reject) => {
-      res.sendFile(handlePath(opened.handle), (err?: NodeJS.ErrnoException) => {
+      res.sendFile(target, (err?: NodeJS.ErrnoException) => {
         // As express does without a callback: a client gone or a failed write only ends the answer.
         if (!err || err.code === "ECONNABORTED" || err.syscall === "write") resolve();
-        else reject(isMissingError(err) && !res.headersSent ? notFound() : err);
+        else if (isMissingError(err) && !res.headersSent) {
+          // The headers were for a file: the 404 that goes out instead isn't an attachment.
+          res.removeHeader("Content-Disposition");
+          reject(notFound());
+        } else reject(err);
       });
     });
   } finally {

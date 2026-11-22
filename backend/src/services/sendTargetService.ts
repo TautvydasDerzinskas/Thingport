@@ -12,11 +12,10 @@ import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
 import { blockedByLookup, metadataHost, widgetDispatcher } from "./customWidgetsService";
 import { buildImportSourceUrl } from "../sources/sourceUrls";
-import { handlePath } from "./fileReuse";
 import { resolvePlateFilePath } from "./printCreation";
 import { managedPrintFilePath, printFileStillNames } from "./printFileService";
 import { plateStillNames } from "./printService";
-import { openRowFile } from "../utils/sendStored";
+import { openedPath, openRowFile } from "../utils/sendStored";
 import {
   SEND_EXPORT_KIND,
   fillIn,
@@ -460,7 +459,7 @@ export async function sendToTarget(
         sent_at: new Date().toISOString(),
       });
     } else {
-      const blob = await fs.openAsBlob(handlePath(opened.handle), { type: file.mime });
+      const blob = await fs.openAsBlob(await openedPath(opened, file.path), { type: file.mime });
       if (req.body === "raw") {
         headers["Content-Type"] = "application/octet-stream";
         body = blob;
