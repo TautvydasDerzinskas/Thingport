@@ -198,7 +198,13 @@ export async function sendPrintsZip(
   }
 
   const tmpPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
-  await writeZip(tmpPath, entries);
+  try {
+    await writeZip(tmpPath, entries);
+  } catch (err) {
+    // Failed half-written, it isn't left behind.
+    await fs.promises.rm(tmpPath, { force: true });
+    throw err;
+  }
   res.download(tmpPath, downloadName, (err) => {
     fs.rm(tmpPath, { force: true }, () => undefined);
     if (err && !res.headersSent) {

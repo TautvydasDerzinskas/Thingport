@@ -153,6 +153,12 @@ describe("a pictures folder the disk can't list", () => {
       expect((await browse(pictures)).folders).toEqual([
         expect.objectContaining({ name: "Thumbnails", files: 0, error_code: "EACCES" }),
       ]);
+      // Asked for itself, it says the disk couldn't read it, not that it isn't there.
+      const itself = await request(app)
+        .get("/api/admin/storage/browse")
+        .query({ path: path.join(pictures, "Thumbnails").split(path.sep).join("/") })
+        .set({ Authorization: `Bearer ${admin.token}` });
+      expect([itself.status, itself.body.code]).toEqual([500, "folder_unreadable"]);
       // The folder above it could be listed: it's shown, though nothing else is in it, and without an error.
       expect((await browse(folder)).folders).toEqual([
         expect.objectContaining({ name: path.basename(pictures), pictures: true, error_code: null }),

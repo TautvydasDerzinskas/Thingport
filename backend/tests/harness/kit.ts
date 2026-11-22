@@ -118,7 +118,10 @@ export function useStorageKit(app: Express): StorageKit {
 
   async function model(owner: KitUser, spec: ModelSpec = {}): Promise<KitModel> {
     const seed = nonce();
-    const bytesOf = async (file: { name: string; bytes?: Buffer }) => file.bytes ?? contentOf(file.name, seed);
+    // A seed for every file, so two of one name in different folders still differ.
+    let made = 0;
+    const bytesOf = async (file: { name: string; bytes?: Buffer }) =>
+      file.bytes ?? contentOf(file.name, `${seed}-${(made += 1)}`);
     const plateSpecs = (spec.plates ?? ["Part.stl"]).map(specOf);
     const plateBytes = await Promise.all(plateSpecs.map(bytesOf));
     const { print } = await createPrint(

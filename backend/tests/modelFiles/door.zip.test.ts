@@ -203,10 +203,14 @@ describe("the download zip", () => {
 
   it("fails when a file it's writing can't be opened, or read once it's open", async () => {
     const { printId, plate, files } = await model(["Guide.pdf"]);
+    const temps = () => fs.readdirSync(os.tmpdir()).filter((name) => name.startsWith("thingport-zip-")).length;
+    const before = temps();
     faults.at("open:zip.entry", 1, "EIO", { path: plate.abs });
     expect((await zipOf(printId)).status).toBe(500);
     faults.at("opened:zip.entry", 1, "EIO", { path: files["Guide.pdf"].abs });
     expect((await zipOf(printId)).status).toBe(500);
+    // Failed half-written, neither is left in the temp folder.
+    expect(temps()).toBe(before);
   });
 
   it("still leaves out a file that's gone, or a folder in its place, and keeps the rest", async () => {

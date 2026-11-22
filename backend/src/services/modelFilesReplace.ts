@@ -104,7 +104,13 @@ export async function replaceModelPlates(
   // LICENSE.txt is written again when it went too.
   await afterLicenseChange(printId);
 
-  return { plates, galleryWhole: await galleryWhole(printId, print.assetsPath, print.previewImages) };
+  // The pictures folder as it is now, read and looked at in one storage-lock turn: a folder move renames the pictures
+  // and saves the new folder under the lock, so one read before the swap may have been left since.
+  const whole = await withStorageLock(async () => {
+    const now = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
+    return galleryWhole(printId, now?.assetsPath ?? null, print.previewImages);
+  });
+  return { plates, galleryWhole: whole };
 }
 
 /** Whether every picture of the gallery is on disk, in the model's folder or the old shared one. One the disk can't

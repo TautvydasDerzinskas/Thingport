@@ -21,6 +21,7 @@ import {
   setSocialSettings,
   type PreviewMode,
 } from "../../src/services/settingsService";
+import { checkLibraryInvariants } from "../harness/invariants";
 import { faults, hits, pauseAt, track } from "../harness/lifecycle";
 import { nonce, register, tempFile, upload } from "../helpers/fileReuse";
 import { contentOf } from "../intake/files";
@@ -426,6 +427,7 @@ describe("a move (move.target, move.source)", () => {
     expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).storagePath).toBe(plate.storagePath);
     expect(fs.readFileSync(abs(plate))).toEqual(bytes);
     expect(fs.existsSync(path.join(path.dirname(abs(plate)), print.id))).toBe(false);
+    expect(await checkLibraryInvariants({ userIds: [owner.id] })).toEqual([]);
   });
 
   it("stops when the look at a file it moves fails, rather than save a place the file never went to", async () => {
@@ -442,6 +444,7 @@ describe("a move (move.target, move.source)", () => {
     expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).storagePath).toBe(plate.storagePath);
     expect(fs.readFileSync(abs(plate))).toEqual(bytes);
     expect(fs.existsSync(path.join(path.dirname(abs(plate)), print.id))).toBe(false);
+    expect(await checkLibraryInvariants({ userIds: [owner.id] })).toEqual([]);
   });
 
   it("leaves a file in bundles/ where its row finds it when its look fails, so bundles/ is kept", async () => {
@@ -591,6 +594,7 @@ describe("a copy (copy.source)", () => {
     await request(app).post(`/api/collection/${collection.body.id}/items/${print.id}`).set(as(owner));
     const viewer = await user();
     return {
+      scope: { userIds: [owner.id, viewer.id] },
       plate: plates[0],
       notes,
       copy: () => request(app).post(`/api/print/${print.id}/copy`).set(as(viewer)),
@@ -599,19 +603,21 @@ describe("a copy (copy.source)", () => {
   }
 
   it("fails, rather than refuse a supporting file as missing, when its look fails", async () => {
-    const { notes, copy, copies } = await sharedModel();
+    const { notes, copy, copies, scope } = await sharedModel();
     faults.at("fileState:copy.source", 1, "EIO", { path: abs(notes) });
 
     expect((await copy()).status).toBe(500);
     expect(await copies()).toBe(0);
+    expect(await checkLibraryInvariants(scope)).toEqual([]);
   });
 
   it("fails, rather than refuse a plate as missing, when its look fails", async () => {
-    const { plate, copy, copies } = await sharedModel();
+    const { plate, copy, copies, scope } = await sharedModel();
     faults.at("fileState:plate.file", 1, "EIO", { path: abs(plate) });
 
     expect((await copy()).status).toBe(500);
     expect(await copies()).toBe(0);
+    expect(await checkLibraryInvariants(scope)).toEqual([]);
   });
 
   it("still refuses a model whose supporting file is gone, or has a folder in its place", async () => {

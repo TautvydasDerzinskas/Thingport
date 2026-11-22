@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
+import { createLogger } from "../logger";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES } from "../config";
 import { withStorageLock } from "../utils/storageLock";
@@ -14,6 +15,8 @@ import { findStoredCopies } from "./storedContent";
 import { normalizeGeneratorScript } from "../utils/scriptLineEndings";
 import { fileState, type StorageSite } from "../modelFiles/storageFs";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
+
+const log = createLogger("model-files");
 
 // The storagePath a file's row has from when it's made until its place is claimed.
 const PENDING_STORAGE_PATH = "pending";
@@ -232,7 +235,9 @@ export async function lookAtPrintFiles(printId: string): Promise<void> {
 
 /** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are gone, and keeps the rest.
  *  A folder at a row's path counts as gone, and stays where it is. Deleting a prepared print's row empties the model's
- *  prepared slot (Print.preparedFile is SetNull). A file the disk can't answer for stops it before any row goes. */
+ *  prepared slot (Print.preparedFile is SetNull). A file the disk can't answer for keeps its row, and the others'
+ *  answers still count: an error on one file says nothing about another, and a script whose file went must go, or its
+ *  download is taken for one still there. */
 export function removeMissingPrintFiles(printId: string): Promise<void> {
   // Rows read, looked at and dropped in one storage-lock turn: a move renames a file and then saves its new path under
   // the lock, so a path read outside it could be one the file has just left.
@@ -241,7 +246,11 @@ export function removeMissingPrintFiles(printId: string): Promise<void> {
     const gone: PrintFile[] = [];
     for (const row of rows) {
       if (row.storagePath === PENDING_STORAGE_PATH) continue;
-      if (!(await printFileThere(row, "repair.sweep"))) gone.push(row);
+      try {
+        if (!(await printFileThere(row, "repair.sweep"))) gone.push(row);
+      } catch (error) {
+        log.warn("couldn't look at a repaired model's file, so its row stays", { print: printId, file: row.id, error });
+      }
     }
     if (!gone.length) return;
     await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });

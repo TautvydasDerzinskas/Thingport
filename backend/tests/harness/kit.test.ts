@@ -24,6 +24,12 @@ const WHOLE: ModelSpec = {
 };
 
 describe("a whole library", () => {
+  it("gives two files of one name in different folders bytes of their own", async () => {
+    const owner = await kit.user();
+    const model = await kit.model(owner, { supporting: ["notes.txt", { name: "notes.txt", folder: "Docs" }] });
+    expect(model.files[0].bytes.equals(model.files[1].bytes)).toBe(false);
+  });
+
   it("breaks no rule, with a tool's model in it", async () => {
     const owner = await kit.user();
     const model = await kit.model(owner, WHOLE);

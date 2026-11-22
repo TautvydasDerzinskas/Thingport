@@ -36,7 +36,8 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
   open handle is served only while the row still names that path (`utils/sendStored.ts`), else the answer is 404. Not its
   size: a file may be edited in place, and its row keeps the size it was saved with. It covers plates, supporting files,
   the prepared print, the zip, Send to's link and upload, MCP's `get_model_file` and partners' downloads; copies still
-  read by path. Pinned by `tests/modelFiles/serveByHandle.test.ts` and `tests/modelFiles/door.zip.test.ts`.
+  read by path. A system that can't reopen a handle by a path (no `/proc/self/fd` or `/dev/fd`: a backend run natively
+  on Windows) reads the file by its path just after the row check instead. Pinned by `tests/modelFiles/serveByHandle.test.ts` and `tests/modelFiles/door.zip.test.ts`.
 
 A rule goes here only in the pull request whose code follows it everywhere it applies, with the test that pins it.
 Reviewers, CodeRabbit included, judge a change's rule conformance against this list only: a rule that isn't here isn't

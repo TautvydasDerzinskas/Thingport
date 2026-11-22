@@ -245,7 +245,8 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
     await new Promise<void>((resolve, reject) => out.end((err?: Error | null) => (err ? reject(err) : resolve())));
   } catch (err) {
     await writing?.close().catch(() => undefined);
-    out.destroy();
+    // Closed before the caller removes the file: an open still under way would make it again after the removal.
+    if (!out.closed) await new Promise<void>((resolve) => out.once("close", () => resolve()).destroy());
     throw err;
   }
 }

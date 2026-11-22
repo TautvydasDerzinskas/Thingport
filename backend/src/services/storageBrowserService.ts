@@ -217,6 +217,11 @@ export async function listStorageFolder(rawFolder: string): Promise<StorageListi
     if (slash === -1) summaryOf(relative).error_code = code;
     else summaryOf(relative.slice(0, slash));
   }
+  // The folder asked for is one the disk couldn't list: say that, not that it isn't there.
+  const ownError = folder ? unreadableFolders.get(folder) : undefined;
+  if (ownError && !folders.size && !here.length) {
+    throw new HttpError(500, `The disk couldn't read this folder (${ownError})`, "folder_unreadable");
+  }
   if (folder && !folders.size && !here.length) throw new HttpError(404, "No such folder");
   const files = await mapWithConcurrency(here, FILE_LOOKS, async (entry): Promise<StorageFile> => {
     const { location, code } = await entry.location();

@@ -276,11 +276,11 @@ describe("a disk that can't answer", () => {
     },
   );
 
-  it("finishes the repair when its sweep can't look at a file, and drops no row", async () => {
+  it("finishes the repair when its sweep can't look at a file, keeping that row and dropping those that went", async () => {
     const owner = await kit.user();
-    const model = await kit.model(owner, { supporting: ["notes.txt", "guide.pdf"], license: "CC-BY-4.0" });
-    const [note, guide, license] = model.files;
-    lose(model.plates[0], guide, license);
+    const model = await kit.model(owner, { supporting: ["notes.txt", "shape.scad"], license: "CC-BY-4.0" });
+    const [note, shape, license] = model.files;
+    lose(model.plates[0], shape, license);
     faults.at("fileState:repair.sweep", 1, "EIO", { path: at(note.storagePath) });
 
     const replaced = await replaceModelFiles(
@@ -293,10 +293,13 @@ describe("a disk that can't answer", () => {
     expect(replaced?.plates.map((plate) => plate.filename)).toEqual(["Benchy.gcode.3mf"]);
     expect(replaced?.print.preparedMetadata).not.toBeNull();
     const files = await prisma.printFile.findMany({ where: { printId: model.print.id } });
-    expect(files.map((file) => file.filename)).toContain("shape.scad");
     expect(fs.readFileSync(at(license.storagePath))).toEqual(license.bytes);
-    // And no row went, the guide's included: the sweep stopped at the note.
-    expect(files.map((file) => file.id)).toEqual(expect.arrayContaining([note.id, guide.id, license.id]));
+    // The note the disk couldn't answer for stays. The script that went is the download's again, rather than its row
+    // holding the name and the download taken for one still there.
+    expect(files.map((file) => file.id)).toContain(note.id);
+    const script = files.find((file) => file.filename === "shape.scad");
+    expect(script?.id).not.toBe(shape.id);
+    expect(fs.existsSync(at(script?.storagePath ?? ""))).toBe(true);
   });
 
   it("keeps every photo when a look at one of them fails", async () => {

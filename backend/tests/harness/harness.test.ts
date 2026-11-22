@@ -124,6 +124,16 @@ describe("pauses", () => {
     beginTest();
   });
 
+  it("refuse one an operation reaches once the test is ending, which then rejects", async () => {
+    const abs = file("late.stl");
+    pauseAt("fileState:repair.sweep", 2);
+    // The second look comes while the test is ending: the first one's disk read gives way to it.
+    const op = track(fileState(abs, "repair.sweep").then(() => fileState(abs, "repair.sweep")));
+    await expect(endTest()).rejects.toThrow(/never reached: a pause at fileState:repair.sweep #2/);
+    beginTest();
+    await expect(op).rejects.toThrow(/ended before fileState:repair.sweep #2/);
+  });
+
   it("are undone when the test ends with an operation parked, which then rejects", async () => {
     const gate = pauseAt("open:serve.plate");
     const op = track(openStored(file("parked.stl"), "serve.plate"));

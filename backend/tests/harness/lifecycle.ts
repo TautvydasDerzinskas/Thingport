@@ -29,6 +29,7 @@ let pauses: Pause[] = [];
 let expected = new Map<string, boolean>();
 let counts = new Map<string, number>();
 let tracked: Promise<unknown>[] = [];
+let ending = false;
 
 function known(name: string): void {
   if (!DOOR_CHECKPOINTS.has(name)) throw new Error(`No checkpoint is called ${name}`);
@@ -64,6 +65,8 @@ function hook(name: string, detail: { path?: string }): Promise<void> | void {
     if (pause.reached || pause.name !== name) continue;
     pause.seen += 1;
     if (pause.seen === pause.nth) {
+      // Reached while the test is ending, nothing would ever release it.
+      if (ending) throw new HarnessAborted(`The test ended before ${name} #${pause.nth} was reached`);
       pause.reached = true;
       pause.parked = true;
       pause.onReached();
@@ -137,6 +140,7 @@ export function track<T>(op: Promise<T>): Promise<T> {
 }
 
 function reset(): void {
+  ending = false;
   faultList = [];
   pauses = [];
   expected = new Map();
@@ -154,6 +158,7 @@ export function beginTest(): void {
  *  tracked one, removes the hook, and fails naming each fault, pause and `reached` never met. */
 export async function endTest(): Promise<void> {
   const problems: string[] = [];
+  ending = true;
   for (const pause of pauses) {
     if (!pause.parked) continue;
     problems.push(`left parked: ${pause.name} #${pause.nth}`);
