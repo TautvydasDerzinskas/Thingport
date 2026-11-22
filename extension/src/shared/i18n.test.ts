@@ -225,12 +225,14 @@ describe("runtime localization", () => {
     const shared = new Map<string, readonly string[]>([
       ["recentlyViewedTitle", TRANSLATED_LOCALES],
       ["adaptPage.fileWithSize", TRANSLATED_LOCALES],
-      ["mini", ["es", "fr", "lt"]],
-      ["adaptPage.sizeKb", ["es", "lt", "zh"]],
-      ["adaptPage.sizeMb", ["es", "lt", "zh"]],
+      ["mini", ["de", "es", "fr", "lt"]],
+      ["adaptPage.sizeKb", ["de", "es", "lt", "zh"]],
+      ["adaptPage.sizeMb", ["de", "es", "lt", "zh"]],
       ["sections", ["fr"]],
       ["gapDescription", ["fr"]],
       ["adaptPopup.sites", ["fr"]],
+      ["tabOfflineFeatures", ["de"]],
+      ["adaptPopup.slicer", ["de"]],
     ]);
     for (const locale of TRANSLATED_LOCALES) {
       for (const [key, english] of Object.entries(catalogs.en)) {

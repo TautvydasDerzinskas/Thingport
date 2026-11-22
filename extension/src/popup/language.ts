@@ -5,6 +5,7 @@ import us from "../assets/flags/US.svg";
 import ru from "../assets/flags/RU.svg";
 import ua from "../assets/flags/UA.svg";
 import by from "../assets/flags/BY.svg";
+import de from "../assets/flags/DE.svg";
 import es from "../assets/flags/ES.svg";
 import fr from "../assets/flags/FR.svg";
 import lt from "../assets/flags/LT.svg";
@@ -20,6 +21,7 @@ const LANGUAGES: { code: Locale; name: string; english: string; flag: string }[]
   { code: "ru", name: "Русский", english: "Russian", flag: ru },
   { code: "uk", name: "Українська", english: "Ukrainian", flag: ua },
   { code: "be", name: "Беларуская", english: "Belarusian", flag: by },
+  { code: "de", name: "Deutsch", english: "German", flag: de },
   { code: "es", name: "Español", english: "Spanish", flag: es },
   { code: "fr", name: "Français", english: "French", flag: fr },
   { code: "lt", name: "Lietuvių", english: "Lithuanian", flag: lt },
