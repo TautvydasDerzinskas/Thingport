@@ -10,7 +10,7 @@ import { Prisma, type Author, type Print, type PrintFile } from "@prisma/client"
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { withStorageLock } from "../utils/storageLock";
-import { buildImportSourceUrl } from "./importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 import { licenseOut, providerName, storedLicense, type LicenseOut } from "./licenseService";
 import { managedPrintFilePath } from "./printFileService";
 import { printFilePathFree, pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";

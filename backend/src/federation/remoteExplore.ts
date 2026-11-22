@@ -1,6 +1,6 @@
 import { licenseOut, type LicenseOut } from "../services/licenseService";
 import type { RemoteModelDetails } from "./remoteIndex";
-import { buildImportSourceUrl } from "../services/importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 import type { Peer, Prisma, RemoteCollection, RemoteModel, RemotePerson } from "@prisma/client";
 import { canSeeRemoteModel } from "./sharedCollections";
 import type { RemoteOriginOut } from "../dto";

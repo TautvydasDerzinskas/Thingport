@@ -10,7 +10,7 @@ import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
 import { blockedByLookup, metadataHost, widgetDispatcher } from "./customWidgetsService";
-import { buildImportSourceUrl } from "./importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 import { resolvePlateFilePath } from "./printCreation";
 import { managedPrintFilePath } from "./printFileService";
 import {
