@@ -1,4 +1,4 @@
-import { isBody, topLevel, type StudioDocument, type StudioFilamentSlot } from "./document";
+import { isBody, plateOf, topLevel, type StudioDocument, type StudioFilamentSlot } from "./document";
 
 // A design's print profile: the slicer settings it's meant to be printed with, as a preset to start from and the
 // settings changed on it, for the slicer and printer the person prints with. Settings are kept under Bambu Studio's
@@ -773,13 +773,19 @@ export function checkProfile(doc: StudioDocument, profile: StudioPrintProfile): 
       });
   }
   if (profile.settings.spiral_mode === true) {
-    const bodies = topLevel(doc).filter((feature) => isBody(feature) && feature.visible);
-    if (bodies.length > 1)
+    const perPlate = new Map<string, number>();
+    for (const feature of topLevel(doc)) {
+      if (!isBody(feature) || !feature.visible) continue;
+      const plate = plateOf(feature);
+      perPlate.set(plate, (perPlate.get(plate) ?? 0) + 1);
+    }
+    const crowded = [...perPlate].filter(([, count]) => count > 1).map(([plate]) => plate);
+    if (crowded.length)
       checks.push({
         code: "vase_bodies",
         level: "warning",
-        text: "Spiral vase prints one body at a time with a single wall: keep one body per plate.",
-        params: { count: bodies.length },
+        text: `Spiral vase prints one body at a time with a single wall: keep one body per plate (more on ${crowded.join(", ")}).`,
+        params: { plates: crowded.join(", ") },
       });
   }
   const family = slicerFamily(profile.slicer);

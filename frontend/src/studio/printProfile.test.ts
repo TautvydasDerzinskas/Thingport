@@ -180,6 +180,19 @@ describe("print profiles", () => {
     expect(checkProfile(doc, profileOf(doc)).map((check) => check.code)).toEqual(["material", "food_contact"]);
   });
 
+  it("warns about spiral vase only for a plate with more than one body", () => {
+    const vaseCheck = (doc: StudioDocument) =>
+      checkProfile(doc, profileOf(doc)).find((check) => check.code === "vase_bodies");
+    let doc = applyCommand(emptyDocument(), "add_box", { width: 20, depth: 20, height: 20 }).document;
+    const cylinder = applyCommand(doc, "add_cylinder", { radius: 10, height: 20 });
+    doc = applyCommand(cylinder.document, "create_plate", { name: "Second" }).document;
+    doc = applyCommand(doc, "move_to_plate", { plate_id: "plate-2", feature_ids: cylinder.created }).document;
+    doc = cmd(doc, { profile: { preset: "vase" } });
+    expect(vaseCheck(doc)).toBeUndefined();
+    doc = applyCommand(doc, "add_box", { width: 10, depth: 10, height: 10, plate_id: "plate-2" }).document;
+    expect(vaseCheck(doc)?.params).toEqual({ plates: "plate-2" });
+  });
+
   it("suggests presets from what a design is for", () => {
     expect(suggestPresets("A wall bracket for the garden hose").map((hit) => hit.id)).toEqual(["strong", "outdoor"]);
     expect(suggestPresets("Small planter pots for herbs")[0]).toEqual({ id: "water", words: ["planter", "pot"] });
