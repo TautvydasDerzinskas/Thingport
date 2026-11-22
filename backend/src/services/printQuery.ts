@@ -7,6 +7,7 @@ import { getLinkedAuthorIds } from "./authorService";
 import { systemCollectionKeyForId } from "./collectionService";
 import { rankedPrintIds } from "./searchService";
 import { extensionsOf } from "../files/kinds";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 
 // The library listing's filters and order, shared by GET /prints and the MCP tools so both list the
 // same models for the same filters.
@@ -126,12 +127,14 @@ export async function buildPrintWhere(
   if (filters.licensed) andClauses.push({ license: { not: Prisma.DbNull } });
   if (filters.generative) {
     // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
-    // generated rather than only printed: any script the kind table knows.
+    // generated rather than only printed: any script the kind table knows, but not one named with a leading dot, which
+    // the table calls junk (as macOS's "._" copies are), as the model's generator_scripts do.
     andClauses.push({
       files: {
         some: {
           role: "SUPPORTING",
           OR: extensionsOf("script").map((ext) => ({ filename: { endsWith: ext, mode: "insensitive" as const } })),
+          NOT: [{ filename: { startsWith: "." } }, { storagePath: PENDING_STORAGE_PATH }],
         },
       },
     });

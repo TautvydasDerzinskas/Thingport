@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
+import { prisma } from "../src/db";
+import { PENDING_STORAGE_PATH } from "../src/modelFiles/pending";
 
 // A model is "generative" when it came with the script it was generated from. The script is kept beside the
 // model, never as one of its plates, so that is what the filter and the listing both go by.
@@ -105,14 +107,39 @@ describe("models that came with a generator script", () => {
     expect(notes.text).toBe("one\r\ntwo\r\n");
   });
 
-  it("lists a script whose name starts with a dot, as the filter counts it", async () => {
+  it("counts no script whose name starts with a dot, which the kind table calls junk, in the list or the filter", async () => {
     const model = await makeModel(`Dotted ${stamp}`);
-    await attachFile(model, ".generator.scad", "size = 10;\n");
+    // As a macOS "._" copy is, kept beside the model like any other file.
+    await attachFile(model, "._generator.scad", "size = 10;\n");
 
     const print = (await request(app).get(`/api/print/${model}`).set(auth())).body;
-    expect(print.generator_scripts.map((script: { filename: string }) => script.filename)).toEqual([".generator.scad"]);
+    expect(print.generator_scripts).toEqual([]);
+    expect(print.supporting_files.map((file: { content_kind: string }) => file.content_kind)).toEqual(["junk"]);
     const only = await request(app).get("/api/prints?limit=100&generative=1").set(auth());
-    expect(only.body.map((item: { id: string }) => item.id)).toContain(model);
+    expect(only.body.map((item: { id: string }) => item.id)).not.toContain(model);
+  });
+
+  it("counts no script still being saved", async () => {
+    const model = await makeModel(`Saving ${stamp}`);
+    // A save under way: its row is made before its place is claimed.
+    const pending = await prisma.printFile.create({
+      data: {
+        printId: model,
+        role: "SUPPORTING",
+        filename: "Coming.scad",
+        mime: "text/plain",
+        size: 9,
+        storagePath: PENDING_STORAGE_PATH,
+      },
+    });
+    try {
+      const print = (await request(app).get(`/api/print/${model}`).set(auth())).body;
+      expect(print.generator_scripts).toEqual([]);
+      const only = await request(app).get("/api/prints?limit=100&generative=1").set(auth());
+      expect(only.body.map((item: { id: string }) => item.id)).not.toContain(model);
+    } finally {
+      await prisma.printFile.delete({ where: { id: pending.id } });
+    }
   });
 
   it("starts as not withheld, which is what an uploaded model is", async () => {

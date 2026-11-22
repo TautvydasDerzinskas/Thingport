@@ -26,6 +26,8 @@ import {
 } from "../services/collectionService";
 import { getDashboardSummary } from "../services/dashboardService";
 import { printOutById } from "../services/printLoader";
+import { kindOfStored, type Kind } from "../files/kinds";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 import type { PrintProfileOut } from "../services/printProfileService";
 import { listPrints, PRINT_SORT_MODES, SELF_AUTHOR_ID, type PrintListPage } from "../services/printQuery";
 import { parseSortDirection, SORT_DIRECTIONS } from "../utils/sortDirection";
@@ -103,6 +105,7 @@ function modelSummary(ctx: McpToolContext, print: PrintOut) {
     category: print.category_name,
     source: print.source_provider ? { provider: print.source_provider, url: print.source_url } : null,
     file_count: print.plates.length,
+    supporting_file_count: print.supporting_file_count,
     view_count: print.view_count,
     print_count: print.print_count,
     favorite: print.is_favorite,
@@ -124,7 +127,8 @@ const searchModels: McpToolDefinition = {
   title: "Search models",
   description:
     "Search the library by words in a model's title, tags, creator or description. Also returns matching " +
-    "collections and tags. Start here to find a model by what it is.",
+    "collections and tags. Start here to find a model by what it is. " +
+    "A model's file_count counts its plates (the 3D files), supporting_file_count the files kept beside them.",
   readOnly: true,
   inputSchema: {
     query: z.string().min(1).describe("Words to look for, e.g. 'benchy' or 'cable clip'."),
@@ -147,7 +151,8 @@ const listModels: McpToolDefinition = {
   title: "List models",
   description:
     "List models, optionally filtered by tags, category, collection, author or what their licence allows, newest " +
-    "first unless sorted otherwise. Filters combine: a model must match every one given.",
+    "first unless sorted otherwise. Filters combine: a model must match every one given. " +
+    "A model's file_count counts its plates (the 3D files), supporting_file_count the files kept beside them.",
   readOnly: true,
   inputSchema: {
     query: z.string().optional().describe("Only models matching these words, as in search_models."),
@@ -235,7 +240,10 @@ const getModel: McpToolDefinition = {
   title: "Get a model",
   description:
     "Everything about one model: its description, files, tags, category, author, collections, where it was " +
-    "imported from, and how often it was viewed and printed. A file that is one of the print profiles the model was " +
+    "imported from, and how often it was viewed and printed. files are its plates (the 3D files); supporting_files " +
+    "are the files kept beside them (instructions, scripts, pictures and the like). Each has content_kind, what the " +
+    "file is (mesh, laser, sliced, cad, script, picture, document, archive and so on); list_model_files gives their " +
+    "ids and links. A file that is one of the print profiles the model was " +
     "imported with carries `print_profile`: its name, whether the designer or the community made it, the printer, " +
     "settings, print time in minutes, filament in grams, and its build plates. `license` is its licence as its source " +
     "lists it or its owner picked: its id (SPDX where there is one), name, link, what it allows of share (pass the " +
@@ -268,9 +276,15 @@ const getModel: McpToolDefinition = {
         name: plate.filename,
         ...(plate.folder ? { folder: plate.folder } : {}),
         size_bytes: plate.size,
+        content_kind: plate.content_kind,
         ...(plate.profile ? { print_profile: profileForAi(plate.profile) } : {}),
       })),
-      supporting_file_count: print.supporting_file_count,
+      supporting_files: (print.supporting_files ?? []).map((file) => ({
+        name: file.filename,
+        ...(file.folder ? { folder: file.folder } : {}),
+        size_bytes: file.size,
+        content_kind: file.content_kind,
+      })),
       license: print.license
         ? {
             id: print.license.id,
@@ -841,6 +855,8 @@ type ModelFile = {
   name: string;
   folder: string | null;
   kind: "plate" | "supporting" | "prepared";
+  /** What the file is, by the kind table: mesh, sliced, document and so on. */
+  content_kind: Kind;
   mime: string;
   size_bytes: number;
   /** Under /api; read with the token when it may read Model files. */
@@ -855,8 +871,11 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     where: { id: modelId, userId },
     include: {
       plates: { orderBy: { position: "asc" } },
-      // The LICENSE.txt Thingport writes says what get_model's `license` does.
-      files: { where: { role: { not: "LICENSE" } }, orderBy: { createdAt: "asc" } },
+      // The LICENSE.txt Thingport writes says what get_model's `license` does; one still "pending" is a save under way.
+      files: {
+        where: { role: { not: "LICENSE" }, storagePath: { not: PENDING_STORAGE_PATH } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!print) throw new HttpError(404, "Print not found");
@@ -865,6 +884,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     name: plate.filename,
     folder: plate.folder,
     kind: "plate",
+    content_kind: kindOfStored(plate.filename),
     mime: plate.mime || "application/octet-stream",
     size_bytes: plate.size,
     apiPath: `/print/${print.id}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
@@ -878,6 +898,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     name: file.filename,
     folder: file.folder,
     kind: file.role === "PREPARED" ? "prepared" : "supporting",
+    content_kind: kindOfStored(file.filename),
     mime: file.mime || "application/octet-stream",
     size_bytes: file.size,
     apiPath: file.role === "PREPARED" ? `/print/${print.id}/prepared-print` : `/print/${print.id}/files/${file.id}`,
@@ -897,6 +918,7 @@ function fileOut(ctx: McpToolContext, file: ModelFile) {
     name: file.name,
     folder: file.folder,
     kind: file.kind,
+    content_kind: file.content_kind,
     mime: file.mime,
     size_bytes: file.size_bytes,
     api_path: `/api${file.apiPath}`,
@@ -909,7 +931,8 @@ const listModelFiles: McpToolDefinition = {
   title: "List a model's files",
   description:
     "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file " +
-    "takes. folder is the folder its source kept it in, levels joined by '/' (e.g. 'USB C version/Handles'; often the " +
+    "takes. kind is what the file is to the model (plate, supporting or prepared); content_kind is what the file is " +
+    "(mesh, laser, sliced, cad, script, picture, document, archive and so on). folder is the folder its source kept it in, levels joined by '/' (e.g. 'USB C version/Handles'; often the " +
     "model's variants), or null; a name is unique within its folder, not the whole model. api_path (on the server's " +
     "own address) or download_url, when the server knows its address, opens with the same token as " +
     "'Authorization: Bearer' if it may read Model files.",

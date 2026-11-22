@@ -11,6 +11,7 @@ import { descriptionImagePath } from "../services/descriptionImageService";
 import { previewImagePath } from "../services/previewImageService";
 import { resolvePlateFilePath } from "../services/printCreation";
 import { managedPrintFilePath, printFileStillNames } from "../services/printFileService";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 import { PROFILE_PROVIDER_VERSION, storedProfile } from "../services/printProfileService";
 import { plateStillNames, plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
@@ -292,9 +293,9 @@ const MODEL_SELECT = {
     },
   },
   previewImages: { orderBy: { position: "asc" }, select: { id: true, generated: true } },
-  // A partner's copy writes its own LICENSE.txt from the licence.
+  // A partner's copy writes its own LICENSE.txt from the licence; one still "pending" is a save under way.
   files: {
-    where: { role: { not: "LICENSE" } },
+    where: { role: { not: "LICENSE" }, storagePath: { not: PENDING_STORAGE_PATH } },
     select: { id: true, filename: true, folder: true, mime: true, size: true, role: true },
   },
   descriptionImages: { select: { id: true, mime: true } },

@@ -46,7 +46,7 @@ These read your library, and are on for a new token:
 | ------------------- | ------------------------------------------------------------------------------------------------------- |
 | `search_models`     | Finds models by words in their title, tags, creator or description, plus matching collections and tags. |
 | `list_models`       | Lists models by tag, category, collection or author, newest, most viewed or most printed first.         |
-| `get_model`         | One model's description, files, tags, category, author, collections and where it was imported from.     |
+| `get_model`         | One model's description, plates and supporting files, tags, category, author, collections and source.   |
 | `list_collections`  | Your collections, model counts and what each syncs with, plus Favourites and Browsing History.          |
 | `get_collection`    | The models in one collection.                                                                           |
 | `list_tags`         | Your tags, most used first, narrowed by a word if you like.                                             |
@@ -128,6 +128,11 @@ the same token in the `Authorization: Bearer` header if the token may read **Mod
 [API token](api-token.md)). A bigger file comes that way. `list_model_images` gives each picture the same, which opens
 if the token may read **Images**. With `include_pictures`, it also hands the assistant the first 8 pictures, scaled down
 to 512 px, so it can look at them, e.g. to pick a cover.
+
+Every file these tools list has `content_kind`, what the file is: `mesh`, `laser`, `sliced`, `cad`, `script`,
+`picture`, `document`, `archive` and so on, as [file kinds](../features/file-kinds.md) names them. `kind` is apart
+from it: what the file is to its model (`plate`, `supporting` or `prepared`). A model's `file_count` counts its plates,
+and `supporting_file_count` the files kept beside them, which `get_model` lists as `supporting_files`.
 
 `save_tool` needs tools turned on for you, with **Users' own tools** switched on, under **Administration → Tools**;
 `list_tools` says so when they aren't, so the assistant can tell you what to ask an admin for. A tool it saves is yours

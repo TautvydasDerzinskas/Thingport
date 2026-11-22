@@ -5,7 +5,8 @@ import { createLogger } from "../logger";
 import { deleteAdapted3mfs } from "../services/adapted3mfCache";
 import { descriptionImageFile, removeAsset } from "../services/modelAssets";
 import { removeGalleryFiles } from "../services/previewImageService";
-import { PENDING_STORAGE_PATH, printFilePathOrNull } from "../services/printFileService";
+import { printFilePathOrNull } from "../services/printFileService";
+import { PENDING_STORAGE_PATH } from "./pending";
 import {
   managedPlatePath,
   pruneEmptyStorageDirs,
