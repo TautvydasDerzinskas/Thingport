@@ -743,6 +743,9 @@ export async function runStudioCommand(
           outcome = addTrace(doc, parsed as Parameters<typeof addTrace>[1], traced);
         } else {
           outcome = applyCommand(doc, name, parsed);
+          // The page always says "person"; who it really was is known here.
+          if (name === "set_print_profile" && outcome.document.print_profile && actor !== "user")
+            outcome.document.print_profile.by = actor;
         }
         const position = design.position + 1;
         // A change after an undo leaves nothing to redo; past the limit, the oldest are let go.

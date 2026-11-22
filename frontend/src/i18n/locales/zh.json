@@ -4294,7 +4294,9 @@
         "features": "对象 / 打印板",
         "properties": "属性",
         "hide": "隐藏 {{panel}}",
-        "show": "显示 {{panel}}"
+        "show": "显示 {{panel}}",
+        "print": "打印",
+        "rightPanel": "属性 / 打印"
       },
       "viewCube": {
         "label": "视图立方体：点击面、边或角即可从该方向查看，拖动可旋转视图",
@@ -4761,6 +4763,181 @@
           "snap": "吸附到网格",
           "snapHelp": "草图点和移动的实体会吸附到当前显示的最细网格线上。关闭后，它们会停在你指向的位置。"
         }
+      },
+      "printProfile": {
+        "title": "打印配置",
+        "presets": "预设",
+        "empty": "还没有打印配置",
+        "emptyHint": "为这个设计选择一个预设，或让 AI 按用途来选。",
+        "choosePreset": "选择预设",
+        "change": "更改",
+        "changed": "已修改",
+        "custom": "自定义",
+        "suggestAi": "让 AI 推荐",
+        "aiWorking": "AI 正在选择…",
+        "suggested": "推荐",
+        "suggestedPreset": "推荐：{{preset}}",
+        "byAi": "由 AI 选择",
+        "slicer": "切片软件",
+        "printer": "打印机",
+        "anyPrinter": "任意打印机",
+        "material": "材料",
+        "anyMaterial": "任意材料",
+        "settings": "设置",
+        "slicerDefault": "切片软件默认",
+        "setIt": "设置",
+        "noneCarried": "{{slicer}} 不会从 3MF 读取这些设置。",
+        "setCount_other": "已设置 {{count}} 项",
+        "reset": "使用切片软件自己的值",
+        "nativeName": "在 {{slicer}} 中：{{name}}",
+        "notCarried": "{{slicer}} 不会从 3MF 读取此项：请在其中设置。",
+        "remove": "移除打印配置",
+        "on": "开",
+        "off": "关",
+        "aiPrompt": "根据这个设计的用途为它选择打印配置：参考我的要求，以及它所来源的模型的描述。用打印配置工具设置好，并用一句话告诉我原因。",
+        "aiPromptSlicer": "我用 {{name}} 切片（切片软件 id {{id}}）。",
+        "aiPromptPrinter": "我的打印机是 {{name}}（打印机 id {{id}}），喷嘴 {{nozzle}} mm。",
+        "category": {
+          "quality": "质量",
+          "strength": "强度",
+          "speed": "速度",
+          "support": "支撑",
+          "others": "其他"
+        },
+        "setting": {
+          "layer_height": "层高",
+          "wall_loops": "墙层数",
+          "top_shell_layers": "顶部层数",
+          "bottom_shell_layers": "底部层数",
+          "top_shell_thickness": "顶部厚度",
+          "wall_generator": "墙生成器",
+          "sparse_infill_density": "填充密度",
+          "sparse_infill_pattern": "填充图案",
+          "initial_layer_speed": "首层速度",
+          "outer_wall_speed": "外墙速度",
+          "inner_wall_speed": "内墙速度",
+          "sparse_infill_speed": "填充速度",
+          "enable_support": "支撑",
+          "support_type": "支撑类型",
+          "support_threshold_angle": "支撑角度",
+          "support_on_build_plate_only": "仅从热床生成支撑",
+          "brim_type": "Brim",
+          "brim_width": "Brim 宽度",
+          "raft_layers": "筏层数",
+          "seam_position": "接缝位置",
+          "seam_slope_type": "斜接缝",
+          "wall_sequence": "墙顺序",
+          "top_surface_pattern": "顶面图案",
+          "ironing_type": "熨烫",
+          "fuzzy_skin": "绒毛表面",
+          "spiral_mode": "螺旋花瓶"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "经典",
+          "grid": "网格",
+          "gyroid": "螺旋体",
+          "cubic": "立方体",
+          "adaptivecubic": "自适应立方体",
+          "triangles": "三角形",
+          "honeycomb": "蜂窝",
+          "lightning": "闪电",
+          "zig_zag": "直线",
+          "concentric": "同心",
+          "normal_auto_": "普通",
+          "tree_auto_": "树状",
+          "no_brim": "无",
+          "outer_only": "外侧",
+          "auto_brim": "自动",
+          "aligned": "对齐",
+          "nearest": "最近",
+          "back": "背面",
+          "random": "随机",
+          "none": "无",
+          "external": "外墙",
+          "all": "所有墙",
+          "inner_wall_outer_wall": "先内后外",
+          "outer_wall_inner_wall": "先外后内",
+          "inner_outer_inner_wall": "内、外、内",
+          "monotonic": "单调",
+          "monotonicline": "单调线",
+          "no_ironing": "无",
+          "topmost": "最顶面",
+          "top": "所有顶面",
+          "solid": "所有实心层"
+        },
+        "preset": {
+          "standard": {
+            "title": "标准",
+            "purpose": "日常零件"
+          },
+          "fine": {
+            "title": "精细",
+            "purpose": "手办、小字"
+          },
+          "draft": {
+            "title": "快速草稿",
+            "purpose": "原型、试装"
+          },
+          "strong": {
+            "title": "高强度",
+            "purpose": "支架、挂钩、齿轮"
+          },
+          "outdoor": {
+            "title": "户外",
+            "purpose": "日晒雨淋"
+          },
+          "water": {
+            "title": "接触水",
+            "purpose": "花盆、托盘"
+          },
+          "toy": {
+            "title": "玩具",
+            "purpose": "结实，适合儿童"
+          },
+          "flexible": {
+            "title": "柔性",
+            "purpose": "TPU 握把、缓冲件"
+          },
+          "heat": {
+            "title": "耐热",
+            "purpose": "汽车、电机、灯具"
+          },
+          "vase": {
+            "title": "花瓶",
+            "purpose": "单层连续外墙"
+          },
+          "smooth": {
+            "title": "光滑顶面",
+            "purpose": "标牌、盖子"
+          }
+        },
+        "check": {
+          "material": "“{{preset}}”更适合用 {{suits}}，而不是 {{material}}。",
+          "not_carried": "{{slicer}} 不会从 3MF 读取：{{keys}}。请在其中设置。",
+          "food_contact": "打印配置不会让零件变得食品安全：材料、打印机部件和清洁同样重要。",
+          "toy": "给幼儿用时，请把锐边倒圆，并避免细小的可脱落零件。",
+          "vase_bodies": "螺旋花瓶只用一道墙打印一个实体：每块打印板只放一个实体。"
+        }
+      },
+      "save": {
+        "destination": "保存位置",
+        "newModel": "新模型",
+        "addToModel": "添加到模型",
+        "pickModel": "你的模型",
+        "profiles_other": "{{count}} 个配置",
+        "noProfiles": "还没有配置",
+        "chooseMyself": "自己选择",
+        "chooseMyselfHint": "预设和设置",
+        "suggestAiHint": "按用途推荐",
+        "without": "不带配置保存",
+        "withoutHint": "仅几何形状",
+        "editProfile": "编辑",
+        "profileName": "配置名称",
+        "askAi": "让 AI 选择",
+        "willHave_other": "“{{name}}”将有 {{count}} 个配置",
+        "addProfile": "添加配置",
+        "addedProfile": "已将“{{profile}}”添加到“{{name}}”"
       }
     },
     "chats": {

@@ -29,6 +29,7 @@ import { saveDescriptionImage } from "../src/services/descriptionImageService";
 import { addPreviewImage } from "../src/services/previewImageService";
 import { licenseData } from "../src/services/licenseService";
 import { createPrint } from "../src/services/printCreation";
+import { PROFILE_PROVIDER_VERSION } from "../src/services/printProfileService";
 import { saveFileFromTemp } from "../src/services/printFileService";
 import { plateThumbExists, saveThumbFromBytes } from "../src/services/printService";
 import { getPreviewMode, getSocialSettings, setPreviewMode, setSocialSettings } from "../src/services/settingsService";
@@ -467,6 +468,43 @@ describe("a partner's model, copied", () => {
       [null, "Supported - Top.stl"],
       [null, "Unsupported - Top.stl"],
       [null, "Base.stl"],
+    ]);
+  });
+
+  it("carries a print profile saved from Studio, which has no site to ask, with its name, reason and creator", async () => {
+    const profileId = "studio-0123456789abcdef";
+    const { print, plates } = await createPrint(
+      owner.id,
+      { title: `Planter ${stamp}` },
+      "planter",
+      [
+        {
+          filename: "planter.3mf",
+          tempFilePath: await profileProject(dir, "planter.3mf", "all"),
+          sourceInstanceId: profileId,
+        },
+      ],
+      { describe: false, classify: false },
+    );
+    const studio = { title: "Outdoor · PETG", description: "It stands in the rain", creator: "Rūta", designId: "d-1" };
+    await prisma.plate.update({ where: { id: plates[0].id }, data: { profile: { studio } } });
+    await share(owner, print.id);
+    const page = (await modelsPage(owner.id)) as { orderedItems: Record<string, unknown>[] };
+    const doc = page.orderedItems.find((item) => item.id === `${ORIGIN}/api/ap/models/${print.id}`)!;
+    // The design it came from stays here.
+    expect((doc.attachment as Record<string, unknown>[])[0]["thingport:profile"]).toEqual({
+      version: PROFILE_PROVIDER_VERSION,
+      facts: { title: studio.title, description: studio.description, creator: studio.creator },
+    });
+
+    const noa = await register("Noa");
+    const copyId = await copied(noa, await indexed(owner, print.id));
+    const shown = await request(app).get(`/api/print/${copyId}`).set(auth(noa));
+    expect(shown.body.plates).toEqual([
+      expect.objectContaining({
+        profile_id: profileId,
+        profile: expect.objectContaining({ title: studio.title, description: studio.description, creator: "Rūta" }),
+      }),
     ]);
   });
 

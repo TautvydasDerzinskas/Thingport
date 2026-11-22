@@ -4671,7 +4671,9 @@
         "features": "Objetos / Placas",
         "properties": "Propiedades",
         "hide": "Ocultar {{panel}}",
-        "show": "Mostrar {{panel}}"
+        "show": "Mostrar {{panel}}",
+        "print": "Impresión",
+        "rightPanel": "Propiedades / Impresión"
       },
       "viewCube": {
         "label": "Cubo de vista: haz clic en una cara, arista o esquina para mirar desde ahí, arrástralo para girar la vista",
@@ -5156,6 +5158,187 @@
           "snap": "Ajustar a la cuadrícula",
           "snapHelp": "Los puntos del boceto y los cuerpos que mueves se ajustan a las líneas más finas que se ven. Desactivado, van donde apuntas."
         }
+      },
+      "printProfile": {
+        "title": "Perfil de impresión",
+        "presets": "Preajustes",
+        "empty": "Aún no hay perfil de impresión",
+        "emptyHint": "Elige un preajuste para este diseño o deja que la IA elija según su uso.",
+        "choosePreset": "Elegir un preajuste",
+        "change": "Cambiar",
+        "changed": "modificado",
+        "custom": "Personalizado",
+        "suggestAi": "Sugerir con IA",
+        "aiWorking": "La IA está eligiendo…",
+        "suggested": "Sugerido",
+        "suggestedPreset": "Sugerencia: {{preset}}",
+        "byAi": "Elegido por la IA",
+        "slicer": "Laminador",
+        "printer": "Impresora",
+        "anyPrinter": "Cualquier impresora",
+        "material": "Material",
+        "anyMaterial": "Cualquier material",
+        "settings": "Ajustes",
+        "slicerDefault": "Predeterminado del laminador",
+        "setIt": "Definir",
+        "noneCarried": "{{slicer}} no lee ninguno de estos ajustes de un 3MF.",
+        "setCount_one": "{{count}} definido",
+        "setCount_many": "{{count}} definidos",
+        "setCount_other": "{{count}} definidos",
+        "reset": "Usar el valor del laminador",
+        "nativeName": "En {{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} no lee esto de un 3MF: ajústalo allí.",
+        "remove": "Quitar el perfil de impresión",
+        "on": "Sí",
+        "off": "No",
+        "aiPrompt": "Elige un perfil de impresión para este diseño según su uso: lo que te pedí y las descripciones de los modelos de los que se hizo. Aplícalo con la herramienta de perfil de impresión y dime por qué en una frase.",
+        "aiPromptSlicer": "Lamino con {{name}} (id de laminador {{id}}).",
+        "aiPromptPrinter": "Mi impresora es la {{name}} (id de impresora {{id}}) con una boquilla de {{nozzle}} mm.",
+        "category": {
+          "quality": "Calidad",
+          "strength": "Resistencia",
+          "speed": "Velocidad",
+          "support": "Soportes",
+          "others": "Otros"
+        },
+        "setting": {
+          "layer_height": "Altura de capa",
+          "wall_loops": "Paredes",
+          "top_shell_layers": "Capas superiores",
+          "bottom_shell_layers": "Capas inferiores",
+          "top_shell_thickness": "Grosor superior",
+          "wall_generator": "Generador de paredes",
+          "sparse_infill_density": "Densidad de relleno",
+          "sparse_infill_pattern": "Patrón de relleno",
+          "initial_layer_speed": "Velocidad de la primera capa",
+          "outer_wall_speed": "Velocidad de pared exterior",
+          "inner_wall_speed": "Velocidad de paredes interiores",
+          "sparse_infill_speed": "Velocidad de relleno",
+          "enable_support": "Soportes",
+          "support_type": "Tipo de soporte",
+          "support_threshold_angle": "Ángulo de soporte",
+          "support_on_build_plate_only": "Soportes solo desde la cama",
+          "brim_type": "Borde",
+          "brim_width": "Ancho del borde",
+          "raft_layers": "Capas de balsa",
+          "seam_position": "Posición de la costura",
+          "seam_slope_type": "Costura biselada",
+          "wall_sequence": "Orden de paredes",
+          "top_surface_pattern": "Patrón superior",
+          "ironing_type": "Alisado",
+          "fuzzy_skin": "Piel difusa",
+          "spiral_mode": "Jarrón en espiral"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Clásico",
+          "grid": "Rejilla",
+          "gyroid": "Giroide",
+          "cubic": "Cúbico",
+          "adaptivecubic": "Cúbico adaptativo",
+          "triangles": "Triángulos",
+          "honeycomb": "Panal",
+          "lightning": "Relámpago",
+          "zig_zag": "Rectilíneo",
+          "concentric": "Concéntrico",
+          "normal_auto_": "Normal",
+          "tree_auto_": "Árbol",
+          "no_brim": "Ninguno",
+          "outer_only": "Exterior",
+          "auto_brim": "Auto",
+          "aligned": "Alineada",
+          "nearest": "Más cercana",
+          "back": "Detrás",
+          "random": "Aleatoria",
+          "none": "Ninguno",
+          "external": "Pared exterior",
+          "all": "Todas las paredes",
+          "inner_wall_outer_wall": "Interior primero",
+          "outer_wall_inner_wall": "Exterior primero",
+          "inner_outer_inner_wall": "Interior, exterior, interior",
+          "monotonic": "Monotónico",
+          "monotonicline": "Líneas monotónicas",
+          "no_ironing": "Ninguno",
+          "topmost": "Superficie superior",
+          "top": "Todas las superficies superiores",
+          "solid": "Todas las capas sólidas"
+        },
+        "preset": {
+          "standard": {
+            "title": "Estándar",
+            "purpose": "Piezas cotidianas"
+          },
+          "fine": {
+            "title": "Detalle fino",
+            "purpose": "Figuras, texto pequeño"
+          },
+          "draft": {
+            "title": "Borrador rápido",
+            "purpose": "Prototipos, pruebas de ajuste"
+          },
+          "strong": {
+            "title": "Resistente",
+            "purpose": "Soportes, ganchos, engranajes"
+          },
+          "outdoor": {
+            "title": "Exterior",
+            "purpose": "Sol y lluvia"
+          },
+          "water": {
+            "title": "Contacto con agua",
+            "purpose": "Macetas, bandejas"
+          },
+          "toy": {
+            "title": "Juguete",
+            "purpose": "Robusto, para niños"
+          },
+          "flexible": {
+            "title": "Flexible",
+            "purpose": "Agarres y topes de TPU"
+          },
+          "heat": {
+            "title": "Resistente al calor",
+            "purpose": "Coches, motores, lámparas"
+          },
+          "vase": {
+            "title": "Jarrón",
+            "purpose": "Una sola pared continua"
+          },
+          "smooth": {
+            "title": "Superficie lisa",
+            "purpose": "Carteles, tapas"
+          }
+        },
+        "check": {
+          "material": "Para «{{preset}}», {{suits}} va mejor que {{material}}.",
+          "not_carried": "{{slicer}} no lee {{keys}} de un 3MF: ajústalos allí.",
+          "food_contact": "Un perfil de impresión no hace que una pieza sea apta para alimentos: también importan el material, las piezas de la impresora y la limpieza.",
+          "toy": "Redondea los bordes afilados y evita piezas pequeñas sueltas para niños pequeños.",
+          "vase_bodies": "El jarrón en espiral imprime un solo cuerpo con una sola pared: deja un cuerpo por placa."
+        }
+      },
+      "save": {
+        "destination": "Dónde guardar",
+        "newModel": "Modelo nuevo",
+        "addToModel": "Añadir a un modelo",
+        "pickModel": "Tus modelos",
+        "profiles_one": "{{count}} perfil",
+        "profiles_many": "{{count}} perfiles",
+        "profiles_other": "{{count}} perfiles",
+        "noProfiles": "Aún no hay perfiles",
+        "chooseMyself": "Elegir yo",
+        "chooseMyselfHint": "Preajustes y ajustes",
+        "suggestAiHint": "Según su uso",
+        "without": "Guardar sin perfil",
+        "withoutHint": "Solo la geometría",
+        "editProfile": "Editar",
+        "profileName": "Nombre del perfil",
+        "askAi": "Que elija la IA",
+        "willHave_one": "«{{name}}» tendrá {{count}} perfil",
+        "willHave_many": "«{{name}}» tendrá {{count}} perfiles",
+        "willHave_other": "«{{name}}» tendrá {{count}} perfiles",
+        "addProfile": "Añadir perfil",
+        "addedProfile": "«{{profile}}» añadido a «{{name}}»"
       }
     },
     "chats": {

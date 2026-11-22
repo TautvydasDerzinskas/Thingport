@@ -445,7 +445,7 @@ describe("Studio's assistant", () => {
       expect.arrayContaining(["studio_create_plate", "studio_move_to_plate", "studio_set_body_color"]),
     );
     expect(names).not.toContain("studio_fillet");
-    expect(names.length).toBeLessThanOrEqual(17);
+    expect(names.length).toBeLessThanOrEqual(18);
     // Its arguments named, not described: the tool's own line says what they are.
     expect(JSON.stringify(body.tools)).not.toMatch(/"properties":\{[^}]*"description"/);
     expect(body.messages[0].content).toMatch(/^You build and change 3D-printable parts/);

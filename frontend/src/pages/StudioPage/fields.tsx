@@ -40,10 +40,13 @@ export function NumberField({
   disabled,
   expression,
   onExpression,
+  fixedUnit,
 }: {
   label: string;
   value: number;
   unit?: string;
+  /** Shown and typed in `unit` whatever the design's units, as a slicer's millimetres are. */
+  fixedUnit?: boolean;
   onCommit: (value: number) => void;
   /** Rejects a numeric value before committing it, restoring the current value on blur. */
   validate?: (value: number) => boolean;
@@ -56,7 +59,7 @@ export function NumberField({
 }) {
   const { t } = useTranslation("app");
   const units = useDesignUnits();
-  const length = unit === "mm";
+  const length = unit === "mm" && !fixedUnit;
   const shownUnit = length ? units : unit;
   const show = (mm: number) =>
     length ? String(Number((mm / MM_PER[units]).toFixed(FIELD_DIGITS[units])) + 0) : String(Number(mm.toFixed(3)) + 0);

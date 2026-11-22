@@ -60,6 +60,11 @@ import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
+import PrintProfilePanel from "./PrintProfilePanel";
+import StudioSaveDialog, { type StudioSaveDraft, type StudioSaveRequest } from "./StudioSaveDialog";
+import { profileAiPrompt } from "./printProfileUi";
+import { useSlicerSettings } from "../../hooks/useSlicerPreference";
+import { useUserPrinters } from "../../hooks/useUserPrinters";
 import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
 import StudioViewport, {
   type BodyStats,
@@ -116,6 +121,9 @@ type Props = {
 // How far a copy lands from the original, so it isn't hidden inside it.
 const COPY_OFFSET: [number, number, number] = [10, 10, 0];
 const PANELS_KEY = "thingport_studio_panels";
+// Which of the right panel's two the browser last showed.
+const RIGHT_TAB_KEY = "thingport_studio_right_tab";
+type RightTab = "properties" | "print";
 const BOTH_PANELS: Record<StudioPanel, boolean> = { features: true, properties: true };
 
 // A panel slides in from its side as it's shown again.
@@ -177,6 +185,8 @@ function typing(target: EventTarget | null): boolean {
 export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation("app");
   const toast = useToast();
+  const slicerSettings = useSlicerSettings();
+  const { printers: userPrinters } = useUserPrinters();
   const confirm = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
   const designId = searchParams.get("design");
@@ -286,7 +296,21 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     highlights?: BodyCheck["highlights"];
   } | null>(null);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
-  const [libraryModelName, setLibraryModelName] = useState<string | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveDraft, setSaveDraft] = useState<StudioSaveDraft | null>(null);
+  const [rightTab, setRightTabState] = useState<RightTab>(() => {
+    try {
+      return window.localStorage.getItem(RIGHT_TAB_KEY) === "print" ? "print" : "properties";
+    } catch {
+      return "properties";
+    }
+  });
+  const setRightTab = (tab: RightTab) => {
+    setRightTabState(tab);
+    try {
+      window.localStorage.setItem(RIGHT_TAB_KEY, tab);
+    } catch {}
+  };
   // A tool that takes more than a click, while its panel is open, and what making its preview said.
   const [operation, setOperation] = useState<Operation | null>(null);
   const handModeSuspended = Boolean(operation || sketch || measureTool);
@@ -319,7 +343,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setPickedPlate(DEFAULT_PLATE_ID);
     setSlicerOpen(false);
     setExportOpen(false);
-    setLibraryModelName(null);
+    setSaveOpen(false);
+    setSaveDraft(null);
     setSelected([]);
     setSketch(null);
     setErrors({});
@@ -728,20 +753,32 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
 
   // Saving to the library: the view as it is, kept with the design, is the model's picture.
   const [saving, setSaving] = useState(false);
-  const saveToLibrary = async (name: string) => {
+  const saveToLibrary = async ({ name, modelId, profileName }: StudioSaveRequest) => {
     if (!design || saving) return;
     setSaving(true);
     try {
       const saved = await waitForSaves(design.id);
       if (!saved) return;
-      const plateHasBodies = topLevel(saved.document).some(
-        (feature) => isBody(feature) && feature.visible && plateOf(feature) === activePlate,
-      );
+      // A new model is shown by the view as it is; a profile added to a model leaves its pictures alone.
+      const plateHasBodies =
+        !modelId &&
+        topLevel(saved.document).some(
+          (feature) => isBody(feature) && feature.visible && plateOf(feature) === activePlate,
+        );
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
       const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;
-      const { model } = await studioApi.saveToLibrary(saved.id, { name, picture_id: picture?.id });
+      const { model } = await studioApi.saveToLibrary(saved.id, {
+        ...(name ? { name } : {}),
+        picture_id: picture?.id,
+        ...(modelId ? { model_id: modelId } : {}),
+        ...(profileName ? { profile_name: profileName } : {}),
+      });
+      setSaveOpen(false);
+      setSaveDraft(null);
       toast({
-        message: t("studio.design.saved", { name: model.title || model.name }),
+        message: modelId
+          ? t("studio.save.addedProfile", { profile: profileName, name: model.title || model.name })
+          : t("studio.design.saved", { name: model.title || model.name }),
         severity: "success",
         action: { label: t("studio.design.openSaved"), onClick: () => navigate(`/models/${model.id}`) },
         autoHideMs: 8000,
@@ -924,6 +961,43 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     Boolean(doc) &&
     !assistant.minimized &&
     (assistant.messages.length > 0 || assistant.running);
+
+  // The print profile: who may be asked to choose one, and what the design is for, in words.
+  const canAskAi = Boolean(assistant.models?.length);
+  const aiBusy = assistant.running || assistant.sending;
+  const madeByPrompts = assistant.messages.some((message) => message.role === "user");
+  const aboutDesign = [
+    design?.name,
+    ...(doc?.features.flatMap((feature) => (feature.type === "mesh" ? [feature.source.model_title] : [])) ?? []),
+    ...assistant.messages.filter((message) => message.role === "user").map((message) => message.text),
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const suggestProfile = () => {
+    if (!design || aiBusy) return;
+    void assistant.send(profileAiPrompt(t, design.document.print_profile, slicerSettings, userPrinters));
+  };
+  // A profile an AI chose or changed marks the Print tab until it's looked at; nothing opens by itself.
+  const [printBadge, setPrintBadge] = useState(false);
+  const printShown = editing && panels.properties && rightTab === "print";
+  const profileStamp = `${design?.id ?? ""}:${doc?.print_profile ? JSON.stringify(doc.print_profile) : ""}`;
+  const seenProfile = useRef(profileStamp);
+  useEffect(() => {
+    if (profileStamp === seenProfile.current) return;
+    const sameDesign = seenProfile.current.split(":")[0] === profileStamp.split(":")[0];
+    seenProfile.current = profileStamp;
+    const by = doc?.print_profile?.by;
+    if (sameDesign && by && by !== "person" && !printShown) setPrintBadge(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileStamp]);
+  useEffect(() => {
+    if (printShown) setPrintBadge(false);
+  }, [printShown]);
+  const openPrintTab = () => {
+    setEditing(true);
+    if (!panels.properties) togglePanel("properties");
+    setRightTab("print");
+  };
 
   const viewportArea = (() => {
     if (plateInView && plateSource) return <StudioSourcePlate plate={plateInView} {...sourcePlate} />;
@@ -1129,7 +1203,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           exporting={exporting}
           saving={saving}
           onSaveDesign={() => void downloadDesign()}
-          onSaveToLibrary={() => setLibraryModelName(designName ?? null)}
+          onSaveToLibrary={() => setSaveOpen(true)}
           onParameters={() => setParametersOpen(true)}
           measuring={Boolean(measureTool)}
           onMeasure={toggleMeasure}
@@ -1229,12 +1303,20 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             <Box sx={(theme) => ({ ...panelSx(theme, "left", 3), ...slideIn(fromRight) })}>
               {panels.properties ? (
                 <SidePanel
-                  title={t("studio.panels.properties")}
+                  title={t("studio.panels.rightPanel")}
+                  tabs={{
+                    items: [
+                      { id: "properties", label: t("studio.panels.properties") },
+                      { id: "print", label: t("studio.panels.print"), badge: printBadge },
+                    ],
+                    value: rightTab,
+                    onChange: (tab) => setRightTab(tab as RightTab),
+                  }}
                   side="right"
-                  hideLabel={t("studio.panels.hide", { panel: t("studio.panels.properties") })}
+                  hideLabel={t("studio.panels.hide", { panel: t("studio.panels.rightPanel") })}
                   onHide={() => togglePanel("properties")}
                 >
-                  {doc && (
+                  {doc && rightTab === "properties" && (
                     <PropertiesPanel
                       designId={design!.id}
                       document={doc}
@@ -1250,14 +1332,41 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                       }}
                     />
                   )}
+                  {doc && design && rightTab === "print" && (
+                    <Box sx={{ height: "100%", overflowY: "auto" }}>
+                      <PrintProfilePanel
+                        design={design}
+                        run={run}
+                        canAskAi={canAskAi}
+                        aiBusy={aiBusy}
+                        onSuggestAi={suggestProfile}
+                        about={aboutDesign}
+                      />
+                    </Box>
+                  )}
                 </SidePanel>
               ) : (
-                <PanelTab
-                  side="right"
-                  label={t("studio.panels.properties")}
-                  ariaLabel={t("studio.panels.show", { panel: t("studio.panels.properties") })}
-                  onOpen={() => togglePanel("properties")}
-                />
+                <Box
+                  sx={{ display: "flex", flexDirection: { xs: "row", md: "column" }, gap: { md: 1 }, height: "100%" }}
+                >
+                  {(["properties", "print"] as const).map((tab) => {
+                    const label = t(`studio.panels.${tab}`);
+                    return (
+                      <PanelTab
+                        key={tab}
+                        side="right"
+                        stacked
+                        label={label}
+                        badge={tab === "print" && printBadge}
+                        ariaLabel={t("studio.panels.show", { panel: label })}
+                        onOpen={() => {
+                          setRightTab(tab);
+                          togglePanel("properties");
+                        }}
+                      />
+                    );
+                  })}
+                </Box>
               )}
             </Box>
           )}
@@ -1497,14 +1606,30 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onImport={importModel}
           onError={showError}
         />
-        <RenameDialog
-          value={libraryModelName}
-          title={t("studio.design.saveToLibrary")}
-          label={t("studio.design.libraryModelName")}
-          maxLength={120}
-          onClose={() => setLibraryModelName(null)}
-          onSave={(name) => void saveToLibrary(name)}
-        />
+        {saveOpen && design && (
+          <StudioSaveDialog
+            design={design}
+            run={run}
+            canAskAi={canAskAi}
+            aiBusy={aiBusy}
+            onSuggestAi={suggestProfile}
+            madeByPrompts={madeByPrompts}
+            about={aboutDesign}
+            saving={saving}
+            draft={saveDraft}
+            onEditProfile={(left) => {
+              setSaveDraft(left);
+              setSaveOpen(false);
+              openPrintTab();
+            }}
+            onSave={(request) => void saveToLibrary(request)}
+            onClose={() => {
+              setSaveDraft(null);
+              setSaveOpen(false);
+            }}
+            onUnauthorized={onUnauthorized}
+          />
+        )}
         <RenameDialog
           value={
             renaming?.kind === "design"

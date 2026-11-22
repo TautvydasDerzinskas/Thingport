@@ -4485,7 +4485,9 @@
         "features": "Objekte / Platten",
         "properties": "Eigenschaften",
         "hide": "{{panel}} ausblenden",
-        "show": "{{panel}} einblenden"
+        "show": "{{panel}} einblenden",
+        "print": "Druck",
+        "rightPanel": "Eigenschaften / Druck"
       },
       "viewCube": {
         "label": "Ansichtswürfel: Klicke auf eine Fläche, Kante oder Ecke, um von dort zu schauen, ziehe ihn, um die Ansicht zu drehen",
@@ -4961,6 +4963,184 @@
           "snap": "Am Raster einrasten",
           "snapHelp": "Skizzenpunkte und verschobene Körper rasten an den feinsten sichtbaren Rasterlinien ein. Ausgeschaltet landen sie dort, wo du zeigst."
         }
+      },
+      "printProfile": {
+        "title": "Druckprofil",
+        "presets": "Voreinstellungen",
+        "empty": "Noch kein Druckprofil",
+        "emptyHint": "Wähle eine Voreinstellung für dieses Design oder lass die KI anhand seines Zwecks wählen.",
+        "choosePreset": "Voreinstellung wählen",
+        "change": "Ändern",
+        "changed": "geändert",
+        "custom": "Eigenes",
+        "suggestAi": "Mit KI vorschlagen",
+        "aiWorking": "KI wählt aus…",
+        "suggested": "Vorschlag",
+        "suggestedPreset": "Vorschlag: {{preset}}",
+        "byAi": "Von der KI gewählt",
+        "slicer": "Slicer",
+        "printer": "Drucker",
+        "anyPrinter": "Beliebiger Drucker",
+        "material": "Material",
+        "anyMaterial": "Beliebiges Material",
+        "settings": "Einstellungen",
+        "slicerDefault": "Slicer-Standard",
+        "setIt": "Festlegen",
+        "noneCarried": "{{slicer}} liest keine dieser Einstellungen aus einer 3MF.",
+        "setCount_one": "{{count}} festgelegt",
+        "setCount_other": "{{count}} festgelegt",
+        "reset": "Wert des Slicers verwenden",
+        "nativeName": "In {{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} liest das nicht aus einer 3MF: dort einstellen.",
+        "remove": "Druckprofil entfernen",
+        "on": "An",
+        "off": "Aus",
+        "aiPrompt": "Wähle ein Druckprofil für dieses Design anhand seines Zwecks: was ich mir gewünscht habe und die Beschreibungen der Modelle, aus denen es entstanden ist. Lege es mit dem Druckprofil-Werkzeug fest und sag mir in einem Satz, warum.",
+        "aiPromptSlicer": "Ich slice mit {{name}} (Slicer-ID {{id}}).",
+        "aiPromptPrinter": "Mein Drucker ist der {{name}} (Drucker-ID {{id}}) mit einer {{nozzle}}-mm-Düse.",
+        "category": {
+          "quality": "Qualität",
+          "strength": "Festigkeit",
+          "speed": "Geschwindigkeit",
+          "support": "Stützen",
+          "others": "Sonstiges"
+        },
+        "setting": {
+          "layer_height": "Schichthöhe",
+          "wall_loops": "Wände",
+          "top_shell_layers": "Obere Schichten",
+          "bottom_shell_layers": "Untere Schichten",
+          "top_shell_thickness": "Dicke oben",
+          "wall_generator": "Wandgenerator",
+          "sparse_infill_density": "Fülldichte",
+          "sparse_infill_pattern": "Füllmuster",
+          "initial_layer_speed": "Geschwindigkeit erste Schicht",
+          "outer_wall_speed": "Geschwindigkeit Außenwand",
+          "inner_wall_speed": "Geschwindigkeit Innenwände",
+          "sparse_infill_speed": "Füllgeschwindigkeit",
+          "enable_support": "Stützen",
+          "support_type": "Stützentyp",
+          "support_threshold_angle": "Stützwinkel",
+          "support_on_build_plate_only": "Stützen nur vom Druckbett",
+          "brim_type": "Brim",
+          "brim_width": "Brim-Breite",
+          "raft_layers": "Raft-Schichten",
+          "seam_position": "Nahtposition",
+          "seam_slope_type": "Schräge Naht",
+          "wall_sequence": "Wandreihenfolge",
+          "top_surface_pattern": "Muster oben",
+          "ironing_type": "Glätten",
+          "fuzzy_skin": "Fuzzy Skin",
+          "spiral_mode": "Spiralvase"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Klassisch",
+          "grid": "Gitter",
+          "gyroid": "Gyroid",
+          "cubic": "Kubisch",
+          "adaptivecubic": "Adaptiv kubisch",
+          "triangles": "Dreiecke",
+          "honeycomb": "Bienenwabe",
+          "lightning": "Blitz",
+          "zig_zag": "Geradlinig",
+          "concentric": "Konzentrisch",
+          "normal_auto_": "Normal",
+          "tree_auto_": "Baum",
+          "no_brim": "Keine",
+          "outer_only": "Außen",
+          "auto_brim": "Auto",
+          "aligned": "Ausgerichtet",
+          "nearest": "Nächstgelegen",
+          "back": "Hinten",
+          "random": "Zufällig",
+          "none": "Keine",
+          "external": "Außenwand",
+          "all": "Alle Wände",
+          "inner_wall_outer_wall": "Innen zuerst",
+          "outer_wall_inner_wall": "Außen zuerst",
+          "inner_outer_inner_wall": "Innen, außen, innen",
+          "monotonic": "Monoton",
+          "monotonicline": "Monotone Linien",
+          "no_ironing": "Keins",
+          "topmost": "Oberste Fläche",
+          "top": "Alle oberen Flächen",
+          "solid": "Alle massiven Schichten"
+        },
+        "preset": {
+          "standard": {
+            "title": "Standard",
+            "purpose": "Alltagsteile"
+          },
+          "fine": {
+            "title": "Feine Details",
+            "purpose": "Figuren, kleine Schrift"
+          },
+          "draft": {
+            "title": "Schneller Entwurf",
+            "purpose": "Prototypen, Passproben"
+          },
+          "strong": {
+            "title": "Robust",
+            "purpose": "Halter, Haken, Zahnräder"
+          },
+          "outdoor": {
+            "title": "Außenbereich",
+            "purpose": "Sonne und Regen"
+          },
+          "water": {
+            "title": "Wasserkontakt",
+            "purpose": "Pflanzgefäße, Schalen"
+          },
+          "toy": {
+            "title": "Spielzeug",
+            "purpose": "Robust, für Kinder"
+          },
+          "flexible": {
+            "title": "Flexibel",
+            "purpose": "TPU-Griffe, Puffer"
+          },
+          "heat": {
+            "title": "Hitzebeständig",
+            "purpose": "Autos, Motoren, Lampen"
+          },
+          "vase": {
+            "title": "Vase",
+            "purpose": "Eine durchgehende Wand"
+          },
+          "smooth": {
+            "title": "Glatte Oberseite",
+            "purpose": "Schilder, Deckel"
+          }
+        },
+        "check": {
+          "material": "Für „{{preset}}“ eignet sich {{suits}} besser als {{material}}.",
+          "not_carried": "{{slicer}} liest {{keys}} nicht aus einer 3MF: dort einstellen.",
+          "food_contact": "Ein Druckprofil macht ein Teil nicht lebensmittelecht: Material, Druckerteile und Reinigung zählen auch.",
+          "toy": "Scharfe Kanten abrunden und für kleine Kinder keine kleinen losen Teile vorsehen.",
+          "vase_bodies": "Spiralvase druckt einen Körper mit einer Wand: einen Körper pro Platte."
+        }
+      },
+      "save": {
+        "destination": "Speicherort",
+        "newModel": "Neues Modell",
+        "addToModel": "Zu einem Modell hinzufügen",
+        "pickModel": "Deine Modelle",
+        "profiles_one": "{{count}} Profil",
+        "profiles_other": "{{count}} Profile",
+        "noProfiles": "Noch keine Profile",
+        "chooseMyself": "Selbst wählen",
+        "chooseMyselfHint": "Voreinstellungen und Einstellungen",
+        "suggestAiHint": "Anhand des Zwecks",
+        "without": "Ohne speichern",
+        "withoutHint": "Nur Geometrie",
+        "editProfile": "Bearbeiten",
+        "profileName": "Profilname",
+        "askAi": "KI wählen lassen",
+        "willHave_one": "„{{name}}“ hat dann {{count}} Profil",
+        "willHave_other": "„{{name}}“ hat dann {{count}} Profile",
+        "addProfile": "Profil hinzufügen",
+        "addedProfile": "„{{profile}}“ zu „{{name}}“ hinzugefügt"
       }
     },
     "chats": {

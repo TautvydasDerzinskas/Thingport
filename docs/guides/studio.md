@@ -200,9 +200,36 @@ a face to print on. **Measure** gives the gap or overlap between two bodies. Ask
 Open all imported 3MF plates before running the whole-design check.
 As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ridges don't count as overhang or thin walls.
 
-**Save to Thingport** asks you to confirm or change the new library model's name, starting with the design's name.
-The model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the design as its description.
-An assistant can save it too when you ask.
+**Save to Thingport** saves the design as a **New model**, named after the design unless you change it, or with **Add
+to a model** as one more print profile of a model you already have: search your library and pick it, and you see how
+many profiles it has. A new model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the
+design as its description. If the design has no print profile yet, the dialog asks for one first: **Choose myself**
+(the presets), **Suggest with AI**, or, for a new model, **Save without**. Name the profile as it should read on the
+model's page. An assistant can save it too when you ask.
+
+### Print profile
+
+The **Print** tab beside **Properties** (while editing) sets the design's print profile. **Choose a preset** offers
+Standard, Fine detail, Quick draft, Strong, Outdoor, Water contact, Toy, Flexible, Heat-resistant, Vase and Smooth top,
+with the ones that fit the design's name and requests marked **Suggested**; **Suggest with AI** asks Studio's assistant
+to choose, and it says why. A new profile is for your main slicer and the printer you use with it; change either, and
+the material, below the preset. **Settings** are sorted as Bambu Studio sorts them, into **Quality**, **Strength**,
+**Speed**, **Support** and **Others**, each a section you open or fold; each shows how many settings the profile sets
+there. In a section, a setting the profile sets is a field (put it back to the slicer's own with ×), and one it
+doesn't shows as **Slicer default** with **Set** beside it. Only settings your slicer reads from a 3MF are offered:
+speeds reach Bambu Studio and the slicers built on it, not PrusaSlicer or Cura. One the profile already sets stays
+listed when you switch to a slicer that doesn't read it, marked as one to set in that slicer. Choices with a look, such as the infill
+and top patterns, support type, brim, seam, wall order, ironing and fuzzy skin, show a small picture of each option.
+Hover a setting to see its name in your slicer. Notes under the preset warn about a material that doesn't suit it, or settings your slicer won't take. A dot
+on the tab means the assistant changed the profile. Fold the panel with its arrow: **Properties** and **Print** then
+wait as two tabs on the right edge.
+
+A design can carry a **print profile**: the slicer settings it's meant to print with, started from a preset such as
+Standard, Strong, Outdoor, Water contact or Toy, for your slicer and printer. It goes into every 3MF the design is
+saved, downloaded or opened as, so Bambu Studio and the slicers built on it open it with those settings, and
+PrusaSlicer and Cura take the ones they can read through **Open adapted**. Saved to Thingport, it shows on the model's
+page as a print profile, like one imported from a model site. An assistant can choose one from what the design is
+for, and it says why; it can also add the design to a model you already have as one more print profile.
 
 ## Working with an AI assistant
 

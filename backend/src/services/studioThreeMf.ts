@@ -30,6 +30,7 @@ import {
   type Vec3,
 } from "../studio/document.generated";
 import type { EvaluatedBody } from "../studio/geometry.generated";
+import { profileProjectSettings, type StudioPrintProfile } from "../studio/printProfile.generated";
 import { bedOutline } from "../studio/printLayout.generated";
 import { plateThumbEntry } from "./printProfileFile";
 
@@ -91,6 +92,7 @@ export async function writeStudioThreeMf(
   plates: readonly (StudioPlate & { thumbnail: Uint8Array })[],
   target?: StudioExportTarget,
   setup?: StudioPrintSetup,
+  printProfile?: StudioPrintProfile,
 ): Promise<Uint8Array | null> {
   const profile = target ? slicerProfile(target.slicer) : null;
   const recipe = target?.printer?.recipe;
@@ -213,6 +215,7 @@ export async function writeStudioThreeMf(
     filament_minimal_purge_on_wipe_tower: slots.map(() => "15"),
     filament_settings_id: slots.map(({ material }) => `Generic ${material}`),
     curr_bed_type: "Textured PEI Plate",
+    ...profileSettingsFor(printProfile, slots.length),
   });
   add("[Content_Types].xml", contentTypesXml());
   add("_rels/.rels", relsXml(true, `/${plateThumbEntry(1)}`));
@@ -241,4 +244,22 @@ export async function writeStudioThreeMf(
   const printer = recipe?.bed ? { ...recipe, bed: { ...layoutBed, outline: recipe.bed.outline } } : recipe;
   const result = plan ? (await adapt3mf(zip, plan, { printer })).zip : zip;
   return result.generateAsync({ type: "uint8array", ...ADAPT_ZIP_OPTIONS });
+}
+
+/**
+ * The design's print profile in the project's settings: its values, and its keys in the first slot of the project's
+ * list of changes (different_settings_to_system: the process, then each filament, then the printer), which is what
+ * makes Bambu Studio and the slicers built on it keep them over their own process preset. The adapter carries that
+ * list into a copy made for the person's printer, and reads the values for PrusaSlicer and Cura.
+ */
+function profileSettingsFor(profile: StudioPrintProfile | undefined, filaments: number): Record<string, unknown> {
+  if (!profile) return {};
+  const { settings, keys } = profileProjectSettings(profile);
+  if (!keys.length) return {};
+  const slots = Math.max(filaments, 1) + 2;
+  return {
+    ...settings,
+    different_settings_to_system: [keys.join(";"), ...Array.from({ length: slots - 1 }, () => "")],
+    inherits_group: Array.from({ length: slots }, () => ""),
+  };
 }

@@ -354,7 +354,9 @@
         "features": "Объекты / Пластины",
         "properties": "Свойства",
         "hide": "Скрыть {{panel}}",
-        "show": "Показать {{panel}}"
+        "show": "Показать {{panel}}",
+        "print": "Печать",
+        "rightPanel": "Свойства / Печать"
       },
       "viewCube": {
         "label": "Куб вида: нажмите грань, ребро или угол для соответствующего ракурса; перетаскивайте для поворота вида",
@@ -808,6 +810,190 @@
           "snap": "Привязка к сетке",
           "snapHelp": "Точки эскиза и перемещаемые тела привязываются к самым мелким видимым линиям сетки. Если выключить, они окажутся там, куда вы укажете."
         }
+      },
+      "printProfile": {
+        "title": "Профиль печати",
+        "presets": "Пресеты",
+        "empty": "Профиля печати пока нет",
+        "emptyHint": "Выберите пресет для этого проекта или позвольте ИИ подобрать его по назначению.",
+        "choosePreset": "Выбрать пресет",
+        "change": "Изменить",
+        "changed": "изменён",
+        "custom": "Свой",
+        "suggestAi": "Предложить с ИИ",
+        "aiWorking": "ИИ подбирает…",
+        "suggested": "Предложено",
+        "suggestedPreset": "Предложено: {{preset}}",
+        "byAi": "Выбран ИИ",
+        "slicer": "Слайсер",
+        "printer": "Принтер",
+        "anyPrinter": "Любой принтер",
+        "material": "Материал",
+        "anyMaterial": "Любой материал",
+        "settings": "Настройки",
+        "slicerDefault": "По умолчанию в слайсере",
+        "setIt": "Задать",
+        "noneCarried": "{{slicer}} не читает эти настройки из 3MF.",
+        "setCount_one": "задано: {{count}}",
+        "setCount_few": "задано: {{count}}",
+        "setCount_many": "задано: {{count}}",
+        "setCount_other": "задано: {{count}}",
+        "reset": "Взять значение слайсера",
+        "nativeName": "В {{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} не читает это из 3MF: задайте там.",
+        "remove": "Удалить профиль печати",
+        "on": "Вкл.",
+        "off": "Выкл.",
+        "aiPrompt": "Подбери профиль печати для этого проекта по его назначению: что я просил и описания моделей, из которых он сделан. Задай его инструментом профиля печати и одним предложением объясни почему.",
+        "aiPromptSlicer": "Я нарезаю в {{name}} (id слайсера {{id}}).",
+        "aiPromptPrinter": "Мой принтер — {{name}} (id принтера {{id}}) с соплом {{nozzle}} мм.",
+        "category": {
+          "quality": "Качество",
+          "strength": "Прочность",
+          "speed": "Скорость",
+          "support": "Поддержки",
+          "others": "Прочее"
+        },
+        "setting": {
+          "layer_height": "Высота слоя",
+          "wall_loops": "Стенки",
+          "top_shell_layers": "Верхние слои",
+          "bottom_shell_layers": "Нижние слои",
+          "top_shell_thickness": "Толщина верха",
+          "wall_generator": "Генератор стенок",
+          "sparse_infill_density": "Плотность заполнения",
+          "sparse_infill_pattern": "Шаблон заполнения",
+          "initial_layer_speed": "Скорость первого слоя",
+          "outer_wall_speed": "Скорость внешней стенки",
+          "inner_wall_speed": "Скорость внутренних стенок",
+          "sparse_infill_speed": "Скорость заполнения",
+          "enable_support": "Поддержки",
+          "support_type": "Тип поддержек",
+          "support_threshold_angle": "Угол поддержек",
+          "support_on_build_plate_only": "Поддержки только от стола",
+          "brim_type": "Кайма",
+          "brim_width": "Ширина каймы",
+          "raft_layers": "Слои подложки",
+          "seam_position": "Положение шва",
+          "seam_slope_type": "Скошенный шов",
+          "wall_sequence": "Порядок стенок",
+          "top_surface_pattern": "Шаблон верха",
+          "ironing_type": "Разглаживание",
+          "fuzzy_skin": "Шероховатая поверхность",
+          "spiral_mode": "Спиральная ваза"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Классический",
+          "grid": "Сетка",
+          "gyroid": "Гироид",
+          "cubic": "Кубический",
+          "adaptivecubic": "Адаптивный кубический",
+          "triangles": "Треугольники",
+          "honeycomb": "Соты",
+          "lightning": "Молния",
+          "zig_zag": "Прямолинейный",
+          "concentric": "Концентрический",
+          "normal_auto_": "Обычные",
+          "tree_auto_": "Древовидные",
+          "no_brim": "Нет",
+          "outer_only": "Внешняя",
+          "auto_brim": "Авто",
+          "aligned": "Выровненный",
+          "nearest": "Ближайший",
+          "back": "Сзади",
+          "random": "Случайный",
+          "none": "Нет",
+          "external": "Внешняя стенка",
+          "all": "Все стенки",
+          "inner_wall_outer_wall": "Сначала внутренние",
+          "outer_wall_inner_wall": "Сначала внешние",
+          "inner_outer_inner_wall": "Внутренняя, внешняя, внутренняя",
+          "monotonic": "Монотонный",
+          "monotonicline": "Монотонные линии",
+          "no_ironing": "Нет",
+          "topmost": "Самая верхняя поверхность",
+          "top": "Все верхние поверхности",
+          "solid": "Все сплошные слои"
+        },
+        "preset": {
+          "standard": {
+            "title": "Стандартный",
+            "purpose": "Повседневные детали"
+          },
+          "fine": {
+            "title": "Мелкие детали",
+            "purpose": "Фигурки, мелкий текст"
+          },
+          "draft": {
+            "title": "Быстрый черновик",
+            "purpose": "Прототипы, пробная посадка"
+          },
+          "strong": {
+            "title": "Прочный",
+            "purpose": "Кронштейны, крючки, шестерни"
+          },
+          "outdoor": {
+            "title": "Для улицы",
+            "purpose": "Солнце и дождь"
+          },
+          "water": {
+            "title": "Контакт с водой",
+            "purpose": "Кашпо, лотки"
+          },
+          "toy": {
+            "title": "Игрушка",
+            "purpose": "Прочная, для детей"
+          },
+          "flexible": {
+            "title": "Гибкий",
+            "purpose": "Ручки и бамперы из TPU"
+          },
+          "heat": {
+            "title": "Термостойкий",
+            "purpose": "Авто, моторы, лампы"
+          },
+          "vase": {
+            "title": "Ваза",
+            "purpose": "Одна сплошная стенка"
+          },
+          "smooth": {
+            "title": "Гладкий верх",
+            "purpose": "Таблички, крышки"
+          }
+        },
+        "check": {
+          "material": "Для «{{preset}}» лучше подходит {{suits}}, чем {{material}}.",
+          "not_carried": "{{slicer}} не читает из 3MF: {{keys}}. Задайте их там.",
+          "food_contact": "Профиль печати не делает деталь пищевой: важны и материал, и детали принтера, и чистка.",
+          "toy": "Скруглите острые края и не делайте мелких отдельных деталей для маленьких детей.",
+          "vase_bodies": "Спиральная ваза печатает одно тело одной стенкой: оставьте по одному телу на пластине."
+        }
+      },
+      "save": {
+        "destination": "Куда сохранить",
+        "newModel": "Новая модель",
+        "addToModel": "Добавить к модели",
+        "pickModel": "Ваши модели",
+        "profiles_one": "{{count}} профиль",
+        "profiles_few": "{{count}} профиля",
+        "profiles_many": "{{count}} профилей",
+        "profiles_other": "{{count}} профиля",
+        "noProfiles": "Профилей пока нет",
+        "chooseMyself": "Выбрать самому",
+        "chooseMyselfHint": "Пресеты и настройки",
+        "suggestAiHint": "По назначению",
+        "without": "Сохранить без профиля",
+        "withoutHint": "Только геометрия",
+        "editProfile": "Изменить",
+        "profileName": "Название профиля",
+        "askAi": "Пусть выберет ИИ",
+        "willHave_one": "У «{{name}}» будет {{count}} профиль",
+        "willHave_few": "У «{{name}}» будет {{count}} профиля",
+        "willHave_many": "У «{{name}}» будет {{count}} профилей",
+        "willHave_other": "У «{{name}}» будет {{count}} профиля",
+        "addProfile": "Добавить профиль",
+        "addedProfile": "«{{profile}}» добавлен к «{{name}}»"
       }
     },
     "shell": {

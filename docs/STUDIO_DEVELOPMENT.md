@@ -84,6 +84,17 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   sample of triangles). A threaded body's overhangs and walls are judged on a copy with its threads as plain cylinders
   (`plainThreads` in `geometry.ts`), as CAD analyses cosmetic threads. `measureBetween` in `geometry.ts` is
   `studio_measure`.
+- **`printProfile.ts`** — a design's print profile (`print_profile`, set by `set_print_profile`): presets, and the
+  settings changed on them, under Bambu Studio's key names and in its categories (a per-nozzle setting, such as a
+  speed, is written as a list), each saying which kinds of slicer it reaches through the
+  slicer adapter (a test checks that against `backend/src/adapter/settings.ts`) and what each kind calls it.
+  `studioThreeMf.ts` writes the settings into the 3MF's `project_settings.config` and lists their keys in
+  `different_settings_to_system`, so Bambu Studio's family keeps them over its process preset and the adapter carries
+  them into a copy for the person's printer, or into PrusaSlicer's and Cura's settings. Saved to the library, the
+  3MF's plate is a print profile (`Plate.sourceInstanceId` `studio-…`, `Plate.profile.studio` for its name, reason and
+  maker), read on the model's page like an imported one; `studio_save_to_library` with `model_id` adds it to a model
+  the person already has. `checkProfile` says what to warn about, and `suggestPresets` picks presets from a description
+  without an AI.
 - **`shapes2d.ts`** and **`vec.ts`** — outlines (rounded corners, insets that keep their shape) and vector maths.
 
 The page applies a document command locally at once (`useStudioDesign`), then sends it; the server applies it again on

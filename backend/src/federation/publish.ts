@@ -11,7 +11,7 @@ import { descriptionImagePath } from "../services/descriptionImageService";
 import { previewImagePath } from "../services/previewImageService";
 import { resolvePlateFilePath } from "../services/printCreation";
 import { managedPrintFilePath, printFileStillNames } from "../services/printFileService";
-import { storedProfile } from "../services/printProfileService";
+import { PROFILE_PROVIDER_VERSION, storedProfile } from "../services/printProfileService";
 import { plateStillNames, plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
 import { achievementsOf } from "../services/achievementService";
@@ -367,14 +367,21 @@ function modelDoc(
   // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
   const attachment = [
     ...print.plates.map((plate) => {
-      const provider = storedProfile(plate.profile)?.provider;
+      const stored = storedProfile(plate.profile);
+      const { studio } = stored ?? {};
       return {
         ...document("plate", plate),
         "thingport:profileId": plate.sourceInstanceId ?? undefined,
-        // What its site said of the print profile, so a copy shows it without asking the site again.
-        "thingport:profile": provider
-          ? { version: storedProfile(plate.profile)?.providerVersion ?? 0, facts: provider }
-          : undefined,
+        // What its site said of the print profile, so a copy shows it without asking the site again. One saved from
+        // Studio has no site: its name, reason and creator go as a site's would, which every partner reads.
+        "thingport:profile": stored?.provider
+          ? { version: stored.providerVersion ?? 0, facts: stored.provider }
+          : studio
+            ? {
+                version: PROFILE_PROVIDER_VERSION,
+                facts: { title: studio.title, description: studio.description, creator: studio.creator },
+              }
+            : undefined,
         // A render is marked: a copy makes its own where its instance renders.
         "thingport:thumb": thumbOf(plate) ?? undefined,
         "thingport:thumbGenerated": plate.thumbGenerated || undefined,

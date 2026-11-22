@@ -4481,7 +4481,9 @@
         "features": "Objects / Plates",
         "properties": "Properties",
         "hide": "Hide {{panel}}",
-        "show": "Show {{panel}}"
+        "show": "Show {{panel}}",
+        "print": "Print",
+        "rightPanel": "Properties / Print"
       },
       "viewCube": {
         "label": "View cube: click a face, edge or corner to look from there, drag it to turn the view",
@@ -4957,6 +4959,184 @@
           "snap": "Snap to grid",
           "snapHelp": "Sketch points and moved bodies snap to the finest grid lines that show. Off, they go where you point."
         }
+      },
+      "printProfile": {
+        "title": "Print profile",
+        "presets": "Presets",
+        "empty": "No print profile yet",
+        "emptyHint": "Pick a preset for this design, or let AI choose from what it's for.",
+        "choosePreset": "Choose a preset",
+        "change": "Change",
+        "changed": "changed",
+        "custom": "Custom",
+        "suggestAi": "Suggest with AI",
+        "aiWorking": "AI is choosing…",
+        "suggested": "Suggested",
+        "suggestedPreset": "Suggested: {{preset}}",
+        "byAi": "Chosen by AI",
+        "slicer": "Slicer",
+        "printer": "Printer",
+        "anyPrinter": "Any printer",
+        "material": "Material",
+        "anyMaterial": "Any material",
+        "settings": "Settings",
+        "slicerDefault": "Slicer default",
+        "setIt": "Set",
+        "noneCarried": "{{slicer}} reads none of these from a 3MF.",
+        "setCount_one": "{{count}} set",
+        "setCount_other": "{{count}} set",
+        "reset": "Use the slicer's own",
+        "nativeName": "In {{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} doesn't read this from a 3MF: set it there.",
+        "remove": "Remove print profile",
+        "on": "On",
+        "off": "Off",
+        "aiPrompt": "Choose a print profile for this design from what it's for: what I asked for and the descriptions of the models it was made from. Set it with the print profile tool, and tell me why in one sentence.",
+        "aiPromptSlicer": "I slice with {{name}} (slicer id {{id}}).",
+        "aiPromptPrinter": "My printer is the {{name}} (printer id {{id}}) with a {{nozzle}} mm nozzle.",
+        "category": {
+          "quality": "Quality",
+          "strength": "Strength",
+          "speed": "Speed",
+          "support": "Support",
+          "others": "Others"
+        },
+        "setting": {
+          "layer_height": "Layer height",
+          "wall_loops": "Walls",
+          "top_shell_layers": "Top layers",
+          "bottom_shell_layers": "Bottom layers",
+          "top_shell_thickness": "Top thickness",
+          "wall_generator": "Wall generator",
+          "sparse_infill_density": "Infill density",
+          "sparse_infill_pattern": "Infill pattern",
+          "initial_layer_speed": "First layer speed",
+          "outer_wall_speed": "Outer wall speed",
+          "inner_wall_speed": "Inner wall speed",
+          "sparse_infill_speed": "Infill speed",
+          "enable_support": "Supports",
+          "support_type": "Support type",
+          "support_threshold_angle": "Support angle",
+          "support_on_build_plate_only": "Supports from the plate only",
+          "brim_type": "Brim",
+          "brim_width": "Brim width",
+          "raft_layers": "Raft layers",
+          "seam_position": "Seam position",
+          "seam_slope_type": "Scarf seam",
+          "wall_sequence": "Wall order",
+          "top_surface_pattern": "Top pattern",
+          "ironing_type": "Ironing",
+          "fuzzy_skin": "Fuzzy skin",
+          "spiral_mode": "Spiral vase"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Classic",
+          "grid": "Grid",
+          "gyroid": "Gyroid",
+          "cubic": "Cubic",
+          "adaptivecubic": "Adaptive cubic",
+          "triangles": "Triangles",
+          "honeycomb": "Honeycomb",
+          "lightning": "Lightning",
+          "zig_zag": "Rectilinear",
+          "concentric": "Concentric",
+          "normal_auto_": "Normal",
+          "tree_auto_": "Tree",
+          "no_brim": "None",
+          "outer_only": "Outer",
+          "auto_brim": "Auto",
+          "aligned": "Aligned",
+          "nearest": "Nearest",
+          "back": "Back",
+          "random": "Random",
+          "none": "None",
+          "external": "Outer wall",
+          "all": "All walls",
+          "inner_wall_outer_wall": "Inner first",
+          "outer_wall_inner_wall": "Outer first",
+          "inner_outer_inner_wall": "Inner, outer, inner",
+          "monotonic": "Monotonic",
+          "monotonicline": "Monotonic lines",
+          "no_ironing": "None",
+          "topmost": "Topmost surface",
+          "top": "All top surfaces",
+          "solid": "All solid layers"
+        },
+        "preset": {
+          "standard": {
+            "title": "Standard",
+            "purpose": "Everyday parts"
+          },
+          "fine": {
+            "title": "Fine detail",
+            "purpose": "Figures, small text"
+          },
+          "draft": {
+            "title": "Quick draft",
+            "purpose": "Prototypes, fit checks"
+          },
+          "strong": {
+            "title": "Strong",
+            "purpose": "Brackets, hooks, gears"
+          },
+          "outdoor": {
+            "title": "Outdoor",
+            "purpose": "Sun and rain"
+          },
+          "water": {
+            "title": "Water contact",
+            "purpose": "Planters, trays"
+          },
+          "toy": {
+            "title": "Toy",
+            "purpose": "Sturdy, for children"
+          },
+          "flexible": {
+            "title": "Flexible",
+            "purpose": "TPU grips, bumpers"
+          },
+          "heat": {
+            "title": "Heat-resistant",
+            "purpose": "Cars, motors, lamps"
+          },
+          "vase": {
+            "title": "Vase",
+            "purpose": "One continuous wall"
+          },
+          "smooth": {
+            "title": "Smooth top",
+            "purpose": "Signs, lids"
+          }
+        },
+        "check": {
+          "material": "{{preset}} parts do better in {{suits}} than in {{material}}.",
+          "not_carried": "{{slicer}} doesn't read {{keys}} from a 3MF: set them there.",
+          "food_contact": "A print profile doesn't make a part food-safe: the material, the printer's parts and cleaning matter too.",
+          "toy": "Round sharp edges, and leave out small loose pieces for young children.",
+          "vase_bodies": "Spiral vase prints one body with one wall: keep one body per plate."
+        }
+      },
+      "save": {
+        "destination": "Where to save",
+        "newModel": "New model",
+        "addToModel": "Add to a model",
+        "pickModel": "Your models",
+        "profiles_one": "{{count}} profile",
+        "profiles_other": "{{count}} profiles",
+        "noProfiles": "No profiles yet",
+        "chooseMyself": "Choose myself",
+        "chooseMyselfHint": "Presets and settings",
+        "suggestAiHint": "From what it's for",
+        "without": "Save without",
+        "withoutHint": "Geometry only",
+        "editProfile": "Edit",
+        "profileName": "Profile name",
+        "askAi": "Ask AI to choose",
+        "willHave_one": "“{{name}}” will have {{count}} profile",
+        "willHave_other": "“{{name}}” will have {{count}} profiles",
+        "addProfile": "Add profile",
+        "addedProfile": "Added “{{profile}}” to “{{name}}”"
       }
     },
     "chats": {

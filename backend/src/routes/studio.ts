@@ -234,6 +234,9 @@ const saveSchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
     picture_id: z.string().regex(ASSET_ID).optional(),
+    // A model to add the design to as one more print profile, instead of a new model.
+    model_id: z.string().trim().min(1).max(64).optional(),
+    profile_name: z.string().trim().min(1).max(120).optional(),
   })
   .strict();
 
@@ -245,6 +248,8 @@ router.post(
     const model = await saveStudioDesignToLibrary(req.userId!, req.params.id, {
       name: body.name,
       pictureId: body.picture_id,
+      modelId: body.model_id,
+      profileName: body.profile_name,
     });
     res.status(201).json({ model });
   }),
