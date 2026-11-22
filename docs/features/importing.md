@@ -58,7 +58,7 @@ Fab365, 3DExport, QIDI Maker and VoxelShare.
   page lists the files under a heading for each folder, and a folder that every file is in, such as one named after the
   model, is left out. Files in different folders may share a name. What a computer leaves in a zip (`__MACOSX`,
   `.DS_Store`, `._` files, `Thumbs.db`, `desktop.ini` and other hidden files) is never imported, nor offered when you
-  pick a zip's files.
+  pick a zip's files. [File kinds](file-kinds.md) lists what Thingport reads each file as.
 - The OpenSCAD script it was generated from, where its creator shared one, whichever site it came from, so it can be
   [customised and generated again](supporting-files.md#models-you-can-generate-again). MakerWorld also says when a
   creator kept the script back, and the model is marked **Script not shared**. On a MakerWorld page, Thingport Grab

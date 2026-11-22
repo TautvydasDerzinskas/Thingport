@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import dotenv from "dotenv";
+import { LEGACY } from "./files/kinds";
 
 // Load .env before any export below reads process.env. Without this, values only worked when
 // @prisma/client happened to load .env first.
@@ -78,44 +79,14 @@ export const PUBLIC_URL = (process.env.PUBLIC_URL || "").trim().replace(/\/+$/, 
 export const AUTH_SECRET = process.env.AUTH_SECRET || "changeme-secret";
 export const AUTH_ALGO = "HS256" as const;
 
-export const IMPORT_ALLOWED_EXTS = new Set([
-  ".stl",
-  ".3mf",
-  ".step",
-  ".stp",
-  ".obj",
-  ".glb",
-  ".lbrn",
-  ".lbrn2",
-  ".zip",
-]);
+export const IMPORT_ALLOWED_EXTS = LEGACY.importAllowed;
 // Mirrors frontend's MODEL_EXTS. Other files in a multi-file upload become SUPPORTING files.
-export const RENDERABLE_MODEL_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".glb"]);
+export const RENDERABLE_MODEL_EXTS = LEGACY.renderable;
 // The script a model is generated from, kept so it can be generated again with other parameters. It holds no
 // geometry until something runs it, so it is never a plate: it comes along as a SUPPORTING file.
-export const PARAMETRIC_SOURCE_EXTS = new Set([".scad"]);
+export const PARAMETRIC_SOURCE_EXTS = LEGACY.parametricSource;
 // Mirrors frontend's UPLOAD_EXTS: what becomes a model on its own.
-export const UPLOADABLE_EXTS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".webp",
-  ".bmp",
-  ".gif",
-  ".svg",
-  ".stl",
-  ".step",
-  ".stp",
-  ".3mf",
-  ".obj",
-  ".glb",
-  // Packed into a .glb with the files it points at (services/gltfPacker.ts).
-  ".gltf",
-  ".f3d",
-  ".lbrn",
-  ".lbrn2",
-  ".zip",
-]);
+export const UPLOADABLE_EXTS = LEGACY.uploadable;
 export const IMPORT_EXT_PRIORITY = [".3mf", ".stl", ".step", ".stp", ".lbrn2", ".lbrn", ".zip"];
 export const IMPORT_BLOCKED_EXTS = new Set([
   ".jpg",

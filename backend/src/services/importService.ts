@@ -7,8 +7,9 @@ import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
-import { IMPORT_ALLOWED_EXTS, PARAMETRIC_SOURCE_EXTS, IMPORT_MAX_BYTES } from "../config";
+import { PARAMETRIC_SOURCE_EXTS, IMPORT_MAX_BYTES } from "../config";
 import { HttpError, guessMimeFromPath } from "../utils/fileUtils";
+import { LEGACY } from "../files/kinds";
 import { isJunk, normalizeFileName } from "../files/names";
 
 import { createKeyedLock } from "../utils/concurrency";
@@ -512,7 +513,7 @@ export async function findImportedExternalIds(
   return new Set(prints.map((p) => p.sourceExternalId).filter((id): id is string => id !== null));
 }
 
-export const MULTI_FILE_PLATE_EXTS = new Set([...IMPORT_ALLOWED_EXTS].filter((ext) => ext !== ".zip"));
+export const MULTI_FILE_PLATE_EXTS = LEGACY.multiFilePlate;
 
 /** How far into a zip holding a zip to keep looking. Sites that build the download archive themselves wrap whatever the
  *  designer uploaded, which is often an archive of their own ("Designer/model/model-v1.1.zip"), and a plate can't be
@@ -630,7 +631,7 @@ async function fetchParametricSources(source: ParametricSourceInfo | undefined):
 
 /** What a zip's folders are worked out over, whichever of its files a call takes, so its plates and scripts, read
  *  twice over (platesAndSourcesFromZip), get the same folders. */
-const ZIP_FOLDER_EXTS: ReadonlySet<string> = new Set([...MULTI_FILE_PLATE_EXTS, ...PARAMETRIC_SOURCE_EXTS]);
+const ZIP_FOLDER_EXTS: ReadonlySet<string> = LEGACY.zipFolder;
 
 /** A zip's plates and scripts, each with the folder it's in, less the top folders every one of them shares. */
 async function placedZipEntries(

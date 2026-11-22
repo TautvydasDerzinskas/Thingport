@@ -41,6 +41,8 @@ import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobR
 import { jobPayload } from "./services/importJobService";
 import type { LineOut, OwnQueue, QueueJobRow, QueueJobView } from "./services/importQueueService";
 import type { ImportOutcome } from "./services/modelNotifications";
+import { kindOf } from "./files/kinds";
+import { normalizeFileName } from "./files/names";
 
 export type UserOut = {
   id: string;
@@ -416,7 +418,7 @@ export function toPrintOut(
   const supporting = files.filter((f) => f.role === "SUPPORTING");
   const supportingCount = supporting.length;
   const generatorScripts = supporting
-    .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
+    .filter((f) => kindOf(normalizeFileName(f.filename)) === "script")
     .map((f) => ({ id: f.id, filename: f.filename, folder: f.folder ?? null }));
   // The model's own files: LICENSE.txt is Thingport's, written from its licence.
   const totalSize =

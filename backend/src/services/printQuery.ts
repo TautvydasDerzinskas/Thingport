@@ -6,6 +6,7 @@ import type { SortDirection } from "../utils/sortDirection";
 import { getLinkedAuthorIds } from "./authorService";
 import { systemCollectionKeyForId } from "./collectionService";
 import { rankedPrintIds } from "./searchService";
+import { extensionsOf } from "../files/kinds";
 
 // The library listing's filters and order, shared by GET /prints and the MCP tools so both list the
 // same models for the same filters.
@@ -125,9 +126,14 @@ export async function buildPrintWhere(
   if (filters.licensed) andClauses.push({ license: { not: Prisma.DbNull } });
   if (filters.generative) {
     // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
-    // generated rather than only printed. `.scad` is the only kind so far; config.ts's set is the list.
+    // generated rather than only printed: any script the kind table knows.
     andClauses.push({
-      files: { some: { role: "SUPPORTING", filename: { endsWith: ".scad", mode: "insensitive" } } },
+      files: {
+        some: {
+          role: "SUPPORTING",
+          OR: extensionsOf("script").map((ext) => ({ filename: { endsWith: ext, mode: "insensitive" as const } })),
+        },
+      },
     });
   }
   // Matched as the search palette matches, so its "see all results" lists what it found.
