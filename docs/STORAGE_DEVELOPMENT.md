@@ -60,6 +60,23 @@ regression or a bug in what it does, is a finding as usual.
 - **Stops and crashes.** The backend has no `SIGTERM` handler, and node runs as PID 1, so a container stop ends in
   `SIGKILL`. Nothing at start-up settles work that a stop cut short.
 
+## The cases table
+
+`backend/tests/intake/cases.ts` holds what every way in makes of the same files today: uploads, MCP, the consume
+folder, files added to a model, a site's page, links, zip links, repairs and copies, each fed the same shapes of files
+(model files, documents, a script, CAD sources, sliced files, pictures, zips, a glTF scene, a licence, system files).
+`cases.test.ts` runs each cell through its real way in and checks all of what it made: every model, each file's role
+and folder, the photos, and what was refused or left out. The browser's own planning of folder uploads, picks and zips
+is in `frontend/src/utils/uploadTree.test.ts`.
+
+- **A pull request that changes how files become models** writes its cells' new `today` in the same pull request and
+  takes its step off their `changes`. `INTAKE_RECORD=<file>` writes what every cell makes, to look over before it goes
+  in. Any other cell that fails is a change the pull request didn't mean.
+- **A cell pins what the code does, faults included.** A wrong `today` is fixed in the code, by the step its `changes`
+  names, never in the table alone.
+- **A finding about a case no cell covers** becomes a new cell first, pinning today's outcome. What it should become is
+  the maintainer's call.
+
 ## Reviews
 
 Each review round goes in this order, with one push for the whole round:

@@ -1,0 +1,20 @@
+{
+  "data": {
+    "print": {
+      "id": "1786545",
+      "name": "Strong garden hose holder",
+      "description": "<h4>Mounting</h4><p>4 x M5 or M6 screws</p>",
+      "user": {
+        "id": "4584310",
+        "handle": "s0ren",
+        "publicUsername": "s0ren",
+        "avatarFilePath": "media/auth/avatars/a.png"
+      },
+      "image": { "filePath": "media/prints/cover.jpg" },
+      "images": [{ "filePath": "media/prints/cover.jpg" }, { "filePath": "media/prints/gallery-1.jpg" }],
+      "tags": [{ "name": "garden" }, { "name": "hose" }],
+      "category": { "id": 42, "name": "Outdoor & Garden" },
+      "stls": [{ "id": "7449061", "name": "garden-hose-holder.3mf" }]
+    }
+  }
+}

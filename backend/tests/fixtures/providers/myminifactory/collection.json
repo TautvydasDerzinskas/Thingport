@@ -1,0 +1,40 @@
+{
+  "name": "Steampunk",
+  "objects": {
+    "total_count": 3,
+    "items": [
+      {
+        "id": 9990077,
+        "name": "Test Skull Pen Holder",
+        "images": [
+          {
+            "id": "front",
+            "is_primary": true,
+            "original": { "url": "https://assets.myminifactory.com/object-images/abc/images/original-front.jpg" },
+            "standard": { "url": "https://assets.myminifactory.com/object-images/abc/images/standard-front.jpg" },
+            "thumbnail": { "url": "https://assets.myminifactory.com/object-images/abc/images/thumb-front.jpg" }
+          }
+        ]
+      },
+      {
+        "id": 9990078,
+        "name": "Object 9990078",
+        "images": [
+          {
+            "id": "side",
+            "is_primary": true,
+            "original": { "url": "https://assets.myminifactory.com/object-images/abc/images/original-side.jpg" },
+            "standard": { "url": "https://assets.myminifactory.com/object-images/abc/images/standard-side.jpg" },
+            "thumbnail": { "url": "https://assets.myminifactory.com/object-images/abc/images/thumb-side.jpg" }
+          }
+        ]
+      },
+      {
+        "id": 9990079,
+        "name": "Object 9990079",
+        "price": { "currency": "USD", "symbol": "$", "value": "2.00" },
+        "images": []
+      }
+    ]
+  }
+}

@@ -384,7 +384,7 @@ Open an issue first, then:
    own to `providers/routes.ts`.
 5. **A contract test**, `backend/tests/providers/<id>.contract.test.ts`, using `describeProviderContract`
    (`tests/providers/contract.ts`), with recorded responses in `tests/fixtures/providers/<id>/`. Never call the real
-   site from a test.
+   site from a test. Every provider has one, so a change to the shared import code runs against all of them.
 6. **App**, `frontend/src/providers/<id>/`: its `CollectionTile.tsx` entered in `collectionTiles.ts`, and an
    `overrides.ts` entry only if needed. Its text goes under `providers.<id>` in every
    `frontend/src/i18n/locales/*.json`; `frontend/src/providers/strings.test.ts` lists what's missing.

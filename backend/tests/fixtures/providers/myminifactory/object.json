@@ -1,0 +1,20 @@
+{
+  "id": 9990077,
+  "name": "Test Skull Pen Holder",
+  "description_html": "<p>A <strong>skull</strong> pen holder.</p>",
+  "tags": ["skull", "desk"],
+  "images": [
+    {
+      "is_primary": true,
+      "original": { "url": "https://assets.myminifactory.com/object-images/test/images/front.jpg" },
+      "thumbnail": { "url": "https://assets.myminifactory.com/object-images/test/images/front.jpg" }
+    }
+  ],
+  "designer": {
+    "id": 777,
+    "username": "TestDesigner",
+    "name": "Test Designer",
+    "avatar_url": "https://assets.myminifactory.com/object-images/test/images/front.jpg"
+  },
+  "categories": { "total_count": 1, "items": [{ "id": 382, "name": "Desk", "parent": null }] }
+}
