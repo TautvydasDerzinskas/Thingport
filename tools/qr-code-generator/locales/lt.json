@@ -331,5 +331,8 @@
   "toast.logoPartly": "{count} dalykas (-ai) tame faile nėra kontūrai ir buvo praleisti.",
   "toast.projectOpened": "Dizainas atvertas.",
   "toast.projectFailed": "Tai ne šio įrankio sukurtas dizainas.",
-  "toast.noWebgl": "Ši naršyklė neturi 3D, tad lieka tik plokščias vaizdas."
+  "toast.noWebgl": "Ši naršyklė neturi 3D, tad lieka tik plokščias vaizdas.",
+  "error.badSvg": "Šio SVG failo perskaityti negalima.",
+  "error.noSvg": "Šiame faile nėra SVG elemento.",
+  "error.noOutline": "Šiame faile nėra spausdinamų kontūrų."
 }

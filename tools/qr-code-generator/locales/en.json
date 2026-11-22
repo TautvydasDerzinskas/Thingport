@@ -330,5 +330,8 @@
   "toast.logoPartly": "{count} thing(s) in that file aren't outlines and were left out.",
   "toast.projectOpened": "Design opened.",
   "toast.projectFailed": "That isn't a design this tool wrote.",
-  "toast.noWebgl": "This browser has no 3D, so the flat view is all there is."
+  "toast.noWebgl": "This browser has no 3D, so the flat view is all there is.",
+  "error.badSvg": "This file is not readable SVG.",
+  "error.noSvg": "This file has no SVG element.",
+  "error.noOutline": "This file has no printable outlines."
 }
