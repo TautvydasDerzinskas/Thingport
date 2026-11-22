@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { categoriesApi as CategoriesApi } from "../api/categories";
-import type { printsApi } from "../api/prints";
+import type { Print, printsApi } from "../api/prints";
 
 const upload = vi.fn<typeof printsApi.upload>();
 const addPreviewImages = vi.fn<typeof printsApi.addPreviewImages>();
@@ -8,7 +8,7 @@ vi.mock("../api/prints", () => ({ printsApi: { upload, addPreviewImages } }));
 vi.mock("../api/categories", () => ({
   categoriesApi: {
     list: vi.fn<typeof CategoriesApi.list>(async () => []),
-    create: vi.fn<(name: string) => Promise<{ id: string }>>(async (name) => ({ id: `category-${name}` })),
+    create: vi.fn<typeof CategoriesApi.create>(async (name) => ({ id: `category-${name}` })),
   },
 }));
 
@@ -38,11 +38,25 @@ const laptop = () => [
   entry("Laptop/license.txt"),
 ];
 
+/** A model as the server answers with one: the plans only read its id. */
+const printOf = (id: string): Print => ({
+  id,
+  name: id,
+  tags: [],
+  created_at: "2026-11-22T00:00:00Z",
+  plates: [],
+  preview_images: [],
+  supporting_file_count: 0,
+  view_count: 0,
+  print_count: 0,
+  is_favorite: false,
+});
+
 const namesSent = () => upload.mock.calls.map(([files]) => (files as File[]).map((file) => file.name));
 
 beforeEach(() => {
   upload.mockReset();
-  upload.mockImplementation(async () => ({ prints: [{ id: `print-${upload.mock.calls.length}` }] }) as never);
+  upload.mockImplementation(async () => ({ prints: [printOf(`print-${upload.mock.calls.length}`)] }));
   addPreviewImages.mockReset();
 });
 
@@ -213,11 +227,11 @@ describe("the cases the browser plans", () => {
         options?.category_id ? `in ${options.category_id}` : null,
       ].filter(Boolean);
       sent.push(`upload ${files.map((file) => file.name).join(", ")}${how.length ? ` (${how.join(", ")})` : ""}`);
-      return { prints: [{ id: `model ${sent.length}` }] } as never;
+      return { prints: [printOf(`model ${sent.length}`)] };
     });
     addPreviewImages.mockImplementation(async (id, files) => {
       sent.push(`photos for ${id}: ${files.map((file) => file.name).join(", ")}`);
-      return { print: { id } } as never;
+      return { print: printOf(id) };
     });
     const { failed } = await run();
     return failed.length ? [...sent, `failed: ${failed.join(", ")}`] : sent;
@@ -225,9 +239,9 @@ describe("the cases the browser plans", () => {
 
   beforeEach(() => {
     // A folder's id is its path, so a request says where its model is filed.
-    vi.mocked(categoriesApi.create).mockImplementation(
-      async (name, _tags, parentId) => ({ id: parentId ? `${parentId}/${name}` : name }) as never,
-    );
+    vi.mocked(categoriesApi.create).mockImplementation(async (name, _tags, parentId) => ({
+      id: parentId ? `${parentId}/${name}` : name,
+    }));
   });
 
   // "Each folder is one model" (uploadFoldersAsModels).

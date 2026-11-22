@@ -163,6 +163,32 @@ const spec: ProviderContractSpec = {
 const ctx = describeProviderContract(spec);
 
 describe("MyMiniFactory specifics", () => {
+  const LIBRARY = "/api/data-library/";
+
+  it("imports a free object with the instance's key alone, never asking for the user's library", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    const stub = ctx.install(handlerFor("ok"));
+    const res = await ctx.importUrl();
+    expectStatus(res, 200);
+    expect(res.body.plates.map((plate: { filename: string }) => plate.filename)).toEqual([
+      "skull.stl",
+      "moustache.stl",
+    ]);
+    expect(stub.calls.filter((call) => call.url.pathname.startsWith(LIBRARY))).toEqual([]);
+  });
+
+  it("imports a login-only object with the user's sign-in, from their library", async () => {
+    await spec.connect(ctx.userId);
+    const stub = ctx.install(handlerFor("ok", "login-only"));
+    const res = await ctx.importUrl();
+    expectStatus(res, 200);
+    expect(res.body.plates.map((plate: { filename: string }) => plate.filename)).toEqual([
+      "skull.stl",
+      "moustache.stl",
+    ]);
+    expect(stub.calls.some((call) => call.url.pathname.startsWith(LIBRARY))).toBe(true);
+  });
+
   it("refuses a login-only object without the user's sign-in with 403 and no session code", async () => {
     await setMyminifactoryApiKey(API_KEY);
     ctx.install(handlerFor("ok", "login-only"));

@@ -1,12 +1,16 @@
 import fs from "node:fs";
+import path from "node:path";
+import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../../src/app";
+import { STORAGE } from "../../src/config";
 import { prisma } from "../../src/db";
 import { setThingiverseAccessToken } from "../../src/providers/thingiverse/token";
 import { setSocialSettings } from "../../src/services/settingsService";
 import { installFetch, type FetchHandler, type FetchStub } from "../providers/support";
 import { CASES, caseName, treeOf } from "./cases";
-import { linesOf, runWay, THINGIVERSE_TOKEN } from "./ways";
+import { linesOf, modelsOf, register, runWay, THINGIVERSE_TOKEN } from "./ways";
+import { filesOf } from "./files";
 
 vi.mock("node:dns/promises", () => ({
   default: {
@@ -65,5 +69,28 @@ describe("how each way in turns files into models", () => {
     if (recording) recorded[caseName(cell)] = outcome;
     // oxlint-disable-next-line vitest/no-conditional-expect -- a recording run writes outcomes down instead
     else expect(outcome).toEqual(cell.today);
+  });
+});
+
+describe("how an outcome reads", () => {
+  it("marks a file the disk doesn't hold, and a prepared file the model doesn't point at", async () => {
+    const account = await register(app, "outcome-marks");
+    const req = request(app)
+      .post("/api/upload")
+      .set({ Authorization: `Bearer ${account.session}` })
+      .field("mode", "multiplate");
+    for (const file of await filesOf({ "Frog.stl": null, "Tower.gcode": null }, "outcome-marks")) {
+      req.attach("files", file.bytes, { filename: file.path });
+    }
+    const id = (await req).body.prints[0].id as string;
+    expect(linesOf({ models: await modelsOf(account.id) })).toEqual(["Frog: P Frog.stl, PP Tower.gcode"]);
+
+    const print = await prisma.print.update({
+      where: { id },
+      data: { preparedFile: { disconnect: true } },
+      include: { plates: true },
+    });
+    fs.rmSync(path.join(STORAGE, print.plates[0].storagePath));
+    expect(linesOf({ models: await modelsOf(account.id) })).toEqual(["Frog: P Frog.stl (missing), pp Tower.gcode"]);
   });
 });

@@ -18,7 +18,8 @@ import type { Way } from "./cases";
 export type Account = { id: string; session: string };
 
 /** A model as its owner finds it: its plates in order (P), then its other files: the prepared print (PP), supporting
- *  files (S) and the LICENSE.txt Thingport writes (L); and how many photos its gallery has. */
+ *  files (S) and the LICENSE.txt Thingport writes (L), any not on the disk marked missing; and how many photos its
+ *  gallery has. */
 export type Model = { name: string; folder?: string; files: string[]; photos: number };
 
 /** What a way in made of a case: the models (or the model added to), what it refused and why, and the files it named
@@ -62,9 +63,11 @@ export async function modelsOf(userId: string): Promise<Model[]> {
       previewImages: { where: { generated: false } },
     },
   });
-  const named = (file: { folder: string | null; filename: string }) =>
-    file.folder ? `${file.folder}/${file.filename}` : file.filename;
-  const role = { PREPARED: "PP", SUPPORTING: "S", LICENSE: "L" } as const;
+  // A file the row names but the disk doesn't hold says so: an outcome is what someone could open, not only its rows.
+  const named = (file: { folder: string | null; filename: string }, at: string) =>
+    `${file.folder ? `${file.folder}/${file.filename}` : file.filename}${fs.existsSync(at) ? "" : " (missing)"}`;
+  // "PP" only for the model's own prepared print; "pp" for a file kept as one that the model doesn't point at.
+  const role = { PREPARED: "pp", SUPPORTING: "S", LICENSE: "L" } as const;
   const categories = new Map(
     (await prisma.category.findMany({ where: { userId } })).map((category) => [category.id, category]),
   );
@@ -80,9 +83,12 @@ export async function modelsOf(userId: string): Promise<Model[]> {
     const model: Model = {
       name: print.title || print.name,
       files: [
-        ...print.plates.map((plate) => `P ${named(plate)}`),
+        ...print.plates.map((plate) => `P ${named(plate, plate.sourcePath ?? path.join(STORAGE, plate.storagePath))}`),
         ...print.files
-          .map((file) => `${print.preparedFileId === file.id ? "PP" : role[file.role]} ${named(file)}`)
+          .map(
+            (file) =>
+              `${print.preparedFileId === file.id ? "PP" : role[file.role]} ${named(file, path.join(STORAGE, file.storagePath))}`,
+          )
           .toSorted(),
       ],
       photos: print.previewImages.length,

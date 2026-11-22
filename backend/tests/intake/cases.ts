@@ -11,7 +11,8 @@ import type { FileTree } from "./files";
 //
 // How an outcome reads, a line each:
 //   "<model> (in <library folder>): <files>, <n> photos": the files are its plates in order (P), then the prepared
-//     print (PP), supporting files (S) and the LICENSE.txt Thingport writes (L), each by its folder and name;
+//     print (PP), supporting files (S) and the LICENSE.txt Thingport writes (L), each by its folder and name, and
+//     "(missing)" after one the disk doesn't hold ("pp" is a file kept as a prepared print the model doesn't use);
 //   "✕ <answer>": what the way in refused, with its status and message;
 //   "left: <files>": what it set aside and named: the consume folder's "Not imported", a zip job's failures.
 // A file the way in took and no line names was dropped.

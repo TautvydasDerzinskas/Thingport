@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
-import { binary, json, loadFixture, threeMf, type FetchHandler } from "./support";
+import { assertThat, binary, json, loadFixture, threeMf, type FetchHandler } from "./support";
 
 vi.mock("node:dns/promises", () => ({
   default: {
@@ -18,6 +18,8 @@ vi.mock("node:dns/promises", () => ({
 const GRAPHQL = "https://api.printables.com/graphql/";
 const MODEL_ID = "1786545";
 const COLLECTION_ID = "2348006";
+/** The model file the recorded model lists. */
+const FILE_ID = "7449061";
 const COLLECTION_URL = `https://www.printables.com/@joshuaargh/collections/${COLLECTION_ID}`;
 
 function handlerFor(scenario: string): FetchHandler {
@@ -26,12 +28,26 @@ function handlerFor(scenario: string): FetchHandler {
     // Its pictures, on media.printables.com, fall through to the stub's own PNG.
     if (url.href !== GRAPHQL) return undefined;
     const query = String(body?.query ?? "");
-    if (query.includes("getDownloadLink")) return json(loadFixture("printables", "download-link"));
-    if (query.includes("moreCollectionModels")) return json(loadFixture("printables", "collection-models"));
+    // Each answer only for what it's an answer to, so a request for the wrong thing can't pass on it.
+    const asked = (body?.variables ?? {}) as Record<string, unknown>;
+    if (query.includes("getDownloadLink")) {
+      assertThat(asked.printId === MODEL_ID, "a download link is asked for the model's own files");
+      assertThat(
+        JSON.stringify(asked.files) === JSON.stringify([{ fileType: "stl", ids: [FILE_ID] }]),
+        "the download link is asked for the model's listed file",
+      );
+      return json(loadFixture("printables", "download-link"));
+    }
+    if (query.includes("moreCollectionModels")) {
+      assertThat(asked.collectionId === COLLECTION_ID, "the collection's models are asked by its id");
+      return json(loadFixture("printables", "collection-models"));
+    }
     if (query.includes("collection(id:")) {
+      assertThat(asked.id === COLLECTION_ID, "the collection is asked by its id");
       return json(scenario === "gone" ? { data: { collection: null } } : loadFixture("printables", "collection"));
     }
     if (query.includes("print(id:")) {
+      assertThat(asked.id === MODEL_ID, "the model is asked by its id");
       return json(scenario === "missing" ? { data: { print: null } } : loadFixture("printables", "model"));
     }
     return undefined;
