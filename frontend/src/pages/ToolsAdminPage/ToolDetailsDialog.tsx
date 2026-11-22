@@ -27,6 +27,7 @@ type Props = {
   onImportModels: () => void;
   onRetry: () => void;
   onUninstall: () => void;
+  onChangeAvailability: () => void;
   /** Opens the admin's own copy; absent where the tool isn't installed or isn't theirs to open. */
   onOpen?: () => void;
 };
@@ -40,6 +41,7 @@ export default function ToolDetailsDialog({
   onImportModels,
   onRetry,
   onUninstall,
+  onChangeAvailability,
   onOpen,
 }: Props) {
   const { t } = useTranslation("app");
@@ -90,7 +92,12 @@ export default function ToolDetailsDialog({
             <Typography variant="h6" sx={{ fontSize: "1.05rem", lineHeight: 1.3 }}>
               {manifest.name}
             </Typography>
-            <Chip size="small" variant="outlined" color={status.color} label={status.label} sx={{ mt: 0.5 }} />
+            <Stack direction="row" spacing={0.75} sx={{ mt: 0.5 }}>
+              <Chip size="small" variant="outlined" color={status.color} label={status.label} />
+              {installed?.enabled === false && (
+                <Chip size="small" variant="outlined" color="warning" label={t("adminSettings.tools.repo.disabled")} />
+              )}
+            </Stack>
           </Box>
         </Stack>
       </DialogTitle>
@@ -112,6 +119,19 @@ export default function ToolDetailsDialog({
             screenshots={manifest.screenshots ?? []}
             urlFor={(shot) => printsApi.fileUrl(`/admin/tools/${encodeURIComponent(tool.slug)}/screenshots/${shot}`)}
           />
+
+          {installed && (
+            <Box>
+              <Button size="small" variant="outlined" disabled={busy} onClick={onChangeAvailability}>
+                {t(
+                  installed.enabled === false ? "adminSettings.tools.repo.enable" : "adminSettings.tools.repo.disable",
+                )}
+              </Button>
+              <Typography variant="caption" component="p" color="text.secondary" sx={{ mt: 0.5 }}>
+                {t("adminSettings.tools.repo.disabledHint")}
+              </Typography>
+            </Box>
+          )}
 
           {models && !models.imported && (
             // Installed without them: the tool runs, but what it needs them for waits until they are here.

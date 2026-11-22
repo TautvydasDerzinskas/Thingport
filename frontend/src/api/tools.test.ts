@@ -22,6 +22,7 @@ function fakeStorage(): Storage {
 /** Every toolsApi call, by the name it has in the module. */
 const calls: Record<string, () => Promise<unknown>> = {
   list: () => toolsApi.list(),
+  status: () => toolsApi.status(),
   save: () => toolsApi.save({ slug: "t", metadata: "{}", script: "", html: null }),
   remove: () => toolsApi.remove("id"),
   models: () => toolsApi.models("id"),
@@ -34,6 +35,7 @@ const calls: Record<string, () => Promise<unknown>> = {
   catalog: () => toolsApi.catalog(),
   install: () => toolsApi.install("slug", true),
   importModels: () => toolsApi.importModels("slug"),
+  setEnabled: () => toolsApi.setEnabled("slug", false),
   uninstall: () => toolsApi.uninstall("slug"),
   fetchModels: () => toolsApi.fetchModels("slug"),
   getAccess: () => toolsApi.getAccess(),
@@ -67,7 +69,7 @@ describe("toolsApi", () => {
     expect(sent[0].headers.get("Authorization")).toBe(`Bearer ${TOKEN}`);
   });
 
-  it.each(["save", "fetchNeededModels", "storageSet", "fetchVia", "install", "setAccess"])(
+  it.each(["save", "fetchNeededModels", "storageSet", "fetchVia", "install", "setEnabled", "setAccess"])(
     "sends %s as JSON, with its body",
     async (name) => {
       await calls[name]();

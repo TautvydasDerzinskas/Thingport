@@ -11,6 +11,7 @@ import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import { useToastHost } from "../ToastProvider";
+import { useTools } from "../../hooks/useTools";
 import ToolIcon from "./ToolIcon";
 import ToolRunner from "./ToolRunner";
 import type { RunnableTool, ToolContext } from "./toolSdk";
@@ -31,17 +32,25 @@ type Props = {
 export default function ToolWindow({ tool, context, onClose, onAbout, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [full, setFull] = useState(false);
+  const available = useTools();
+  // Other sessions may disable a repository tool while this window is open. Unmount its runner once the shared
+  // availability check has confirmed that it is no longer available.
+  const toolId = tool?.id;
+  const missing = Boolean(toolId && available && !available.tools.some((item) => item.id === toolId));
+  useEffect(() => {
+    if (missing) onClose();
+  }, [missing, onClose]);
   // Each tool opens at its own size, whatever the last one was left at.
   useEffect(() => {
     if (!tool) setFull(false);
   }, [tool]);
   const size = tool?.manifest.window ?? { width: 960, height: 640 };
   // A tool's toasts, an Open button among them, show inside its window, where a keyboard and screen reader reach them.
-  const toastHost = useToastHost(Boolean(tool));
+  const toastHost = useToastHost(Boolean(tool) && !missing);
 
   return (
     <Dialog
-      open={Boolean(tool)}
+      open={Boolean(tool) && !missing}
       onClose={onClose}
       maxWidth={false}
       fullScreen={full}
@@ -64,7 +73,7 @@ export default function ToolWindow({ tool, context, onClose, onAbout, onUnauthor
         },
       }}
     >
-      {tool && (
+      {tool && !missing && (
         <>
           <Box
             sx={{

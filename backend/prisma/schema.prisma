@@ -808,6 +808,8 @@ model Tool {
   id           String           @id @default(cuid())
   /// "repo" for one installed from the repository, "own" for one a user made.
   source       String
+  /// Whether an installed repository tool is available to users.
+  enabled      Boolean          @default(true)
   /// "repo" for a repository tool, its owner's id for an own one: the unique index covers both, where a null owner
   /// wouldn't (Postgres treats nulls as distinct).
   scope        String

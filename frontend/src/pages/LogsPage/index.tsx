@@ -47,6 +47,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   photos_per_model_changed: "info",
   custom_widgets_changed: "warning",
   tool_installed: "info",
+  tool_availability_changed: "warning",
   // Takes the data it kept for everyone with it.
   tool_uninstalled: "error",
   tools_access_changed: "warning",
