@@ -11,6 +11,7 @@ ones.
 ## Designing
 
 Use the **⋮** menu next to the design name to create, open, rename, export, or delete a design, or open it in a slicer.
+Its **Recent** list jumps to the three designs you edited last.
 The toolbar's **Save** menu is available in both modes. The **Edit** button (the pencil) shows the editing tools,
 **Properties**, and the status bar. You can turn the view and use the undo and redo shortcuts in either mode.
 The **Objects / Plates** and **Properties** panels fold away with the arrows in their headers. Reopen them from

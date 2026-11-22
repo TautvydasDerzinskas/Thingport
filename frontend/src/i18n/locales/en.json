@@ -4411,6 +4411,14 @@
         "emptyTitle": "No designs yet",
         "emptyHint": "Start one, then build it from shapes and sketches.",
         "untitled": "Untitled design",
+        "menu": {
+          "quickActions": "Quick actions",
+          "new": "New",
+          "open": "Open",
+          "slicer": "Slicer",
+          "recent": "Recent",
+          "edited": "Edited {{time}}"
+        },
         "nothingToExport": "Nothing visible to download",
         "features_one": "{{count}} feature",
         "features_other": "{{count}} features",

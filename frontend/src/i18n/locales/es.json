@@ -4596,6 +4596,14 @@
         "emptyTitle": "Aún no hay diseños",
         "emptyHint": "Empieza uno y constrúyelo con formas y bocetos.",
         "untitled": "Diseño sin título",
+        "menu": {
+          "quickActions": "Acciones rápidas",
+          "new": "Nuevo",
+          "open": "Abrir",
+          "slicer": "Laminador",
+          "recent": "Recientes",
+          "edited": "Editado {{time}}"
+        },
         "nothingToExport": "No hay nada visible que descargar",
         "features_one": "{{count}} elemento",
         "features_many": "{{count}} elementos",

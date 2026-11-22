@@ -4609,6 +4609,14 @@
         "emptyTitle": "Aucune conception pour l’instant",
         "emptyHint": "Commencez-en une, puis construisez-la avec des formes et des esquisses.",
         "untitled": "Conception sans titre",
+        "menu": {
+          "quickActions": "Actions rapides",
+          "new": "Nouvelle",
+          "open": "Ouvrir",
+          "slicer": "Trancheur",
+          "recent": "Récentes",
+          "edited": "Modifiée {{time}}"
+        },
         "nothingToExport": "Rien de visible à télécharger",
         "features_one": "{{count}} élément",
         "features_many": "{{count}} éléments",

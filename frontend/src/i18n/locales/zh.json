@@ -4229,6 +4229,14 @@
         "emptyTitle": "还没有设计",
         "emptyHint": "新建一个设计，然后用形状和草图来构建它。",
         "untitled": "未命名设计",
+        "menu": {
+          "quickActions": "快捷操作",
+          "new": "新建",
+          "open": "打开",
+          "slicer": "切片",
+          "recent": "最近",
+          "edited": "{{time}}编辑"
+        },
         "nothingToExport": "没有可下载的可见内容",
         "features_other": "{{count}} 个特征",
         "saveToLibrary": "保存到 Thingport",

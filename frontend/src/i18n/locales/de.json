@@ -4414,6 +4414,14 @@
         "emptyTitle": "Noch keine Designs",
         "emptyHint": "Beginne eines und baue es dann aus Formen und Skizzen auf.",
         "untitled": "Design ohne Titel",
+        "menu": {
+          "quickActions": "Schnellaktionen",
+          "new": "Neu",
+          "open": "Öffnen",
+          "slicer": "Slicer",
+          "recent": "Zuletzt bearbeitet",
+          "edited": "Bearbeitet {{time}}"
+        },
         "nothingToExport": "Nichts Sichtbares zum Herunterladen",
         "features_one": "{{count}} Element",
         "features_other": "{{count}} Elemente",

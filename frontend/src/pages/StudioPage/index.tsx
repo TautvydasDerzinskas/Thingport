@@ -777,16 +777,17 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     () => (
       <StudioDesignMenu
         key={openDesignId}
-        hasDesign={Boolean(openDesignId)}
+        designId={openDesignId ?? null}
         onNewDesign={() => void newDesign()}
-        onOpenDesign={() => setDesignsOpen(true)}
+        onBrowseDesigns={() => setDesignsOpen(true)}
+        onSwitchDesign={(id) => setSearchParams({ design: id })}
         onRenameDesign={() => setRenaming({ kind: "design" })}
         onExport={() => setExportOpen(true)}
         onOpenSlicer={() => void openSlicer()}
         onDeleteDesign={() => void deleteDesign()}
       />
     ),
-    [deleteDesign, newDesign, openDesignId, openSlicer],
+    [deleteDesign, newDesign, openDesignId, openSlicer, setSearchParams],
   );
   usePageHeader({
     title: designName,

@@ -4706,6 +4706,14 @@
         "emptyTitle": "Kol kas nėra projektų",
         "emptyHint": "Pradėkite naują ir kurkite jį iš formų bei eskizų.",
         "untitled": "Projektas be pavadinimo",
+        "menu": {
+          "quickActions": "Greiti veiksmai",
+          "new": "Naujas",
+          "open": "Atidaryti",
+          "slicer": "Pjaustyklė",
+          "recent": "Naujausi",
+          "edited": "Redaguota {{time}}"
+        },
         "nothingToExport": "Nėra matomų elementų atsisiųsti",
         "features_one": "{{count}} elementas",
         "features_few": "{{count}} elementai",
