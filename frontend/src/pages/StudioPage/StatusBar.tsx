@@ -156,7 +156,9 @@ export default function StatusBar({
             onClick={() => onTogglePanel(panel)}
           >
             <ListItemIcon>{panels[panel] && <CheckRoundedIcon fontSize="small" />}</ListItemIcon>
-            <ListItemText>{t(`studio.panels.${panel}`)}</ListItemText>
+            <ListItemText>
+              {t(panel === "properties" ? "studio.panels.rightPanel" : "studio.panels.features")}
+            </ListItemText>
           </MenuItem>
         ))}
       </Menu>

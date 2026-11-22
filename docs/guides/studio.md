@@ -200,9 +200,24 @@ a face to print on. **Measure** gives the gap or overlap between two bodies. Ask
 Open all imported 3MF plates before running the whole-design check.
 As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ridges don't count as overhang or thin walls.
 
-**Save to Thingport** asks you to confirm or change the new library model's name, starting with the design's name.
-The model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the design as its description.
-An assistant can save it too when you ask.
+**Save to Thingport** saves the design as a **New model**, named after the design unless you change it, or with **Add
+to a model** as one more print profile of a model you already have: search your library and pick it, and you see how
+many profiles it has. A new model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the
+design as its description. If the design has no print profile yet, the dialog asks for one first: **Choose myself**
+(the presets), **Suggest with AI**, or, for a new model, **Save without**. Name the profile as it should read on the
+model's page. An assistant can save it too when you ask.
+
+### Print profile
+
+The **Print** tab beside **Properties** (while editing) sets the design's print profile. **Choose a preset** offers
+Standard, Fine detail, Quick draft, Strong, Outdoor, Water contact, Toy, Flexible, Heat-resistant, Vase and Smooth top,
+with the ones that fit the design's name and requests marked **Suggested**; **Suggest with AI** asks Studio's assistant
+to choose, and it says why. A new profile is for your main slicer and the printer you use with it; change either, and
+the material, below the preset. **Settings** lists what the profile sets: change a value, put one back to the slicer's
+own with ×, or **Add a setting** from those your slicer reads from a 3MF (hover a setting to see its name in your
+slicer). Notes under the preset warn about a material that doesn't suit it, or settings your slicer won't take. A dot
+on the tab means the assistant changed the profile. Fold the panel with its arrow: **Properties** and **Print** then
+wait as two tabs on the right edge.
 
 A design can carry a **print profile**: the slicer settings it's meant to print with, started from a preset such as
 Standard, Strong, Outdoor, Water contact or Toy, for your slicer and printer. It goes into every 3MF the design is

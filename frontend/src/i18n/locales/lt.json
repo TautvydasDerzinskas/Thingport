@@ -4776,7 +4776,9 @@
         "features": "Objektai / Plokštės",
         "properties": "Savybės",
         "hide": "Slėpti: {{panel}}",
-        "show": "Rodyti: {{panel}}"
+        "show": "Rodyti: {{panel}}",
+        "print": "Spausdinimas",
+        "rightPanel": "Savybės / Spausdinimas"
       },
       "viewCube": {
         "label": "Vaizdo kubas: spustelėkite sieną, briauną ar kampą, kad žiūrėtumėte iš ten, vilkite jį, kad pasuktumėte vaizdą",
@@ -5261,6 +5263,181 @@
           "snap": "Pritraukti prie tinklelio",
           "snapHelp": "Eskizo taškai ir perkeliami kūnai pritraukiami prie smulkiausių matomų tinklelio linijų. Išjungus jie atsiduria ten, kur rodote."
         }
+      },
+      "printProfile": {
+        "title": "Spausdinimo profilis",
+        "presets": "Šablonai",
+        "empty": "Spausdinimo profilio dar nėra",
+        "emptyHint": "Pasirinkite šio projekto šabloną arba leiskite DI parinkti pagal paskirtį.",
+        "choosePreset": "Pasirinkti šabloną",
+        "change": "Keisti",
+        "changed": "pakeistas",
+        "custom": "Savas",
+        "suggestAi": "Pasiūlyti su DI",
+        "aiWorking": "DI renkasi…",
+        "suggested": "Siūloma",
+        "suggestedPreset": "Siūloma: {{preset}}",
+        "byAi": "Parinko DI",
+        "slicer": "Pjaustyklė",
+        "printer": "Spausdintuvas",
+        "anyPrinter": "Bet kuris spausdintuvas",
+        "material": "Medžiaga",
+        "anyMaterial": "Bet kuri medžiaga",
+        "settings": "Nustatymai",
+        "addSetting": "Pridėti nustatymą",
+        "reset": "Naudoti pjaustyklės reikšmę",
+        "nativeName": "{{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} šio nustatymo iš 3MF neperskaito: nustatykite jį ten.",
+        "remove": "Pašalinti spausdinimo profilį",
+        "on": "Įjungta",
+        "off": "Išjungta",
+        "aiPrompt": "Parink šiam projektui spausdinimo profilį pagal jo paskirtį: ko prašiau ir modelių, iš kurių jis sukurtas, aprašymus. Nustatyk jį spausdinimo profilio įrankiu ir vienu sakiniu paaiškink kodėl.",
+        "aiPromptSlicer": "Pjaustau su {{name}} (pjaustyklės id {{id}}).",
+        "aiPromptPrinter": "Mano spausdintuvas – {{name}} (spausdintuvo id {{id}}) su {{nozzle}} mm antgaliu.",
+        "group": {
+          "layers": "Sluoksniai",
+          "walls": "Sienelės ir apvalkalai",
+          "infill": "Užpildas",
+          "support": "Atramos",
+          "adhesion": "Sukibimas su platforma",
+          "finish": "Apdaila"
+        },
+        "setting": {
+          "layer_height": "Sluoksnio aukštis",
+          "wall_loops": "Sienelės",
+          "top_shell_layers": "Viršutiniai sluoksniai",
+          "bottom_shell_layers": "Apatiniai sluoksniai",
+          "top_shell_thickness": "Viršaus storis",
+          "wall_generator": "Sienelių generatorius",
+          "sparse_infill_density": "Užpildo tankis",
+          "sparse_infill_pattern": "Užpildo raštas",
+          "enable_support": "Atramos",
+          "support_type": "Atramų tipas",
+          "support_threshold_angle": "Atramų kampas",
+          "support_on_build_plate_only": "Atramos tik nuo platformos",
+          "brim_type": "Kraštas",
+          "brim_width": "Krašto plotis",
+          "raft_layers": "Plausto sluoksniai",
+          "seam_position": "Siūlės vieta",
+          "seam_slope_type": "Nuožulni siūlė",
+          "wall_sequence": "Sienelių tvarka",
+          "top_surface_pattern": "Viršaus raštas",
+          "ironing_type": "Lyginimas",
+          "fuzzy_skin": "Šiurkštus paviršius",
+          "spiral_mode": "Spiralinė vaza"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Klasikinis",
+          "grid": "Tinklelis",
+          "gyroid": "Giroidas",
+          "cubic": "Kubinis",
+          "adaptivecubic": "Prisitaikantis kubinis",
+          "triangles": "Trikampiai",
+          "honeycomb": "Korys",
+          "lightning": "Žaibas",
+          "zig_zag": "Tiesinis",
+          "concentric": "Koncentrinis",
+          "normal_auto_": "Įprastos",
+          "tree_auto_": "Medžio",
+          "no_brim": "Nėra",
+          "outer_only": "Išorinis",
+          "auto_brim": "Automatinis",
+          "aligned": "Sulygiuota",
+          "nearest": "Artimiausia",
+          "back": "Gale",
+          "random": "Atsitiktinė",
+          "none": "Nėra",
+          "external": "Išorinė sienelė",
+          "all": "Visos sienelės",
+          "inner_wall_outer_wall": "Pirma vidinės",
+          "outer_wall_inner_wall": "Pirma išorinės",
+          "inner_outer_inner_wall": "Vidinė, išorinė, vidinė",
+          "monotonic": "Monotoninis",
+          "monotonicline": "Monotoninės linijos",
+          "no_ironing": "Nėra",
+          "topmost": "Aukščiausias paviršius",
+          "top": "Visi viršutiniai paviršiai",
+          "solid": "Visi vientisi sluoksniai"
+        },
+        "preset": {
+          "standard": {
+            "title": "Standartinis",
+            "purpose": "Kasdienės detalės"
+          },
+          "fine": {
+            "title": "Smulkios detalės",
+            "purpose": "Figūrėlės, smulkus tekstas"
+          },
+          "draft": {
+            "title": "Greitas juodraštis",
+            "purpose": "Prototipai, tinkamumo bandymai"
+          },
+          "strong": {
+            "title": "Tvirtas",
+            "purpose": "Laikikliai, kabliai, krumpliaračiai"
+          },
+          "outdoor": {
+            "title": "Lauke",
+            "purpose": "Saulė ir lietus"
+          },
+          "water": {
+            "title": "Sąlytis su vandeniu",
+            "purpose": "Vazonai, padėklai"
+          },
+          "toy": {
+            "title": "Žaislas",
+            "purpose": "Tvirtas, vaikams"
+          },
+          "flexible": {
+            "title": "Lankstus",
+            "purpose": "TPU rankenos, buferiai"
+          },
+          "heat": {
+            "title": "Atsparus karščiui",
+            "purpose": "Automobiliai, varikliai, lempos"
+          },
+          "vase": {
+            "title": "Vaza",
+            "purpose": "Viena ištisinė sienelė"
+          },
+          "smooth": {
+            "title": "Lygus viršus",
+            "purpose": "Ženklai, dangteliai"
+          }
+        },
+        "check": {
+          "material": "Šablonui „{{preset}}“ labiau tinka {{suits}} nei {{material}}.",
+          "not_carried": "{{slicer}} iš 3MF neperskaito: {{keys}}. Nustatykite juos ten.",
+          "food_contact": "Spausdinimo profilis nepadaro detalės saugios maistui: svarbu ir medžiaga, spausdintuvo dalys bei valymas.",
+          "toy": "Suapvalinkite aštrius kraštus ir mažiems vaikams venkite smulkių atskirų dalių.",
+          "vase_bodies": "Spiralinė vaza spausdina vieną kūną viena sienele: palikite po vieną kūną plokštėje."
+        }
+      },
+      "save": {
+        "destination": "Kur išsaugoti",
+        "newModel": "Naujas modelis",
+        "addToModel": "Pridėti prie modelio",
+        "pickModel": "Jūsų modeliai",
+        "profiles_one": "{{count}} profilis",
+        "profiles_few": "{{count}} profiliai",
+        "profiles_many": "{{count}} profilio",
+        "profiles_other": "{{count}} profilių",
+        "noProfiles": "Profilių dar nėra",
+        "chooseMyself": "Pasirinkti pačiam",
+        "chooseMyselfHint": "Šablonai ir nustatymai",
+        "suggestAiHint": "Pagal paskirtį",
+        "without": "Išsaugoti be profilio",
+        "withoutHint": "Tik geometrija",
+        "editProfile": "Redaguoti",
+        "profileName": "Profilio pavadinimas",
+        "askAi": "Leisti parinkti DI",
+        "willHave_one": "„{{name}}“ turės {{count}} profilį",
+        "willHave_few": "„{{name}}“ turės {{count}} profilius",
+        "willHave_many": "„{{name}}“ turės {{count}} profilio",
+        "willHave_other": "„{{name}}“ turės {{count}} profilių",
+        "addProfile": "Pridėti profilį",
+        "addedProfile": "„{{profile}}“ pridėtas prie „{{name}}“"
       }
     },
     "chats": {

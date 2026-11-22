@@ -4679,7 +4679,9 @@
         "features": "Objets / Plateaux",
         "properties": "Propriétés",
         "hide": "Masquer {{panel}}",
-        "show": "Afficher {{panel}}"
+        "show": "Afficher {{panel}}",
+        "print": "Impression",
+        "rightPanel": "Propriétés / Impression"
       },
       "viewCube": {
         "label": "Cube de vue : cliquez sur une face, une arête ou un coin pour regarder de là, faites-le glisser pour tourner la vue",
@@ -5164,6 +5166,179 @@
           "snap": "Accrocher à la grille",
           "snapHelp": "Les points d’esquisse et les corps déplacés s’accrochent aux lignes les plus fines visibles. Désactivé, ils vont là où vous pointez."
         }
+      },
+      "printProfile": {
+        "title": "Profil d’impression",
+        "presets": "Préréglages",
+        "empty": "Pas encore de profil d’impression",
+        "emptyHint": "Choisissez un préréglage pour cette conception, ou laissez l’IA choisir selon son usage.",
+        "choosePreset": "Choisir un préréglage",
+        "change": "Changer",
+        "changed": "modifié",
+        "custom": "Personnalisé",
+        "suggestAi": "Suggérer avec l’IA",
+        "aiWorking": "L’IA choisit…",
+        "suggested": "Suggéré",
+        "suggestedPreset": "Suggestion : {{preset}}",
+        "byAi": "Choisi par l’IA",
+        "slicer": "Trancheur",
+        "printer": "Imprimante",
+        "anyPrinter": "N’importe quelle imprimante",
+        "material": "Matériau",
+        "anyMaterial": "N’importe quel matériau",
+        "settings": "Réglages",
+        "addSetting": "Ajouter un réglage",
+        "reset": "Utiliser la valeur du trancheur",
+        "nativeName": "Dans {{slicer}} : {{name}}",
+        "notCarried": "{{slicer}} ne lit pas ce réglage dans un 3MF : réglez-le là-bas.",
+        "remove": "Supprimer le profil d’impression",
+        "on": "Activé",
+        "off": "Désactivé",
+        "aiPrompt": "Choisis un profil d’impression pour cette conception selon son usage : ce que j’ai demandé et les descriptions des modèles dont elle est issue. Applique-le avec l’outil de profil d’impression et dis-moi pourquoi en une phrase.",
+        "aiPromptSlicer": "Je tranche avec {{name}} (identifiant de trancheur {{id}}).",
+        "aiPromptPrinter": "Mon imprimante est la {{name}} (identifiant d’imprimante {{id}}) avec une buse de {{nozzle}} mm.",
+        "group": {
+          "layers": "Couches",
+          "walls": "Parois et coques",
+          "infill": "Remplissage",
+          "support": "Supports",
+          "adhesion": "Adhérence au plateau",
+          "finish": "Finition"
+        },
+        "setting": {
+          "layer_height": "Hauteur de couche",
+          "wall_loops": "Parois",
+          "top_shell_layers": "Couches supérieures",
+          "bottom_shell_layers": "Couches inférieures",
+          "top_shell_thickness": "Épaisseur supérieure",
+          "wall_generator": "Générateur de parois",
+          "sparse_infill_density": "Densité de remplissage",
+          "sparse_infill_pattern": "Motif de remplissage",
+          "enable_support": "Supports",
+          "support_type": "Type de support",
+          "support_threshold_angle": "Angle de support",
+          "support_on_build_plate_only": "Supports depuis le plateau uniquement",
+          "brim_type": "Bordure",
+          "brim_width": "Largeur de bordure",
+          "raft_layers": "Couches de radeau",
+          "seam_position": "Position de la couture",
+          "seam_slope_type": "Couture en biseau",
+          "wall_sequence": "Ordre des parois",
+          "top_surface_pattern": "Motif supérieur",
+          "ironing_type": "Lissage",
+          "fuzzy_skin": "Surface texturée",
+          "spiral_mode": "Vase en spirale"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Classique",
+          "grid": "Grille",
+          "gyroid": "Gyroïde",
+          "cubic": "Cubique",
+          "adaptivecubic": "Cubique adaptatif",
+          "triangles": "Triangles",
+          "honeycomb": "Nid d’abeille",
+          "lightning": "Éclair",
+          "zig_zag": "Rectiligne",
+          "concentric": "Concentrique",
+          "normal_auto_": "Normal",
+          "tree_auto_": "Arborescent",
+          "no_brim": "Aucune",
+          "outer_only": "Extérieure",
+          "auto_brim": "Auto",
+          "aligned": "Alignée",
+          "nearest": "La plus proche",
+          "back": "Arrière",
+          "random": "Aléatoire",
+          "none": "Aucun",
+          "external": "Paroi extérieure",
+          "all": "Toutes les parois",
+          "inner_wall_outer_wall": "Intérieure d’abord",
+          "outer_wall_inner_wall": "Extérieure d’abord",
+          "inner_outer_inner_wall": "Intérieure, extérieure, intérieure",
+          "monotonic": "Monotone",
+          "monotonicline": "Lignes monotones",
+          "no_ironing": "Aucun",
+          "topmost": "Surface la plus haute",
+          "top": "Toutes les surfaces supérieures",
+          "solid": "Toutes les couches pleines"
+        },
+        "preset": {
+          "standard": {
+            "title": "Standard",
+            "purpose": "Pièces du quotidien"
+          },
+          "fine": {
+            "title": "Détails fins",
+            "purpose": "Figurines, petits textes"
+          },
+          "draft": {
+            "title": "Brouillon rapide",
+            "purpose": "Prototypes, essais d’ajustement"
+          },
+          "strong": {
+            "title": "Solide",
+            "purpose": "Supports, crochets, engrenages"
+          },
+          "outdoor": {
+            "title": "Extérieur",
+            "purpose": "Soleil et pluie"
+          },
+          "water": {
+            "title": "Contact avec l’eau",
+            "purpose": "Jardinières, bacs"
+          },
+          "toy": {
+            "title": "Jouet",
+            "purpose": "Robuste, pour enfants"
+          },
+          "flexible": {
+            "title": "Flexible",
+            "purpose": "Poignées, butées en TPU"
+          },
+          "heat": {
+            "title": "Résistant à la chaleur",
+            "purpose": "Voitures, moteurs, lampes"
+          },
+          "vase": {
+            "title": "Vase",
+            "purpose": "Une seule paroi continue"
+          },
+          "smooth": {
+            "title": "Dessus lisse",
+            "purpose": "Panneaux, couvercles"
+          }
+        },
+        "check": {
+          "material": "Pour « {{preset}} », {{suits}} convient mieux que {{material}}.",
+          "not_carried": "{{slicer}} ne lit pas {{keys}} dans un 3MF : réglez-les là-bas.",
+          "food_contact": "Un profil d’impression ne rend pas une pièce alimentaire : le matériau, les pièces de l’imprimante et le nettoyage comptent aussi.",
+          "toy": "Arrondissez les arêtes vives et évitez les petites pièces détachées pour les jeunes enfants.",
+          "vase_bodies": "Le vase en spirale imprime un seul corps avec une seule paroi : gardez un corps par plateau."
+        }
+      },
+      "save": {
+        "destination": "Où enregistrer",
+        "newModel": "Nouveau modèle",
+        "addToModel": "Ajouter à un modèle",
+        "pickModel": "Vos modèles",
+        "profiles_one": "{{count}} profil",
+        "profiles_many": "{{count}} profils",
+        "profiles_other": "{{count}} profils",
+        "noProfiles": "Pas encore de profils",
+        "chooseMyself": "Choisir moi-même",
+        "chooseMyselfHint": "Préréglages et réglages",
+        "suggestAiHint": "Selon son usage",
+        "without": "Enregistrer sans",
+        "withoutHint": "Géométrie seule",
+        "editProfile": "Modifier",
+        "profileName": "Nom du profil",
+        "askAi": "Laisser l’IA choisir",
+        "willHave_one": "« {{name}} » aura {{count}} profil",
+        "willHave_many": "« {{name}} » aura {{count}} profils",
+        "willHave_other": "« {{name}} » aura {{count}} profils",
+        "addProfile": "Ajouter le profil",
+        "addedProfile": "« {{profile}} » ajouté à « {{name}} »"
       }
     },
     "chats": {

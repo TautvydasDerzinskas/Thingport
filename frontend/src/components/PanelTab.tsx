@@ -10,6 +10,10 @@ const appear = keyframes`from { opacity: 0; } to { opacity: 1; }`;
 
 type Props = {
   label: string;
+  /** One of several stacked on the strip, each as tall as its label, rather than the strip's only tab. */
+  stacked?: boolean;
+  /** A dot after the label: something new to look at in the panel. */
+  badge?: boolean;
   /** The side of the page the panel is on: the tab reads up its edge, as a folder's tab would. */
   side: "left" | "right";
   onOpen: () => void;
@@ -17,11 +21,11 @@ type Props = {
   ariaLabel: string;
 };
 
-export default function PanelTab({ label, side, onOpen, ariaLabel }: Props) {
+export default function PanelTab({ label, side, onOpen, ariaLabel, stacked, badge }: Props) {
   return (
     <Box
       sx={(theme) => ({
-        height: "100%",
+        height: stacked ? "auto" : "100%",
         display: "flex",
         justifyContent: "center",
         animation: `${appear} 200ms ease-out`,
@@ -68,6 +72,13 @@ export default function PanelTab({ label, side, onOpen, ariaLabel }: Props) {
           sx={(theme) => ({ fontSize: 16, [theme.breakpoints.down("md")]: { transform: "rotate(-90deg)" } })}
         />
         {label}
+        {badge && (
+          <Box
+            component="span"
+            aria-hidden
+            sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "primary.main", flexShrink: 0 }}
+          />
+        )}
       </ButtonBase>
     </Box>
   );

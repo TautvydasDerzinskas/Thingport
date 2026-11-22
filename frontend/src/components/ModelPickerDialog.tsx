@@ -49,15 +49,12 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Models from the user's own library, found as they type (newest first with nothing typed). */
-export default function ModelPickerDialog({ title, confirmLabel, max, onClose, onPick, onUnauthorized }: Props) {
-  const { t } = useTranslation(["app", "common"]);
+/** The user's own models matching what they type, newest first with nothing typed: null while the first page loads. */
+export function useLibraryModels(onUnauthorized?: () => void) {
   const [query, setQuery] = React.useState("");
   const debounced = useDebouncedValue(query.trim(), 250);
   const [models, setModels] = React.useState<Print[] | null>(null);
   const [failed, setFailed] = React.useState(false);
-  const [picked, setPicked] = React.useState<Print[]>([]);
-  const pickedIds = new Set(picked.map((model) => model.id));
 
   React.useEffect(() => {
     let current = true;
@@ -76,6 +73,16 @@ export default function ModelPickerDialog({ title, confirmLabel, max, onClose, o
       current = false;
     };
   }, [debounced, onUnauthorized]);
+
+  return { query, setQuery, debounced, models, failed };
+}
+
+/** Models from the user's own library, found as they type (newest first with nothing typed). */
+export default function ModelPickerDialog({ title, confirmLabel, max, onClose, onPick, onUnauthorized }: Props) {
+  const { t } = useTranslation(["app", "common"]);
+  const { query, setQuery, debounced, models, failed } = useLibraryModels(onUnauthorized);
+  const [picked, setPicked] = React.useState<Print[]>([]);
+  const pickedIds = new Set(picked.map((model) => model.id));
 
   const toggle = (model: Print) => {
     if (max === 1) {

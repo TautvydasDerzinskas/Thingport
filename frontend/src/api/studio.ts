@@ -222,7 +222,11 @@ export const studioApi = {
     return res.json();
   },
   /** Saves the design to the library as a new model; `picture_id` is the picture to show it by. */
-  saveToLibrary: async (id: string, body: { name?: string; picture_id?: string }) => {
+  /** As a new model, or with `model_id` as one more print profile of that model. */
+  saveToLibrary: async (
+    id: string,
+    body: { name?: string; picture_id?: string; model_id?: string; profile_name?: string },
+  ) => {
     const saved = await request<{ model: { id: string; name: string; title: string | null } }>(
       `${design(id)}/save-to-library`,
       "POST",
