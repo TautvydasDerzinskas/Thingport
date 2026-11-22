@@ -2,6 +2,14 @@ function question(prompt, options, correct, explanation, article, points = 1, pi
   return { prompt, options, correct, explanation, article, points, picture };
 }
 
+// Answered by picking one of four defect photos: its options are the defects' article ids.
+function pick(prompt, options, correct, explanation, article, points = 1) {
+  return { prompt, options, correct, explanation, article, points, kind: "pictures" };
+}
+
+// A question shown beside one of diagrams.js's drawings.
+const drawn = (diagram, item) => ({ ...item, diagram });
+
 export const questionBank = [
   question(
     "Which material is a good starting point for a rigid indoor fit-check prototype?",
@@ -10,17 +18,20 @@ export const questionBank = [
     "PLA is usually easy to print and holds detail well at room temperature.",
     "pla",
   ),
-  question(
-    "What is the main job of a brim?",
-    [
-      "Hide the wall seam",
-      "Strengthen each layer bond",
-      "Increase the material’s flow capacity",
-      "Increase the first layer’s contact area",
-    ],
-    [3],
-    "A brim extends the base and helps it resist peeling or tipping.",
-    "brim",
+  drawn(
+    "adhesion",
+    question(
+      "What is the main job of a brim?",
+      [
+        "Hide the wall seam",
+        "Strengthen each layer bond",
+        "Increase the material’s flow capacity",
+        "Increase the first layer’s contact area",
+      ],
+      [3],
+      "A brim extends the base and helps it resist peeling or tipping.",
+      "brim",
+    ),
   ),
   question(
     "Which part melts the filament before it leaves the nozzle?",
@@ -74,17 +85,20 @@ export const questionBank = [
     "TPU is available in a range of flexible grades. Compare hardness on the same Shore scale.",
     "tpu",
   ),
-  question(
-    "What is the seam on a closed filament-printed wall?",
-    [
-      "The fan duct’s shadow",
-      "The meeting point where the wall starts and ends",
-      "The gap between the build plate and the lowest layer",
-      "The junction between infill and a support",
-    ],
-    [1],
-    "Starting and stopping the extrusion at the perimeter’s join can leave a small mark.",
+  drawn(
     "seam",
+    question(
+      "What is the seam on a closed filament-printed wall?",
+      [
+        "The fan duct’s shadow",
+        "The meeting point where the wall starts and ends",
+        "The gap between the build plate and the lowest layer",
+        "The junction between infill and a support",
+      ],
+      [1],
+      "Starting and stopping the extrusion at the perimeter’s join can leave a small mark.",
+      "seam",
+    ),
   ),
   question(
     "The upper half of a test cube is abruptly displaced sideways. What is the symptom called?",
@@ -100,19 +114,25 @@ export const questionBank = [
     "Nylon and water-soluble supports are examples of materials that can pick up moisture quickly.",
     "hygroscopic",
   ),
-  question(
-    "What object starts as a separate outline around the part and can prime extrusion?",
-    ["Brim", "Raft", "Skirt", "Bridge"],
-    [2],
-    "A skirt can prime the nozzle and show initial flow. The outline stays separate from the part.",
-    "skirt",
+  drawn(
+    "adhesion",
+    question(
+      "What object starts as a separate outline around the part and can prime extrusion?",
+      ["Brim", "Raft", "Skirt", "Bridge"],
+      [2],
+      "A skirt can prime the nozzle and show initial flow. The outline stays separate from the part.",
+      "skirt",
+    ),
   ),
-  question(
-    "When the same part prints with a finer layer height, what usually increases?",
-    ["Nozzle diameter", "The number of layers", "Filament diameter", "Build plate size"],
-    [1],
-    "A thinner layer height divides the same part height into more layers.",
-    "layer-height",
+  drawn(
+    "layer-line",
+    question(
+      "When the same part prints with a finer layer height, what usually increases?",
+      ["Nozzle diameter", "The number of layers", "Filament diameter", "Build plate size"],
+      [1],
+      "A thinner layer height divides the same part height into more layers.",
+      "layer-height",
+    ),
   ),
   question(
     "Which reading is a typical unit of volumetric flow?",
@@ -564,17 +584,20 @@ export const questionBank = [
     "A sealed container slows moisture uptake. A dry box can also keep sensitive filament dry during use.",
     "wet-filament",
   ),
-  question(
-    "Where does elephant’s foot typically show up?",
-    [
-      "In the middle of a bridge",
-      "At the top of a sharp corner",
-      "Across every layer above a collision",
-      "At the base of the part",
-    ],
-    [3],
-    "The bottom layers flare outward and can interfere with a mating feature.",
+  drawn(
     "elephant-foot",
+    question(
+      "Where does elephant’s foot typically show up?",
+      [
+        "In the middle of a bridge",
+        "At the top of a sharp corner",
+        "Across every layer above a collision",
+        "At the base of the part",
+      ],
+      [3],
+      "The bottom layers flare outward and can interfere with a mating feature.",
+      "elephant-foot",
+    ),
   ),
   question(
     "Which printer motion layout commonly moves the plate back and forth in Y?",
@@ -661,17 +684,20 @@ export const questionBank = [
     "Flow ratio scales how much filament is sent for a path. Confirm feeding first.",
     "flow-ratio",
   ),
-  question(
-    "What makes a printer’s first-layer calibration meaningful?",
-    [
-      "A greater layer count",
-      "A new slicer icon",
-      "A nozzle gap that leaves attached, joined lines",
-      "A perfectly vertical seam",
-    ],
-    [2],
-    "Joined, slightly flattened roads indicate good contact without excess squish.",
-    "first-layer",
+  drawn(
+    "first-layer-gap",
+    question(
+      "What makes a printer’s first-layer calibration meaningful?",
+      [
+        "A greater layer count",
+        "A new slicer icon",
+        "A nozzle gap that leaves attached, joined lines",
+        "A perfectly vertical seam",
+      ],
+      [2],
+      "Joined, slightly flattened roads indicate good contact without excess squish.",
+      "first-layer",
+    ),
   ),
   question(
     "What defines retraction?",
@@ -1213,16 +1239,391 @@ export const questionBank = [
     "nozzle-guide",
     3,
   ),
+  question(
+    "Which defect does this pair of test posts show?",
+    ["Stringing", "Layer shift", "Z banding", "Elephant’s foot"],
+    [0],
+    "Thin threads stretched across the travel gap are strings. Molten plastic oozed while the nozzle crossed the gap.",
+    "stringing",
+    1,
+    "stringing",
+  ),
+  question(
+    "The lowest layers of this cube flare outward. Which slicer setting is made to correct it?",
+    ["Elephant foot compensation", "Ironing", "Seam position", "Bridge flow"],
+    [0],
+    "Elephant foot compensation shrinks the first layer slightly. Check first that the first layer isn’t squished too hard.",
+    "elephant-foot",
+    1,
+    "elephant-foot",
+  ),
+  question(
+    "What usually starts a failure like this one?",
+    [
+      "The part or a feature lost its footing and the nozzle kept extruding into the air",
+      "The roof had too few top layers",
+      "The seam was set to random",
+      "The filament was too dry",
+    ],
+    [0],
+    "Once the part comes loose or a feature starts in mid-air, the plastic has nothing to land on and piles up in loops.",
+    "spaghetti",
+    1,
+    "spaghetti",
+  ),
+  question(
+    "This wall has thin, broken lines and small holes in bands. What is it called?",
+    ["Under-extrusion", "Over-extrusion", "Pillowing", "Ringing"],
+    [0],
+    "Too little plastic reaches the wall, so lines thin out and leave holes. Check feeding, the nozzle and the flow limit.",
+    "under-extrusion",
+    1,
+    "under-extrusion",
+  ),
+  question(
+    "This tower split open along one layer, and the layers above it still line up. What is the defect?",
+    ["Layer separation", "Layer shift", "Warping", "Z banding"],
+    [0],
+    "A split along one layer plane with aligned layers above it is poor layer bonding, not a lost position.",
+    "layer-separation",
+    1,
+    "layer-separation",
+  ),
+  question(
+    "Filament sags under the span between these two legs. Which test tells you the most?",
+    [
+      "A bridge test at the same layer height, changing bridge speed, flow or fan one at a time",
+      "A first-layer patch in each corner of the plate",
+      "A retraction test between two posts",
+      "A temperature tower for the first layer only",
+    ],
+    [0],
+    "A bridge test isolates the span. Changing one bridge setting at a time shows which one helped.",
+    "bridging-guide",
+    1,
+    "poor-bridging",
+  ),
+  question(
+    "Gaps like these appear on fast infill and outer walls, but slow walls print solid. What should you check first?",
+    [
+      "Whether those speeds ask for more plastic than the hotend’s maximum volumetric speed",
+      "The number of top layers",
+      "The brim width",
+      "The seam position",
+    ],
+    [0],
+    "When only fast lines starve, the hotend can’t melt plastic quickly enough. The flow limit caps the speed before gaps appear.",
+    "print-time",
+    2,
+    "under-extrusion",
+  ),
+  question(
+    "A press-fit lid binds only at the bottom edge of a box, where the base flares like this. What is the best first change?",
+    [
+      "Raise elephant foot compensation a little and check the first layer isn’t squished",
+      "Add two more walls",
+      "Raise infill to 40%",
+      "Turn on ironing",
+    ],
+    [0],
+    "Only the flared base is oversized. Shrinking the first layer fixes the fit without changing the rest of the box.",
+    "elephant-foot",
+    2,
+    "elephant-foot",
+  ),
+  question(
+    "Which two changes are sensible first tests for strings like these on a PETG print?",
+    [
+      "Dry the spool and compare with the same profile",
+      "Print a temperature test 5°C lower, within the filament’s range",
+      "Add a brim",
+      "Add more top layers",
+    ],
+    [0, 1],
+    "Wet filament and a hot nozzle are the usual causes of PETG strings. Change one at a time to see which helped.",
+    "stringing",
+    3,
+    "stringing",
+  ),
+  question(
+    "Which two checks help prevent a failure like this on the next try?",
+    [
+      "Check first-layer adhesion and the build surface",
+      "Check that supports reach every feature that starts in mid-air",
+      "Set the seam to random",
+      "Turn on ironing",
+    ],
+    [0, 1],
+    "Spaghetti starts when the part comes loose or a feature has nothing under it. Adhesion and supports address both.",
+    "spaghetti",
+    3,
+    "spaghetti",
+  ),
+  question(
+    "Which two changes can improve layer bonding on an ASA part that split like this?",
+    [
+      "Reduce part cooling to what the filament profile recommends",
+      "Keep drafts away with a stable enclosure",
+      "Add more top layers",
+      "Make only the brim wider",
+    ],
+    [0, 1],
+    "Layers bond poorly when they cool too fast. Less fan and a stable warm chamber help shrink-prone materials.",
+    "layer-separation",
+    3,
+    "layer-separation",
+  ),
+  question(
+    "PrusaSlicer’s “Perimeters” setting is called what in Bambu Studio and OrcaSlicer?",
+    ["Wall loops", "Top shell layers", "Sparse infill density", "Threshold angle"],
+    [0],
+    "Both count the walls around each layer. Cura calls the same setting Wall Line Count.",
+    "key-settings",
+  ),
+  question(
+    "What does UltiMaker Cura call PrusaSlicer’s “Extrusion multiplier”?",
+    ["Flow", "Infill Density", "Wall Line Count", "Support Top Distance"],
+    [0],
+    "All three slicers scale the extruded amount with it. Bambu Studio and OrcaSlicer call it Flow ratio.",
+    "key-settings",
+  ),
+  drawn(
+    "threshold",
+    question(
+      "A guide sets the support threshold angle to 30° in OrcaSlicer. Roughly what gives similar supports in Cura’s Support Overhang Angle?",
+      ["About 60°", "About 30°", "0°", "90°"],
+      [0],
+      "OrcaSlicer measures the overhang from the horizontal and Cura from the vertical, so 30° in one is about 60° in the other.",
+      "key-settings",
+      2,
+    ),
+  ),
+  question(
+    "Which change usually adds strength to a wall-mounted hook for the least extra time?",
+    [
+      "Add walls and print it on its side so the layers run along the arm",
+      "Switch to 0.12 mm layers",
+      "Turn on ironing",
+      "Print it upright with 100% infill",
+    ],
+    [0],
+    "Walls carry most of the load in a small part, and layers along the arm can’t split apart under it.",
+    "key-settings",
+    2,
+  ),
+  question(
+    "A flat roof shows gaps after you switched to finer layers. Which two settings help most?",
+    ["A thicker top shell or more top layers", "Denser infill under the roof", "A wider brim", "A random seam"],
+    [0, 1],
+    "Fine layers make a thinner roof from the same layer count. More roof thickness and closer backing let it close.",
+    "shell-settings",
+    3,
+  ),
+  question(
+    "Which setting prints a single continuous outer wall with no seam?",
+    ["Spiral vase", "Ironing", "Arachne wall generator", "Aligned seam"],
+    [0],
+    "Spiral vase raises the nozzle steadily as it goes round, so there is no start and end point on the wall.",
+    "key-settings",
+  ),
+  question(
+    "What does ironing do?",
+    [
+      "Passes over flat top faces with a little flow to smooth them",
+      "Shrinks the first layer",
+      "Adds walls around holes",
+      "Dries the filament before printing",
+    ],
+    [0],
+    "Ironing smooths top faces such as lids and signs. It adds time, so use it on the topmost surface only.",
+    "key-settings",
+  ),
+  drawn(
+    "seam",
+    question(
+      "Which setting moves the zipper line of wall starts to the back of a part?",
+      ["Seam position", "Elephant foot compensation", "Bridge flow", "Top Z distance"],
+      [0],
+      "Seam position chooses where each wall loop starts. Rear or aligned keeps the line off the show face.",
+      "key-settings",
+    ),
+  ),
+  drawn(
+    "bridge-overhang",
+    question(
+      "In this side view, what is feature B called?",
+      ["A bridge", "An overhang", "A raft", "A brim"],
+      [0],
+      "B spans between two anchors, so it prints as a bridge. A sticks out from one side only, which makes it an overhang.",
+      "bridge",
+    ),
+  ),
+  drawn(
+    "bridge-overhang",
+    question(
+      "Feature A in this side view droops at its tip. Which two changes are most likely to help?",
+      [
+        "Add support under the ledge or turn it into a chamfer",
+        "Tune overhang cooling and speed with a small test",
+        "Add more top layers to the pillar",
+        "Use a wider brim",
+      ],
+      [0, 1],
+      "A ledge anchored on one side only needs support, a gentler angle, or cooling and speed that let each line set before the next.",
+      "overhang",
+      3,
+    ),
+  ),
+  drawn(
+    "layer-line",
+    question(
+      "In this cross-section, which mark shows the layer height?",
+      [
+        "h, the height of one road",
+        "w, the width of one road",
+        "The opening of the nozzle",
+        "The height of the whole stack",
+      ],
+      [0],
+      "Layer height is how tall each road is. Line width is how wide it is, and it usually starts near the nozzle diameter.",
+      "layer-height",
+    ),
+  ),
+  drawn(
+    "first-layer-gap",
+    question(
+      "Which cross-section shows a well-set first layer?",
+      [
+        "B, slightly flattened roads that just touch",
+        "A, round roads with gaps between them",
+        "C, thin roads with ridges pushed up between them",
+        "Any of them, as long as the part sticks",
+      ],
+      [0],
+      "A nozzle set too high leaves round, separate roads. One set too low squashes them thin and pushes up ridges.",
+      "first-layer",
+    ),
+  ),
+  drawn(
+    "threshold",
+    question(
+      "In OrcaSlicer, you raise the threshold angle θ shown here from 30° to 45°. What happens to the supports?",
+      [
+        "Steeper slopes get supports too, so there are more supports",
+        "Only flatter slopes get supports, so there are fewer",
+        "Supports stop touching the build plate",
+        "Nothing changes until supports are painted",
+      ],
+      [0],
+      "OrcaSlicer supports overhangs flatter than the threshold, measured from the horizontal. A higher threshold includes steeper slopes.",
+      "key-settings",
+      2,
+    ),
+  ),
+  drawn(
+    "walls-infill",
+    question(
+      "In this top view of one layer, what are the two loops around the outside?",
+      ["Walls, also called perimeters", "Sparse infill", "A brim", "Support interface"],
+      [0],
+      "Walls trace the outline of each layer. Infill fills the space inside them.",
+      "perimeter",
+    ),
+  ),
+  pick(
+    "Which print shows elephant’s foot?",
+    ["elephant-foot", "warping", "layer-shift", "z-banding"],
+    [0],
+    "The lowest layers flare out past the wall. Elephant foot compensation or a slightly larger first-layer gap fixes it.",
+    "elephant-foot",
+  ),
+  pick(
+    "Which print shows warping?",
+    ["warping", "first-layer", "elephant-foot", "layer-separation"],
+    [0],
+    "A corner that stuck at first and then lifted as the part cooled is warping.",
+    "warping",
+  ),
+  pick(
+    "Which print shows a layer shift?",
+    ["layer-shift", "z-banding", "ringing", "layer-separation"],
+    [0],
+    "Every layer above one height moved sideways at once, which points to lost position, not poor bonding.",
+    "layer-shift",
+  ),
+  pick(
+    "Which print shows Z banding?",
+    ["z-banding", "ringing", "seam-blobs", "layer-shift"],
+    [0],
+    "Evenly spaced horizontal bands around the whole tower are Z banding. Ringing runs vertically after a feature.",
+    "z-banding",
+  ),
+  pick(
+    "Which print shows ringing after a sharp feature?",
+    ["ringing", "z-banding", "seam-blobs", "over-extrusion"],
+    [0],
+    "Ringing echoes fade along a wall just after a sharp feature, from vibration when the head changes direction.",
+    "ringing",
+  ),
+  pick(
+    "Which print shows stringing?",
+    ["stringing", "spaghetti", "poor-bridging", "wet-filament"],
+    [0],
+    "Fine threads across the open gap are strings left by plastic that oozed during travel.",
+    "stringing",
+  ),
+  pick(
+    "Which wall shows under-extrusion?",
+    ["under-extrusion", "wet-filament", "over-extrusion", "top-gaps"],
+    [0],
+    "Rows of narrow holes and thin lines mean too little plastic reached the wall.",
+    "under-extrusion",
+  ),
+  pick(
+    "Which print shows seam blobs?",
+    ["seam-blobs", "z-banding", "wet-filament", "ringing"],
+    [0],
+    "A single vertical line of bumps is where each wall loop starts and ends.",
+    "seam-blobs",
+  ),
+  pick(
+    "Which print most likely came from a damp spool?",
+    ["wet-filament", "layer-separation", "z-banding", "top-gaps"],
+    [0],
+    "Scattered pits and rough spots come from moisture turning to steam in the hotend. Dry the spool and compare.",
+    "wet-filament",
+    2,
+  ),
+  pick(
+    "Which two prints show a problem with the first layers?",
+    ["first-layer", "elephant-foot", "layer-shift", "ringing"],
+    [0, 1],
+    "Round, separated first-layer lines and a flared base both come from how the first layers meet the plate.",
+    "first-layer",
+    3,
+  ),
+  pick(
+    "On a PLA print, which two problems would more part cooling most likely improve?",
+    ["small-layer-overheating", "poor-bridging", "layer-shift", "wet-filament"],
+    [0, 1],
+    "A soft, bent tip and sagging bridge lines both cool too slowly. A layer shift and moisture pits have other causes.",
+    "temperature-cooling",
+    3,
+  ),
 ];
 
 const mix = [
-  [1, 20, 2],
+  [1, 20, 5],
   [2, 5, 1],
   [3, 5, 1],
 ];
 export const questionCount = mix.reduce((sum, [, count]) => sum + count, 0);
 export const totalPoints = mix.reduce((sum, [points, count]) => sum + points * count, 0);
 export const passingPoints = Math.ceil(totalPoints * 0.8);
+export const pictureCount = mix.reduce((sum, [, , pictures]) => sum + pictures, 0);
+
+/** Shown with a defect photo, or answered by picking one: the mix guarantees each attempt some of these. */
+export const isPictured = (item) => Boolean(item.picture) || item.kind === "pictures";
 
 function shuffled(items, random) {
   const result = [...items];
@@ -1246,8 +1647,8 @@ export function makeAttempt(previous = [], random = Math.random) {
     ];
     const chosen = shuffled(
       [
-        ...ranked.filter((item) => item.picture).slice(0, pictures),
-        ...ranked.filter((item) => !item.picture).slice(0, count - pictures),
+        ...ranked.filter(isPictured).slice(0, pictures),
+        ...ranked.filter((item) => !isPictured(item)).slice(0, count - pictures),
       ],
       random,
     );
@@ -1265,12 +1666,17 @@ export function makeAttempt(previous = [], random = Math.random) {
   });
 }
 
+/** The points one answer earns: all of them when the selected set is exactly the correct one, otherwise none. */
+export function gradeItem(item, selected = new Set()) {
+  return selected.size === item.correct.length && item.correct.every((choice) => selected.has(choice))
+    ? item.points
+    : 0;
+}
+
 export function gradeQuiz(questions, answers) {
   const items = questions.map((item, index) => {
     const selected = answers[index] ?? new Set();
-    const earned =
-      selected.size === item.correct.length && item.correct.every((choice) => selected.has(choice)) ? item.points : 0;
-    return { ...item, selected, earned };
+    return { ...item, selected, earned: gradeItem(item, selected) };
   });
   const score = items.reduce((sum, item) => sum + item.earned, 0);
   return { score, passed: score >= passingPoints, items };

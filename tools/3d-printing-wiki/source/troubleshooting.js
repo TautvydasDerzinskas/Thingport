@@ -606,6 +606,274 @@ const additionalIssues = [
     source: "https://www.klipper3d.org/Skew_Correction.html",
     keywords: "xy skew slant crooked print leaning taper out of square diagonal frame",
   },
+  {
+    id: "brittle-filament",
+    title: "Filament snaps in the feed path",
+    summary: "The strand breaks inside a tube, feeder or multi-material unit, often while loading or retracting.",
+    check:
+      "Pull a short length off the spool and bend it gently into a loop. A strand that snaps cleanly is brittle. Breaks that always happen at the same bend, gear or tube joint point to the feed path rather than the spool.",
+    causes:
+      "Old or damp filament can turn brittle. Resting in a tight curve or a sharp tube bend, a pinching idler and repeated retractions through a feeder can also crack the strand.",
+    fixes: [
+      "With the printer cool and idle, remove the broken pieces using the maker’s procedure for that feeder, tube or hub. Don’t force a fragment past a coupler.",
+      "Dry the spool to the maker’s schedule and store it sealed. Drying helps a damp spool, but filament that stays brittle afterward may need replacing.",
+      "Route tubes so the strand never waits in a tight bend, and check idler tension against the printer’s instructions.",
+      "If breaks happen only during filament changes, compare a fresh spool before changing the change sequence or retraction.",
+    ],
+    verify:
+      "The loop test bends without snapping, and the spool loads, prints and unloads several times with no fragment left behind.",
+    related: ["wet-filament", "filament-drying", "pla", "extruder", "bowden"],
+    source: "https://wiki.bambulab.com/en/x1/troubleshooting/broken-filament-anywhere",
+    keywords:
+      "filament breaking snapping brittle pla cracked filament broken in ptfe tube ams feeder snapped stuck in tube",
+  },
+  {
+    id: "feed-tangle",
+    title: "Spool tangles or feeding drags",
+    summary: "The spool stops turning, the strand pulls tight or a multi-material feeder reports a feed error.",
+    check:
+      "Watch the spool while the extruder pulls. A wrap trapped under a neighboring loop stops the spool suddenly. A smooth but heavy pull points to the holder, the spool hub or a long tube.",
+    causes:
+      "A free end released during unloading can slip under another wrap and form a knot. Stiff spool holders, unsupported reel sizes, kinked tubes and long routes add drag.",
+    fixes: [
+      "Pause or cancel the job. Hold the free end, find the crossed wrap and ease it free without kinking the filament, then rewind the slack.",
+      "Clip the free end into the spool’s hole every time before letting go of it.",
+      "Check that the holder turns freely and that the reel’s type and size suit the feeder. Use the maker’s adapter for cardboard reels if it requires one.",
+      "Route tubes in smooth curves, then test the feed with a long purge or a small part.",
+    ],
+    verify: "The spool turns smoothly through a full print and the feeder completes its loads without drag or errors.",
+    related: ["extruder-clicking", "under-extrusion", "bowden", "multimaterial-history", "print-stops"],
+    source: prusa("tangled-filament_421198"),
+    keywords: "tangled spool knot filament tangle spool stuck ams feed error ams jam spool holder drag cardboard spool",
+  },
+  {
+    id: "bulging-corners",
+    title: "Corners bulge and line width varies",
+    summary: "Corners swell or round over, while lines thin out just after each start or speed change.",
+    check:
+      "Print a thin-walled square or the slicer’s pressure advance test. A bulge at each corner followed by a thin stretch suggests nozzle pressure lagging behind the motion. Fat corners at every speed point to excess flow instead.",
+    causes:
+      "Molten filament compresses in the melt zone, so flow trails behind quick speed changes. Missing or uncalibrated pressure advance, high acceleration, soft filament and long Bowden paths make it more visible.",
+    fixes: [
+      "Check flow with the stock profile first. Tune flow and pressure separately, never together.",
+      "Run the slicer’s or firmware’s pressure advance calibration for the filament, nozzle and speed you use. Marlin calls its version Linear Advance.",
+      "Keep the value with the filament where your slicer or printer allows, since materials and colors can need different values. Lower acceleration if corners still swell.",
+    ],
+    verify: "On the same test at the same speeds, corners stay sharp and line ends match the middle of each line.",
+    related: ["pressure-advance", "over-extrusion", "seam-blobs", "flow-ratio", "bowden"],
+    source: "https://github.com/OrcaSlicer/OrcaSlicer/wiki/pressure_advance_calib",
+    keywords:
+      "bulging corners swollen corners rounded corners linear advance pressure advance k factor uneven line width corner blobs",
+  },
+  {
+    id: "vfa-ripples",
+    title: "Fine vertical ripples at certain speeds",
+    summary: "Even, closely spaced vertical lines cover flat walls, then fade or change at another speed.",
+    check:
+      "Print the slicer’s VFA speed tower, or a cube at several outer-wall speeds. Ripples that come and go with speed across whole faces suggest motor or belt resonance. Echoes that start at a corner and fade along the wall are ringing.",
+    causes:
+      "Stepper motors, belts and pulleys can vibrate at particular speeds. Belt tension, worn pulleys and loose parts make it worse. Input shaping reduces corner echoes but doesn’t always cure this pattern.",
+    fixes: [
+      "Inspect the tower and note the speed bands with the roughest surface.",
+      "Set the outer-wall speed outside those bands. Some slicers let a printer profile list speed ranges to avoid.",
+      "If ripples appear at every speed, inspect belts, pulleys and idlers per the service manual, and run the printer’s vibration calibration where offered.",
+    ],
+    verify: "The wall prints with less ripple at the chosen speed and corners stay as sharp as before.",
+    related: ["ringing", "z-banding", "input-shaping", "motion-history", "corexy"],
+    source: "https://github.com/OrcaSlicer/OrcaSlicer/wiki/vfa_calib",
+    keywords:
+      "vfa vertical fine artifacts vertical lines on walls salmon skin motor resonance belt texture ripples mrr",
+  },
+  {
+    id: "blobs-zits",
+    title: "Scattered blobs and zits",
+    summary: "Small bumps dot the walls instead of lining up along one seam.",
+    check:
+      "Turn on seam and retraction markers in the preview. Zits that match scattered seam points or retraction spots come from starts and stops. Bumps with no link to toolpath events point to moisture or feeding.",
+    causes:
+      "A random seam, many retractions on travel moves, pressure left in the nozzle when it stops, a nozzle near the top of its range, or damp filament.",
+    fixes: [
+      "Choose an aligned or rear seam instead of random, unless the shape has no good place to hide one.",
+      "Cut needless retractions with avoid crossing walls (combing in Cura), and check retraction and wipe with the slicer’s retraction test.",
+      "Dry the spool and test a slightly cooler nozzle within the material’s range. Calibrate pressure advance where your printer supports it.",
+    ],
+    verify: "A repeat print shows fewer bumps, and the marks that remain follow the seam you chose.",
+    related: ["seam-blobs", "seam", "retraction", "wet-filament", "pressure-advance"],
+    source: "https://github.com/OrcaSlicer/OrcaSlicer/wiki/retraction_calib",
+    keywords: "zits blobs pimples random bumps on surface scattered blobs retraction wipe random seam",
+  },
+  {
+    id: "travel-scars",
+    title: "Nozzle drags scars across top surfaces",
+    summary: "Thin lines or scratches cross a finished top surface between features.",
+    check:
+      "Match the scars to travel moves in the preview. Lines along travel paths over a finished top mean the nozzle is dragging. Raised or curled top edges that catch the nozzle suggest excess flow or curling.",
+    causes:
+      "Travel moves cross finished surfaces at the height of the last layer. Excess top flow, curled edges and oozing make contact more likely.",
+    fixes: [
+      "Turn on travel lift: Z hop in Bambu Studio and OrcaSlicer, Lift height in PrusaSlicer’s travel lift settings, Z Hop When Retracted in Cura. Limit it to top surfaces if the option exists, since lifting on every travel can add strings.",
+      "Keep travel inside the part with avoid crossing walls in Bambu Studio and OrcaSlicer, avoid crossing perimeters in PrusaSlicer or combing in Cura.",
+      "Calibrate top-surface flow and look for curled edges. Ironing can smooth a top that still shows marks.",
+    ],
+    verify: "The same top surface prints without scars, and the walls show no new stringing.",
+    related: ["z-hop", "travel-move", "retraction", "over-extrusion", "infill-collision", "stringing"],
+    source: "https://github.com/OrcaSlicer/OrcaSlicer/wiki/printer_extruder_z_hop",
+    keywords:
+      "z hop zhop nozzle scratches top surface travel marks scars lines on top avoid crossing walls combing lift z",
+  },
+  {
+    id: "one-side-overhangs",
+    title: "Overhangs droop on one side only",
+    summary: "The same overhang prints cleanly on one face and curls or sags on the opposite face.",
+    check:
+      "Print a small overhang test with the same angle facing four directions. If the bad side stays the same on the machine wherever the test sits, compare it with the direction the part-cooling air comes from.",
+    causes:
+      "Many toolheads cool from one side or through an uneven duct. A cracked or loose duct, a slow fan or plastic stuck in the duct weakens airflow further.",
+    fixes: [
+      "With the printer off and cool, check the part-cooling fan and duct for damage, debris or a loose fit using the service manual.",
+      "Rotate the part so its hardest overhang faces the strongest airflow. Slow the overhang walls if your slicer has a separate overhang speed.",
+      "Add supports or a chamfer under overhangs that still fail, or use an auxiliary fan if the printer has one and the material suits it.",
+    ],
+    verify: "The four-direction test shows a similar finish on every face, or the rotated part prints cleanly.",
+    related: ["poor-bridging", "overhang", "temperature-cooling", "orientation", "small-layer-overheating"],
+    source: cooling,
+    keywords: "one side overhang bad fan duct single fan side cooling uneven overhang curling one side droop",
+  },
+  {
+    id: "wall-gaps",
+    title: "Gaps between walls",
+    summary: "Thin slits run between perimeters, or between the inner wall and the solid fill.",
+    check:
+      "Find the gap in the slicer’s line-type preview. A gap in the preview means the wall widths don’t fill the space. A solid preview but a gappy print points to flow or feeding.",
+    causes:
+      "A wall thickness that isn’t a clean multiple of the line width, the classic wall generator leaving thin leftovers, gap fill turned off, or low flow.",
+    fixes: [
+      "Compare the variable-width wall generator, Arachne, with the classic one in the preview.",
+      "Check that gap fill is on for the region, or change the wall line width or count so the walls fill the space.",
+      "If the preview is closed, calibrate flow and rule out under-extrusion before changing wall widths.",
+    ],
+    verify:
+      "The preview and the print both show walls that touch along their whole length, with no new bulge on the outer wall.",
+    related: ["perimeter", "line-width", "under-extrusion", "infill-wall-gap", "missing-thin-walls"],
+    source: prusa("layers-and-perimeters_1748"),
+    keywords: "gap between perimeters wall gaps slits in walls gap fill arachne classic perimeters thin gaps in wall",
+  },
+  {
+    id: "infill-show-through",
+    title: "Infill pattern shows through the walls",
+    summary: "A faint grid or diagonal texture appears on outer walls or under thin top skins.",
+    check:
+      "Hold the part against a light. A texture that matches the infill in the preview is show-through, sometimes called infill ghosting. It is most visible on thin walls and light or translucent colors.",
+    causes:
+      "Too few walls, a high infill-to-wall overlap, infill printed before the walls, or thin translucent filament.",
+    fixes: [
+      "Add one wall loop and compare. An extra wall usually adds strength as well.",
+      "Reset infill overlap to the profile’s default and keep walls printing before infill.",
+      "Under top skins, add top layers or use denser infill. A more opaque filament helps with light colors.",
+    ],
+    verify: "The walls look even under the same light, with no new bulges where the infill meets them.",
+    related: ["infill", "perimeter", "top-layers", "infill-wall-gap", "shell-settings"],
+    source: "https://github.com/OrcaSlicer/OrcaSlicer/wiki/strength_settings_walls",
+    keywords:
+      "infill visible through walls infill ghosting see infill pattern outer wall translucent shadow grid show through",
+  },
+  {
+    id: "weak-parts",
+    title: "Parts break or flex too easily",
+    summary: "A part that looks fine snaps, cracks at a corner or bends more than expected in use.",
+    check:
+      "Examine the break. A clean split along one layer points to layer bonding or orientation. A crack from a sharp inside corner points to the design. A part that bends without breaking may need thicker walls or a stiffer material.",
+    causes:
+      "Load pulling across the layers, thin walls with sparse infill, sharp inside corners, a cold or fast print with weak bonds, damp filament, or a material that doesn’t suit the load or heat.",
+    fixes: [
+      "Orient the part so its main load runs along the printed lines rather than across the layers.",
+      "Add walls and top and bottom layers before raising infill. Walls often add more strength per gram, but test the real part.",
+      "Round sharp inside corners in CAD, and print within the material’s range from a dry spool for good bonding.",
+      "Pick a material for the load and temperature, such as PETG or ASA rather than PLA for a part that gets warm.",
+    ],
+    verify:
+      "A test piece with the new orientation and settings survives the real load, or fails somewhere other than the old break.",
+    related: ["anisotropy", "layer-separation", "orientation", "shell-settings", "petg"],
+    source: prusa("modeling-with-3d-printing-in-mind_164135"),
+    keywords:
+      "weak prints brittle parts break easily part strength stronger prints snapped part layer lines walls vs infill",
+  },
+  {
+    id: "wrong-size",
+    title: "Model prints at the wrong size",
+    summary: "A part comes out tiny, huge or slightly off from the size it was designed at.",
+    check:
+      "Compare the size in the slicer with the intended size. A factor of about 25.4 means inches read as millimeters. A factor of 10 or 1,000 suggests centimeters or meters. A small error, the same on every part, points to shrinkage or calibration.",
+    causes:
+      "STL files store no units, so slicers assume millimeters. A scale left on the object, material shrinkage or incorrectly configured axis motion can also change the size.",
+    fixes: [
+      "Re-export from CAD in millimeters, or use the slicer’s convert-from-inches option or a 2540% scale.",
+      "Reset the object’s scale to 100% and check the size fields in the object panel before slicing.",
+      "Measure a simple calibration part with a trusted tool. For a small consistent error, follow the printer maker’s calibration rather than scaling every model. Shrink-prone materials may take a shrinkage setting in the filament profile, where your slicer has one.",
+    ],
+    verify: "The slicer shows the intended dimensions and a test part measures within the tolerance you need.",
+    related: ["stl-3mf", "cad", "tolerance", "undersized-holes", "3mf-history"],
+    source: prusa("object-manipulation-panel_1757"),
+    keywords: "wrong size too small tiny model inches mm units scale 2540% shrinkage dimensions off model huge",
+  },
+  {
+    id: "broken-mesh",
+    title: "Slicer shows missing walls or holes from a broken mesh",
+    summary: "Layers go missing, walls vanish or the slicer warns about errors, open edges or a repaired model.",
+    check:
+      "Look for the slicer’s mesh error icon or repair notice, then scroll the layer preview for missing areas. A floating-region or empty-layer warning on a sound mesh is an orientation or support question instead.",
+    causes:
+      "The model isn’t a closed solid. Open edges, flipped faces, overlapping shells, self-intersections and surfaces with no thickness are common in mesh exports, sculpts and game assets.",
+    fixes: [
+      "Let the slicer repair the model, then check the preview again. Automatic repair can guess wrong on thin or detailed areas.",
+      "Fix the source: export a closed solid from CAD, or use a mesh tool to close holes, recalculate normals and merge shells.",
+      "If the designer offers a 3MF or STEP file, try it instead of the STL.",
+    ],
+    verify: "The slicer reports no errors and every layer of the preview shows the expected walls.",
+    related: ["manifold", "stl-3mf", "cad", "missing-thin-walls", "orientation", "support"],
+    source: prusa("corrupted-3d-models-for-printing_2205"),
+    keywords:
+      "non manifold nonmanifold broken mesh open edges model errors repair mesh missing layers holes in model flipped normals",
+  },
+  {
+    id: "print-stops",
+    title: "Print stops or pauses partway",
+    summary: "The printer pauses, cancels or simply halts mid-job, sometimes with no clear message.",
+    check:
+      "Read the screen, app or log first. A runout message, a temperature error and a lost connection each point somewhere different. Note the layer where it stopped and whether filament is still loaded.",
+    causes:
+      "The filament ran out or tangled, the runout sensor triggered falsely, extrusion stopped, a temperature fault halted the job, the power dropped, or a USB or network host stopped sending it.",
+    fixes: [
+      "After a runout or tangle, follow the printer’s resume procedure. Check that the part is still attached before resuming.",
+      "If the sensor triggers with filament present, clean or test it as the manual describes. Some printers let you turn it off for a single job.",
+      "Print from the printer’s own storage or queue rather than streaming from a computer that can sleep.",
+      "After a power cut, use the printer’s recovery feature if it has one. Consider a UPS for long jobs.",
+    ],
+    verify: "A long test job finishes, or pauses only when the filament really runs out and then resumes cleanly.",
+    related: ["feed-tangle", "temperature-error", "heat-creep-jam", "spaghetti", "gcode"],
+    source: prusa("filament-runout_916077"),
+    keywords:
+      "print stopped halfway paused print filament runout sensor power loss resume print usb disconnect print cancelled",
+  },
+  {
+    id: "homing-failure",
+    title: "Homing or probing fails before printing",
+    summary: "The printer stops during homing, bed leveling or calibration with an axis or probe error.",
+    check:
+      "Record the error code and the axis or step it names. A failure only from a cold start, only with one plate or only after a nozzle wipe narrows down the cause.",
+    causes:
+      "Filament or residue on a nozzle-contact probe, a missing or unsuitable plate for an inductive probe, an obstruction or binding axis, a loose cable, or vibration from the surface under the printer.",
+    fixes: [
+      "Turn the printer off and let it cool. Clear anything in the way of the axes and seat the build plate as the maker specifies.",
+      "Clean the nozzle tip as the manual prescribes before nozzle-contact probing, and use the plate type the probe expects.",
+      "Look up the error code in the maker’s documentation for your exact model and follow its checks. Don’t disable a failing probe to get past it.",
+    ],
+    verify: "Homing and calibration complete several times in a row, and the first layer comes out even.",
+    related: ["uneven-first-layer", "bed-mesh", "z-offset", "first-layer", "layer-shift"],
+    source: "https://help.prusa3d.com/category/printer-troubleshooting_227",
+    keywords:
+      "homing failed probing failed bed leveling failed homing error z axis probe error crash detection endstop calibration failed",
+  },
 ];
 
 const groupedIds = [
@@ -622,6 +890,8 @@ const groupedIds = [
       "heat-creep-jam",
       "nozzle-blob",
       "temperature-error",
+      "brittle-filament",
+      "feed-tangle",
     ],
   ],
   [
@@ -629,22 +899,43 @@ const groupedIds = [
     [
       "layer-shift",
       "ringing",
+      "vfa-ripples",
       "z-banding",
       "leaning-walls",
       "layer-separation",
       "seam-blobs",
+      "blobs-zits",
+      "bulging-corners",
+      "travel-scars",
       "gloss-bands",
       "color-bleed",
     ],
   ],
   [
     "Supports and cooling",
-    ["spaghetti", "poor-bridging", "support-collapses", "rough-supports", "small-layer-overheating"],
+    [
+      "spaghetti",
+      "poor-bridging",
+      "one-side-overhangs",
+      "support-collapses",
+      "rough-supports",
+      "small-layer-overheating",
+    ],
   ],
   [
     "Geometry, fit and infill",
-    ["top-gaps", "infill-wall-gap", "infill-collision", "missing-thin-walls", "undersized-holes"],
+    [
+      "top-gaps",
+      "infill-wall-gap",
+      "wall-gaps",
+      "infill-show-through",
+      "infill-collision",
+      "missing-thin-walls",
+      "undersized-holes",
+      "weak-parts",
+    ],
   ],
+  ["Files, slicing and machine", ["wrong-size", "broken-mesh", "print-stops", "homing-failure"]],
 ];
 
 const availableIssues = new Map(

@@ -100,7 +100,7 @@ function overview(open, navigate, image) {
   practical.append(
     node("h2", null, "Choose settings for your next print"),
     entryGrid(
-      ["layer-height", "filament-drying", "shell-settings", "nozzle-guide"].map((id) => byId.get(id)),
+      ["key-settings", "layer-height", "shell-settings", "filament-drying"].map((id) => byId.get(id)),
       open,
     ),
   );
@@ -331,9 +331,9 @@ export default function mount(thingport) {
     scroller.scrollTop = 0;
     if (reviewIndex !== undefined) {
       const article = pane.querySelector(`[data-wiki-review-article="${reviewIndex}"]`);
-      const row = article?.closest("details");
-      if (row) {
-        row.open = true;
+      if (article) {
+        const row = article.closest("details");
+        if (row) row.open = true;
         article.focus({ preventScroll: true });
         scroller.scrollTop =
           article.getBoundingClientRect().top - scroller.getBoundingClientRect().top - scroller.clientHeight / 2;

@@ -29,6 +29,7 @@ const files = [
   "articles.js",
   "quiz.js",
   "ui.js",
+  "diagrams.js",
   "exam.js",
   "window.js",
 ];

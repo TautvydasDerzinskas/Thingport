@@ -22,6 +22,8 @@
 <style>
   .tp-printing-wiki {
     --wiki-soft: color-mix(in srgb, var(--tp-accent) 8%, var(--tp-paper));
+    --wiki-good: var(--tp-success, #2e7d4f);
+    --wiki-bad: var(--tp-error, #c0392b);
     height: 100%;
     overflow: auto;
     background: var(--tp-background);
@@ -34,6 +36,9 @@
   }
   .tp-printing-wiki :where(*) {
     box-sizing: border-box;
+  }
+  .tp-printing-wiki [hidden] {
+    display: none !important;
   }
   .tp-printing-wiki :where(h1, h2, h3, p, figure, fieldset) {
     margin: 0;
@@ -454,19 +459,15 @@
     justify-items: start;
     gap: 12px;
   }
-  .tp-printing-wiki .wiki-question-status,
-  .tp-printing-wiki .wiki-exam-controls {
+  .tp-printing-wiki .wiki-exam-controls,
+  .tp-printing-wiki .wiki-quiz-footer,
+  .tp-printing-wiki .wiki-quiz-top {
     display: flex;
     width: 100%;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 6px;
-  }
-  .tp-printing-wiki .wiki-progress {
-    width: 100%;
-    height: 9px;
-    accent-color: var(--tp-accent);
+    gap: 8px;
   }
   .tp-printing-wiki .wiki-points {
     flex: none;
@@ -478,38 +479,429 @@
     font-size: 12px;
     font-weight: 700;
   }
-  .tp-printing-wiki .wiki-options {
-    border: 0;
-    padding: 0;
-    min-width: 0;
-    width: 100%;
-    display: grid;
-    gap: 7px;
-  }
-  .tp-printing-wiki .wiki-options legend {
-    font-size: 18px;
-    font-weight: 700;
-    padding: 0;
-  }
-  .tp-printing-wiki .wiki-option {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    padding: 9px 12px;
-    border-radius: 7px;
+  .tp-printing-wiki .wiki-segmented {
+    display: inline-flex;
+    gap: 3px;
+    padding: 3px;
     border: 1px solid var(--tp-divider);
-    cursor: pointer;
+    border-radius: 9px;
+    background: var(--tp-background);
   }
-  .tp-printing-wiki .wiki-option:has(input:checked) {
+  .tp-printing-wiki .wiki-segment {
+    min-height: 30px;
+    padding: 4px 14px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--tp-text-muted);
+    font-weight: 650;
+    transition:
+      background-color 150ms,
+      color 150ms;
+  }
+  .tp-printing-wiki .wiki-segment:hover {
+    color: var(--tp-text);
+  }
+  .tp-printing-wiki .wiki-segment[aria-pressed="true"] {
+    background: var(--tp-paper);
+    color: var(--tp-text);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--tp-text) 20%, transparent);
+  }
+  .tp-printing-wiki .wiki-quiz-card {
+    container: wiki-quiz / inline-size;
+    justify-items: stretch;
+    gap: 14px;
+  }
+  .tp-printing-wiki .wiki-quiz-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .tp-printing-wiki .wiki-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 10px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .tp-printing-wiki .wiki-streak {
+    color: var(--tp-accent);
     background: var(--wiki-soft);
-    border-color: var(--tp-accent);
+    border-color: color-mix(in srgb, var(--tp-accent) 40%, var(--tp-divider));
   }
-  .tp-printing-wiki .wiki-option input {
-    flex: none;
+  .tp-printing-wiki .wiki-flame {
+    width: 13px;
+    height: 13px;
+    fill: currentColor;
+  }
+  .tp-printing-wiki .wiki-quiz-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--tp-accent) 35%, var(--tp-divider));
+    border-radius: 10px;
+    background: var(--wiki-soft);
+  }
+  .tp-printing-wiki .wiki-quiz-confirm p {
+    margin-inline-end: auto;
+    font-weight: 650;
+  }
+  .tp-printing-wiki .wiki-meter {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--tp-divider);
+    overflow: hidden;
+  }
+  .tp-printing-wiki .wiki-meter span {
+    display: block;
+    height: 100%;
+    background: var(--tp-accent);
+    transform: scaleX(var(--wiki-done, 0));
+    transform-origin: left;
+  }
+  .tp-printing-wiki .wiki-quiz-meta {
+    color: var(--tp-text-muted);
+    font-size: 12px;
+    font-weight: 650;
+    margin-bottom: -8px;
+  }
+  .tp-printing-wiki .wiki-quiz-question {
+    min-width: 0;
     margin: 0;
-    width: 17px;
-    height: 17px;
-    accent-color: var(--tp-accent);
+    padding: 0;
+    border: 0;
+  }
+  .tp-printing-wiki .wiki-quiz-question legend {
+    padding: 0;
+    margin-bottom: 12px;
+  }
+  .tp-printing-wiki .wiki-quiz-prompt {
+    font-size: 18px;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    font-weight: 720;
+  }
+  .tp-printing-wiki .wiki-quiz-question > .wiki-notice {
+    margin-bottom: 10px;
+  }
+  .tp-printing-wiki .wiki-quiz-body {
+    display: grid;
+    gap: 16px;
+    align-items: start;
+  }
+  .tp-printing-wiki .wiki-quiz-visual {
+    max-width: 320px;
+  }
+  .tp-printing-wiki .wiki-quiz-visual figcaption {
+    margin-top: 4px;
+    font-size: 12px;
+  }
+  .tp-printing-wiki .wiki-quiz-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #181c26;
+  }
+  .tp-printing-wiki .wiki-quiz-drawing {
+    padding: 8px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 10px;
+    background: var(--tp-background);
+  }
+  .tp-printing-wiki .wiki-quiz-answers,
+  .tp-printing-wiki .wiki-tiles {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+  .tp-printing-wiki .wiki-quiz-hint.wiki-notice {
+    color: var(--wiki-bad);
+  }
+  .tp-printing-wiki .wiki-tile,
+  .tp-printing-wiki .wiki-pick {
+    position: relative;
+    border: 1.5px solid var(--tp-divider);
+    border-radius: 10px;
+    background: var(--tp-paper);
+    cursor: pointer;
+    transition:
+      border-color 150ms,
+      background-color 150ms;
+  }
+  .tp-printing-wiki .wiki-tile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-weight: 550;
+  }
+  .tp-printing-wiki .wiki-locked {
+    cursor: default;
+  }
+  .tp-printing-wiki :is(.wiki-tile, .wiki-pick):not(.wiki-locked):hover {
+    border-color: color-mix(in srgb, var(--tp-accent) 60%, var(--tp-divider));
+  }
+  .tp-printing-wiki .wiki-tile-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .tp-printing-wiki .wiki-tile-key {
+    flex: 0 0 24px;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 6px;
+    background: var(--tp-background);
+    color: var(--tp-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .tp-printing-wiki .wiki-tile-text {
+    min-width: 0;
+  }
+  .tp-printing-wiki .wiki-tile-mark {
+    margin-inline-start: auto;
+    padding-inline-start: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .tp-printing-wiki .wiki-tile-mark:empty {
+    display: none;
+  }
+  .tp-printing-wiki :is(.wiki-tile, .wiki-pick):has(input:checked) {
+    border-color: var(--tp-accent);
+    background: var(--wiki-soft);
+  }
+  .tp-printing-wiki :is(.wiki-tile, .wiki-pick):has(input:checked) .wiki-tile-key {
+    border-color: var(--tp-accent);
+    background: var(--tp-accent);
+    color: var(--tp-accent-ink);
+  }
+  .tp-printing-wiki :is(.wiki-tile, .wiki-pick):has(input:focus-visible) {
+    outline: 2px solid var(--tp-accent);
+    outline-offset: 2px;
+  }
+  .tp-printing-wiki .wiki-quiz-card .wiki-correct.wiki-correct {
+    border-color: var(--wiki-good);
+    background: color-mix(in srgb, var(--wiki-good) 12%, var(--tp-paper));
+  }
+  .tp-printing-wiki .wiki-quiz-card .wiki-wrong.wiki-wrong {
+    border-color: var(--wiki-bad);
+    background: color-mix(in srgb, var(--wiki-bad) 10%, var(--tp-paper));
+  }
+  .tp-printing-wiki .wiki-quiz-card .wiki-correct.wiki-correct .wiki-tile-key {
+    border-color: var(--wiki-good);
+    background: var(--wiki-good);
+    color: var(--tp-paper);
+  }
+  .tp-printing-wiki .wiki-quiz-card .wiki-wrong.wiki-wrong .wiki-tile-key {
+    border-color: var(--wiki-bad);
+    background: var(--wiki-bad);
+    color: var(--tp-paper);
+  }
+  .tp-printing-wiki .wiki-correct .wiki-tile-mark {
+    color: var(--wiki-good);
+  }
+  .tp-printing-wiki .wiki-wrong .wiki-tile-mark {
+    color: var(--wiki-bad);
+  }
+  .tp-printing-wiki .wiki-picks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tp-printing-wiki .wiki-pick {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 4px;
+    border-width: 2px;
+  }
+  .tp-printing-wiki .wiki-pick-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 7px;
+    background: #181c26;
+  }
+  .tp-printing-wiki .wiki-pick .wiki-tile-key {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    border-color: transparent;
+    background: color-mix(in srgb, #000 62%, transparent);
+    color: #fff;
+  }
+  .tp-printing-wiki .wiki-pick .wiki-tile-mark {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: var(--tp-paper);
+  }
+  .tp-printing-wiki .wiki-pick-caption {
+    padding: 0 4px 2px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .tp-printing-wiki .wiki-feedback {
+    display: grid;
+    justify-items: start;
+    gap: 6px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--wiki-bad) 40%, var(--tp-divider));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--wiki-bad) 7%, var(--tp-paper));
+  }
+  .tp-printing-wiki .wiki-feedback.wiki-good {
+    border-color: color-mix(in srgb, var(--wiki-good) 40%, var(--tp-divider));
+    background: color-mix(in srgb, var(--wiki-good) 8%, var(--tp-paper));
+  }
+  .tp-printing-wiki .wiki-feedback:focus {
+    outline: none;
+  }
+  .tp-printing-wiki .wiki-feedback:focus-visible {
+    outline: 2px solid var(--tp-accent);
+    outline-offset: 2px;
+  }
+  .tp-printing-wiki .wiki-feedback-title {
+    color: var(--wiki-bad);
+    font-weight: 750;
+  }
+  .tp-printing-wiki .wiki-good .wiki-feedback-title {
+    color: var(--wiki-good);
+  }
+  .tp-printing-wiki .wiki-animate {
+    animation: wiki-feedback-in 200ms ease-out both;
+  }
+  @keyframes wiki-feedback-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  .tp-printing-wiki .wiki-keys {
+    color: var(--tp-text-muted);
+    font-size: 12px;
+  }
+  .tp-printing-wiki .wiki-keys kbd {
+    padding: 0 5px;
+    border: 1px solid var(--tp-divider);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    background: var(--tp-background);
+    font: inherit;
+    font-size: 11px;
+  }
+  .tp-printing-wiki .wiki-diagram {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-bed {
+    fill: var(--tp-divider);
+  }
+  .tp-printing-wiki .wiki-diagram .wd-part {
+    fill: color-mix(in srgb, var(--tp-accent) 72%, var(--tp-paper));
+  }
+  .tp-printing-wiki .wiki-diagram .wd-soft {
+    fill: color-mix(in srgb, var(--tp-accent) 24%, var(--tp-paper));
+  }
+  .tp-printing-wiki .wiki-diagram .wd-outline {
+    stroke: var(--tp-accent);
+    stroke-width: 1.5;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-stroke {
+    fill: none;
+    stroke: var(--tp-accent);
+    stroke-width: 3;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-thick {
+    stroke-width: 7;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-hatch {
+    fill: none;
+    stroke: color-mix(in srgb, var(--tp-accent) 55%, var(--tp-paper));
+    stroke-width: 2;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-layer {
+    fill: none;
+    stroke: color-mix(in srgb, var(--tp-paper) 55%, transparent);
+    stroke-width: 1.2;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-dot {
+    fill: color-mix(in srgb, var(--tp-text) 65%, var(--tp-accent));
+  }
+  .tp-printing-wiki .wiki-diagram .wd-nozzle {
+    fill: var(--tp-text-muted);
+  }
+  .tp-printing-wiki .wiki-diagram .wd-support {
+    stroke: var(--tp-text-muted);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-guide {
+    fill: none;
+    stroke: var(--tp-text-muted);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-dimension {
+    fill: none;
+    stroke: var(--tp-text);
+    stroke-width: 1.5;
+  }
+  .tp-printing-wiki .wiki-diagram .wd-label {
+    fill: var(--tp-text-muted);
+    font: 700 15px var(--tp-font, system-ui, sans-serif);
+  }
+  @container wiki-quiz (width < 560px) {
+    .tp-printing-wiki .wiki-quiz-visual {
+      max-width: none;
+    }
+    .tp-printing-wiki .wiki-quiz-photo {
+      aspect-ratio: 4 / 3;
+      object-fit: contain;
+    }
+  }
+  @container wiki-quiz (width >= 560px) {
+    .tp-printing-wiki .wiki-quiz-has-visual {
+      grid-template-columns: minmax(200px, 40%) minmax(0, 1fr);
+    }
+    .tp-printing-wiki .wiki-picks {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tp-printing-wiki .wiki-animate {
+      animation: none;
+    }
+    .tp-printing-wiki :is(.wiki-segment, .wiki-tile, .wiki-pick) {
+      transition: none;
+    }
   }
   .tp-printing-wiki .wiki-notice,
   .tp-printing-wiki .wiki-award {

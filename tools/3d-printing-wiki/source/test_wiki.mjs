@@ -4,7 +4,17 @@ import { test } from "node:test";
 import { articles, byId, searchWiki } from "./articles.js";
 import { history } from "./history.js";
 import { printers } from "./printers.js";
-import { gradeQuiz, makeAttempt, passingPoints, questionBank, questionCount, totalPoints } from "./quiz.js";
+import { diagrams } from "./diagrams.js";
+import {
+  gradeQuiz,
+  isPictured,
+  makeAttempt,
+  passingPoints,
+  pictureCount,
+  questionBank,
+  questionCount,
+  totalPoints,
+} from "./quiz.js";
 import { issueGroups, issues } from "./troubleshooting.js";
 
 test("all cross-references resolve and pictured defects have a bundled WebP", () => {
@@ -24,8 +34,8 @@ test("all cross-references resolve and pictured defects have a bundled WebP", ()
 });
 
 test("each symptom has a diagnostic check, ordered fixes and a way to verify the outcome", () => {
-  assert.equal(issues.length, 32);
-  assert.equal(issueGroups.length, 5);
+  assert.equal(issues.length, 46);
+  assert.equal(issueGroups.length, 6);
   for (const issue of issues) {
     assert.ok(issue.check && issue.causes && issue.verify && issue.source, issue.id);
     assert.ok(issue.fixes.length >= 2, issue.id);
@@ -52,16 +62,38 @@ test("search includes article sections and ranks title matches first", () => {
 });
 
 test("every question has valid answers and references an article", () => {
-  assert.equal(questionBank.length, 108);
+  assert.equal(questionBank.length, 144);
   assert.equal(new Set(questionBank.map(({ prompt }) => prompt)).size, questionBank.length);
-  for (const { article, options, correct, points, picture } of questionBank) {
+  for (const { article, options, correct, points, picture, diagram, kind } of questionBank) {
     assert.ok(byId.has(article), article);
     if (picture) assert.ok(byId.get(picture)?.imageAlt, picture);
+    if (diagram) assert.ok(diagrams[diagram], diagram);
+    if (kind === "pictures") {
+      for (const option of options) assert.ok(byId.get(option)?.imageAlt, `${option} has a photo`);
+    }
     assert.equal(new Set(options).size, 4);
     assert.equal(correct.length, points === 3 ? 2 : 1);
     assert.equal(new Set(correct).size, correct.length);
     assert.ok(correct.every((choice) => Number.isInteger(choice) && choice >= 0 && choice < options.length));
   }
+});
+
+test("picture-choice questions and diagrams are counted and drawn from known ids", () => {
+  const picks = questionBank.filter(({ kind }) => kind === "pictures");
+  assert.equal(picks.length, 11);
+  assert.equal(questionBank.filter(({ diagram }) => diagram).length, 14);
+  assert.equal(Object.keys(diagrams).length, 8);
+  for (const [id, { label, shapes }] of Object.entries(diagrams)) {
+    assert.ok(label.length > 40, id);
+    assert.ok(shapes().length > 3, id);
+  }
+  assert.equal(pictureCount, 7);
+  for (const [points, needed] of [
+    [1, 10],
+    [2, 2],
+    [3, 2],
+  ])
+    assert.ok(questionBank.filter((item) => item.points === points && isPictured(item)).length >= needed);
 });
 
 test("consecutive attempts have equal scoring mixes and different questions", () => {
@@ -76,8 +108,8 @@ test("consecutive attempts have equal scoring mixes and different questions", ()
       [20, 5, 5],
     );
     assert.deepEqual(
-      [1, 2, 3].map((weight) => attempt.filter(({ points, picture }) => points === weight && picture).length),
-      [2, 1, 1],
+      [1, 2, 3].map((weight) => attempt.filter((item) => item.points === weight && isPictured(item)).length),
+      [5, 1, 1],
     );
   }
   assert.ok(second.every(({ prompt }) => !previousQuestions.has(prompt)));

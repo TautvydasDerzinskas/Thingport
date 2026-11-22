@@ -118,6 +118,18 @@ const definitions = [
     ["printer-types", "bambu-lab", "prusa"],
   ],
   [
+    "manifold",
+    "Manifold mesh",
+    "A closed, watertight surface with no gaps, flipped faces or zero-thickness parts, so a slicer can tell inside from outside. Repair or re-export a mesh that isn’t.",
+    ["broken-mesh", "stl-3mf", "cad"],
+  ],
+  [
+    "z-hop",
+    "Z hop",
+    "A brief lift of the nozzle during travel moves so it clears the finished print. It reduces scars on top surfaces and can add a little stringing.",
+    ["travel-scars", "retraction", "travel-move"],
+  ],
+  [
     "parametric-model",
     "Parametric model",
     "A design controlled by dimensions, constraints and feature relationships. Edit a parameter to regenerate geometry that depends on it.",
@@ -174,8 +186,8 @@ const definitions = [
   [
     "fff",
     "FFF / FDM",
-    "Fused filament fabrication or fused deposition modeling. A nozzle deposits softened filament in layers to form the part.",
-    ["hotend", "slicer"],
+    "Fused filament fabrication or fused deposition modeling. A nozzle deposits softened filament in layers to form the part. RepRap builders adopted FFF because FDM is a Stratasys trademark.",
+    ["hotend", "slicer", "stratasys", "reprap-history"],
   ],
   [
     "flow-ratio",
@@ -523,7 +535,7 @@ export const guides = [
       ],
     ],
     ["first-print", "temperature-cooling", "stringing", "bridging-guide", "volumetric-flow", "flow-ratio"],
-    [["OrcaSlicer · Calibration", "https://github.com/OrcaSlicer/OrcaSlicer/wiki/Calibration"]],
+    [["OrcaSlicer · Calibration", "https://github.com/OrcaSlicer/OrcaSlicer/wiki/calibration_guide"]],
   ),
 ];
 
@@ -542,6 +554,8 @@ const searchAliases = {
   "print-time": "print speed time estimate print faster acceleration maximum flow",
   "cut-prints": "part splitting joinery cut prints cutting models oversized",
   "printer-types": "popular printers bed slinger enclosed printer",
+  "key-settings":
+    "important settings best settings slicer settings explained perimeters wall count infill percentage cura prusaslicer orcaslicer bambu studio names",
 };
 
 const normalize = (value) =>

@@ -47,7 +47,213 @@ const dryingSchedules = {
   note: "The two ASA examples use cycles 10°C and three hours apart. Prusa also distinguishes spool generations. Check the reel as well as the filament, especially with old, refillable or cardboard-core spools.",
 };
 
+const keySettings = {
+  text: "Most of these are process settings: they belong to the part, not the printer. Change them before the rest.",
+  columns: ["Setting", "What it changes", "Change it when", "Starting point · 0.4 mm nozzle"],
+  rows: [
+    [
+      "Layer height",
+      "Vertical detail and print time",
+      "Curves and slopes look stepped, or you need a quick draft",
+      "0.20 mm; 0.12–0.16 mm for detail, 0.24–0.28 mm for drafts",
+    ],
+    [
+      "Walls",
+      "Strength at edges, holes and screws, and whether a part holds water",
+      "The part carries load, takes screws or must seal",
+      "2–3; 4 or more for loaded or watertight parts",
+    ],
+    [
+      "Top and bottom shells",
+      "Whether flat roofs close and floors seal",
+      "A roof shows gaps or bumps, or you switch to fine layers",
+      "About 0.8–1.0 mm of roof and 0.6 mm of floor, as a thickness where the slicer allows it",
+    ],
+    [
+      "Infill density",
+      "Mass, time and support under the roof",
+      "The part is loaded, or a display piece could be lighter",
+      "10–15% for display parts, 20–40% for functional ones",
+    ],
+    [
+      "Infill pattern",
+      "Stiffness by direction, time and nozzle strikes",
+      "The nozzle catches the infill, or the load comes from several directions",
+      "Grid or gyroid for general parts; lightning only for display parts",
+    ],
+    [
+      "Supports",
+      "Where supports appear and how steep an overhang may print without them",
+      "Overhangs droop, or supports appear where they aren’t needed",
+      "Tree or organic for figures, normal for flat ledges; paint or block them locally",
+    ],
+    [
+      "Support top distance",
+      "How easily supports come off and how rough the face above them is",
+      "Supports fuse to the part, or the face above them sags",
+      "Keep the profile’s value, often about one layer height",
+    ],
+    [
+      "Brim, skirt or raft",
+      "First-layer grip",
+      "Corners lift, or a tall part stands on a small footprint",
+      "A 3–5 mm brim for small footprints and shrink-prone materials",
+    ],
+    [
+      "Seam position",
+      "Where each wall loop starts and ends",
+      "A zipper line runs down a show face",
+      "Aligned or rear to hide it on a corner or the back; random spreads it",
+    ],
+    [
+      "Nozzle temperature",
+      "Layer bonding, stringing and gloss",
+      "Layers split, or strings appear",
+      "The filament maker’s range; test in 5°C steps",
+    ],
+    [
+      "Part cooling fan",
+      "Overhangs and bridges against layer bonding",
+      "Overhangs curl, or ABS and ASA layers crack",
+      "The filament profile’s values; less for ABS, ASA and PC",
+    ],
+    [
+      "Max volumetric speed",
+      "How much plastic the hotend can melt per second, which caps every speed",
+      "Walls show gaps only at speed, or a high-flow hotend is fitted",
+      "The filament profile’s value; raise it only after a flow test",
+    ],
+    [
+      "Ironing",
+      "Smoothness of flat top faces",
+      "A flat top must look polished, such as a sign or a lid",
+      "Topmost surface only; it adds time",
+    ],
+  ],
+  note: "These starting points suit common PLA and PETG profiles. The printer and filament maker’s presets come first.",
+};
+
+const settingNames = {
+  text: "Each slicer family names the same setting its own way. Use this table to follow a guide written for another slicer.",
+  columns: ["Setting", "Bambu Studio and OrcaSlicer", "PrusaSlicer", "UltiMaker Cura"],
+  rows: [
+    ["Number of walls", "Wall loops", "Perimeters", "Wall Line Count"],
+    ["Top solid layers", "Top shell layers", "Solid layers · Top", "Top Layers"],
+    ["Minimum roof thickness", "Top shell thickness", "Minimum shell thickness · Top", "Top Thickness"],
+    ["Infill amount", "Sparse infill density", "Fill density", "Infill Density"],
+    ["Infill shape", "Sparse infill pattern", "Fill pattern", "Infill Pattern"],
+    ["Supports on", "Enable support", "Generate support material", "Generate Support"],
+    ["When to support", "Threshold angle", "Overhang threshold", "Support Overhang Angle"],
+    [
+      "Supports from the plate only",
+      "On build plate only",
+      "Support on build plate only",
+      "Support Placement · Touching Buildplate",
+    ],
+    ["Gap above supports", "Top Z distance", "Top contact Z distance", "Support Top Distance"],
+    ["First-layer grip", "Brim type, Brim width", "Brim type, Brim width", "Build Plate Adhesion Type, Brim Width"],
+    ["Where loops start", "Seam position", "Seam position", "Z Seam Alignment"],
+    ["Flow correction", "Flow ratio", "Extrusion multiplier", "Flow"],
+    [
+      "Shrink the first layer",
+      "Elephant foot compensation",
+      "Elephant foot compensation",
+      "Initial Layer Horizontal Expansion",
+    ],
+    ["Variable-width walls", "Wall generator · Arachne", "Perimeter generator · Arachne", "Built in since Cura 5.0"],
+    ["One continuous wall", "Spiral vase", "Spiral vase", "Spiralize Outer Contour"],
+    ["Polish flat tops", "Ironing type", "Enable ironing", "Enable Ironing"],
+  ],
+  note: "The support angles point in opposite directions. Bambu Studio, OrcaSlicer and PrusaSlicer support overhangs flatter than the threshold, measured from the horizontal, so a higher number adds supports. Cura measures from the vertical: 0° supports every overhang and a higher number adds fewer. A 30° threshold in the first group is roughly 60° in Cura.",
+};
+
+const goalSettings = {
+  text: "Start from the matching preset, then change these first.",
+  columns: ["Goal", "Change first", "Material to consider"],
+  rows: [
+    ["Fine detail", "0.12 mm layers, a slower outer wall, tree supports; a 0.2–0.25 mm nozzle for tiny parts", "PLA"],
+    ["Quick draft or fit check", "0.28 mm layers, 2 walls, 10% infill, no ironing", "PLA"],
+    [
+      "Strong functional part",
+      "4–6 walls, 25–40% gyroid or cubic infill, layers running along the load",
+      "PETG, ABS, ASA or PA",
+    ],
+    ["Outdoor part", "4 walls, 20% or more infill, a seam on a hidden face", "ASA for sun, PETG for shade"],
+    [
+      "Container that holds water",
+      "4 walls or spiral vase, 5 or more bottom layers, a little more flow or temperature within the range",
+      "PETG or PP",
+    ],
+    ["Flexible part", "3 or more walls, low speed, the preset’s retraction, low infill for squish", "TPU"],
+    ["Smooth flat top", "Ironing on the topmost surface, a monotonic top pattern, more top layers", "PLA or PETG"],
+    ["Toy", "Rounded edges in the design, 3–4 walls, 15–20% infill, no small loose pieces", "PLA or PETG"],
+  ],
+  note: "A print profile can’t make a part food-safe or child-safe on its own. Material grade, printer parts, surface texture and cleaning all matter, as does the age group for small pieces.",
+};
+
 export const studyGuides = [
+  guide(
+    "key-settings",
+    "The slicer settings that matter most",
+    "What to change first, what each setting is called in Bambu Studio, OrcaSlicer, PrusaSlicer and Cura, and what to leave to the profile.",
+    [
+      [
+        "Start with the right three profiles",
+        "Most print quality comes from picking the printer, nozzle and filament profiles that match the hardware. The printer profile holds the machine’s limits, retraction and start code. The filament profile holds temperatures, cooling, flow ratio and the maximum volumetric speed. The process profile holds the part’s choices: layer height, walls, shells, infill, supports and adhesion. Change process settings first, filament settings after a calibration test, and printer settings only when the hardware changed.",
+      ],
+      ["The settings worth knowing", keySettings],
+      ["Same setting, different names", settingNames],
+      ["Change these first for a goal", goalSettings],
+      [
+        "Where each setting lives",
+        "Bambu Studio and OrcaSlicer split settings into printer, filament and process presets, and a project can override process settings per object or part. Temperatures, fan speeds, flow ratio and maximum volumetric speed are filament settings there. PrusaSlicer uses Print, Filament and Printer Settings tabs with the same split. Cura combines a material and a quality profile, adds an intent such as Engineering or Visual on supported printers, and keeps your edits as a custom profile.",
+      ],
+      [
+        "Opening a project from another slicer",
+        "A 3MF project carries geometry, plates and usually the designer’s process settings. Bambu Studio and the slicers built on it read each other’s projects most completely, though a project tagged by another brand may keep its geometry and drop its settings. PrusaSlicer and Cura take the geometry and only some per-object settings, and opening a file as a project can swap your printer for one made from the file. Check the selected printer, nozzle and filament before slicing, then compare walls, infill and supports with what the designer describes.",
+      ],
+      [
+        "Settings to leave to the profile",
+        "Line widths, acceleration, jerk or junction deviation, retraction length, start and end G-code and the bed shape belong to the printer and nozzle. Change them to match changed hardware or after a test shows what’s wrong. When a print looks wrong, check the filament’s dryness and the first layer before editing any of these.",
+      ],
+      [
+        "Example · A wall-mounted hook",
+        "Print the hook on its side, so the layers run along the arm instead of across it. Use four walls and 25–30% gyroid infill and keep 0.20 mm layers. Compare the estimate with two walls: on a small part the extra walls usually cost little time and add strength where the load is.",
+      ],
+    ],
+    [
+      "layer-height",
+      "shell-settings",
+      "temperature-cooling",
+      "print-time",
+      "nozzle-guide",
+      "orientation",
+      "slicers",
+      "seam",
+      "support",
+      "brim",
+      "volumetric-flow",
+      "flow-ratio",
+    ],
+    [
+      [
+        "OrcaSlicer · Setting definitions",
+        "https://github.com/OrcaSlicer/OrcaSlicer/blob/main/src/libslic3r/PrintConfig.cpp",
+      ],
+      [
+        "PrusaSlicer 2.9.2 · Setting definitions",
+        "https://github.com/prusa3d/PrusaSlicer/blob/version_2.9.2/src/libslic3r/PrintConfig.cpp",
+      ],
+      [
+        "UltiMaker Cura · Setting definitions",
+        "https://github.com/Ultimaker/Cura/blob/main/resources/definitions/fdmprinter.def.json",
+      ],
+      layers,
+      ["Prusa · Seam position", prusa("seam-position_151069")],
+      ["Prusa · Support material", prusa("support-material_1698")],
+      ["Prusa · Ironing", prusa("ironing_177488")],
+    ],
+  ),
   guide(
     "temperature-cooling",
     "Tune nozzle temperature, bed and cooling",
