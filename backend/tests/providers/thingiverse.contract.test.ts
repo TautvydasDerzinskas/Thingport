@@ -24,11 +24,15 @@ const COLLECTION_URL = `https://www.thingiverse.com/Derzinskas/collections/${COL
 
 /** "rejected": Thingiverse turns the App Token down, 401 to every call. */
 function handlerFor(scenario: string): FetchHandler {
+  // Only the files the Thing lists download, so a request for any other one fails the test.
+  const listed = new Set(
+    (loadFixture("thingiverse", "thing").zip_data.files as { url: string }[]).map((file) => file.url),
+  );
   return async ({ url }) => {
     if (url.hostname === "cdn.thingiverse.com") {
       const name = url.pathname.split("/").pop()!;
       // Pictures fall through to the stub's own PNG; the PDF isn't a model file, so it's never asked for.
-      return name.endsWith(".stl") ? binary(stl(name)) : undefined;
+      return name.endsWith(".stl") && listed.has(url.href) ? binary(stl(name)) : undefined;
     }
     if (url.hostname !== "api.thingiverse.com") return undefined;
     assertThat(url.searchParams.get("access_token") === TOKEN, "every API call carries the instance's App Token");
