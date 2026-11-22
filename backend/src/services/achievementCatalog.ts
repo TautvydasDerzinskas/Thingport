@@ -41,7 +41,7 @@ export const BADGE_TOOLS = [
 ] as const;
 
 /** Secrets a widget or tool gives away, as `<its slug>/<key>`: what its `thingport.achievements.unlock(key)` asks for. */
-export const SECRETS = ["weather-scene/guest"] as const;
+export const SECRETS = ["weather-scene/guest", "3d-printing-wiki/fundamentals"] as const;
 
 /** "Regular": on more than 20 of the last 30 days (UTC), gone grey once that's no longer so. */
 export const REGULAR_WINDOW_DAYS = 30;

@@ -315,6 +315,27 @@ describe("earning", () => {
     expect((await own(member)).at(-1)?.id).toBe("secret:weather-scene/guest");
   });
 
+  it("grants the wiki quiz badge once and respects the achievements switch", async () => {
+    const learner = await register("Learner");
+    const secret = "3d-printing-wiki/fundamentals";
+    const claim = () => request(app).post("/api/me/achievements/secret").set(auth(learner)).send({ secret });
+    await setAchievementSettings({ enabled: false });
+    try {
+      expect((await claim()).status).toBe(404);
+      expect(await prisma.userAchievement.count({ where: { userId: learner.id } })).toBe(0);
+    } finally {
+      await setAchievementSettings({ enabled: true });
+    }
+    expect((await claim()).status).toBe(204);
+    expect((await claim()).status).toBe(204);
+    expect(await badge(learner, `secret:${secret}`)).toMatchObject({ tier: 0, count: null, seen: false });
+    expect(
+      await prisma.notification.count({
+        where: { userId: learner.id, message: { path: ["values", "badge"], equals: `secret:${secret}` } },
+      }),
+    ).toBe(1);
+  });
+
   it("earns Regular on more than 20 of the last 30 days, and shows it lapsed after", async () => {
     // One clock for the days written here and the service's window, at noon: a day can't turn over meanwhile.
     vi.useFakeTimers({ toFake: ["Date"] });

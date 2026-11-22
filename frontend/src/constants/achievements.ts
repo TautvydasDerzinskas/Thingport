@@ -138,6 +138,15 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     material: "secret",
     words: { kind: "badge", key: "weatherGuest" },
   },
+  {
+    id: "secret:3d-printing-wiki/fundamentals",
+    group: "secrets",
+    glyph: "studio",
+    cut: "rosette",
+    thresholds: [1],
+    material: "gold",
+    words: { kind: "badge", key: "fdmFundamentals" },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((def) => [def.id, def]));

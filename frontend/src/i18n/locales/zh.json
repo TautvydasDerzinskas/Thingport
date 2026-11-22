@@ -5007,6 +5007,11 @@
           "rule": "从 {{count}} 个不同网站同步合集",
           "stat": "已从 {{count}} 个网站同步"
         },
+        "fdmFundamentals": {
+          "name": "FDM 基础",
+          "rule": "在 3D 打印维基测验中获得至少 80% 的分数。",
+          "stat": "已通过 FDM 测验"
+        },
         "weatherGuest": {
           "name": "偶遇来客",
           "rule": "这是个秘密。你发现了它。",
