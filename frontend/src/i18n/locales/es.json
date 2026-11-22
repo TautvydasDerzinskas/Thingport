@@ -4858,6 +4858,23 @@
           "closed": "Cerrado"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Nivelando la placa de impresión…",
+          "Afilando los lápices…",
+          "Cuadrando la cuadrícula…",
+          "Poniendo el origen a cero…",
+          "Tensando las correas…",
+          "Calibrando los ejes…",
+          "Alineando los planos…",
+          "Contando los triángulos…",
+          "Puliendo los redondeos…",
+          "Calentando la boquilla…",
+          "Abriendo la caja de herramientas…",
+          "Midiendo dos veces, cortando una…"
+        ]
+      },
       "importModel": {
         "loadingStudio": "Cargando Thingport Studio…",
         "preparing": "Preparando «{{filename}}» para Thingport Studio…",

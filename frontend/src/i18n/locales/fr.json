@@ -4871,6 +4871,23 @@
           "closed": "Fermé"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Mise à niveau du plateau…",
+          "Taille des crayons…",
+          "Mise en place de la grille…",
+          "Remise à zéro de l’origine…",
+          "Tension des courroies…",
+          "Calibrage des axes…",
+          "Alignement des plans…",
+          "Comptage des triangles…",
+          "Polissage des congés…",
+          "Chauffe de la buse…",
+          "Ouverture de la boîte à outils…",
+          "Mesurer deux fois, couper une fois…"
+        ]
+      },
       "importModel": {
         "loadingStudio": "Chargement de Thingport Studio…",
         "preparing": "Préparation de « {{filename}} » pour Thingport Studio…",

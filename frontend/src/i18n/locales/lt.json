@@ -4968,6 +4968,23 @@
           "closed": "Uždaras"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Lyginama spausdinimo plokštė…",
+          "Drožiami pieštukai…",
+          "Lygiuojamas tinklelis…",
+          "Nustatoma koordinačių pradžia…",
+          "Įtempiami diržai…",
+          "Kalibruojamos ašys…",
+          "Rikiuojamos plokštumos…",
+          "Skaičiuojami trikampiai…",
+          "Šlifuojami užapvalinimai…",
+          "Šildomas purkštukas…",
+          "Išpakuojama įrankių dėžė…",
+          "Septynis kartus matuojama, vieną kartą kerpama…"
+        ]
+      },
       "importModel": {
         "loadingStudio": "Kraunama „Thingport Studio“…",
         "preparing": "Failas „{{filename}}“ ruošiamas atidaryti programoje „Thingport Studio“…",

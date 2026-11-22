@@ -47,7 +47,7 @@ import DashboardAdminPage from "./pages/DashboardAdminPage";
 import ToolsAdminPage from "./pages/ToolsAdminPage";
 import ToolsPage from "./pages/ToolsPage";
 import { useStudioEnabled } from "./hooks/useStudioEnabled";
-import StudioModelImport, { StudioProgress } from "./pages/StudioPage/StudioModelImport";
+import StudioModelImport, { StudioSplash } from "./pages/StudioPage/StudioModelImport";
 import type { StudioArrival } from "./pages/StudioPage/openModel";
 import UsersPage from "./pages/UsersPage";
 import SocialAdminPage from "./pages/SocialAdminPage";
@@ -108,7 +108,7 @@ function StudioRoute({ isAdmin, onUnauthorized }: { isAdmin: boolean; onUnauthor
   if (enabled && navigationType === "PUSH" && openModel) {
     return <StudioModelImport key={location.key} request={openModel} onUnauthorized={onUnauthorized} />;
   }
-  const loading = <StudioProgress message={t("studio.importModel.loadingStudio")} />;
+  const loading = <StudioSplash label={t("studio.importModel.loadingStudio")} />;
   if (enabled === null) return loading;
   return (
     <React.Suspense fallback={loading}>

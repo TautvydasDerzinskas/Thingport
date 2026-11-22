@@ -8,6 +8,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
+import SplashLoader from "../../components/SplashLoader";
 import { openModelAsDesign, type StudioArrival, type StudioModelRequest } from "./openModel";
 
 export function StudioProgress({ message }: { message: string }) {
@@ -24,6 +25,14 @@ export function StudioProgress({ message }: { message: string }) {
         {message}
       </Typography>
     </Stack>
+  );
+}
+
+/** Studio's own full-page wait, while its code or an imported model loads. */
+export function StudioSplash({ label, detail }: { label: string; detail?: string }) {
+  const { t } = useTranslation("app");
+  return (
+    <SplashLoader title={t("studio.loading.title")} label={label} phrasesKey="studio.loading.phrases" detail={detail} />
   );
 }
 
@@ -62,7 +71,7 @@ export default function StudioModelImport({
   }, [fileId, model, navigate, onUnauthorized, t]);
 
   if (error === null) {
-    return <StudioProgress message={t("studio.importModel.preparing", { filename })} />;
+    return <StudioSplash label={t("studio.importModel.preparing", { filename })} detail={filename} />;
   }
   return (
     <Stack spacing={2} alignItems="center" justifyContent="center" sx={{ minHeight: "60vh", px: 2 }}>

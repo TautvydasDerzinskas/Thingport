@@ -4479,6 +4479,23 @@
           "closed": "闭合"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "正在调平打印板…",
+          "正在削铅笔…",
+          "正在对齐网格…",
+          "正在归零原点…",
+          "正在张紧皮带…",
+          "正在校准坐标轴…",
+          "正在排列基准面…",
+          "正在清点三角面…",
+          "正在打磨圆角…",
+          "正在预热喷嘴…",
+          "正在打开工具箱…",
+          "量两次，切一次…"
+        ]
+      },
       "importModel": {
         "loadingStudio": "正在加载 Thingport Studio…",
         "preparing": "正在为 Thingport Studio 准备“{{filename}}”…",

@@ -4667,6 +4667,23 @@
           "closed": "Closed"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Levelling the build plate…",
+          "Sharpening the pencils…",
+          "Squaring up the grid…",
+          "Zeroing the origin…",
+          "Tightening the belts…",
+          "Calibrating the axes…",
+          "Lining up the planes…",
+          "Counting the triangles…",
+          "Rounding off the fillets…",
+          "Warming up the nozzle…",
+          "Unpacking the toolbox…",
+          "Measuring twice, cutting once…"
+        ]
+      },
       "importModel": {
         "loadingStudio": "Loading Thingport Studio…",
         "preparing": "Preparing {{filename}} for Thingport Studio…",

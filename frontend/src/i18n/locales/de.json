@@ -4671,6 +4671,23 @@
           "closed": "Geschlossen"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Druckplatte wird nivelliert …",
+          "Bleistifte werden gespitzt …",
+          "Raster wird gezeichnet …",
+          "Ursprung wird genullt …",
+          "Riemen werden gespannt …",
+          "Achsen werden kalibriert …",
+          "Ebenen werden ausgerichtet …",
+          "Dreiecke werden gezählt …",
+          "Kanten werden verrundet …",
+          "Düse wird vorgeheizt …",
+          "Werkzeugkasten wird ausgepackt …",
+          "Zweimal messen, einmal schneiden …"
+        ]
+      },
       "importModel": {
         "loadingStudio": "Thingport Studio wird geladen …",
         "preparing": "„{{filename}}“ wird für Thingport Studio vorbereitet …",
