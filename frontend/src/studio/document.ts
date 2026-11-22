@@ -10,6 +10,7 @@ export const DOCUMENT_VERSION = 1;
 
 export type { Vec2, Vec3 } from "./vec";
 import { applyMatrix, cross, frameMatrix, normalize, type Vec2, type Vec3 } from "./vec";
+import type { StudioPrintProfile } from "./printProfile";
 import { treatCorners } from "./shapes2d";
 import { textContours, type TextShape } from "./text";
 import { pathContours } from "./svgPath";
@@ -264,6 +265,8 @@ export type StudioDocument = {
   plates?: StudioPlate[];
   next_plate_id?: number;
   print_setup?: StudioPrintSetup;
+  /** The slicer settings it's meant to print with (printProfile.ts); absent until one is set. */
+  print_profile?: StudioPrintProfile;
   locked_layout?: string[];
   filament_slots?: StudioFilamentSlot[];
   /** The units the design is shown and typed in, as a CAD document's are; mm when absent. Only how sizes read: every

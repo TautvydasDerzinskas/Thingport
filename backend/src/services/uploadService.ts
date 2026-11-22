@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { Print } from "@prisma/client";
+import type { Prisma, Print } from "@prisma/client";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
 import { HttpError, mimeFromContentType } from "../utils/fileUtils";
@@ -31,6 +31,9 @@ export type UploadedFile = {
   /** Untrusted; sanitized here. */
   originalname: string;
   mimetype?: string | null;
+  /** A plate that is a print profile (Plate.sourceInstanceId), with what's known of it (Plate.profile): Studio's
+   *  saves. */
+  profile?: { id: string; stored: Prisma.JsonObject };
 };
 
 /** By the name as it will be kept, so "part.STL " is an STL. */
@@ -82,7 +85,13 @@ async function createModelFrom(userId: string, meta: PrintMetaInput, files: Uplo
 
   const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
     const safeName = normalizeFileName(f.originalname);
-    return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
+    return {
+      filename: safeName,
+      mime: mimeFromContentType(f.mimetype, safeName),
+      tempFilePath: f.path,
+      sourceInstanceId: f.profile?.id,
+      profile: f.profile?.stored,
+    };
   });
   const nameHint = path.parse(plateInputs[0].filename).name;
   const { print } = await createPrint(userId, meta, nameHint, plateInputs);
@@ -135,7 +144,13 @@ async function addFilesTo(
       if (isPlate(f)) {
         const safeName = normalizeFileName(f.originalname);
         const [plate] = await addPlatesToPrint(userId, printId, [
-          { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path },
+          {
+            filename: safeName,
+            mime: mimeFromContentType(f.mimetype, safeName),
+            tempFilePath: f.path,
+            sourceInstanceId: f.profile?.id,
+            profile: f.profile?.stored,
+          },
         ]);
         plateIds.push(plate.id);
       } else {

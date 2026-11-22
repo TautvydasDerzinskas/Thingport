@@ -18,7 +18,8 @@ import {
   type ToolResult,
   type ToolSpec,
 } from "./aiToolChat";
-import { LIMITS } from "../studio/document.generated";
+import { LIMITS, STUDIO_FILAMENT_MATERIALS } from "../studio/document.generated";
+import { PRINT_PRESET_IDS } from "../studio/printProfile.generated";
 import { getPublicUrl, getStudioAssistantPrefs } from "./settingsService";
 import { STUDIO_GUIDE } from "./studioGuide";
 import { getStudioDesign, studioPicturePath, type StudioPicture } from "./studioService";
@@ -73,12 +74,35 @@ const SEARCH_NOTE = `Only a few of your tools are loaded at first. Search for th
 (cone, sphere, torus), screw threads, text, tracing a picture, sketches and SVG paths, extrude, revolve, loft and
 sweep, create and move bodies between build plates, set body colors, press/pull, fillet, chamfer, hole, shell, split, separating parts, patterns and mirrors, hulls, aligning bodies
 and laying them flat, scaling, moving, editing, renaming and deleting features, undo, looking at the design, checking
-it for printing, measuring between bodies, parameters and formulas, finding a library model to import, and saving
-the design to the library.`;
+it for printing, measuring between bodies, parameters and formulas, setting the print profile, finding a library
+model to import, and saving the design to the library.`;
 
 // For small local models: the few tools most requests need, each said in a line, and the arguments that matter. Every
 // one is the same command as in full, so a person and the AI still change a design the same way.
-const COMPACT: Record<string, { description: string; args: string[] }> = {
+// A tool whose arguments are too many for a small model gets `shape` instead: fewer, still the command's own, which the
+// server checks against the whole.
+const COMPACT: Record<string, { description: string; args: string[]; shape?: z.ZodRawShape }> = {
+  studio_set_print_profile: {
+    description:
+      "Sets the print profile: a preset (standard, fine, draft, strong, outdoor, water, toy, flexible, heat, vase, " +
+      "smooth), the material, a reason for the person, and a few settings.",
+    args: ["profile"],
+    shape: {
+      profile: z.object({
+        preset: z.enum(PRINT_PRESET_IDS).optional(),
+        material: z.enum(STUDIO_FILAMENT_MATERIALS).optional(),
+        reason: z.string().optional(),
+        settings: z
+          .object({
+            layer_height: z.number().optional(),
+            wall_loops: z.number().int().optional(),
+            sparse_infill_density: z.number().optional(),
+            enable_support: z.boolean().optional(),
+          })
+          .optional(),
+      }),
+    },
+  },
   studio_create_plate: { description: "Creates a named build plate and returns its id.", args: ["name"] },
   studio_move_to_plate: { description: "Moves bodies to a plate.", args: ["plate_id", "feature_ids"] },
   studio_set_body_color: {
@@ -217,7 +241,7 @@ function assistantTools(): AssistantTool[] {
       schema: tighten(json(shape), true) as Record<string, unknown>,
       compact: small
         ? (tighten(
-            json(Object.fromEntries(Object.entries(shape).filter(([key]) => small.args.includes(key)))),
+            json(small.shape ?? Object.fromEntries(Object.entries(shape).filter(([key]) => small.args.includes(key)))),
             false,
           ) as Record<string, unknown>)
         : null,

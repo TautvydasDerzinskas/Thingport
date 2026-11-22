@@ -28,8 +28,25 @@ const PROVIDER_RETRY_MS = 24 * 60 * 60 * 1000;
 
 const log = createLogger("profiles");
 
+/** A profile saved from Studio: its plate's profile id starts with this, and no provider is asked about it. */
+export const STUDIO_PROFILE_PREFIX = "studio-";
+
+export function isStudioProfileId(id: string | null | undefined): boolean {
+  return Boolean(id?.startsWith(STUDIO_PROFILE_PREFIX));
+}
+
+/** What Studio says of a profile saved from a design: the name and the reason the person or an AI gave, and whose. */
+export type StudioProfileFacts = {
+  title: string;
+  description: string | null;
+  creator: string | null;
+  /** The design it was saved from, which may change or go after. */
+  designId: string;
+};
+
 /** Plate.profile: what each source said, kept apart, so a newer reader of one keeps the other's. */
 export type StoredProfile = {
+  studio?: StudioProfileFacts | null;
   file?: ProfileFileFacts | null;
   fileVersion?: number;
   /** The file it was read from, by size and modification time: one edited since is read again. */
@@ -103,6 +120,7 @@ export function profileOut(plate: ProfilePlate): PrintProfileOut | null {
   const stored = storedProfile(plate.profile);
   const file = stored?.file ?? null;
   const provider = stored?.provider ?? null;
+  const studio = stored?.studio ?? null;
   const providerPlates = provider?.plates ?? [];
   const basePlates = file?.plates.length
     ? file.plates
@@ -130,10 +148,10 @@ export function profileOut(plate: ProfilePlate): PrintProfileOut | null {
   const fileFilaments = filePlates.length && filePlates.every(hasAllFilaments) ? projectFilaments(filePlates) : [];
   const filaments = fileFilaments.length ? fileFilaments : (provider?.filaments ?? []);
   return {
-    title: provider?.title ?? null,
-    description: provider?.description ?? null,
+    title: studio?.title ?? provider?.title ?? null,
+    description: studio?.description ?? provider?.description ?? null,
     origin: provider?.origin ?? null,
-    creator: provider?.creator ?? null,
+    creator: studio?.creator ?? provider?.creator ?? null,
     seconds: seconds ?? sumOf(plates.map((p) => p.seconds)),
     grams: grams ?? sumOf(plates.map((p) => p.grams)),
     filaments: filaments.length ? filaments : projectFilaments(plates),
@@ -181,7 +199,8 @@ export function profilesPending(
   return plates.some((plate) => {
     if (!plate.sourceInstanceId) return false;
     const stored = storedProfile(plate.profile);
-    return needsFile(stored, fileStampOf(plate)) || (providerReads && needsProvider(stored, now));
+    const asksProvider = providerReads && !isStudioProfileId(plate.sourceInstanceId);
+    return needsFile(stored, fileStampOf(plate)) || (asksProvider && needsProvider(stored, now));
   });
 }
 
@@ -239,7 +258,12 @@ async function fillProfiles(printId: string): Promise<void> {
   }
 
   const read = await providerFactsReader(print.sourceProvider);
-  const wanted = read ? print.plates.filter((plate) => needsProvider(next.get(plate.id)!, now)) : [];
+  // A profile saved from Studio is the person's own: no site knows it.
+  const wanted = read
+    ? print.plates.filter(
+        (plate) => !isStudioProfileId(plate.sourceInstanceId) && needsProvider(next.get(plate.id)!, now),
+      )
+    : [];
   if (read && wanted.length && print.sourceExternalId) {
     let facts: Awaited<ReturnType<typeof read>> = null;
     try {

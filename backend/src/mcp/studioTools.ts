@@ -4,6 +4,8 @@ import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
 import { isBody, plateOf, studioPlates, topLevel, type Feature, type Vec3 } from "../studio/document.generated";
 import { traceSummary } from "../studio/trace.generated";
 import { DEFAULT_PRINT_BED } from "../studio/printLayout.generated";
+import { checkProfile } from "../studio/printProfile.generated";
+import { prisma } from "../db";
 import {
   createStudioDesign,
   deleteStudioDesign,
@@ -29,6 +31,22 @@ import { WithImages, type McpToolContext, type McpToolDefinition } from "./toolT
 // Studio over MCP: the designs, and one tool per command in frontend/src/studio/commands.ts, made from that list, so
 // every step a person takes on the page is one an assistant can take too. Shown to a token's user as a single "Studio"
 // permission.
+
+/** The models a design's imported meshes came from, as the library has them now: what each is and is for. */
+async function sourceModels(userId: string, features: readonly Feature[]) {
+  const ids = [...new Set(features.flatMap((feature) => (feature.type === "mesh" ? [feature.source.model_id] : [])))];
+  if (!ids.length) return [];
+  const models = await prisma.print.findMany({
+    where: { id: { in: ids.slice(0, 20) }, userId },
+    select: { id: true, name: true, title: true, notes: true, tags: true },
+  });
+  return models.map((model) => ({
+    model_id: model.id,
+    title: model.title || model.name,
+    description: model.notes ? model.notes.slice(0, 1200) : null,
+    tags: model.tags.slice(0, 20),
+  }));
+}
 
 const designId = z.string().min(1).describe("The design's id, from studio_list_designs or studio_create_design.");
 const RENDER_COLOR = "#4f8fd8";
@@ -110,6 +128,7 @@ const getDesign: McpToolDefinition = {
       studioDesignHistory(design, 10),
     ]);
     const roots = topLevel(design.document);
+    const profile = design.document.print_profile;
     return {
       ...brief(ctx, design),
       units: "mm",
@@ -117,6 +136,12 @@ const getDesign: McpToolDefinition = {
       display_units: design.document.units ?? "mm",
       up: "+Z",
       print_setup: design.document.print_setup ?? null,
+      print_profile: profile ?? null,
+      // What to tell the person about the profile before they print (a material that doesn't suit it, settings their
+      // slicer won't take from the file).
+      profile_checks: profile ? checkProfile(design.document, profile).map((check) => check.text) : [],
+      // The library models its imported meshes came from: their descriptions say what the design is for.
+      made_from: await sourceModels(ctx.userId, design.document.features),
       locked_layout: design.document.locked_layout ?? [],
       filament_slots: design.document.filament_slots ?? [],
       // Each with its unit: mm, cm or in for a length, deg, or none.
@@ -414,21 +439,44 @@ const saveToLibrary: McpToolDefinition = {
   name: "studio_save_to_library",
   title: "Save a Studio design to the library",
   description:
-    "Saves the design to the user's Thingport library as a new model: its visible bodies as one 3MF project with its plates and colors, a picture " +
-    "of it, and the requests the user made to Studio's assistant about it as its description. Each save is a new " +
-    "model, a copy of the design as it is now. Save when the user asks to; returns the model's id and link.",
+    "Saves the design to the user's Thingport library: its visible bodies as one 3MF project with its plates, colors " +
+    "and print profile (studio_set_print_profile), made for the profile's slicer and printer. By default it's a new " +
+    "model, with a picture of the design and the requests the user made to Studio's assistant about it as its " +
+    "description. With model_id (a model from search_models or list_models) it's added to that model as one more " +
+    "print profile instead, shown on the model's page beside its other profiles; that needs the design to have a " +
+    "print profile. Each save is a copy of the design as it is now. Save when the user asks to; returns the model's " +
+    "id and link.",
   readOnly: false,
   group: "studio",
   inputSchema: {
     design_id: designId,
-    name: z.string().trim().min(1).max(120).optional().describe("The model's name. Default: the design's."),
+    name: z.string().trim().min(1).max(120).optional().describe("A new model's name. Default: the design's."),
+    model_id: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .optional()
+      .describe("A model of the user's to add the design to as one more print profile, instead of a new model."),
+    profile_name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .optional()
+      .describe("The print profile's name on the model's page. Default: its own name, else its preset and material."),
   },
   async run(ctx, args) {
+    const modelId = args.model_id as string | undefined;
     const model = await saveStudioDesignToLibrary(ctx.userId, args.design_id as string, {
       name: args.name as string | undefined,
+      modelId,
+      profileName: args.profile_name as string | undefined,
     });
     return {
-      done: `Saved the design to the library as “${model.title || model.name}”`,
+      done: modelId
+        ? `Added the design to “${model.title || model.name}” as a print profile`
+        : `Saved the design to the library as “${model.title || model.name}”`,
       model_id: model.id,
       name: model.title || model.name,
       url: ctx.publicUrl ? `${ctx.publicUrl}/models/${model.id}` : null,

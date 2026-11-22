@@ -56,6 +56,15 @@ import {
 import { PATH_CHARACTERS } from "./svgPath.generated";
 import { isoPitch, threadProblem } from "./threads.generated";
 import { arrangeFootprints, DEFAULT_PRINT_BED, isSimpleBedPolygon } from "./printLayout.generated";
+import {
+  PRINT_PRESET_IDS,
+  PROFILE_SETTINGS,
+  PROFILE_SLICERS,
+  printPreset,
+  profileSummary,
+  type ProfileSettingDef,
+  type StudioPrintProfile,
+} from "./printProfile.generated";
 import type { TraceShape, Traced, TraceSettings } from "./trace.generated";
 import {
   applyDirection,
@@ -117,6 +126,21 @@ type CommandDefinition<S extends z.ZodRawShape> = {
 const command = <S extends z.ZodRawShape>(definition: CommandDefinition<S>) => definition;
 
 // --- Arguments, shared ---
+
+/** A print-profile setting's value as a command takes it, or null to put it back to the slicer's own. */
+function settingArg(setting: ProfileSettingDef) {
+  const unit = setting.kind === "number" && setting.unit ? ` (${setting.unit})` : "";
+  const about = `${setting.names.bambu}${unit}`;
+  if (setting.kind === "switch") return z.boolean().nullable().optional().describe(about);
+  if (setting.kind === "choice")
+    return z
+      .enum(setting.options.map((choice) => choice.value) as [string, ...string[]])
+      .nullable()
+      .optional()
+      .describe(about);
+  const number = z.number().finite().min(setting.min).max(setting.max);
+  return (setting.step >= 1 ? number.int() : number).nullable().optional().describe(about);
+}
 
 const coordinate = z.number().finite().min(-LIMITS.size).max(LIMITS.size);
 const vec2 = z.tuple([coordinate, coordinate]);
@@ -2475,6 +2499,105 @@ export const STUDIO_COMMANDS = {
         summary: setup ? `Set up printing with ${setup.printer}` : "Cleared the printer setup",
         created: [],
       };
+    },
+  }),
+
+  set_print_profile: command({
+    title: "Set the design's print profile",
+    destructive: true,
+    description:
+      "Sets the design's print profile: the slicer settings it's meant to be printed with, one per design, written into " +
+      "its 3MF when it's exported, opened in a slicer or saved to the library, where it shows as a print profile on the " +
+      "model's page. `preset` starts from a built-in preset (studio_guide lists them: standard, fine, draft, strong, " +
+      "outdoor, water, toy, flexible, heat, vase, smooth) and replaces the settings with the preset's; `settings` then " +
+      "changes single settings by Bambu Studio's key names, null putting one back to the slicer's own preset. Without a " +
+      "preset, `settings` changes only those it names. Lengths are in mm, sparse_infill_density in percent (0-100), " +
+      "support_threshold_angle in degrees from the horizontal. `slicer` and `printer` say what it's for: the person's " +
+      "slicer (one of Thingport's slicer ids) and one of their printers by printer-catalogue id and nozzle in mm; " +
+      "leave them out to keep what's set. `material` is the filament it's meant for. When you choose a profile, give a " +
+      "one- or two-sentence `reason`, which the person sees. Fields left out stay as they are; null clears one. A null " +
+      "profile removes it.",
+    args: {
+      profile: z
+        .object({
+          preset: z
+            .enum(PRINT_PRESET_IDS)
+            .nullable()
+            .optional()
+            .describe("A preset to start from, replacing the settings; null marks the profile as built by hand."),
+          settings: z
+            .object(Object.fromEntries(PROFILE_SETTINGS.map((setting) => [setting.key, settingArg(setting)])))
+            .strict()
+            .optional()
+            .describe("Settings to change, by Bambu Studio's names; null puts one back to the slicer's own value."),
+          slicer: z
+            .enum(Object.keys(PROFILE_SLICERS) as [string, ...string[]])
+            .nullable()
+            .optional()
+            .describe("The slicer it's for."),
+          printer: z
+            .object({
+              id: z.string().trim().min(1).max(120).describe("The printer catalogue's id for the printer."),
+              nozzle: z
+                .string()
+                .regex(/^\d{1,2}(\.\d{1,3})?$/, "A nozzle size in mm, such as 0.4")
+                .describe("Its nozzle in mm, such as 0.4."),
+            })
+            .strict()
+            .nullable()
+            .optional()
+            .describe("The printer it's for."),
+          material: z.enum(STUDIO_FILAMENT_MATERIALS).nullable().optional().describe("The filament it's meant for."),
+          name: z.string().trim().min(1).max(80).nullable().optional().describe("Its name in the library."),
+          reason: z
+            .string()
+            .trim()
+            .min(1)
+            .max(600)
+            .nullable()
+            .optional()
+            .describe("Why these settings, for the person."),
+        })
+        .strict()
+        .nullable()
+        .describe("The changes to the print profile, or null to remove it."),
+    },
+    apply(doc, { profile: change }) {
+      if (!change) {
+        const had = Boolean(doc.print_profile);
+        delete doc.print_profile;
+        return {
+          document: doc,
+          summary: had ? "Removed the print profile" : "There was no print profile",
+          created: [],
+        };
+      }
+      const current = doc.print_profile;
+      const next: StudioPrintProfile = current
+        ? { ...current, settings: { ...current.settings } }
+        : { preset: null, settings: {} };
+      if (change.preset !== undefined) {
+        next.preset = change.preset;
+        const preset = printPreset(change.preset);
+        if (preset) {
+          next.settings = { ...preset.settings };
+          if (change.material === undefined) next.material = preset.materials[0];
+        }
+      }
+      for (const [key, value] of Object.entries(change.settings ?? {})) {
+        if (value === undefined) continue;
+        if (value === null) delete next.settings[key as keyof StudioPrintProfile["settings"]];
+        else next.settings[key as keyof StudioPrintProfile["settings"]] = value;
+      }
+      for (const field of ["slicer", "printer", "material", "name", "reason"] as const) {
+        const value = change[field];
+        if (value === null) delete next[field];
+        else if (value !== undefined) (next as Record<string, unknown>)[field] = value;
+      }
+      // The server records who it was when it isn't the person on the page.
+      next.by = "person";
+      doc.print_profile = next;
+      return { document: doc, summary: `Set the print profile: ${profileSummary(next)}`, created: [] };
     },
   }),
 

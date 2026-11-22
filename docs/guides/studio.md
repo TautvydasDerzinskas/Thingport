@@ -204,6 +204,13 @@ As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ri
 The model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the design as its description.
 An assistant can save it too when you ask.
 
+A design can carry a **print profile**: the slicer settings it's meant to print with, started from a preset such as
+Standard, Strong, Outdoor, Water contact or Toy, for your slicer and printer. It goes into every 3MF the design is
+saved, downloaded or opened as, so Bambu Studio and the slicers built on it open it with those settings, and
+PrusaSlicer and Cura take the ones they can read through **Open adapted**. Saved to Thingport, it shows on the model's
+page as a print profile, like one imported from a model site. An assistant can choose one from what the design is
+for, and it says why; it can also add the design to a model you already have as one more print profile.
+
 ## Working with an AI assistant
 
 Connect an assistant as [the MCP guide](mcp.md) describes, then turn on **Studio designs** in your API token's MCP

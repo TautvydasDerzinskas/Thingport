@@ -611,6 +611,154 @@ describe("Studio", () => {
     expect(again?.previewImages).toHaveLength(1);
   });
 
+  it("keeps a print profile with the design, writes it into the 3MF and shows it as the model's print profile", async () => {
+    const token = await mcpToken(alice);
+    const designFor = async (name: string) => {
+      const created = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name });
+      await command(alice, created.body.id, "add_box", { width: 30, depth: 20, height: 4 });
+      return created.body.id as string;
+    };
+    const hook = await designFor("Hose hook");
+
+    // A preset, one setting changed on it, and what it's for.
+    const set = await command(alice, hook, "set_print_profile", {
+      profile: {
+        preset: "outdoor",
+        settings: { wall_loops: 6 },
+        slicer: "orcaslicer",
+        reason: "It hangs in the garden.",
+      },
+    });
+    expect(set.status).toBe(200);
+    expect(set.body.design.document.print_profile).toMatchObject({
+      preset: "outdoor",
+      material: "ASA",
+      slicer: "orcaslicer",
+      by: "person",
+      settings: { wall_loops: 6, sparse_infill_density: 25, brim_width: 5 },
+    });
+    expect(
+      (await command(alice, hook, "set_print_profile", { profile: { settings: { wall_loops: 99 } } })).status,
+    ).toBe(400);
+    // An assistant's change says so, and the design tells it what to warn about.
+    await callTool(token, "studio_set_print_profile", {
+      design_id: hook,
+      profile: { settings: { seam_position: "back", layer_height: null } },
+    });
+    const read = await callTool(token, "studio_get_design", { design_id: hook });
+    expect(read.data.print_profile).toMatchObject({ by: "mcp", settings: { seam_position: "back" } });
+    expect(read.data.print_profile.settings.layer_height).toBeUndefined();
+    expect(read.data.profile_checks).toEqual([]);
+
+    // Saved as a new model, its 3MF carries the settings and its plate is a print profile.
+    const saved = await request(app).post(`/api/studio/designs/${hook}/save-to-library`).set(auth(alice)).send({});
+    expect(saved.status).toBe(201);
+    const modelId = saved.body.model.id as string;
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: modelId } });
+    expect(plate.sourceInstanceId).toMatch(/^studio-[0-9a-f]{16}$/);
+    expect(plate.profile).toMatchObject({
+      studio: { title: "Outdoor ASA", description: "It hangs in the garden.", creator: "Studio alice", designId: hook },
+    });
+    const zip = await JSZip.loadAsync(fs.readFileSync(resolvePlateFilePath(plate)!));
+    const config = JSON.parse(await zip.file("Metadata/project_settings.config")!.async("string"));
+    expect(config).toMatchObject({
+      wall_loops: "6",
+      sparse_infill_density: "25%",
+      brim_type: "outer_only",
+      brim_width: "5",
+      seam_position: "back",
+    });
+    expect(config.layer_height).toBeUndefined();
+    expect(String(config.different_settings_to_system[0]).split(";").toSorted()).toEqual([
+      "bottom_shell_layers",
+      "brim_type",
+      "brim_width",
+      "seam_position",
+      "sparse_infill_density",
+      "sparse_infill_pattern",
+      "top_shell_layers",
+      "wall_loops",
+    ]);
+
+    // The model page reads it like an imported profile, from its 3MF, with Studio's name for it.
+    const profilesOf = async (id: string) => {
+      await request(app).post(`/api/print/${id}/profiles/fill`).set(auth(alice));
+      for (let i = 0; i < 50; i++) {
+        const res = await request(app).get(`/api/print/${id}/profiles`).set(auth(alice));
+        if (!res.body.pending && !res.body.filling) return res.body.profiles as Record<string, Record<string, unknown>>;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      throw new Error("The profiles were never read");
+    };
+    expect((await profilesOf(modelId))[plate.id]).toMatchObject({
+      title: "Outdoor ASA",
+      description: "It hangs in the garden.",
+      creator: "Studio alice",
+      walls: 6,
+      infill: "25%",
+    });
+
+    // Another design goes onto the same model as a second profile; one without a profile can't, nor onto Bob's model.
+    const second = await designFor("Hose hook, strong");
+    await command(alice, second, "set_print_profile", { profile: { preset: "strong", name: "Heavy hose" } });
+    const added = await callTool(token, "studio_save_to_library", { design_id: second, model_id: modelId });
+    expect(added.data).toMatchObject({ model_id: modelId });
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates).toHaveLength(2);
+    expect(plates[1].sourceInstanceId).toMatch(/^studio-/);
+    expect(plates[1].filename).toBe("Heavy hose.3mf");
+    expect((await profilesOf(modelId))[plates[1].id]).toMatchObject({ title: "Heavy hose", walls: 5 });
+
+    const bare = await designFor("Bare");
+    const refused = await request(app)
+      .post(`/api/studio/designs/${bare}/save-to-library`)
+      .set(auth(alice))
+      .send({ model_id: modelId });
+    expect(refused.status).toBe(400);
+    expect(refused.body.code).toBe("studio_profile_required");
+    const bobsModel = await request(app).post("/api/studio/designs").set(auth(bob)).send({ name: "Bob's" });
+    await command(bob, bobsModel.body.id, "add_box", { width: 10, depth: 10, height: 10 });
+    const bobs = await request(app)
+      .post(`/api/studio/designs/${bobsModel.body.id}/save-to-library`)
+      .set(auth(bob))
+      .send({});
+    expect(
+      (
+        await request(app)
+          .post(`/api/studio/designs/${second}/save-to-library`)
+          .set(auth(alice))
+          .send({ model_id: bobs.body.model.id })
+      ).status,
+    ).toBe(404);
+
+    // Made for a printer: the 3MF names the slicer's presets for it, and keeps the profile's changes over them.
+    await command(alice, second, "set_print_profile", {
+      profile: { slicer: "orcaslicer", printer: { id: "bambulab-p1s", nozzle: "0.4" } },
+    });
+    const forPrinter = await request(app)
+      .post(`/api/studio/designs/${second}/save-to-library`)
+      .set(auth(alice))
+      .send({});
+    const printerPlate = await prisma.plate.findFirstOrThrow({ where: { printId: forPrinter.body.model.id } });
+    const printerZip = await JSZip.loadAsync(fs.readFileSync(resolvePlateFilePath(printerPlate)!));
+    const printerConfig = JSON.parse(await printerZip.file("Metadata/project_settings.config")!.async("string"));
+    expect(printerConfig.printer_settings_id).toMatch(/P1S/);
+    expect(printerConfig.print_settings_id).toMatch(/0\.20mm/);
+    expect(printerConfig).toMatchObject({ wall_loops: "5", sparse_infill_density: "35%" });
+    expect(String(printerConfig.different_settings_to_system[0]).split(";")).toContain("wall_loops");
+    expect((await profilesOf(forPrinter.body.model.id))[printerPlate.id]).toMatchObject({
+      title: "Heavy hose",
+      printer: expect.stringMatching(/P1S/),
+      walls: 5,
+    });
+
+    // Cleared, the next save has no profile.
+    await command(alice, hook, "set_print_profile", { profile: null });
+    const plain = await request(app).post(`/api/studio/designs/${hook}/save-to-library`).set(auth(alice)).send({});
+    const plainPlate = await prisma.plate.findFirstOrThrow({ where: { printId: plain.body.model.id } });
+    expect(plainPlate.sourceInstanceId).toBeNull();
+  });
+
   it("keeps each person's Studio settings: where the assistant shows, and the units new designs start in", async () => {
     const settings = (session: string) => request(app).get("/api/studio/settings").set(auth(session));
     const grid = { show: true, spacing: "adaptive", density: "normal", major: 10, subdivisions: 10, snap: true };

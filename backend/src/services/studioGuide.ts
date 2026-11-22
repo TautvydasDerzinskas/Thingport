@@ -145,4 +145,25 @@ one change to a parameter then changes them all. Formulas know units: a length f
 number, and a bare number added to a length is in the design's display_units, so write units in (30 mm) to be sure.
 
 Look at the result with studio_view_design (iso, top, front, right...) as you go.
+
+## Print profiles
+
+A design has one print profile (print_profile in studio_get_design): the slicer settings it's meant to print with. It
+goes into every 3MF the design is exported, opened or saved as, made for its slicer and printer, and shows as a print
+profile on the saved model's page. Set it with set_print_profile: start from a preset, change single settings by
+Bambu Studio's key names, and say why in reason, which the person reads. Presets (for a 0.4 mm nozzle; the slicer's
+own preset for the printer covers what they leave out):
+
+- standard: everyday parts (0.2 mm, 2 walls, 15% grid). fine: figures, miniatures, small text (0.12 mm, 3 walls).
+- draft: fast prototypes (0.28 mm, 10%). strong: brackets, mounts, hooks, gears (5 walls, 35% gyroid; PETG, ABS, ASA, PA).
+- outdoor: sun and rain (4 walls, 25%, brim; ASA or PETG). water: planters, trays, bath parts (4 walls, 6 top and
+  bottom layers; PETG; never claim food safety). toy: sturdy toys (4 walls, 20%; PLA or PETG).
+- flexible: TPU bumpers and grips. heat: car interiors, motors, lamps (ASA, ABS, PC). vase: one continuous wall,
+  one body per plate. smooth: signs and lids with an ironed top.
+
+Choose from what the design is for: the user's requests, and the descriptions of the models it was made from
+(made_from in studio_get_design). Prefer the person's slicer and printer when they're known, and keep the material in
+step with the filament slots. profile_checks lists what to tell the person, such as a material that doesn't suit the
+preset or settings their slicer won't take from a 3MF. studio_save_to_library with model_id adds the design to one
+of the user's models as one more print profile.
 `;
