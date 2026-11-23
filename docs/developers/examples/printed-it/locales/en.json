@@ -1,0 +1,16 @@
+{
+  "commands.mark": "Mark as printed",
+  "commands.mark-selection": "Mark as printed",
+  "marked": "Marked {count} as printed",
+  "open": "Open Printed it",
+  "title": "What you've printed",
+  "add": "Add models",
+  "addConfirm": "Mark",
+  "none": "Nothing marked yet. Mark a model from the Tools menu on its page, or add some here.",
+  "unmark": "Not printed",
+  "everyone": "Everyone sees yours",
+  "people": "{count} people see yours",
+  "chip": "Printed by {count}",
+  "you": "You",
+  "someone": "Someone"
+}

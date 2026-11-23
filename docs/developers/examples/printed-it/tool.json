@@ -1,0 +1,14 @@
+{
+  "name": "Printed it",
+  "description": "Marks the models you've printed, and shows on each model's page who in the household has printed it.",
+  "version": "1.0.0",
+  "window": { "width": 460, "height": 520 },
+  "hosts": [],
+  "category": "library",
+  "locales": ["en"],
+  "commands": [
+    { "id": "mark", "title": "Mark as printed", "on": "model", "window": false },
+    { "id": "mark-selection", "title": "Mark as printed", "on": "selection", "window": false }
+  ],
+  "modelPage": { "info": true }
+}

@@ -22,6 +22,11 @@ them, download instead. A file's **⋮** menu, or a right-click on it, also down
 [Send to](../guides/send-to.md) places that takes its type. The **Download** picker lists them below the model files, and a partner's model shows its
 supporting files in a list of their own. Adding them to a model you already have is on the way.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/58_supporting_file_viewer.png">
+  <img src="../../frontend/src/assets/screenshots/light/58_supporting_file_viewer.png" alt="A model's README open in the supporting files viewer, the model's other files beside it" width="100%">
+</picture>
+
 ## Models you can generate again
 
 Some sites let a creator publish the script a model is built from rather than only the finished mesh —

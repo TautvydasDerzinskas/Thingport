@@ -237,9 +237,10 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[Imports from 23 sites](docs/features/importing.md)**: MakerWorld, Printables, Thingiverse, MyMiniFactory and 19 more, with [synced collections](docs/guides/synced-collections.md)
 - **[Opens in your slicer as if it were made there](docs/features/adapted-3mf.md)**: a 3MF from any site, adapted to your slicer and the printer you print on
 - **[AI that tidies up](docs/guides/ai.md)**: better descriptions and categories, on a local model or Claude
-- **[Studio, a CAD of its own](docs/guides/studio.md)**: describe a part in one prompt and the AI builds it, or design it by hand
+- **[Studio, a CAD of its own](docs/guides/studio.md)**: describe a part in one prompt and the AI builds it, or design it by hand; open a 3MF with its plates and colours, and give it the print settings it goes to your slicer with
 - **[Print quality checks](docs/features/print-quality.md)**: problems found before you slice
-- **[Tools](docs/guides/tools.md) and [OpenSCAD](docs/features/supporting-files.md#models-you-can-generate-again)**: planners, generators and calculators, and models that come with an OpenSCAD script, customized in the library
+- **[Send to your printer](docs/guides/send-to.md)**: a file from the model's page to OctoPrint, Klipper, PrusaLink or a webhook
+- **[Tools](docs/guides/tools.md) and [OpenSCAD](docs/features/supporting-files.md#models-you-can-generate-again)**: planners, generators and calculators, a print queue and filament shelf the household shares, notes and a 3D printing wiki, and models that come with an OpenSCAD script, customized in the library
 - **[Share it](docs/features/multi-user.md)**: with your household, or with [other Thingport instances](docs/features/connected-instances.md) you connect to
 
 **[More features…](docs/FEATURES.md)**

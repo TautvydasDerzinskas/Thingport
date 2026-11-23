@@ -14,15 +14,18 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Multicolour models in their own colours](features/3d-previews.md)**
 - **[Print quality checks](features/print-quality.md)**
 - **[Studio: design parts with an AI, or by hand](guides/studio.md)**
+- **[Open a 3MF in Studio with its plates and colours, and give a design its print settings](guides/studio.md#plates-colors-and-export)**
 - **[AI categorization and descriptions, on a local model or Claude](guides/ai.md)**
 - **[Organize, search and bulk-edit](features/organize-and-search.md)**
+- **[Sort by name, or flip any sort](features/organize-and-search.md#search)**
 - **[Dashboard](features/dashboard.md)**
 - **[Profile, activity and achievements](features/profile-and-activity.md)**
 - **[Author pages](features/authors.md)**
 - **[Open in your slicer](features/slicers.md)**
+- **[Send to your printer or a webhook: OctoPrint, Klipper, PrusaLink, Home Assistant, n8n, Node-RED](guides/send-to.md)**
 - **[Adapted 3MFs: a model opens in your slicer as if it had been made there, for your printer](features/adapted-3mf.md)**
 - **[Print profiles on the model page, with their print time, filament and plates](features/importing.md#what-comes-with-a-model)**
-- **[Everything to print it](features/supporting-files.md)**
+- **[Everything to print it: instructions and parts lists, opened on the model page](features/supporting-files.md)**
 - **[Licences: what each model lets you do, filters by it, and LICENSE.txt beside the files](features/licenses.md)**
 - **[Customize models that came with their OpenSCAD script](features/supporting-files.md#models-you-can-generate-again)**
 - **[Download as ZIP](features/downloads.md)**
@@ -39,6 +42,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Connect an AI assistant (MCP)](guides/mcp.md)**
 - **[Custom dashboard widgets](guides/custom-widgets.md)**
 - **[Tools: planners, generators, calculators and a 3MF normalizer](guides/tools.md)**
+- **[A print queue and a filament shelf the household shares, notes on models and a 3D printing wiki](guides/tools.md#the-tools-in-the-repository)**
 - **[Make your own tools, or have an AI write them](guides/tools.md#have-an-ai-write-one)**
-- **[Light and dark themes, accent colours, in English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian and Simplified Chinese](features/appearance.md)**
+- **[Light and dark themes, accent colours, the thumbnail you pick, in English, German, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian and Simplified Chinese](features/appearance.md)**
 - **[Self-hosted](../README.md#installation)**

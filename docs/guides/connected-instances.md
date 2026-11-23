@@ -124,9 +124,9 @@ Anyone on the instance can ask to reach someone on another one: **Explore → So
 handle (`name@their.instance`) and a note. Nothing goes to that instance yet. Every admin here gets a notification,
 and the request waits under **Requests → From your users**:
 
-- **Connect…** opens [Connect to an instance](#connect-to-an-instance) with the address guessed from the handle (plain
-  HTTP for a local address or name like `.lan`, HTTPS otherwise; change it if it's wrong). The note their admin sees
-  says who asked, and whom they want to reach: everyone here waiting to reach someone on that instance goes in the
+- **Connect…** opens [Connect to another instance](#connect-to-another-instance) with the address guessed from the
+  handle (plain HTTP for a local address or name like `.lan`, HTTPS otherwise; change it if it's wrong). The note their
+  admin sees says who asked, and whom they want to reach: everyone here waiting to reach someone on that instance goes in the
   same request. Each person who asked is told once the instances connect, or if the other admin declines.
 - **Decline** tells only the person who asked.
 

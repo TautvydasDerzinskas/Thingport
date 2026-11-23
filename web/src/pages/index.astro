@@ -90,6 +90,8 @@ const TOOL_ORDER = [
   "print-cost-estimator",
   "print-queue",
   "filament-shelf",
+  "notes",
+  "3d-printing-wiki",
   "makerworld-3mf-normalizer",
   "openscad-customizer",
 ];
@@ -103,6 +105,8 @@ const SHORT_NAMES: Record<string, string> = {
   "print-cost-estimator": "Print cost",
   "print-queue": "Print queue",
   "filament-shelf": "Filament shelf",
+  notes: "Notes",
+  "3d-printing-wiki": "Wiki",
   "makerworld-3mf-normalizer": "3MF normalizer",
   "openscad-customizer": "Script customizer",
 };
@@ -143,8 +147,10 @@ const jsonLd = [
       "3D preview in the browser",
       "3MFs adapted to open in your slicer as if made there, for your printer",
       "AI that sorts models into your categories and tidies their descriptions",
-      "Studio: change models or design new parts with AI",
+      "Studio: change models or design new parts with AI, open 3MFs in colour and give them print settings",
+      "Send files to OctoPrint, Klipper, PrusaLink or a webhook",
       "Tools and an OpenSCAD script customizer that generate models",
+      "A print queue and filament shelf the household shares, notes on models and a 3D printing wiki",
       "Connected Thingport instances to share models with friends, over ActivityPub",
       "REST API and MCP server",
     ],
@@ -418,8 +424,9 @@ const arrowRight = "M9 5l7 7-7 7";
           <div>
             <p>
               Describe a part, or a change to a model you kept, and Studio's AI designs it step by step, checks it for
-              printing and saves it to your library. Every step is a CAD command you can take yourself, and the same
-              commands are tools for your assistant over MCP.
+              printing and saves it to your library. Open a 3MF and it comes in with its plates and colours; give it a
+              print profile and it opens in your slicer ready to print. Every step is a CAD command you can take
+              yourself, and the same commands are tools for your assistant over MCP.
             </p>
             <a class="text-link" href={url("docs/guides/studio/")}>Read about Studio <Icon name="arrow" size={16} /></a>
           </div>
@@ -486,8 +493,8 @@ const arrowRight = "M9 5l7 7-7 7";
           <span class="eyebrow">Tools</span>
           <h2 id="tools-title">Generate models on the fly with tools and OpenSCAD scripts</h2>
           <p>
-            Small apps that open in a window of their own and save what they make straight into your library. Pick one
-            to see it.
+            Small apps that open in a window of their own, or right on a model's page, and work with your library. Pick
+            one to see it.
           </p>
         </div>
         <div class="tools" data-tools>
