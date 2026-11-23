@@ -3,7 +3,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { asyncHandler } from "../utils/asyncHandler";
 import { findApiTokenUser, isApiToken } from "../services/apiTokenService";
 import { buildMcpServer } from "../mcp/server";
-import { mcpToolsFor } from "../mcp/tools";
+import { grantedMcpTools, mcpToolsFor } from "../mcp/tools";
 import { getMcpAccess, getPublicUrl } from "../services/settingsService";
 
 // The MCP endpoint (Streamable HTTP, stateless): an assistant connects with the user's API token.
@@ -43,7 +43,7 @@ router.post(
       return;
     }
     const offered = new Set(mcpToolsFor(access).map((tool) => tool.name));
-    const allowed = new Set(user.apiTokenMcpTools.filter((name) => offered.has(name)));
+    const allowed = new Set(grantedMcpTools(user.apiTokenMcpTools).filter((name) => offered.has(name)));
     const server = buildMcpServer({ userId: user.id, publicUrl: await getPublicUrl() }, allowed);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     res.on("close", () => {
