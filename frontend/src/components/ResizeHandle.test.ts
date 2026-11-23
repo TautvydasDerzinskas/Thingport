@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keyedWidth } from "./ResizeHandle";
+import { keyedWidth, widthLimit } from "./ResizeHandle";
 
 describe("keyedWidth", () => {
   const right = { min: 180, max: 480, edge: "right" as const };
@@ -21,5 +21,19 @@ describe("keyedWidth", () => {
   it("leaves other keys alone", () => {
     expect(keyedWidth("Enter", false, 220, right)).toBeNull();
     expect(keyedWidth("ArrowUp", false, 220, right)).toBeNull();
+  });
+});
+
+describe("widthLimit", () => {
+  const limits = { min: 180, max: 480, share: 0.4 };
+
+  it("takes the panel's maximum in a wide window and its share of a narrower one", () => {
+    expect(widthLimit(1600, limits)).toBe(480);
+    expect(widthLimit(1000, limits)).toBe(400);
+    expect(widthLimit(901, limits)).toBe(360);
+  });
+
+  it("never goes below the minimum", () => {
+    expect(widthLimit(300, limits)).toBe(180);
   });
 });

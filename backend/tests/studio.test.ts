@@ -587,6 +587,14 @@ describe("Studio", () => {
     const library = await readBambuPackage(fs.readFileSync(resolvePlateFilePath(file)!));
     expect(library.plates.map(({ name }) => name)).toEqual(["Tests", "Plate 1"]);
 
+    // A hidden plate too heavy to check doesn't stop the check of the shown ones.
+    const heavy = (await tool("add_sphere", { plate_id: lids, radius: 5, segments: 256 })).data.created[0];
+    expect((await tool("linear_pattern", { feature_id: heavy, count: 70, spacing: 12 })).isError).toBe(false);
+    expect((await tool("check_print")).data.bodies.map((body: { id: string }) => body.id)).toEqual(["box-1", "box-3"]);
+    expect((await tool("set_plate_visibility", { plate_id: lids, visible: true })).isError).toBe(false);
+    expect((await tool("check_print")).text).toMatch(/too heavy to check/);
+    expect((await tool("set_plate_visibility", { plate_id: lids, visible: false })).isError).toBe(false);
+
     for (const plate_id of [tests, "plate-1"]) await tool("set_plate_visibility", { plate_id, visible: false });
     const nothing = await request(app)
       .post(`/api/studio/designs/${design.id}/save-to-library`)

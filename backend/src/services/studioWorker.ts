@@ -10,6 +10,7 @@ import {
   MAX_PLATES,
   STUDIO_FILAMENT_SLOT_LIMIT,
   featureById,
+  hiddenPlates,
   isBody,
   plateOf,
   studioPlates,
@@ -358,7 +359,12 @@ async function check(input: Extract<StudioWorkerInput, { kind: "check" }>): Prom
   const unloaded = studioPlates(input.document).find((plate) => plate.source && !plate.hidden);
   if (unloaded)
     return { status: "refused", reason: `Open ${unloaded.name} before checking the whole design for printing.` };
-  const estimate = estimateTriangles(input.document);
+  // Only what the check makes counts: the visible bodies on shown plates.
+  const hidden = hiddenPlates(input.document);
+  const checked = topLevel(input.document).filter(
+    (feature) => isBody(feature) && feature.visible && !hidden.has(plateOf(feature)),
+  );
+  const estimate = estimateTriangles(input.document, new Set(checked.map((feature) => feature.id)));
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
   return {
     status: "checked",

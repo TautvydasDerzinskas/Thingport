@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 
@@ -24,6 +24,32 @@ export function keyedWidth(
   return null;
 }
 
+type WidthLimits = {
+  min: number;
+  max: number;
+  /** The most of the window's width it may take, 0 to 1. */
+  share: number;
+};
+
+/** The widest a panel may be in a window this wide: its own maximum, or its share of the window when that's less. */
+export function widthLimit(windowWidth: number, { min, max, share }: WidthLimits): number {
+  return Math.max(min, Math.min(max, Math.floor(windowWidth * share)));
+}
+
+/** A panel's width for a ResizeHandle. The width shown stays within the window's limit, and one asked for in a wider
+ *  window comes back when the window grows again. Kept for as long as the page that holds it. */
+export function useResizableWidth(initial: number, limits: WidthLimits) {
+  const [asked, setAsked] = useState(initial);
+  const [windowWidth, setWindowWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const max = widthLimit(windowWidth, limits);
+  return { width: Math.min(asked, max), max, setWidth: setAsked };
+}
+
 type Props = {
   /** The panel's edge it sits on; the panel's box has to be positioned. */
   edge: "left" | "right";
@@ -41,15 +67,26 @@ type Props = {
 
 /** A side panel's resizable edge: a pill to drag, or arrow keys once it has focus, as a window splitter. */
 export default function ResizeHandle({ edge, width, min, max, defaultWidth, onChange, label, hint }: Props) {
-  const drag = useRef<{ x: number; width: number } | null>(null);
+  // Where the drag started, and the page's own user-select to put back after it.
+  const drag = useRef<{ x: number; width: number; userSelect: string } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [hovered, setHovered] = useState(false);
   const clamp = (value: number) => Math.round(Math.min(max, Math.max(min, value)));
-  const end = () => {
+  const release = () => {
+    if (drag.current) document.body.style.userSelect = drag.current.userSelect;
     drag.current = null;
-    setDragging(false);
-    document.body.style.removeProperty("user-select");
   };
+  const end = () => {
+    release();
+    setDragging(false);
+  };
+  // Leaving the page mid-drag: a removed handle gets no lostpointercapture.
+  useEffect(
+    () => () => {
+      if (drag.current) document.body.style.userSelect = drag.current.userSelect;
+    },
+    [],
+  );
   return (
     <Tooltip title={hint} placement={edge === "right" ? "right" : "left"} open={hovered && !dragging}>
       <Box
@@ -69,7 +106,7 @@ export default function ResizeHandle({ edge, width, min, max, defaultWidth, onCh
           if (event.button !== 0) return;
           event.preventDefault();
           event.currentTarget.setPointerCapture(event.pointerId);
-          drag.current = { x: event.clientX, width };
+          drag.current = { x: event.clientX, width, userSelect: document.body.style.userSelect };
           setDragging(true);
           // Dragging across the tree shouldn't select its text.
           document.body.style.userSelect = "none";

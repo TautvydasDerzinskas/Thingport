@@ -562,6 +562,14 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     for (const [id, body] of outgoing) {
       if (featureById(doc, id) && !wanted.has(id)) body.group.visible = false;
     }
+    // Hidden at once, not once a body's new shape is made.
+    if (plateHidden) {
+      for (const feature of bodies) {
+        const body = s.bodies.get(feature.id);
+        if (body) body.group.visible = false;
+      }
+      attachGizmo();
+    }
     s.render();
     const drop = () => {
       for (const [id, body] of outgoing) {

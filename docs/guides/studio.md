@@ -47,8 +47,8 @@ download a ZIP with one STL per populated plate. From a plate's menu, **Export a
 bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
 slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
 plate at a time, choose which plate to open. Studio prepares unopened plates as needed for export, subject to the
-design's export limits. For Bambu-compatible slicers, open all imported plates to see every color under **Filament
-assignments**. Choose the slot and material you loaded and save the assignments before opening or downloading the
+design's export limits. For Bambu-compatible slicers, open all imported plates that aren't hidden to see every color under
+**Filament assignments**. Choose the slot and material you loaded and save the assignments before opening or downloading the
 3MF. Studio marks unassigned colors and assigns those to free slots automatically. This handoff supports up to 16
 colors. When the slicer has a preset for the design's checked printer and nozzle, Studio selects that preset by default.
 

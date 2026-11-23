@@ -60,7 +60,7 @@ import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
-import ResizeHandle from "../../components/ResizeHandle";
+import ResizeHandle, { useResizableWidth } from "../../components/ResizeHandle";
 import PrintProfilePanel from "./PrintProfilePanel";
 import StudioSaveDialog, { type StudioSaveDraft, type StudioSaveRequest } from "./StudioSaveDialog";
 import { profileAiPrompt } from "./printProfileUi";
@@ -167,8 +167,9 @@ function panelSx(theme: Theme, side: "left" | "right", order: number) {
   };
 }
 
-/** The Objects / Plates panel's width in px. A changed width lasts while Studio stays open. */
-const OBJECTS_WIDTH = { default: 220, min: 180, max: 480 };
+/** The Objects / Plates panel's width in px, and the most of the window it takes so the view keeps the rest. A changed
+ *  width lasts while Studio stays open. */
+const OBJECTS_WIDTH = { default: 220, min: 180, max: 480, share: 0.4 };
 
 function slideIn(frames: ReturnType<typeof keyframes>) {
   return {
@@ -264,7 +265,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   });
   const [mode, setMode] = useState<StudioMode>("select");
   const [panels, setPanels] = useState(storedPanels);
-  const [objectsWidth, setObjectsWidth] = useState(OBJECTS_WIDTH.default);
+  const objectsWidth = useResizableWidth(OBJECTS_WIDTH.default, OBJECTS_WIDTH);
   const togglePanel = (panel: StudioPanel) =>
     setPanels((prev) => {
       const next = { ...prev, [panel]: !prev[panel] };
@@ -368,7 +369,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       return false;
     };
     setSelected((prev) => (prev.every(onPlate) ? prev : prev.filter(onPlate)));
-    setSketch((prev) => (prev && onPlate(prev.id) && featureById(doc, prev.id)?.type === "sketch" ? prev : null));
+    // Hiding the plate, from here or by an assistant, ends drawing on a sketch the view no longer shows.
+    const plateHidden = studioPlates(doc).some((plate) => plate.id === activePlate && plate.hidden);
+    setSketch((prev) =>
+      prev && !plateHidden && onPlate(prev.id) && featureById(doc, prev.id)?.type === "sketch" ? prev : null,
+    );
   }, [doc, activePlate]);
 
   const changePlate = (id: string) => {
@@ -765,9 +770,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     try {
       const saved = await waitForSaves(design.id);
       if (!saved) return;
-      // A new model is shown by the view as it is; a profile added to a model leaves its pictures alone.
+      // A new model is shown by the view as it is; a profile added to a model leaves its pictures alone. A hidden
+      // plate draws nothing, so it gives no picture.
       const plateHasBodies =
         !modelId &&
+        !studioPlates(saved.document).some((plate) => plate.id === activePlate && plate.hidden) &&
         topLevel(saved.document).some(
           (feature) => isBody(feature) && feature.visible && plateOf(feature) === activePlate,
         );
@@ -1247,8 +1254,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
               xs: "minmax(0, 1fr)",
               // A hidden panel leaves a strip with its tab.
               md: [
-                // The view keeps most of a narrow window, whatever the panel was dragged to.
-                showObjectsPanel && (panels.features ? `min(${objectsWidth}px, 40vw)` : "36px"),
+                showObjectsPanel && (panels.features ? `${objectsWidth.width}px` : "36px"),
                 "minmax(0, 1fr)",
                 editing && (panels.properties ? "270px" : "36px"),
                 assistantPanel && "300px",
@@ -1273,11 +1279,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                 <Box sx={{ display: { xs: "none", md: "block" } }}>
                   <ResizeHandle
                     edge="right"
-                    width={objectsWidth}
+                    width={objectsWidth.width}
                     min={OBJECTS_WIDTH.min}
-                    max={OBJECTS_WIDTH.max}
+                    max={objectsWidth.max}
                     defaultWidth={OBJECTS_WIDTH.default}
-                    onChange={setObjectsWidth}
+                    onChange={objectsWidth.setWidth}
                     label={t("studio.panels.resize", { panel: objectsLabel })}
                     hint={t("studio.panels.resizeHint")}
                   />
