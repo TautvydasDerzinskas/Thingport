@@ -19,6 +19,7 @@ import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
 import {
+  hiddenPlates,
   isBody,
   plateOf,
   STUDIO_DEFAULT_BODY_COLOR,
@@ -92,11 +93,13 @@ export default function StudioSlicerDialog({
       ? `${setup.printer}/${setup.nozzle}`
       : printerChoices.find(({ printer }) => printer.id === settings.printers[slicer])?.key;
   const printer = printerChoices.find(({ key }) => key === (chosenPrinter ?? defaultPrinter));
+  // Hidden plates stay out of what a slicer opens.
+  const hidden = hiddenPlates(design.document);
   const bodies = topLevel(design.document)
     .filter(isBody)
-    .filter((body) => body.visible);
+    .filter((body) => body.visible && !hidden.has(plateOf(body)));
   const used = new Set(bodies.map(plateOf));
-  const plates = studioPlates(design.document).filter((plate) => plate.source || used.has(plate.id));
+  const plates = studioPlates(design.document).filter((plate) => !plate.hidden && (plate.source || used.has(plate.id)));
   const plate = plates.find((entry) => entry.id === chosenPlate) ?? plates[0];
   const onePlate = profile?.reads !== "bambu" && plates.length > 1;
   const canAssignSlots = profile?.reads === "bambu";

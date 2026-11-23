@@ -1,14 +1,42 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -68,6 +96,215 @@ function Icon({ feature }: { feature: Feature }) {
   return <FeatureIcon type={feature.type} sx={sx} />;
 }
 
+/** Where the plate being dragged would land, drawn as a line across the tree. */
+function DropLine({ at }: { at: "before" | "after" }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        position: "absolute",
+        left: 6,
+        right: 6,
+        height: 2,
+        bgcolor: "primary.main",
+        borderRadius: 1,
+        zIndex: 1,
+        pointerEvents: "none",
+        ...(at === "before" ? { top: -1 } : { bottom: -1 }),
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          left: -4,
+          top: -3,
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          border: 2,
+          borderColor: "primary.main",
+          bgcolor: "background.paper",
+          boxSizing: "border-box",
+        },
+      }}
+    />
+  );
+}
+
+type PlateItemProps = {
+  plate: StudioPlate;
+  name: string;
+  active: boolean;
+  expanded: boolean;
+  canEdit: boolean;
+  hasActions: boolean;
+  dropLine: "before" | "after" | null;
+  onActivate: () => void;
+  onExpand: (expanded: boolean) => void;
+  onMenu: (anchor: MenuAnchor) => void;
+  onToggleHidden: () => void;
+  children: ReactNode;
+};
+
+/** A plate and what's on it. In edit mode its grip drags it to another place in the list. */
+function PlateItem({
+  plate,
+  name,
+  active,
+  expanded,
+  canEdit,
+  hasActions,
+  dropLine,
+  onActivate,
+  onExpand,
+  onMenu,
+  onToggleHidden,
+  children,
+}: PlateItemProps) {
+  const { t } = useTranslation(["app", "common"]);
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useSortable({
+    id: plate.id,
+    disabled: !canEdit,
+  });
+  const hidden = Boolean(plate.hidden);
+  return (
+    <Box
+      ref={setNodeRef}
+      role="treeitem"
+      aria-label={name}
+      aria-expanded={expanded}
+      aria-current={active}
+      // The overlay shows the plate being dragged; its place stays as a faint placeholder.
+      sx={{ position: "relative", opacity: isDragging ? 0.4 : 1 }}
+    >
+      {dropLine && <DropLine at={dropLine} />}
+      <ListItemButton
+        dense
+        selected={active}
+        aria-label={name}
+        onClick={onActivate}
+        onContextMenu={
+          hasActions
+            ? (event) => {
+                event.preventDefault();
+                onMenu(contextAnchor(event));
+              }
+            : undefined
+        }
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          onExpand(event.key === "ArrowRight");
+        }}
+        sx={{
+          borderRadius: 1,
+          px: 0.5,
+          py: 0.25,
+          gap: 0.5,
+          minHeight: 32,
+          "& .row-action": { opacity: 0, transition: "opacity 150ms" },
+          "&:hover .row-action, &:focus-within .row-action": { opacity: 1 },
+        }}
+      >
+        {canEdit && (
+          <Tooltip title={t("studio.plates.drag")}>
+            <Box
+              ref={setActivatorNodeRef}
+              component="span"
+              className="row-action"
+              {...attributes}
+              {...listeners}
+              aria-label={`${t("studio.plates.drag")}: ${name}`}
+              onClick={(event) => event.stopPropagation()}
+              sx={{
+                display: "inline-flex",
+                width: 14,
+                ml: -0.25,
+                flexShrink: 0,
+                color: "text.secondary",
+                cursor: isDragging ? "grabbing" : "grab",
+                touchAction: "none",
+                borderRadius: 0.5,
+                "&:focus-visible": { opacity: 1, outline: 2, outlineColor: "primary.main", outlineStyle: "solid" },
+              }}
+            >
+              <DragIndicatorIcon sx={{ fontSize: 16 }} />
+            </Box>
+          </Tooltip>
+        )}
+        <IconButton
+          size="small"
+          aria-label={`${t(expanded ? "studio.tree.collapse" : "studio.tree.expand")} ${name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onExpand(!expanded);
+          }}
+          sx={{ p: 0, color: "text.secondary" }}
+        >
+          <ChevronRightIcon sx={{ fontSize: 18, transform: expanded ? "rotate(90deg)" : "none" }} />
+        </IconButton>
+        <LayersOutlinedIcon
+          sx={{
+            fontSize: 18,
+            color: active ? "primary.main" : "text.secondary",
+            flexShrink: 0,
+            opacity: hidden ? 0.5 : 1,
+          }}
+        />
+        <Typography
+          variant="body2"
+          noWrap
+          sx={{ flex: 1, minWidth: 0, fontWeight: active ? 600 : 500, opacity: hidden ? 0.5 : 1 }}
+        >
+          {name}
+        </Typography>
+        {canEdit && (
+          <Tooltip title={t(hidden ? "studio.plates.show" : "studio.plates.hide")}>
+            <IconButton
+              className="row-action"
+              size="small"
+              aria-label={`${t(hidden ? "studio.plates.show" : "studio.plates.hide")}: ${name}`}
+              aria-pressed={hidden}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleHidden();
+              }}
+              // A hidden plate keeps its crossed-out eye showing.
+              sx={{ p: 0.25, ...(hidden ? { opacity: "1 !important" } : {}) }}
+            >
+              {hidden ? (
+                <VisibilityOffOutlinedIcon sx={{ fontSize: 16 }} />
+              ) : (
+                <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+        )}
+        {hasActions && (
+          <Tooltip title={t("studio.plates.actions")}>
+            <IconButton
+              size="small"
+              aria-haspopup="menu"
+              aria-label={`${t("studio.plates.actions")}: ${name}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onMenu(event.currentTarget);
+              }}
+              sx={{ p: 0.25 }}
+            >
+              <MoreVertIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+        )}
+      </ListItemButton>
+      {expanded && (
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+        <Box role="group" sx={{ opacity: hidden ? 0.5 : 1 }}>
+          {children}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export default function ObjectsPanel({
   document,
   activePlate,
@@ -85,6 +322,12 @@ export default function ObjectsPanel({
 }: Props) {
   const { t } = useTranslation("app");
   const title = t("studio.panels.features");
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", { noSsr: true });
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const [drag, setDrag] = useState<{ id: string; over: string | null } | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [plateExpansion, setPlateExpansion] = useState<Partial<Record<string, boolean>>>({});
   const [plateMenu, setPlateMenu] = useState<{ id: string; anchor: MenuAnchor } | null>(null);
@@ -104,6 +347,21 @@ export default function ObjectsPanel({
   const canEditPlates = Boolean(document && editing);
   const canExportPlate = (plate: StudioPlate) =>
     Boolean(plate.source || rootsByPlate.get(plate.id)?.some((feature) => isBody(feature) && feature.visible));
+
+  const menuIndex = menuPlate ? plates.indexOf(menuPlate) : -1;
+  const movePlate = (id: string, position: number) => void run("move_plate", { plate_id: id, position });
+  const dropLineOf = (id: string): "before" | "after" | null => {
+    if (!drag || drag.over !== id || drag.over === drag.id) return null;
+    const from = plates.findIndex((plate) => plate.id === drag.id);
+    return from < plates.findIndex((plate) => plate.id === id) ? "after" : "before";
+  };
+  const dropPlate = ({ active, over }: DragEndEvent) => {
+    setDrag(null);
+    if (!over || active.id === over.id) return;
+    const to = plates.findIndex((plate) => plate.id === over.id);
+    if (to >= 0) movePlate(String(active.id), to + 1);
+  };
+  const draggedPlate = drag && plates.find((plate) => plate.id === drag.id);
 
   const expandPlate = (id: string, expanded: boolean) => {
     setPlateExpansion((prev) => ({ ...prev, [id]: expanded }));
@@ -289,71 +547,36 @@ export default function ObjectsPanel({
         aria-multiselectable={editing || undefined}
         sx={{ height: "100%", overflow: "auto", px: 0.75, pb: 1 }}
       >
-        {plates.map((plate) => {
-          const active = plate.id === activePlate;
-          const expanded = plateExpansion[plate.id] ?? active;
-          const roots = rootsByPlate.get(plate.id) ?? [];
-          const name = plateLabel(plate, t);
-          const hasActions = canEditPlates || canExportPlate(plate);
-          return (
-            <Box key={plate.id} role="treeitem" aria-label={name} aria-expanded={expanded} aria-current={active}>
-              <ListItemButton
-                dense
-                selected={active}
-                aria-label={name}
-                onClick={() => activatePlate(plate.id)}
-                onContextMenu={
-                  hasActions
-                    ? (event) => {
-                        event.preventDefault();
-                        setPlateMenu({ id: plate.id, anchor: contextAnchor(event) });
-                      }
-                    : undefined
-                }
-                onKeyDown={(event) => {
-                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-                  event.preventDefault();
-                  expandPlate(plate.id, event.key === "ArrowRight");
-                }}
-                sx={{ borderRadius: 1, px: 0.5, py: 0.25, gap: 0.5, minHeight: 32 }}
-              >
-                <IconButton
-                  size="small"
-                  aria-label={`${t(expanded ? "studio.tree.collapse" : "studio.tree.expand")} ${name}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    expandPlate(plate.id, !expanded);
-                  }}
-                  sx={{ p: 0, color: "text.secondary" }}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={({ active }) => setDrag({ id: String(active.id), over: null })}
+          onDragOver={({ active, over }) => setDrag({ id: String(active.id), over: over ? String(over.id) : null })}
+          onDragEnd={dropPlate}
+          onDragCancel={() => setDrag(null)}
+        >
+          <SortableContext items={plates.map((plate) => plate.id)} strategy={verticalListSortingStrategy}>
+            {plates.map((plate) => {
+              const active = plate.id === activePlate;
+              const expanded = plateExpansion[plate.id] ?? active;
+              const roots = rootsByPlate.get(plate.id) ?? [];
+              return (
+                <PlateItem
+                  key={plate.id}
+                  plate={plate}
+                  name={plateLabel(plate, t)}
+                  active={active}
+                  expanded={expanded}
+                  canEdit={canEditPlates}
+                  hasActions={canEditPlates || canExportPlate(plate)}
+                  dropLine={dropLineOf(plate.id)}
+                  onActivate={() => activatePlate(plate.id)}
+                  onExpand={(next) => expandPlate(plate.id, next)}
+                  onMenu={(anchor) => setPlateMenu({ id: plate.id, anchor })}
+                  onToggleHidden={() =>
+                    void run("set_plate_visibility", { plate_id: plate.id, visible: Boolean(plate.hidden) })
+                  }
                 >
-                  <ChevronRightIcon sx={{ fontSize: 18, transform: expanded ? "rotate(90deg)" : "none" }} />
-                </IconButton>
-                <LayersOutlinedIcon
-                  sx={{ fontSize: 18, color: active ? "primary.main" : "text.secondary", flexShrink: 0 }}
-                />
-                <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0, fontWeight: active ? 600 : 500 }}>
-                  {name}
-                </Typography>
-                {hasActions && (
-                  <Tooltip title={t("studio.plates.actions")}>
-                    <IconButton
-                      size="small"
-                      aria-haspopup="menu"
-                      aria-label={`${t("studio.plates.actions")}: ${name}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setPlateMenu({ id: plate.id, anchor: event.currentTarget });
-                      }}
-                      sx={{ p: 0.25 }}
-                    >
-                      <MoreVertIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </ListItemButton>
-              {expanded && (
-                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-                <Box role="group">
                   {roots.length ? (
                     roots.map((feature) => row(feature, plate.id, 0))
                   ) : (
@@ -361,11 +584,25 @@ export default function ObjectsPanel({
                       {t(plate.source ? "studio.importModel.platePending" : "studio.tree.empty")}
                     </Typography>
                   )}
-                </Box>
-              )}
-            </Box>
-          );
-        })}
+                </PlateItem>
+              );
+            })}
+          </SortableContext>
+          <DragOverlay dropAnimation={reduceMotion ? null : undefined}>
+            {draggedPlate && (
+              <Paper
+                elevation={6}
+                sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 0.5, minHeight: 32, cursor: "grabbing" }}
+              >
+                <DragIndicatorIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                <LayersOutlinedIcon sx={{ fontSize: 18, color: "text.secondary" }} />
+                <Typography variant="body2" noWrap sx={{ fontWeight: 500, pr: 1 }}>
+                  {plateLabel(draggedPlate, t)}
+                </Typography>
+              </Paper>
+            )}
+          </DragOverlay>
+        </DndContext>
       </Box>
       <Menu
         anchorEl={plateMenu?.anchor}
@@ -380,7 +617,10 @@ export default function ObjectsPanel({
             if (menuPlate) onExportPlate(menuPlate.id);
           }}
         >
-          {t("studio.plates.exportStl")}
+          <ListItemIcon>
+            <FileDownloadOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("studio.plates.exportStl")}</ListItemText>
         </MenuItem>
         {canEditPlates && [
           <MenuItem
@@ -395,7 +635,10 @@ export default function ObjectsPanel({
               setPlateMenu(null);
             }}
           >
-            {t("studio.print.arrange")}
+            <ListItemIcon>
+              <GridViewOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("studio.print.arrange")}</ListItemText>
           </MenuItem>,
           <MenuItem
             key="rename"
@@ -404,8 +647,56 @@ export default function ObjectsPanel({
               setPlateMenu(null);
             }}
           >
-            {t("studio.plates.rename")}
+            <ListItemIcon>
+              <DriveFileRenameOutlineOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("studio.plates.rename")}</ListItemText>
           </MenuItem>,
+          <Divider key="order" />,
+          <MenuItem
+            key="up"
+            disabled={menuIndex < 1}
+            onClick={() => {
+              if (menuPlate) movePlate(menuPlate.id, menuIndex);
+              setPlateMenu(null);
+            }}
+          >
+            <ListItemIcon>
+              <ArrowUpwardIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("studio.plates.moveUp")}</ListItemText>
+          </MenuItem>,
+          <MenuItem
+            key="down"
+            disabled={menuIndex < 0 || menuIndex >= plates.length - 1}
+            onClick={() => {
+              if (menuPlate) movePlate(menuPlate.id, menuIndex + 2);
+              setPlateMenu(null);
+            }}
+          >
+            <ListItemIcon>
+              <ArrowDownwardIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("studio.plates.moveDown")}</ListItemText>
+          </MenuItem>,
+          <MenuItem
+            key="visibility"
+            onClick={() => {
+              if (menuPlate)
+                void run("set_plate_visibility", { plate_id: menuPlate.id, visible: Boolean(menuPlate.hidden) });
+              setPlateMenu(null);
+            }}
+          >
+            <ListItemIcon>
+              {menuPlate?.hidden ? (
+                <VisibilityOutlinedIcon fontSize="small" />
+              ) : (
+                <VisibilityOffOutlinedIcon fontSize="small" />
+              )}
+            </ListItemIcon>
+            <ListItemText>{t(menuPlate?.hidden ? "studio.plates.show" : "studio.plates.hide")}</ListItemText>
+          </MenuItem>,
+          <Divider key="delete-divider" />,
           <MenuItem
             key="delete"
             disabled={
@@ -418,8 +709,12 @@ export default function ObjectsPanel({
               if (menuPlate) void run("delete_plate", { plate_id: menuPlate.id });
               setPlateMenu(null);
             }}
+            sx={{ color: "error.main" }}
           >
-            {t("studio.plates.delete")}
+            <ListItemIcon sx={{ color: "inherit" }}>
+              <DeleteOutlineIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("studio.plates.delete")}</ListItemText>
           </MenuItem>,
         ]}
       </Menu>

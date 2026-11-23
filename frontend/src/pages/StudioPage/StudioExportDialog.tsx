@@ -8,7 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Segmented from "../../components/controls/Segmented";
-import { isBody, studioPlates, topLevel, type StudioDocument } from "../../studio/document";
+import { exportsSomething, type StudioDocument } from "../../studio/document";
 
 type Format = "3mf" | "stl-zip";
 
@@ -22,9 +22,7 @@ type Props = {
 export default function StudioExportDialog({ document, downloading, onDownload, onClose }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const [format, setFormat] = useState<Format>("3mf");
-  const canExport =
-    studioPlates(document).some((plate) => plate.source) ||
-    topLevel(document).some((feature) => isBody(feature) && feature.visible);
+  const canExport = exportsSomething(document);
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">

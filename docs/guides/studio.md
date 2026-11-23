@@ -15,7 +15,8 @@ Its **Recent** list jumps to the three designs you edited last.
 The toolbar's **Save** menu is available in both modes. The **Edit** button (the pencil) shows the editing tools,
 **Properties**, and the status bar. You can turn the view and use the undo and redo shortcuts in either mode.
 The **Objects / Plates** and **Properties** panels fold away with the arrows in their headers. Reopen them from
-their tabs or from the panels button at the right of the status bar, beside the print check and **Studio settings**.
+their tabs or from the panels button at the right of the status bar, beside the print check and **Studio settings**. Drag the pill on the **Objects / Plates** panel's edge to widen it for long names, or focus it and use the arrow keys;
+double-click it for the default width. The width lasts while Studio is open, and a new visit starts at the default.
 
 ### Plates, colors, and export
 
@@ -29,6 +30,11 @@ the viewport. In Edit mode, use **Add plate** in the panel header or the actions
 delete it when empty. Expand an object to see the features it was built from. For multi-plate designs, the panel
 also lets you switch plates outside Edit mode.
 
+In Edit mode, drag a plate by its grip, or use **Move up** and **Move down** in its menu, to change the order plates
+are saved and exported in. The eye on a plate, or **Hide plate** in its menu, hides it: its bodies aren't drawn, and
+**Save to Thingport**, **Export**, **Open with slicer** and the whole-design check leave it out. It stays in the
+design, and **Export as STL** in its own menu still downloads it.
+
 Select a body and use **Move to plate** in Properties to change its plate while keeping its position and orientation.
 You can select several bodies to move or color them together. Set **Body color** and choose **Apply** to use that
 color in the viewport and the 3MF. Each plate with visible bodies gets a thumbnail in the 3MF. Hidden bodies and
@@ -41,8 +47,8 @@ download a ZIP with one STL per populated plate. From a plate's menu, **Export a
 bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
 slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
 plate at a time, choose which plate to open. Studio prepares unopened plates as needed for export, subject to the
-design's export limits. For Bambu-compatible slicers, open all imported plates to see every color under **Filament
-assignments**. Choose the slot and material you loaded and save the assignments before opening or downloading the
+design's export limits. For Bambu-compatible slicers, open all imported plates that aren't hidden to see every color under
+**Filament assignments**. Choose the slot and material you loaded and save the assignments before opening or downloading the
 3MF. Studio marks unassigned colors and assigns those to free slots automatically. This handoff supports up to 16
 colors. When the slicer has a preset for the design's checked printer and nozzle, Studio selects that preset by default.
 
@@ -202,7 +208,7 @@ print. Pick one of your saved printers to show its bed outline in the viewport a
 for the check. You can also enter custom dimensions. Select a warning to jump to its object and plate. Overhangs
 and thin walls show markers at the affected areas. Use **Onto bed** to lower a floating body or **Lay flat** to pick
 a face to print on. **Measure** gives the gap or overlap between two bodies. Ask AI and MCP use the same printer setup.
-Open all imported 3MF plates before running the whole-design check.
+Open all imported 3MF plates that aren't hidden before running the whole-design check.
 As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ridges don't count as overhang or thin walls.
 
 **Save to Thingport** saves the design as a **New model**, named after the design unless you change it, or with **Add

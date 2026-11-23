@@ -552,6 +552,58 @@ describe("Studio", () => {
     expect((await archive.file("3 - Tray_A.stl")!.async("nodebuffer")).readUInt32LE(80)).toBe(12);
   }, 60_000);
 
+  it("saves and exports plates in their order, leaving hidden plates out", async () => {
+    const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Order" });
+    const token = await mcpToken(alice);
+    const tool = (name: string, args = {}) => callTool(token, `studio_${name}`, { design_id: design.id, ...args });
+    const base = `/api/studio/designs/${design.id}/export`;
+    const download = (format: string, plate = "-") =>
+      request(app).get(`${base}/${format}/-/-/-/${plate}/Order`).set(auth(alice)).buffer(true).parse(readBinary);
+    const box = { width: 12, depth: 12, height: 5 };
+    expect((await tool("add_box", box)).isError).toBe(false);
+    const lids = (await tool("create_plate", { name: "Lids" })).data.created[0];
+    const tests = (await tool("create_plate", { name: "Tests" })).data.created[0];
+    expect((await tool("add_box", { ...box, plate_id: lids })).isError).toBe(false);
+    expect((await tool("add_box", { ...box, plate_id: tests })).isError).toBe(false);
+    expect((await tool("move_plate", { plate_id: tests, position: 1 })).isError).toBe(false);
+    expect((await tool("set_plate_visibility", { plate_id: lids, visible: false })).isError).toBe(false);
+    expect((await tool("get_design")).data.plates).toEqual([
+      { id: tests, name: "Tests", feature_ids: ["box-3"] },
+      { id: "plate-1", name: "Plate 1", feature_ids: ["box-1"] },
+      { id: lids, name: "Lids", hidden: true, feature_ids: ["box-2"] },
+    ]);
+
+    const project = await download("3mf");
+    expect(project.status).toBe(200);
+    expect((await readBambuPackage(project.body)).plates.map(({ name }) => name)).toEqual(["Tests", "Plate 1"]);
+    const zipped = await download("stl-zip");
+    expect(Object.keys((await JSZip.loadAsync(zipped.body)).files)).toEqual(["1 - Tests.stl", "2 - Plate 1.stl"]);
+    // A hidden plate still exports when it's the one asked for.
+    expect((await download("stl", lids)).status).toBe(200);
+
+    const saved = await request(app).post(`/api/studio/designs/${design.id}/save-to-library`).set(auth(alice)).send({});
+    expect(saved.status).toBe(201);
+    const file = await prisma.plate.findFirstOrThrow({ where: { printId: saved.body.model.id } });
+    const library = await readBambuPackage(fs.readFileSync(resolvePlateFilePath(file)!));
+    expect(library.plates.map(({ name }) => name)).toEqual(["Tests", "Plate 1"]);
+
+    // A hidden plate too heavy to check doesn't stop the check of the shown ones.
+    const heavy = (await tool("add_sphere", { plate_id: lids, radius: 5, segments: 256 })).data.created[0];
+    expect((await tool("linear_pattern", { feature_id: heavy, count: 70, spacing: 12 })).isError).toBe(false);
+    expect((await tool("check_print")).data.bodies.map((body: { id: string }) => body.id)).toEqual(["box-1", "box-3"]);
+    expect((await tool("set_plate_visibility", { plate_id: lids, visible: true })).isError).toBe(false);
+    expect((await tool("check_print")).text).toMatch(/too heavy to check/);
+    expect((await tool("set_plate_visibility", { plate_id: lids, visible: false })).isError).toBe(false);
+
+    for (const plate_id of [tests, "plate-1"]) await tool("set_plate_visibility", { plate_id, visible: false });
+    const nothing = await request(app)
+      .post(`/api/studio/designs/${design.id}/save-to-library`)
+      .set(auth(alice))
+      .send({});
+    expect(nothing.status).toBe(400);
+    expect(nothing.body.code).toBe("studio_save_empty");
+  }, 60_000);
+
   it("saves a design to the library: its 3MF, its picture, and what was asked as its description", async () => {
     const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Tag" });
     const empty = await request(app).post(`/api/studio/designs/${design.id}/save-to-library`).set(auth(alice)).send({});

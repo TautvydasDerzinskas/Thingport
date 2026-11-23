@@ -2658,11 +2658,12 @@ export const STUDIO_COMMANDS = {
 
   delete_plate: command({
     title: "Delete an empty build plate",
-    description: "Deletes an empty build plate. Move its features first. Plate 1 always remains available.",
+    description:
+      "Deletes an empty build plate. Move its features first. plate-1, where bodies without a plate_id go, always remains.",
     destructive: true,
     args: { plate_id: plateId },
     apply(doc, { plate_id }) {
-      if (plate_id === DEFAULT_PLATE_ID) throw new CommandError("The first plate cannot be deleted.");
+      if (plate_id === DEFAULT_PLATE_ID) throw new CommandError("plate-1 cannot be deleted.");
       if (findPlate(doc, plate_id).source)
         throw new CommandError("Load this build plate first.", "studio_plate_pending");
       if (doc.features.some((feature) => feature.plate_id === plate_id && !consumerOf(doc, feature.id)))
@@ -2672,6 +2673,52 @@ export const STUDIO_COMMANDS = {
       }
       doc.plates = studioPlates(doc).filter((plate) => plate.id !== plate_id);
       return { document: doc, created: [], summary: `Deleted ${plate_id}` };
+    },
+  }),
+
+  move_plate: command({
+    title: "Move a build plate in the plate list",
+    destructive: true,
+    description:
+      "Moves a build plate to another place in the design's plate list, the order plates are shown, saved and exported " +
+      "in. The other plates keep their order; the plate keeps its ID, name and bodies.",
+    args: {
+      plate_id: plateId,
+      position: z
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_PLATES)
+        .describe("Its place in the plate list as studio_get_design lists it: 1 is first."),
+    },
+    apply(doc, { plate_id, position }) {
+      findPlate(doc, plate_id);
+      const plates = [...studioPlates(doc)];
+      const from = plates.findIndex((plate) => plate.id === plate_id);
+      if (position > plates.length)
+        throw new CommandError(
+          `This design has ${plates.length} ${plates.length === 1 ? "plate" : "plates"}, so position goes up to ${plates.length}.`,
+        );
+      plates.splice(position - 1, 0, ...plates.splice(from, 1));
+      doc.plates = plates;
+      return { document: doc, created: [], summary: `Moved ${plate_id} to position ${position}` };
+    },
+  }),
+
+  set_plate_visibility: command({
+    title: "Show or hide a build plate",
+    destructive: true,
+    description:
+      "Hides a build plate, or shows it again. A hidden plate stays in the design and commands still change it, but " +
+      "the view doesn't draw it and it's left out when the whole design is saved to the library, downloaded, opened " +
+      "in a slicer or print-checked. Exporting that one plate still works. Each body keeps its own visibility.",
+    args: { plate_id: plateId, visible: z.boolean().describe("true shows it, false hides it.") },
+    apply(doc, { plate_id, visible }) {
+      doc.plates = [...studioPlates(doc)];
+      const plate = findPlate(doc, plate_id);
+      if (visible) delete plate.hidden;
+      else plate.hidden = true;
+      return { document: doc, created: [], summary: `${visible ? "Showed" : "Hid"} ${plate_id}` };
     },
   }),
 
@@ -2891,7 +2938,7 @@ export const STUDIO_COMMANDS = {
       "Brings in an STL, 3MF, STEP, OBJ or GLB from the library. Find the model with search_models and its files " +
       "with list_model_files. STL, STEP, OBJ and GLB come in as one mesh, centered on the bed. A 3MF brings each " +
       "printable object as its own body, retaining its name, layout and uniform color where given. The first plate " +
-      "imports into plate_id or the first Studio plate; additional populated plates are created. Each loose piece " +
+      "imports into plate_id or plate-1; additional populated plates are created. Each loose piece " +
       "within a body can be split with separate_parts. A closed mesh can be combined, rounded, drilled and " +
       `hollowed. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
     kind: "import",
