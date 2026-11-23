@@ -2,6 +2,7 @@ import http from "node:http";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
+import Ajv2020 from "ajv/dist/2020";
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -423,6 +424,20 @@ describe("Studio's assistant", () => {
     const retried = seen[1].body as { tools: { type?: string; defer_loading?: boolean }[] };
     expect(retried.tools.some((tool) => tool.type?.startsWith("tool_search"))).toBe(false);
     expect(retried.tools.some((tool) => tool.defer_loading)).toBe(false);
+  });
+
+  it("sends Claude only tool schemas JSON Schema 2020-12 accepts", async () => {
+    await offer("anthropic", await startAi());
+    const designId = await newDesign(person.token);
+    script = () => claude([{ type: "text", text: "Nothing to do." }], "end_turn");
+    expect((await ask(person.token, designId, "Hello")).run.status).toBe("done");
+    const tools = (seen[0].body as { tools: { name: string; input_schema?: object }[] }).tools;
+    const ajv = new Ajv2020({ strict: false });
+    const invalid = tools.filter((tool) => tool.input_schema && !ajv.validateSchema(tool.input_schema));
+    expect(invalid.map((tool) => tool.name)).toEqual([]);
+    // A tuple whose places differ keeps each one's description.
+    const setup = tools.find((tool) => tool.name === "studio_set_print_setup")!.input_schema;
+    expect(JSON.stringify(setup)).toMatch(/"prefixItems":\[\{[^}]*"Bed width in mm"/);
   });
 
   it("gives a small local model the compact tool set, with short instructions", async () => {
