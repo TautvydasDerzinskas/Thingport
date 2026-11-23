@@ -6637,7 +6637,17 @@
     },
     "supporting": {
       "title": "Archivos adjuntos",
-      "actionsFor": "Acciones de {{name}}"
+      "actionsFor": "Acciones de {{name}}",
+      "open": "Abrir",
+      "openInTab": "Abrir en una pestaña nueva",
+      "newTab": "Pestaña nueva",
+      "copyLink": "Copiar enlace",
+      "linkCopied": "Enlace copiado",
+      "noPreview": "No hay vista previa para archivos {{type}}",
+      "tooLargeToPreview": "Demasiado grande para la vista previa",
+      "previewFailed": "No se pudo mostrar este archivo",
+      "firstRows": "Se muestran las primeras {{count}} filas",
+      "firstColumns": "Se muestran las primeras {{count}} columnas"
     },
     "customizer": {
       "title": "Personalizando {{model}}",

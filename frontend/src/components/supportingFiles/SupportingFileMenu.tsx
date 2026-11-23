@@ -5,6 +5,8 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import LinkIcon from "@mui/icons-material/Link";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useTranslation } from "react-i18next";
 import type { SendTargetSummary } from "../../api/sendTargets";
 import { SendKindIcon, kindOf } from "../sendTo/sendKinds";
@@ -14,24 +16,31 @@ export type FileMenuAnchor = { element: HTMLElement } | { top: number; left: num
 
 const NO_TARGETS: SendTargetSummary[] = [];
 
-/** A supporting file's actions: downloading it, then each of the user's Send to places that takes it. */
+/** A supporting file's actions: opening, downloading and linking to it, then each of the user's Send to places that
+ *  takes it. */
 export default function SupportingFileMenu({
   anchor,
   onClose,
+  onOpen,
   onDownload,
+  onCopyLink,
   sendTargets = NO_TARGETS,
   sending,
   onSend,
 }: {
   anchor: FileMenuAnchor | null;
   onClose: () => void;
+  /** Left out where there's no viewer, as on a partner's model. */
+  onOpen?: () => void;
   /** Left out where there's nothing to download, as for a partner's file it gave no address for. */
   onDownload?: () => void;
+  /** Left out where there's no page of the file's to link to, as on a partner's model. */
+  onCopyLink?: () => void;
   sendTargets?: SendTargetSummary[];
   sending?: ReadonlySet<string>;
   onSend?: (target: SendTargetSummary) => void;
 }) {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation(["common", "models"]);
   const run = (action: () => void) => () => {
     onClose();
     action();
@@ -50,6 +59,14 @@ export default function SupportingFileMenu({
       onContextMenu={(event) => event.preventDefault()}
       slotProps={{ paper: { sx: { minWidth: 220 } } }}
     >
+      {onOpen && (
+        <MenuItem onClick={run(onOpen)}>
+          <ListItemIcon>
+            <VisibilityOutlinedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("models:supporting.open")}</ListItemText>
+        </MenuItem>
+      )}
       {onDownload && (
         <MenuItem onClick={run(onDownload)}>
           <ListItemIcon>
@@ -58,7 +75,15 @@ export default function SupportingFileMenu({
           <ListItemText>{t("common:download")}</ListItemText>
         </MenuItem>
       )}
-      {onDownload && sendTargets.length > 0 && <Divider />}
+      {onCopyLink && (
+        <MenuItem onClick={run(onCopyLink)}>
+          <ListItemIcon>
+            <LinkIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t("models:supporting.copyLink")}</ListItemText>
+        </MenuItem>
+      )}
+      {(onOpen || onDownload || onCopyLink) && sendTargets.length > 0 && <Divider />}
       {sendTargets.map((target) => (
         <MenuItem key={target.id} disabled={sending?.has(target.id)} onClick={run(() => onSend?.(target))}>
           <ListItemIcon>

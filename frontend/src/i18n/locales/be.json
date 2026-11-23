@@ -6321,7 +6321,17 @@
     },
     "supporting": {
       "title": "Дапаможныя файлы",
-      "actionsFor": "Дзеянні для {{name}}"
+      "actionsFor": "Дзеянні для {{name}}",
+      "open": "Адкрыць",
+      "openInTab": "Адкрыць у новай укладцы",
+      "newTab": "Новая ўкладка",
+      "copyLink": "Скапіраваць спасылку",
+      "linkCopied": "Спасылка скапіравана",
+      "noPreview": "Няма папярэдняга прагляду для файлаў {{type}}",
+      "tooLargeToPreview": "Занадта вялікі для папярэдняга прагляду",
+      "previewFailed": "Не ўдалося паказаць гэты файл",
+      "firstRows": "Паказаны першыя {{count}} радкоў",
+      "firstColumns": "Паказаны першыя {{count}} слупкоў"
     },
     "collections": {
       "pageTitle": "Калекцыі",

@@ -6403,7 +6403,17 @@
     },
     "supporting": {
       "title": "Zusatzdateien",
-      "actionsFor": "Aktionen für {{name}}"
+      "actionsFor": "Aktionen für {{name}}",
+      "open": "Öffnen",
+      "openInTab": "In neuem Tab öffnen",
+      "newTab": "Neuer Tab",
+      "copyLink": "Link kopieren",
+      "linkCopied": "Link kopiert",
+      "noPreview": "Keine Vorschau für {{type}}-Dateien",
+      "tooLargeToPreview": "Zu groß für eine Vorschau",
+      "previewFailed": "Diese Datei konnte nicht angezeigt werden",
+      "firstRows": "Die ersten {{count}} Zeilen",
+      "firstColumns": "Die ersten {{count}} Spalten"
     },
     "customizer": {
       "title": "{{model}} anpassen",

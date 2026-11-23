@@ -6398,7 +6398,17 @@
     },
     "supporting": {
       "title": "Supporting files",
-      "actionsFor": "Actions for {{name}}"
+      "actionsFor": "Actions for {{name}}",
+      "open": "Open",
+      "openInTab": "Open in a new tab",
+      "newTab": "New tab",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "noPreview": "No preview for {{type}} files",
+      "tooLargeToPreview": "Too large to preview",
+      "previewFailed": "Couldn't show this file",
+      "firstRows": "Showing the first {{count}} rows",
+      "firstColumns": "Showing the first {{count}} columns"
     },
     "customizer": {
       "title": "Customizing {{model}}",
