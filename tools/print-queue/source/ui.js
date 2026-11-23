@@ -390,7 +390,8 @@ export default function mount(thingport) {
       context.modelId ? allJobs(shared, { model: context.modelId }).catch(() => []) : [],
     ]);
     if (closed || read !== reads) return;
-    if (dragKey) {
+    // Not under a drag, nor under the model picker, which hands focus back to the Add model button it opened from.
+    if (dragKey || adding) {
       due = true;
       return;
     }
@@ -511,14 +512,14 @@ export default function mount(thingport) {
     return li;
   }
 
-  // One pick at a time: a second could pass the duplicate check before the first's jobs are stored. The board isn't
-  // drawn again meanwhile, so the picker hands focus back to the card that opened it.
+  // One pick at a time: a second could pass the duplicate check before the first's jobs are stored. The board is read
+  // again once it's done, never while the picker is open.
   let adding = false;
   const pickAndAdd = safely(async () => {
     if (adding) return;
     adding = true;
     try {
-      if (await addPicked(thingport)) await load();
+      if (await addPicked(thingport)) due = true;
     } finally {
       adding = false;
       if (due) refreshWhenIdle();
