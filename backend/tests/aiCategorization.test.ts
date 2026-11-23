@@ -16,6 +16,16 @@ import {
   suggestMappedCategory,
 } from "../src/services/aiCategorizationService";
 
+const moves = vi.hoisted(() => ({ fail: false }));
+vi.mock("../src/services/printService", async (original) => {
+  const actual = await original<typeof import("../src/services/printService")>();
+  return {
+    ...actual,
+    relocatePrint: (...args: Parameters<typeof actual.relocatePrint>) =>
+      moves.fail ? Promise.reject(new Error("disk full")) : actual.relocatePrint(...args),
+  };
+});
+
 const app = createApp();
 const stamp = Date.now();
 const STL = "solid test\nendsolid test";
@@ -1054,6 +1064,29 @@ describe("AI categorization", () => {
     expect(accepted.status).toBe(200);
     expect(accepted.body.print).toMatchObject({ category_id: target.id, name: "Twin (2)", ai_suggestion: null });
     expect(await prisma.print.findUniqueOrThrow({ where: { id: twin.id } })).toMatchObject({ name: "Twin" });
+  });
+
+  it("files a model in its category when its files can't follow", async () => {
+    const target = await category("Target");
+    const baseUrl = await startProvider(() => ({ category_id: target.id, confidence: 0.9, reason: "fits" }));
+    await enable(baseUrl);
+    const model = await print();
+    await request(app).post(`/api/print/${model.id}/recategorize`).set(auth()).send({});
+
+    moves.fail = true;
+    try {
+      const accepted = await request(app).post(`/api/print/${model.id}/ai-suggestion/accept`).set(auth()).send({});
+      expect(accepted.status).toBe(200);
+      expect(accepted.body.print).toMatchObject({ category_id: target.id, ai_suggestion: null });
+
+      await enable(baseUrl, { mode: "auto" });
+      const auto = await print();
+      const applied = await request(app).post(`/api/print/${auto.id}/recategorize`).set(auth()).send({});
+      expect(applied.status).toBe(200);
+      expect(applied.body).toMatchObject({ outcome: "applied", print: { category_id: target.id } });
+    } finally {
+      moves.fail = false;
+    }
   });
 
   it("discards an in-flight answer when a user categorizes manually", async () => {
