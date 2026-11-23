@@ -5116,16 +5116,8 @@
       "settings": {
         "title": "Ajustes de Studio",
         "sections": {
-          "assistant": "Preguntar a la IA",
           "units": "Unidades",
           "grid": "Cuadrícula"
-        },
-        "assistantIntro": "Dónde muestra su conversación Preguntar a la IA.",
-        "layout": "Disposición",
-        "layoutHelp": "Barra: bajo la vista, una línea mientras la IA trabaja y el resto al abrirla. Panel lateral: junto a la vista, para que nada tape el modelo.",
-        "layouts": {
-          "bar": "Barra",
-          "panel": "Panel lateral"
         },
         "failed": "No se pudo guardar el ajuste.",
         "unitsIntro": "En qué se muestran y escriben las medidas. Las medidas no cambian; solo cómo se leen.",

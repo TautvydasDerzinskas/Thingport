@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { studioApi, type StudioGridSettings, type StudioSettings } from "../api/studio";
 
-// The person's Studio settings, saved on the account so every device has them: where the assistant shows, the units a
-// new design starts in, and the grid. Shared by Studio's settings dialog and the page so there's one request, and a change shows in
-// both at once.
+// New design units and grid settings are saved on the account. The dialog and page share one request and update together.
 /** An adaptive grid at normal density, snapped to; fixed, 10 mm with 1 mm between. */
 export const GRID_DEFAULTS: StudioGridSettings = {
   show: true,
@@ -13,7 +11,7 @@ export const GRID_DEFAULTS: StudioGridSettings = {
   subdivisions: 10,
   snap: true,
 };
-const DEFAULTS: StudioSettings = { prompt_layout: "bar", units: "mm", grid: GRID_DEFAULTS };
+const DEFAULTS: StudioSettings = { units: "mm", grid: GRID_DEFAULTS };
 
 /** A change: any of the settings, the grid's one by one. */
 export type StudioSettingsChange = Partial<Omit<StudioSettings, "grid">> & { grid?: Partial<StudioGridSettings> };

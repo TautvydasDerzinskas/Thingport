@@ -32,8 +32,7 @@
 // Administration -> Social shows them on. Nothing is changed in the library: the merge and download dialogs are only
 // opened, and System Health's full test only checks connections. Email addresses on the page are blurred. The import
 // queue's rows are made up and answered in the browser, so nothing is queued on the instance, and so are Explore (the
-// library's own models, shown as shared by made-up people) and who the sharing form's collection is shared with. The
-// Studio prompt layout is switched for its shot and restored afterwards.
+// library's own models, shown as shared by made-up people) and who the sharing form's collection is shared with.
 //
 // The connected-instances shots (43-49) need a partner instance, and are skipped without one: 43-45 and 48 are taken
 // on the instance that connects from home, as its admin, 46, 47 and 49 on the one it connects to. 48 looks up
@@ -639,8 +638,6 @@ const SHOTS = [
     name: "41_studio",
     optional: "studioDesign",
     run: async (page, ctx) => {
-      // The conversation beside the design rather than over it.
-      await ctx.api("PATCH", "/studio/settings", { prompt_layout: "panel" });
       await open(page, `/studio?design=${encodeURIComponent(ctx.studioDesign)}`);
       await page.getByRole("button", { name: "Edit design" }).waitFor({ timeout: 30000 });
       // The bodies are built in a worker once the design arrives, and the camera eases onto them.
@@ -940,7 +937,6 @@ const page = await context.newPage();
 let token = null;
 let originalTheme;
 let originalView;
-let originalLayout;
 let originalProfilesView;
 let originalSocial;
 let failed = 0;
@@ -973,13 +969,6 @@ try {
   optionalIds.studioDesign ??= await api(token, "GET", "/studio/designs")
     .then((designs) => designs.find((design) => design.feature_count > 0)?.id)
     .catch(() => undefined);
-  if (shots.some((shot) => shot.name === "41_studio")) {
-    originalLayout = await api(token, "GET", "/studio/settings")
-      .then((settings) => settings.prompt_layout)
-      .catch(() => undefined);
-    // The shot changes the layout, so without one to put back it isn't taken.
-    if (originalLayout === undefined) optionalIds.studioDesign = undefined;
-  }
 
   const ctx = { displayName, ...optionalIds, api: (method, url, body) => api(token, method, url, body) };
   for (const theme of themes) {
@@ -1040,11 +1029,6 @@ try {
   if (token && originalSocial !== undefined) {
     await api(token, "PATCH", "/social/settings", originalSocial).catch((err) =>
       console.error(`Couldn't restore social features (${JSON.stringify(originalSocial)}): ${err.message}`),
-    );
-  }
-  if (token && originalLayout !== undefined) {
-    await api(token, "PATCH", "/studio/settings", { prompt_layout: originalLayout }).catch((err) =>
-      console.error(`Couldn't restore the Studio prompt layout (${originalLayout}): ${err.message}`),
     );
   }
   // Each run signs in afresh, so without this every run would leave a session behind on the account.

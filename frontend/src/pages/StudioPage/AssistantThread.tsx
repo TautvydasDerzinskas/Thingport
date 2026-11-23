@@ -186,7 +186,7 @@ export function AssistantConversation({ assistant, maxHeight }: { assistant: Stu
   );
 }
 
-/** The conversation beside the view, for the side panel layout: the bar under the view keeps only the prompt. */
+/** The conversation beside the viewport in View mode. */
 export function AssistantPanel({ assistant }: { assistant: StudioAssistant }) {
   const { t } = useTranslation("app");
   return (
