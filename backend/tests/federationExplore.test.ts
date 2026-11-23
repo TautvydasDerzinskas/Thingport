@@ -169,6 +169,8 @@ beforeAll(async () => {
           },
           { name: "notes.pdf", size: 20, mediaType: "application/pdf", kind: "file", role: "SUPPORTING" },
           { name: "elsewhere.stl", size: 30, url: "http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl" },
+          // Not a plate, with no role said.
+          { name: "job.3mf", size: 40, kind: "file" },
         ],
       },
     })
@@ -491,6 +493,17 @@ describe("Explore with partners", () => {
         name: "elsewhere.stl",
         folder: null,
         size: 30,
+        media_type: null,
+        url: null,
+        role: null,
+        content_kind: "mesh",
+        caps: PLATE,
+      },
+      // A file with no role is offered as before too.
+      {
+        name: "job.3mf",
+        folder: null,
+        size: 40,
         media_type: null,
         url: null,
         role: null,

@@ -354,8 +354,10 @@ export async function remotePersonModels(
   return { models: rows.map(modelCardOut), total };
 }
 
-/** A partner's file that isn't a plate: its prepared print, or one kept beside the plates. */
-const roleOfFile = (role: string | undefined): FileRole => (role === "PREPARED" ? "prepared" : "supporting");
+/** A partner's file that isn't a plate: its prepared print, one kept beside the plates, or null where the partner
+ *  didn't say which. */
+const roleOfFile = (role: string | undefined): FileRole | null =>
+  role === "PREPARED" ? "prepared" : role === "SUPPORTING" ? "supporting" : null;
 
 export type RemoteModelOut = RemoteModelCardOut & {
   /** As its owner's library has it; absent when its partner doesn't say. */
