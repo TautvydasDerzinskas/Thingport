@@ -1,5 +1,41 @@
 # Thingport backend changelog
 
+# [thingport-backend-v1.8.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.7.0...thingport-backend-v1.8.0) (2026-11-23)
+
+
+### Bug Fixes
+
+* a delete removes all of a model, and a tool's file stays ([#423](https://github.com/TautvydasDerzinskas/Thingport/issues/423)) ([876f1d2](https://github.com/TautvydasDerzinskas/Thingport/commit/876f1d2e032b037f87f6db3f11340810290c7a62))
+* accept a category suggestion when that category has a model of the same name ([#431](https://github.com/TautvydasDerzinskas/Thingport/issues/431)) ([430f56d](https://github.com/TautvydasDerzinskas/Thingport/commit/430f56db523df1ccf8951c384b3cdcc3138cd63f))
+* download names and zip paths come out right ([#419](https://github.com/TautvydasDerzinskas/Thingport/issues/419)) ([0ca8059](https://github.com/TautvydasDerzinskas/Thingport/commit/0ca8059809f9ee2f68135403e8ded123add70ec7))
+* mark the session cookie Secure behind an HTTPS reverse proxy ([#364](https://github.com/TautvydasDerzinskas/Thingport/issues/364)) ([4ec1d87](https://github.com/TautvydasDerzinskas/Thingport/commit/4ec1d871d208f62fb9e8958128e661137d80c092))
+* one rule for file names, and junk left out on the server ([#408](https://github.com/TautvydasDerzinskas/Thingport/issues/408)) ([a6d2887](https://github.com/TautvydasDerzinskas/Thingport/commit/a6d28875177f18364442bd2a1a3d559937e91948))
+* one table of file kinds ([#409](https://github.com/TautvydasDerzinskas/Thingport/issues/409)) ([3394982](https://github.com/TautvydasDerzinskas/Thingport/commit/3394982c50ef92b6662cbfe72e351be2ca7d6ece))
+* only a missing file counts as missing, and a repair keeps the rest ([#421](https://github.com/TautvydasDerzinskas/Thingport/issues/421)) ([260489f](https://github.com/TautvydasDerzinskas/Thingport/commit/260489f3bf3377a8e0673768a8939dfe51ffed81))
+* preview 3MFs whose model isn't named 3D/3dmodel.model ([#361](https://github.com/TautvydasDerzinskas/Thingport/issues/361)) ([7628c53](https://github.com/TautvydasDerzinskas/Thingport/commit/7628c536664b5008e207958322e5bb688a4ceaf9)), closes [#360](https://github.com/TautvydasDerzinskas/Thingport/issues/360)
+* refine Studio chat, Filament Shelf swatches, and Notes visibility ([#426](https://github.com/TautvydasDerzinskas/Thingport/issues/426)) ([c72c214](https://github.com/TautvydasDerzinskas/Thingport/commit/c72c214da14a1a7d03331c98cd885ea4be699ed8))
+* **studio:** load 3MF build plates on demand ([#400](https://github.com/TautvydasDerzinskas/Thingport/issues/400)) ([2114d0d](https://github.com/TautvydasDerzinskas/Thingport/commit/2114d0d52aa7236bab72a503e9aed62da2243155))
+* **studio:** send the assistant's tool schemas to Claude as JSON Schema 2020-12 ([#434](https://github.com/TautvydasDerzinskas/Thingport/issues/434)) ([9244067](https://github.com/TautvydasDerzinskas/Thingport/commit/9244067674357dd78646ed3eb55b4dbad0be6a1e))
+
+
+### Features
+
+* a partner's files and the SDK's related files say what each is ([#427](https://github.com/TautvydasDerzinskas/Thingport/issues/427)) ([2771417](https://github.com/TautvydasDerzinskas/Thingport/commit/27714179e90cc3965bc7765f813a4fe9e7bd1fd9))
+* add Filament shelf, the household's spools and the filaments each model needs ([#374](https://github.com/TautvydasDerzinskas/Thingport/issues/374)) ([9eb289d](https://github.com/TautvydasDerzinskas/Thingport/commit/9eb289dc5ceb7e4faa1f9f634fad5fbe358771e1)), closes [#366](https://github.com/TautvydasDerzinskas/Thingport/issues/366) [#263](https://github.com/TautvydasDerzinskas/Thingport/issues/263) [#367](https://github.com/TautvydasDerzinskas/Thingport/issues/367) [#341](https://github.com/TautvydasDerzinskas/Thingport/issues/341) [#264](https://github.com/TautvydasDerzinskas/Thingport/issues/264) [#375](https://github.com/TautvydasDerzinskas/Thingport/issues/375)
+* add Notes tool for model previews ([#394](https://github.com/TautvydasDerzinskas/Thingport/issues/394)) ([b18e088](https://github.com/TautvydasDerzinskas/Thingport/commit/b18e0886c9ce922b8f948b0921473808bd09eded))
+* model data carries each file's kind and its supporting files ([#425](https://github.com/TautvydasDerzinskas/Thingport/issues/425)) ([2dd6100](https://github.com/TautvydasDerzinskas/Thingport/commit/2dd61007196b9ff44ec9623b74a22c5007fee6bd))
+* open a model's supporting files in place ([#430](https://github.com/TautvydasDerzinskas/Thingport/issues/430)) ([d161f79](https://github.com/TautvydasDerzinskas/Thingport/commit/d161f79f61936c681d83c227e3af6cee4033d272))
+* see, download and send a model's supporting files ([#428](https://github.com/TautvydasDerzinskas/Thingport/issues/428)) ([53316e2](https://github.com/TautvydasDerzinskas/Thingport/commit/53316e2323095b7582f62ae1ff2fc12908bca084))
+* share a print queue, send files to your printer, and run tools from a model's page ([#365](https://github.com/TautvydasDerzinskas/Thingport/issues/365)) ([c5051f7](https://github.com/TautvydasDerzinskas/Thingport/commit/c5051f7ec0aae2a27e43edc752e55649977880f0)), closes [#366](https://github.com/TautvydasDerzinskas/Thingport/issues/366) [#263](https://github.com/TautvydasDerzinskas/Thingport/issues/263) [#367](https://github.com/TautvydasDerzinskas/Thingport/issues/367) [#341](https://github.com/TautvydasDerzinskas/Thingport/issues/341)
+* show the first gallery picture on model cards, and pick it in Edit model ([#382](https://github.com/TautvydasDerzinskas/Thingport/issues/382)) ([2534874](https://github.com/TautvydasDerzinskas/Thingport/commit/253487461a8b307c48fb22444fd4f89cd1849d66)), closes [#368](https://github.com/TautvydasDerzinskas/Thingport/issues/368)
+* sort models by name and reverse list order ([#393](https://github.com/TautvydasDerzinskas/Thingport/issues/393)) ([ea813ae](https://github.com/TautvydasDerzinskas/Thingport/commit/ea813ae1ff5f4c11fcadae02107a34fc218cb209))
+* **studio:** add build plates and printer-aware 3MF workflows ([#395](https://github.com/TautvydasDerzinskas/Thingport/issues/395)) ([9fada10](https://github.com/TautvydasDerzinskas/Thingport/commit/9fada10fcaa0c0af78ed8ac77a75247006e8c1fd)), closes [#396](https://github.com/TautvydasDerzinskas/Thingport/issues/396)
+* **studio:** add plate exports and simplify design actions ([#417](https://github.com/TautvydasDerzinskas/Thingport/issues/417)) ([cc54cf5](https://github.com/TautvydasDerzinskas/Thingport/commit/cc54cf566df29a2f7b13ffbcd51ec14bcd03d9de))
+* **studio:** print profiles for designs, saved into the 3MF and shown as a model's print profile ([#422](https://github.com/TautvydasDerzinskas/Thingport/issues/422)) ([3ca70fb](https://github.com/TautvydasDerzinskas/Thingport/commit/3ca70fbfc71373872b4cbeb9e496d5300ccdd61f)), closes [#424](https://github.com/TautvydasDerzinskas/Thingport/issues/424)
+* **tools:** add the 3D Printing Wiki ([#420](https://github.com/TautvydasDerzinskas/Thingport/issues/420)) ([8e00ed8](https://github.com/TautvydasDerzinskas/Thingport/commit/8e00ed855281604c728bae304160992ec312de07))
+* **tools:** allow administrators to disable installed tools ([#413](https://github.com/TautvydasDerzinskas/Thingport/issues/413)) ([90779cc](https://github.com/TautvydasDerzinskas/Thingport/commit/90779cc8e830e27fbfacb2ffcd4c48e6864bd5ed))
+* **tools:** queue prints from a model grid or the print queue's own board ([#429](https://github.com/TautvydasDerzinskas/Thingport/issues/429)) ([64ef296](https://github.com/TautvydasDerzinskas/Thingport/commit/64ef296841211915259fc4bd0ed5b391e1548148))
+
 # [thingport-backend-v1.7.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.6.0...thingport-backend-v1.7.0) (2026-11-15)
 
 

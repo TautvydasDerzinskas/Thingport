@@ -1,5 +1,20 @@
 # Thingport Grab changelog
 
+# [thingport-grab-v1.13.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.12.0...thingport-grab-v1.13.0) (2026-11-23)
+
+
+### Bug Fixes
+
+* **extension:** close Grab translation gaps ([#418](https://github.com/TautvydasDerzinskas/Thingport/issues/418)) ([8087e1e](https://github.com/TautvydasDerzinskas/Thingport/commit/8087e1e3e3bb31f7c21645e0d1f2fd74d0df3d03)), closes [#389](https://github.com/TautvydasDerzinskas/Thingport/issues/389)
+* preview 3MFs whose model isn't named 3D/3dmodel.model ([#361](https://github.com/TautvydasDerzinskas/Thingport/issues/361)) ([7628c53](https://github.com/TautvydasDerzinskas/Thingport/commit/7628c536664b5008e207958322e5bb688a4ceaf9)), closes [#360](https://github.com/TautvydasDerzinskas/Thingport/issues/360)
+* say when a reverse proxy, not Thingport, answered a request ([#363](https://github.com/TautvydasDerzinskas/Thingport/issues/363)) ([97be1e1](https://github.com/TautvydasDerzinskas/Thingport/commit/97be1e1967bc2bd7740d5128e897343f212a3af6)), closes [#333](https://github.com/TautvydasDerzinskas/Thingport/issues/333) [#333](https://github.com/TautvydasDerzinskas/Thingport/issues/333)
+
+
+### Features
+
+* add Filament shelf, the household's spools and the filaments each model needs ([#374](https://github.com/TautvydasDerzinskas/Thingport/issues/374)) ([9eb289d](https://github.com/TautvydasDerzinskas/Thingport/commit/9eb289dc5ceb7e4faa1f9f634fad5fbe358771e1)), closes [#366](https://github.com/TautvydasDerzinskas/Thingport/issues/366) [#263](https://github.com/TautvydasDerzinskas/Thingport/issues/263) [#367](https://github.com/TautvydasDerzinskas/Thingport/issues/367) [#341](https://github.com/TautvydasDerzinskas/Thingport/issues/341) [#264](https://github.com/TautvydasDerzinskas/Thingport/issues/264) [#375](https://github.com/TautvydasDerzinskas/Thingport/issues/375)
+* **studio:** add build plates and printer-aware 3MF workflows ([#395](https://github.com/TautvydasDerzinskas/Thingport/issues/395)) ([9fada10](https://github.com/TautvydasDerzinskas/Thingport/commit/9fada10fcaa0c0af78ed8ac77a75247006e8c1fd)), closes [#396](https://github.com/TautvydasDerzinskas/Thingport/issues/396)
+
 # [thingport-grab-v1.12.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.11.0...thingport-grab-v1.12.0) (2026-11-15)
 
 
