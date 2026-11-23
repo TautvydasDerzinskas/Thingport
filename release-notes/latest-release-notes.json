@@ -1,20 +1,15 @@
 {
   "version": "1.8.0",
   "title": "Studio opens your 3MFs, in colour and ready to print",
-  "summary": "Thingport 1.8.0 opens any 3MF in Studio with its plates and colours, and a design now carries its own print settings into your slicer. Most of the rest is what you asked for: a shared print queue and filament shelf, notes on your models, a 3D printing wiki, Send to your printer, the thumbnail you pick, sorting by name, and Thingport in German.",
+  "summary": "Thingport 1.8.0 opens any 3MF in Studio with its plates and colours, and a design now carries its own print settings into your slicer. Most of the rest is what you asked for: a shared print queue and filament shelf, notes on your models, a 3D printing wiki, a \"Send to your printer\" feature, the thumbnail you pick, sorting by name, and Thingport in German.",
   "contributors": [
-    "bbright20",
     "CandidB",
-    "DarkCeltic",
     "gearaddict",
-    "JcMinarro",
     "joriswill",
-    "nevergone",
     "pleasantone",
     "roadkingvrod",
     "SeoliteQ",
     "slewantoski",
-    "souldessin",
     "tecbeat"
   ],
   "items": [

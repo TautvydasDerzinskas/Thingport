@@ -1,6 +1,6 @@
 ---
 title: "Thingport 1.8.0: Studio opens your 3MFs, in colour and ready to print"
-description: "Studio now opens any 3MF with its plates and colours, and a design carries its own print settings into your slicer. Plus what you asked for: a shared print queue and filament shelf, notes on your models, a 3D printing wiki, Send to your printer, thumbnails you pick, sorting by name and Thingport in German."
+description: 'Studio now opens any 3MF with its plates and colours, and a design carries its own print settings into your slicer. Plus what you asked for: a shared print queue and filament shelf, notes on your models, a 3D printing wiki, a "Send to your printer" feature, thumbnails you pick, sorting by name and Thingport in German.'
 pubDate: 2026-11-23
 tags: ["release", "studio", "3mf", "tools", "send-to", "supporting-files"]
 ---
@@ -11,7 +11,7 @@ colours, or say how it should be printed.
 **Now it does.** Thingport 1.8.0 opens any 3MF in Studio with its plates and colours, and a design carries its own
 print settings all the way into your slicer. Most of the rest of this release is yours: it grew out of the issues and
 ideas you sent in. A print queue and a filament shelf the household shares, notes on your models, a 3D printing wiki,
-Send to your printer, the thumbnail you pick, sorting by name, and Thingport in German.
+a "Send to your printer" feature, the thumbnail you pick, sorting by name, and Thingport in German.
 
 ## Studio: open a 3MF, colour it, set how it prints
 
@@ -160,13 +160,11 @@ languages.
 
 ## Thank you
 
-This release is mostly yours: your issues, ideas, reports and a whole translation. Thanks to
-[bbright20](https://github.com/bbright20), [CandidB](https://github.com/CandidB),
-[DarkCeltic](https://github.com/DarkCeltic), [gearaddict](https://github.com/gearaddict),
-[JcMinarro](https://github.com/JcMinarro), [joriswill](https://github.com/joriswill), who translated Thingport into
-German, [nevergone](https://github.com/nevergone), [pleasantone](https://github.com/pleasantone),
-[roadkingvrod](https://github.com/roadkingvrod), [SeoliteQ](https://github.com/SeoliteQ),
-[slewantoski](https://github.com/slewantoski), [souldessin](https://github.com/souldessin) and
+This release is mostly yours: it fixes what you reported, builds what you asked for, and speaks German thanks to a
+whole translation. Thanks to [CandidB](https://github.com/CandidB), [gearaddict](https://github.com/gearaddict),
+[joriswill](https://github.com/joriswill), who translated Thingport into German,
+[pleasantone](https://github.com/pleasantone), [roadkingvrod](https://github.com/roadkingvrod),
+[SeoliteQ](https://github.com/SeoliteQ), [slewantoski](https://github.com/slewantoski) and
 [tecbeat](https://github.com/tecbeat)! Keep them coming: the
 [issues](https://github.com/TautvydasDerzinskas/Thingport/issues) are where the next release starts.
 
