@@ -190,7 +190,8 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 
 /** A schema as it's sent: without what costs tokens and tells the AI nothing it needs (the server checks every call
  *  anyway): `additionalProperties: false`, the ±10 m limit on every coordinate, a tuple's same item said three times;
- *  and, for the compact set, the fields' own descriptions. */
+ *  and, for the compact set, the fields' own descriptions. A tuple whose places differ goes as `prefixItems`: the
+ *  converter writes draft-07's `items: [...]`, which Claude, checking against JSON Schema 2020-12, refuses. */
 function tighten(node: unknown, keepDescriptions: boolean): unknown {
   if (Array.isArray(node)) return node.map((item) => tighten(item, keepDescriptions));
   if (!node || typeof node !== "object") return node;
@@ -199,13 +200,10 @@ function tighten(node: unknown, keepDescriptions: boolean): unknown {
     if (key === "additionalProperties" && value === false) continue;
     if ((key === "minimum" || key === "maximum") && Math.abs(value as number) === LIMITS.size) continue;
     if (key === "description" && !keepDescriptions && typeof value === "string") continue;
-    if (
-      key === "items" &&
-      Array.isArray(value) &&
-      value.length > 1 &&
-      value.every((item) => sameJson(item, value[0]))
-    ) {
-      out.items = tighten(value[0], keepDescriptions);
+    if (key === "items" && Array.isArray(value)) {
+      const places = value.map((item) => tighten(item, keepDescriptions));
+      if (places.length > 1 && places.every((item) => sameJson(item, places[0]))) out.items = places[0];
+      else out.prefixItems = places;
       continue;
     }
     out[key] =
