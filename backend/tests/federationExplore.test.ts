@@ -160,8 +160,14 @@ beforeAll(async () => {
         images: [],
         sharedAt: new Date(Date.now() - 60_000),
         files: [
-          { name: "bin.3mf", size: 1800, mediaType: "model/3mf", url: `${PARTNER}/api/ap/files/plate/p1/bin.3mf` },
-          { name: "notes.pdf", size: 20, mediaType: "application/pdf" },
+          {
+            name: "bin.3mf",
+            size: 1800,
+            mediaType: "model/3mf",
+            url: `${PARTNER}/api/ap/files/plate/p1/bin.3mf`,
+            kind: "plate",
+          },
+          { name: "notes.pdf", size: 20, mediaType: "application/pdf", kind: "file", role: "SUPPORTING" },
           { name: "elsewhere.stl", size: 30, url: "http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl" },
         ],
       },
@@ -456,6 +462,7 @@ describe("Explore with partners", () => {
 
   it("hands out a partner's files through this instance, and only those the partner gave", async () => {
     const remoteFiles = await request(app).get(`/api/explore/elsewhere/model/${filesModelId}`).set(auth(viewer));
+    const PLATE = { preview3d: true, openInSlicer: true, openInStudio: true, customize: false };
     expect(remoteFiles.body.files).toEqual([
       {
         name: "bin.3mf",
@@ -464,10 +471,32 @@ describe("Explore with partners", () => {
         media_type: "model/3mf",
         // By a key from its address at the partner, so a reordered list never serves another file.
         url: `/explore/elsewhere/model/${filesModelId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p1/bin.3mf`)}/bin.3mf`,
+        role: "plate",
+        content_kind: "mesh",
+        caps: PLATE,
       },
-      { name: "notes.pdf", folder: null, size: 20, media_type: "application/pdf", url: null },
-      // Somewhere other than the partner's own origin: never fetched.
-      { name: "elsewhere.stl", folder: null, size: 30, media_type: null, url: null },
+      {
+        name: "notes.pdf",
+        folder: null,
+        size: 20,
+        media_type: "application/pdf",
+        url: null,
+        role: "supporting",
+        content_kind: "document",
+        caps: { preview3d: false, openInSlicer: false, openInStudio: false, customize: false },
+      },
+      // Somewhere other than the partner's own origin: never fetched. Indexed with no role, as a row from before
+      // partners said, so offered as a plate.
+      {
+        name: "elsewhere.stl",
+        folder: null,
+        size: 30,
+        media_type: null,
+        url: null,
+        role: null,
+        content_kind: "mesh",
+        caps: PLATE,
+      },
     ]);
     // A key for no file it shares, or for one that isn't on its origin, is never fetched.
     for (const key of ["0", "x", fileKey("http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl")]) {

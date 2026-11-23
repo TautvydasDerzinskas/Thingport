@@ -104,6 +104,12 @@ function ModelRoute(props: React.ComponentProps<typeof ModelDetailPage>) {
   return <ModelDetailPage key={printId} {...props} />;
 }
 
+/** A partner's model's page, likewise made new for each model. */
+function ElsewhereModelRoute(props: React.ComponentProps<typeof ElsewhereModelPage>) {
+  const { modelId } = useParams();
+  return <ElsewhereModelPage key={modelId} {...props} />;
+}
+
 /** /studio when the backend has Studio; home when it's older than Studio, once that's known. */
 function StudioRoute({ isAdmin, onUnauthorized }: { isAdmin: boolean; onUnauthorized: () => void }) {
   const { t } = useTranslation("app");
@@ -344,7 +350,7 @@ function AppShell({
         />
         <Route
           path="/explore/elsewhere/models/:modelId"
-          element={<ElsewhereModelPage onUnauthorized={onUnauthorized} />}
+          element={<ElsewhereModelRoute onUnauthorized={onUnauthorized} />}
         />
         <Route
           path="/explore/elsewhere/collections/:collectionId"
