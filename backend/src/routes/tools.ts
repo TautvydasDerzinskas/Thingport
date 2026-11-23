@@ -25,6 +25,8 @@ import {
   deleteSharedData,
   getAudience,
   listSharedData,
+  replaceEntrySchema,
+  replaceToolEntry,
   setAudience,
   setSharedData,
   shareablePeople,
@@ -172,6 +174,15 @@ router.delete(
   asyncHandler(async (req, res) => {
     await deleteSharedData(userOf(req), String(req.params.id), String(req.params.key));
     res.status(204).end();
+  }),
+);
+
+router.post(
+  "/tools/:id/replace-entry",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(replaceEntrySchema, req.body);
+    const replaced = await replaceToolEntry(userOf(req), String(req.params.id), body);
+    res.status(replaced ? 204 : 409).end();
   }),
 );
 

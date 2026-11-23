@@ -234,7 +234,6 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     if (designId) void reload(designId);
   }, [designId, reload]);
   const [studioSettings, setStudioSettings] = useStudioSettings();
-  const promptLayout = studioSettings.prompt_layout;
   // How much of the bottom of the view the prompt covers, which the view keeps the model above.
   const [promptInset, setPromptInset] = useState(0);
 
@@ -955,12 +954,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   };
   const sketchFeature = sketch && doc ? featureById(doc, sketch.id) : undefined;
   const renamingFeature = renaming?.kind === "feature" && doc ? featureById(doc, renaming.id) : undefined;
-  // In the side panel layout the conversation goes beside the view, once there is one.
   const assistantPanel =
-    promptLayout === "panel" &&
-    Boolean(doc) &&
-    !assistant.minimized &&
-    (assistant.messages.length > 0 || assistant.running);
+    !editing && Boolean(doc) && !assistant.minimized && (assistant.messages.length > 0 || assistant.running);
 
   // The print profile: who may be asked to choose one, and what the design is for, in words.
   const canAskAi = Boolean(assistant.models?.length);
@@ -1157,7 +1152,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             {t(`studio.sketch.hint.${sketch.tool}`)}
           </Typography>
         )}
-        <PromptOverlay assistant={assistant} isAdmin={isAdmin} layout={promptLayout} onInset={setPromptInset} />
+        <PromptOverlay assistant={assistant} isAdmin={isAdmin} editing={editing} onInset={setPromptInset} />
       </>
     );
   })();

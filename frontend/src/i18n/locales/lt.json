@@ -5227,16 +5227,8 @@
       "settings": {
         "title": "Studijos nustatymai",
         "sections": {
-          "assistant": "Klausti DI",
           "units": "Vienetai",
           "grid": "Tinklelis"
-        },
-        "assistantIntro": "Kur „Klausti DI“ rodo pokalbį.",
-        "layout": "Išdėstymas",
-        "layoutHelp": "Juosta: po vaizdu, viena eilutė, kol DI dirba, likusi dalis atsidaro paspaudus. Šoninis skydelis: šalia vaizdo, kad niekas neuždengtų modelio.",
-        "layouts": {
-          "bar": "Juosta",
-          "panel": "Šoninis skydelis"
         },
         "failed": "Nepavyko išsaugoti nustatymo.",
         "unitsIntro": "Kokiais vienetais rodomi ir įvedami dydžiai. Patys dydžiai nesikeičia, keičiasi tik tai, kaip jie užrašomi.",

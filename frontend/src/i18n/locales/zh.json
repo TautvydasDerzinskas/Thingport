@@ -4721,16 +4721,8 @@
       "settings": {
         "title": "Studio 设置",
         "sections": {
-          "assistant": "AI 助手",
           "units": "单位",
           "grid": "网格"
-        },
-        "assistantIntro": "AI 助手在哪里显示对话。",
-        "layout": "布局",
-        "layoutHelp": "底栏：位于视图下方，AI 工作时只显示一行，展开后显示其余内容。侧边面板：位于视图旁边，不会遮挡模型。",
-        "layouts": {
-          "bar": "底栏",
-          "panel": "侧边面板"
         },
         "failed": "无法保存该设置。",
         "unitsIntro": "尺寸以什么单位显示和输入。尺寸本身完全不变，变化的只是显示方式。",

@@ -4921,16 +4921,8 @@
       "settings": {
         "title": "Studio-Einstellungen",
         "sections": {
-          "assistant": "KI fragen",
           "units": "Einheiten",
           "grid": "Raster"
-        },
-        "assistantIntro": "Wo „KI fragen“ die Unterhaltung zeigt.",
-        "layout": "Anordnung",
-        "layoutHelp": "Leiste: unter der Ansicht, eine Zeile, während die KI arbeitet, der Rest, wenn du sie öffnest. Seitenleiste: neben der Ansicht, sodass nichts das Modell verdeckt.",
-        "layouts": {
-          "bar": "Leiste",
-          "panel": "Seitenleiste"
         },
         "failed": "Die Einstellung konnte nicht gespeichert werden.",
         "unitsIntro": "In welcher Einheit Größen angezeigt und eingegeben werden. Die Größen bleiben genau, wie sie sind; nur ihre Anzeige ändert sich.",

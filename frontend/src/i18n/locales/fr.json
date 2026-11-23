@@ -5129,16 +5129,8 @@
       "settings": {
         "title": "Réglages du Studio",
         "sections": {
-          "assistant": "Demander à l’IA",
           "units": "Unités",
           "grid": "Grille"
-        },
-        "assistantIntro": "Où « Demander à l’IA » affiche sa conversation.",
-        "layout": "Disposition",
-        "layoutHelp": "Barre : sous la vue, une ligne pendant que l'IA travaille, le reste en l'ouvrant. Panneau latéral : à côté de la vue, pour que rien ne cache le modèle.",
-        "layouts": {
-          "bar": "Barre",
-          "panel": "Panneau latéral"
         },
         "failed": "Impossible d'enregistrer le réglage.",
         "unitsIntro": "Dans quelles unités les cotes sont affichées et saisies. Les cotes ne changent pas ; seule leur lecture change.",

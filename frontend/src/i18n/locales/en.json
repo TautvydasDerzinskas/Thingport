@@ -4917,16 +4917,8 @@
       "settings": {
         "title": "Studio settings",
         "sections": {
-          "assistant": "Ask AI",
           "units": "Units",
           "grid": "Grid"
-        },
-        "assistantIntro": "Where Ask AI shows its conversation.",
-        "layout": "Layout",
-        "layoutHelp": "Bar: under the view, one line while the AI works, the rest when you open it. Side panel: beside the view, so nothing covers the model.",
-        "layouts": {
-          "bar": "Bar",
-          "panel": "Side panel"
         },
         "failed": "Couldn't save the setting.",
         "unitsIntro": "What sizes are shown and typed in. Sizes stay exactly as they are; only how they read changes.",

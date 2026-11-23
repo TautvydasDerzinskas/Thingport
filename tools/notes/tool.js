@@ -103,10 +103,16 @@ const FIELDS = ["x", "y", "text", "look", "color"];
  * The viewer's note as it's kept under its key now, or null when it's gone; a failed read throws. Not the same as
  * missing from a picture's notes: one from another copy shows there only while the pictures can be compared.
  */
-export async function storedNote({ shared, storage }, note) {
-  if (!note.public) return noteValue(await storage.get(note.key));
-  const entries = await shared.list({ prefix: note.key });
-  return noteValue(entries.find((entry) => entry.mine && entry.key === note.key)?.value);
+export async function storedNote(thingport, note) {
+  return (await storedNoteEntry(thingport, note))?.value ?? null;
+}
+
+async function storedNoteEntry({ shared, storage }, { key, public: isPublic }) {
+  const raw = isPublic
+    ? (await shared.list({ prefix: key })).find((entry) => entry.mine && entry.key === key)?.value
+    : await storage.get(key);
+  const value = noteValue(raw);
+  return value ? { key, store: isPublic ? "shared" : "storage", raw, value } : null;
 }
 
 /** The fields an edit changes from `original`, now or in a save it sent before (`tried`). */
@@ -136,26 +142,51 @@ export const restoredTried = (tried, stored, fields) => tried.map((sent) => ({ .
  * throws `NoteGone` for a note deleted meanwhile.
  * `tried` lists what the editor's earlier saves sent, each of which may have gone through with its answer lost: a
  * stored value one of them sent isn't a change made somewhere else. A new note with any is looked for under its key
- * and taken as an edit of the first; one not found is written afresh. `onSend` is called with the key this save
- * writes first, as it starts writing, when its value joins those.
- * A public note edited on another copy after its writer lost the model it was on moves to `moveKey`, on this copy:
+ * and taken as an edit of the first; one not found is written afresh. `onSend` tracks writes that may have gone through.
+ * Changing `previousPublic` to `public` moves a note to `moveKey` in the chosen store. A public note edited on another
+ * copy after its writer lost the model it was on also moves to `moveKey`, on this copy:
  * pass the same one to a retry of the move. A move whose new copy turns out written is finished there. `oldCopy`, the
  * old key and the values this editor knew it to hold, is what's left to clean up once the move is done, however the
- * editor came to be at the new copy: it's removed only as this editor left it, and one changed since, or that can't be
- * read, is left. Returns the key it's kept under, the value written, and whether an older copy was left.
+ * editor came to be at the new copy on hosts without atomic moves. Returns the key it's kept under, the value written,
+ * and whether an older copy was left.
  */
 export async function saveNote(thingport, note, value, modelId, moveKey) {
+  try {
+    return await writeNote(thingport, note, value, modelId, moveKey);
+  } catch (error) {
+    // Read again if another editor changed the note after our read. The usual merge finds which fields changed.
+    if (!(error instanceof NoteWriteRaced)) throw error;
+    return writeNote(thingport, note, value, modelId, moveKey);
+  }
+}
+
+class NoteWriteRaced extends Error {}
+
+async function writeNote(thingport, note, value, modelId, moveKey) {
   const { shared, storage, api } = thingport;
   const tried = note.tried ?? [];
+  const visibilityChange =
+    note.existing && note.previousPublic !== undefined && note.previousPublic !== Boolean(note.public);
+  if (visibilityChange && (!shared.replace || !moveKey)) throw new Error("Changing visibility requires an atomic move");
   // A move sent before may have written the new copy with its answer lost: then that copy is the note now.
-  const movable = note.public && note.existing && moveKey && moveKey !== note.key;
-  const moved = movable && tried.length ? await storedNote(thingport, { public: true, key: moveKey }) : null;
+  const movable = (visibilityChange || note.public) && note.existing && moveKey && moveKey !== note.key;
+  const moved =
+    movable && tried.length ? await storedNoteEntry(thingport, { public: note.public, key: moveKey }) : null;
   // The old copy a finished move leaves to clean up: this save's own once it's at the new copy.
-  const oldCopy = moved ? (note.oldCopy ?? { key: note.key, values: [note.original, ...tried] }) : note.oldCopy;
+  const oldCopy =
+    moved && !shared.replace ? (note.oldCopy ?? { key: note.key, values: [note.original, ...tried] }) : note.oldCopy;
   const cleanUp = () =>
     oldCopy && oldCopy.key !== (moved ? moveKey : note.key) ? dropOldCopy(thingport, oldCopy) : false;
   let contents = pick(value, FIELDS);
-  const stored = moved ?? (note.existing || tried.length ? await storedNote(thingport, note) : null);
+  const current =
+    moved ??
+    (note.existing || tried.length
+      ? await storedNoteEntry(thingport, {
+          key: note.key,
+          public: visibilityChange ? note.previousPublic : note.public,
+        })
+      : null);
+  const stored = current?.value;
   if (note.existing && !stored) throw new NoteGone();
   if (stored) {
     const original = note.existing ? note.original : tried[0];
@@ -168,6 +199,24 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     }
     contents = { ...contents, ...pick(stored, theirs) };
   }
+  const written = note.modelId ?? modelId;
+  if (current && shared.replace) {
+    const key = visibilityChange || moved ? moveKey : note.key;
+    const model = visibilityChange || moved ? modelId : written;
+    const canMove = note.public && !visibilityChange && !moved && written !== modelId && moveKey;
+    try {
+      await replaceNote(thingport, note, current, key, contents, model, !canMove);
+      return { key, value: contents, leftover: await cleanUp() };
+    } catch (error) {
+      if (error instanceof NoteWriteRaced || !canMove) throw error;
+      if (!(await modelIsGone(api, written))) {
+        note.onSend?.(key, contents);
+        throw error;
+      }
+      await replaceNote(thingport, note, current, moveKey, contents, modelId);
+      return { key: moveKey, value: contents, leftover: false };
+    }
+  }
   note.onSend?.(moved ? moveKey : note.key, contents);
   if (moved) {
     await shared.set(moveKey, contents, { model: modelId });
@@ -179,7 +228,6 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     return { key: note.key, value: contents, leftover: false };
   }
   // A public note stays tied to the model its key names, which is how copies of that model find it.
-  const written = note.modelId ?? modelId;
   try {
     await shared.set(note.key, contents, { model: written });
     return { key: note.key, value: contents, leftover: await cleanUp() };
@@ -187,14 +235,35 @@ export async function saveNote(thingport, note, value, modelId, moveKey) {
     if (written === modelId || !moveKey) throw error;
     // Only a model its writer can't open any more moves the note; any other failure is the caller's to retry. The
     // model's licence answers that the way the write does, without counting as a visit to the model.
-    const res = await api("/print/" + encodeURIComponent(written) + "/license").catch(() => null);
-    if (!res || ![403, 404].includes(res.status)) throw error;
+    if (!(await modelIsGone(api, written))) throw error;
     // The new copy is written first, so a failure along the way leaves two copies rather than none. The old one then
     // goes only as this save found it, as it was written, or as this editor knew it.
     await shared.set(moveKey, contents, { model: modelId });
     const known = [...(note.oldCopy?.values ?? []), stored, contents];
     return { key: moveKey, value: contents, leftover: await dropOldCopy(thingport, { key: note.key, values: known }) };
   }
+}
+
+async function modelIsGone(api, modelId) {
+  const res = await api("/print/" + encodeURIComponent(modelId) + "/license").catch(() => null);
+  return res && [403, 404].includes(res.status);
+}
+
+async function replaceNote({ shared }, note, current, key, contents, model, trackFailure = true) {
+  const previous = { key: current.key, store: current.store, value: current.raw };
+  const next = note.public
+    ? { key, store: "shared", value: contents, model }
+    : { key, store: "storage", value: { ...contents, updatedAt: new Date().toISOString() } };
+  let replaced;
+  try {
+    replaced = await shared.replace(previous, next);
+  } catch (error) {
+    if (trackFailure) note.onSend?.(key, contents);
+    throw error;
+  }
+  if (!replaced) throw new NoteWriteRaced();
+  note.onSend?.(key, contents);
+  if (previous.store === "storage" && next.store === "storage") personalChanges.dispatchEvent(new Event("change"));
 }
 
 /**
@@ -849,8 +918,7 @@ export function modelImage(thingport) {
   const writer = (note) => (note.mine ? t("note.you") : note.user?.name || t("note.someone"));
   const size = () => ({ width: layer?.clientWidth ?? 0, height: layer?.clientHeight ?? 0 });
   const draftKey = [thingport.tool?.id ?? "", user?.id ?? "", modelId, preview?.key ?? ""].join("|");
-  // A new note of the viewer's on this picture, as it's kept once saved.
-  const ownNote = (e) => ({ key: e.key, mine: true, modelId, ...(e.isPublic ? { public: true, user } : {}) });
+  const ownNote = (key, isPublic) => ({ key, mine: true, modelId, ...(isPublic ? { public: true, user } : {}) });
 
   const settings = settingsFor(thingport);
   // The menu while it's open, so its switch follows a change made elsewhere or the settings arriving.
@@ -1108,7 +1176,8 @@ export function modelImage(thingport) {
   // ---- The editor: the note itself, with a toolbar under it ----
 
   const EDITABLE = ["text", "look", "color", "x", "y"];
-  const changedFields = (e) => EDITABLE.filter((field) => e[field] !== e.original[field]);
+  const changingVisibility = (e) => e.isPublic !== Boolean(e.note?.public);
+  const hasChanges = (e) => changingVisibility(e) || EDITABLE.some((field) => e[field] !== e.original[field]);
 
   // An edit kept for the picture: what it started from and only the fields it changed, now or in a save whose answer
   // was lost, so coming back applies those to the note as it is then, rather than writing back fields someone else has
@@ -1144,7 +1213,8 @@ export function modelImage(thingport) {
   const stillKept = (draft) => drafts.get(draftKey)?.get(draft.token) === draft && !draft.saving;
   // The new copy a move this edit sent may have written with its answer lost, which then stands in for the old one.
   const movedCopy = (e) => (e.tried.length && e.moveKey && e.moveKey !== e.key ? e.moveKey : null);
-  const ownPublic = (key) => notes.find((candidate) => candidate.mine && candidate.public && candidate.key === key);
+  const ownCopy = (key, isPublic) =>
+    notes.find((candidate) => candidate.mine && Boolean(candidate.public) === isPublic && candidate.key === key);
 
   async function restoreDraft() {
     // Past any whose note has been deleted since, or can't be checked now, to the first that can open: each once.
@@ -1157,7 +1227,8 @@ export function modelImage(thingport) {
       const moveTo = movedCopy(draft);
       let note =
         draft.note &&
-        (notes.find((candidate) => noteId(candidate) === noteId(draft.note)) ?? (moveTo && ownPublic(moveTo)));
+        (notes.find((candidate) => noteId(candidate) === noteId(draft.note)) ??
+          (moveTo && ownCopy(moveTo, draft.isPublic)));
       if (draft.note && !note) {
         // Not among this picture's notes isn't deleted: one from another copy shows only while the pictures can be
         // compared. Where it's kept says which, or its move's new copy for one gone; one still there comes back as
@@ -1168,7 +1239,7 @@ export function modelImage(thingport) {
           stored = await storedNote(thingport, draft.note);
           if (!stored && moveTo) {
             key = moveTo;
-            stored = await storedNote(thingport, { public: true, key });
+            stored = await storedNote(thingport, { public: draft.isPublic, key });
           }
         } catch {
           // Can't tell: this draft waits for the next load, said once however many fail.
@@ -1183,7 +1254,7 @@ export function modelImage(thingport) {
           ui.toast(t("editor.deleted"), "warning");
           continue;
         }
-        note = { ...draft.note, ...(key === draft.note.key ? {} : { key, modelId }), value: stored };
+        note = { ...(key === draft.note.key ? draft.note : ownNote(key, draft.isPublic)), value: stored };
       }
       dropDraft(draft);
       const latest = note?.value ?? draft.base;
@@ -1235,7 +1306,7 @@ export function modelImage(thingport) {
       tried: draft?.tried ?? [],
       // The look and colour picked in this edit, which new notes start with once it's saved with them.
       chosen: { ...draft?.chosen },
-      // One key for a public note moving to this copy, however often the move is retried.
+      // Keep one destination key for a move across saves.
       moveKey: draft?.moveKey ?? null,
       // The old copy such a move leaves to clean up, with the values this edit knew it to hold: kept apart from the
       // original, which a draft coming back moves.
@@ -1430,10 +1501,12 @@ export function modelImage(thingport) {
   }
 
   function setAudience(isPublic) {
-    if (editing.note || editing.tried.length) return;
+    if (audienceLocked(editing) || editing.saving) return;
     editing.isPublic = isPublic;
     applyEditor();
   }
+
+  const audienceLocked = (e) => Boolean(e.tried.length || (e.note && !thingport.shared.replace));
 
   function applyEditor() {
     const e = editing;
@@ -1446,8 +1519,10 @@ export function modelImage(thingport) {
       control.setAttribute("aria-pressed", String(look === e.look));
     for (const [name, control] of Object.entries(e.audience)) {
       control.setAttribute("aria-pressed", String((name === "public") === e.isPublic));
-      control.disabled = e.saving || Boolean(e.note || e.tried.length);
-      if (e.note || e.tried.length) control.title = t(e.note ? "editor.visibilityFixed" : "editor.visibilitySent");
+      control.disabled = e.saving || audienceLocked(e);
+      control.title = audienceLocked(e)
+        ? t(e.tried.length ? "editor.visibilitySent" : "editor.visibilityFixed")
+        : t(name === "public" ? "editor.public" : "editor.personal");
     }
     e.swatches.hidden = e.colorSep.hidden = !sticky;
     for (const [color, swatch] of Object.entries(e.colors))
@@ -1580,7 +1655,7 @@ export function modelImage(thingport) {
     const e = editing;
     if (!e || e.saving) return;
     // A new note with nothing written couldn't be saved anyway.
-    if (changedFields(e).length && (e.note || e.text.trim())) {
+    if (hasChanges(e) && (e.note || e.text.trim())) {
       const discard = await ui.confirm({
         title: t("editor.discardTitle"),
         message: t("editor.discardMessage"),
@@ -1619,14 +1694,17 @@ export function modelImage(thingport) {
     // Taken now, as the save may finish after the picture changes.
     const chosen = { ...e.chosen };
     const pickedAt = ++picks;
-    if (e.isPublic && e.note && e.note.modelId && e.note.modelId !== modelId) {
+    if (e.note && changingVisibility(e)) {
       e.moveKey ??= newNoteKey(modelId, preview.key);
-      e.oldCopy ??= { key: e.note.key, values: [e.original, ...e.tried] };
+    } else if (e.isPublic && e.note?.modelId && e.note.modelId !== modelId) {
+      e.moveKey ??= newNoteKey(modelId, preview.key);
+      if (!thingport.shared.replace) e.oldCopy ??= { key: e.note.key, values: [e.original, ...e.tried] };
     }
     try {
       const draft = {
         key: e.key,
         public: e.isPublic,
+        previousPublic: e.note ? Boolean(e.note.public) : undefined,
         modelId: e.note?.modelId,
         existing: Boolean(e.note),
         original: e.original,
@@ -1662,8 +1740,7 @@ export function modelImage(thingport) {
       if (!alive || editing !== e) return;
       const moved = saved.key !== e.key;
       const note = {
-        ...(e.note ?? ownNote(e)),
-        ...(moved ? { key: saved.key, modelId } : {}),
+        ...(e.note && !moved ? e.note : ownNote(saved.key, e.isPublic)),
         value: noteValue(saved.value),
         updatedAt: new Date().toISOString(),
       };
@@ -1695,9 +1772,9 @@ export function modelImage(thingport) {
         if (e.field.value.trim() !== e.text) e.field.value = e.text;
         e.original = error.stored;
         e.tried = [];
-        e.note = { ...(e.note ?? ownNote(e)), value: error.stored };
+        e.note = { ...(e.note ?? ownNote(e.key, e.isPublic)), value: error.stored };
         if (error.key !== e.key) {
-          e.note = { ...e.note, key: error.key, modelId };
+          e.note = { ...ownNote(error.key, e.isPublic), value: error.stored };
           e.key = error.key;
           e.moveKey = null;
         }
@@ -1765,10 +1842,10 @@ export function modelImage(thingport) {
   async function endIfGone(e) {
     if (!e?.note || e.saving || notes.some((note) => noteId(note) === noteId(e.note))) return;
     const moveTo = movedCopy(e);
-    if (moveTo && ownPublic(moveTo)) return;
-    const kept = (key) => storedNote(thingport, { ...e.note, key }).catch(() => undefined);
-    let stored = await kept(e.note.key);
-    if (stored === null && moveTo) stored = await kept(moveTo);
+    if (moveTo && ownCopy(moveTo, e.isPublic)) return;
+    const kept = (note) => storedNote(thingport, note).catch(() => undefined);
+    let stored = await kept(e.note);
+    if (stored === null && moveTo) stored = await kept({ key: moveTo, public: e.isPublic });
     if (stored !== null || !alive || editing !== e || e.saving) return;
     dropDraft(e);
     endEdit(null);
@@ -1795,8 +1872,7 @@ export function modelImage(thingport) {
     // have gone through, of something other than the note as it now starts from. One still saving waits too, in case
     // the save fails.
     const unsure = (e) => e.tried.some((sent) => EDITABLE.some((field) => sent[field] !== e.original[field]));
-    if (editing && (editing.saving || unsure(editing) || changedFields(editing).length))
-      keepDraft(editing, editing.saving);
+    if (editing && (editing.saving || unsure(editing) || hasChanges(editing))) keepDraft(editing, editing.saving);
     stop();
     observer?.disconnect();
     document.removeEventListener("pointerdown", onPointerDown, true);

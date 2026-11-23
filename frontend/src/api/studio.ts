@@ -149,8 +149,6 @@ export function studioExportPath(id: string, filename: string, options?: StudioE
   return `${design(id)}/export/${parts.map(encodeURIComponent).join("/")}`;
 }
 
-/** Where Studio's assistant shows: the bar under the view, or a panel beside it. */
-export type StudioPromptLayout = "bar" | "panel";
 /** How the grid behind a design is drawn and snapped to, as a CAD program's grid settings: adaptive, it follows the zoom
  *  at a density; fixed, it's `major` mm apart with `subdivisions` minor lines between. */
 export type StudioGridSettings = {
@@ -162,7 +160,7 @@ export type StudioGridSettings = {
   snap: boolean;
 };
 /** A person's own Studio settings, kept on the account. */
-export type StudioSettings = { prompt_layout: StudioPromptLayout; units: "mm" | "cm" | "in"; grid: StudioGridSettings };
+export type StudioSettings = { units: "mm" | "cm" | "in"; grid: StudioGridSettings };
 
 export const studioApi = {
   export: (id: string, filename: string, options?: StudioExport) =>

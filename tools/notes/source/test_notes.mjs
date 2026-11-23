@@ -175,6 +175,55 @@ test("a note is kept where its visibility says, with its look and colour", async
 });
 
 const value = { x: 0.5, y: 0.5, text: "Hi", look: "bubble", color: "yellow" };
+
+test("publishing a legacy personal note compares its raw value and keeps the latest untouched fields", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m1:image:a:2";
+  const raw = { x: 0.5, y: 0.5, text: "Hi", updatedAt: "2026-02-01" };
+  const storage = fakeStorage({ [from]: raw });
+  const shared = fakeShared();
+  const note = { key: from, previousPublic: false, public: true, existing: true, original: value };
+  let calls = 0;
+  shared.replace = async (previous, next) => {
+    assert.deepEqual(previous, { key: from, store: "storage", value: storage.data.get(from) });
+    if (++calls === 1) {
+      storage.data.set(from, { ...raw, color: "pink" });
+      return false;
+    }
+    assert.deepEqual(next, { key: to, store: "shared", value: { ...value, color: "pink" }, model: "m1" });
+    return true;
+  };
+  assert.deepEqual(await saveNote({ storage, shared }, note, value, "m1", to), {
+    key: to,
+    value: { ...value, color: "pink" },
+    leftover: false,
+  });
+  assert.equal(calls, 2);
+});
+
+test("a retry after moving a public note to personal uses the personal destination and keeps a later edit there", async () => {
+  const from = "note:m1:image:a:1";
+  const to = "note:m2:image:b:2";
+  const edited = { ...value, text: "Made personal" };
+  const latest = { ...edited, color: "pink", updatedAt: "2026-02-01" };
+  const storage = fakeStorage({ [to]: latest });
+  const shared = fakeShared();
+  const note = { key: from, previousPublic: true, public: false, existing: true, original: value, tried: [edited] };
+  const current = { ...edited, text: "Personal revision", color: "pink" };
+  shared.replace = async (previous, next) => {
+    assert.deepEqual(previous, { key: to, store: "storage", value: latest });
+    assert.deepEqual(next, { key: to, store: "storage", value: { ...current, updatedAt: next.value.updatedAt } });
+    assert.ok(Date.parse(next.value.updatedAt));
+    return true;
+  };
+  assert.deepEqual(await saveNote({ storage, shared }, note, { ...edited, text: current.text }, "m2", to), {
+    key: to,
+    value: current,
+    leftover: false,
+  });
+  assert.deepEqual(shared.calls, []);
+});
+
 // The server's answer for a model's licence, which is how a note asks after a model: gone for the writer, or there.
 const fakeApi = (gone) => async (path) => {
   assert.match(path, /^\/print\/[^/]+\/license$/);
@@ -416,7 +465,7 @@ test("a new note's retry whose first save didn't go through is written afresh", 
   assert.equal(storage.data.get(key).text, "Retried");
   // Someone else's public note under the same key isn't the viewer's.
   const shared = fakeShared([{ key, value: { ...sent, text: "Theirs" }, mine: false }]);
-  await saveNote({ storage, shared }, { key, public: true, tried: [sent] }, sent, "m1");
+  await saveNote({ storage, shared }, { key, public: true, previousPublic: false, tried: [sent] }, sent, "m1");
   assert.deepEqual(shared.calls, [{ prefix: key }, { set: key, value: sent, options: { model: "m1" } }]);
 });
 
