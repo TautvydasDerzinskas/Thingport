@@ -481,7 +481,8 @@ export async function withStudioSourcePlates<T>(
   const files: string[] = [];
   try {
     for (const plate of studioPlates(document)) {
-      if (!plate.source || (plateId && plate.id !== plateId)) continue;
+      // The whole design leaves hidden plates out, so there's no need to load one.
+      if (!plate.source || (plateId ? plate.id !== plateId : plate.hidden)) continue;
       const source = plate.source;
       const project = await importLibraryProject(path.join(dir, `${source.archive_id}.3mf`), dir, source.model, source);
       files.push(...project.destinations);

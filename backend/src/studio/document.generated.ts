@@ -308,6 +308,8 @@ export type StudioPlate = {
   /** The ordinal for a generated label, translated by the viewer until the plate is named. */
   default_name?: number;
   source?: StudioPlateSource;
+  /** Not drawn, and left out of the whole design's saves, exports and print check; absent when shown. */
+  hidden?: true;
 };
 export const DEFAULT_PLATE_ID = "plate-1";
 export const MAX_PLATES = 32;
@@ -318,6 +320,21 @@ export function studioPlates(doc: StudioDocument): readonly StudioPlate[] {
 
 export function plateOf(feature: Feature): string {
   return feature.plate_id ?? DEFAULT_PLATE_ID;
+}
+
+/** The plates a whole-design save, export or print check leaves out. */
+export function hiddenPlates(doc: StudioDocument): Set<string> {
+  return new Set(studioPlates(doc).flatMap((plate) => (plate.hidden ? [plate.id] : [])));
+}
+
+/** Whether saving or exporting the whole design has anything to write: a visible body or an unopened source plate,
+ *  on a shown plate. */
+export function exportsSomething(doc: StudioDocument): boolean {
+  const hidden = hiddenPlates(doc);
+  return (
+    studioPlates(doc).some((plate) => plate.source && !plate.hidden) ||
+    topLevel(doc).some((feature) => isBody(feature) && feature.visible && !hidden.has(plateOf(feature)))
+  );
 }
 
 // What one design may hold. A server evaluates designs for assistants, so these keep that bounded.

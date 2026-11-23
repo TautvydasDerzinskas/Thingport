@@ -152,6 +152,8 @@ const getDesign: McpToolDefinition = {
         id: plate.id,
         name: plate.name,
         pending_import: plate.source ? true : undefined,
+        // Left out of whole-design saves, exports and the print check.
+        hidden: plate.hidden,
         feature_ids: roots.filter((feature) => plateOf(feature) === plate.id).map((feature) => feature.id),
       })),
       bodies:
@@ -194,7 +196,7 @@ const viewDesign: McpToolDefinition = {
     plate_id: z
       .string()
       .optional()
-      .describe("A loaded plate ID from studio_get_design. Defaults to the first plate with bodies."),
+      .describe("A loaded plate ID from studio_get_design. Defaults to the first shown plate with bodies."),
     views: z.array(z.enum(STUDIO_VIEWS)).min(1).max(4).optional().describe('Up to 4. Default ["iso"].'),
     size: z
       .number()
@@ -221,7 +223,9 @@ const viewDesign: McpToolDefinition = {
             .map(plateOf)
         : [],
     );
-    const defaultPlate = plates.find((entry) => visiblePlates.has(entry.id));
+    const defaultPlate =
+      plates.find((entry) => !entry.hidden && visiblePlates.has(entry.id)) ??
+      plates.find((entry) => visiblePlates.has(entry.id));
     const pending = selected ?? (defaultPlate ? undefined : firstUnopened);
     if (pending?.source) throw new HttpError(422, `Call studio_load_source_plate on ${pending.id} before viewing it.`);
     const views = (args.views as (typeof STUDIO_VIEWS)[number][] | undefined) ?? ["iso"];

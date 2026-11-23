@@ -17,6 +17,7 @@ import {
   type MeshData,
   type PartMeasure,
   type StudioDocument,
+  type StudioPlate,
   type StudioPrintSetup,
   type Vec3,
 } from "../studio/document.generated";
@@ -225,14 +226,14 @@ async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): 
   const { bodies, errors } = evaluateDesign(wasm, input.document, ids, meshesIn(input.assetDir));
   const images: { view: StudioView; png: string }[] = [];
   if (input.render) {
+    const hasBodies = (plate: StudioPlate) =>
+      bodies.some((body) => {
+        const feature = featureById(input.document, body.id);
+        return feature?.visible && plateOf(feature) === plate.id;
+      });
+    const plates = studioPlates(input.document);
     const renderPlate =
-      input.render.plate ??
-      studioPlates(input.document).find((plate) =>
-        bodies.some((body) => {
-          const feature = featureById(input.document, body.id);
-          return feature?.visible && plateOf(feature) === plate.id;
-        }),
-      )?.id;
+      input.render.plate ?? (plates.find((plate) => !plate.hidden && hasBodies(plate)) ?? plates.find(hasBodies))?.id;
     const parts = bodies.flatMap((body) => {
       const feature = featureById(input.document, body.id);
       if (!feature?.visible || !isBody(feature) || plateOf(feature) !== renderPlate) return [];
@@ -354,7 +355,7 @@ async function sourcePlates(srcPath: string): Promise<StudioWorkerResult> {
 
 /** Whether the design will print as it's placed, for studio_check_print. */
 async function check(input: Extract<StudioWorkerInput, { kind: "check" }>): Promise<StudioWorkerResult> {
-  const unloaded = studioPlates(input.document).find((plate) => plate.source);
+  const unloaded = studioPlates(input.document).find((plate) => plate.source && !plate.hidden);
   if (unloaded)
     return { status: "refused", reason: `Open ${unloaded.name} before checking the whole design for printing.` };
   const estimate = estimateTriangles(input.document);
@@ -410,8 +411,13 @@ function bodyFitsPrinterBed(body: EvaluatedBody, bed: Vec3, outline?: StudioPrin
 }
 
 async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }>): Promise<StudioWorkerResult> {
+  // One plate asked for by name goes out even when hidden; the whole design leaves hidden plates out.
+  const platesInDesign = studioPlates(input.document).filter((plate) =>
+    input.plate ? plate.id === input.plate : !plate.hidden,
+  );
+  const exported = new Set(platesInDesign.map((plate) => plate.id));
   const visible = topLevel(input.document).filter(
-    (feature) => isBody(feature) && feature.visible && (!input.plate || plateOf(feature) === input.plate),
+    (feature) => isBody(feature) && feature.visible && exported.has(plateOf(feature)),
   );
   if (!visible.length) return { status: "empty" };
   const ids = visible.map((feature) => feature.id);
@@ -433,7 +439,6 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
       : [];
   });
   if (!parts.length) return { status: "empty" };
-  const platesInDesign = studioPlates(input.document);
   const autoStl = input.format === "auto" && parts.length === 1 && !parts[0].color && platesInDesign.length === 1;
   if (input.format === "stl" || autoStl) {
     const bytes = binaryStl(parts.map(({ body }) => worldTriangles(body)));

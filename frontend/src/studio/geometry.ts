@@ -9,6 +9,7 @@ import {
   shapeFill,
   sketchFrame,
   sketchMatrix,
+  hiddenPlates,
   plateOf,
   topLevel,
   transformMatrix,
@@ -717,8 +718,8 @@ export function measureBounds(
   }
 }
 
-/** Checks the design's visible top-level bodies for printing, where they are. A body that isn't a closed solid can't
- *  be checked. Bodies that fail to build are reported with the reason. */
+/** Checks the design's visible top-level bodies on its shown plates for printing, where they are. A body that isn't a
+ *  closed solid can't be checked. Bodies that fail to build are reported with the reason. */
 export function checkDesign(
   wasm: ManifoldToplevel,
   doc: StudioDocument,
@@ -737,8 +738,9 @@ export function checkDesign(
     const bodies: { id: string; plate: string; solid: Manifold; plain?: Manifold }[] = [];
     const open: string[] = [];
     const invalid: { id: string; message: string }[] = [];
+    const hidden = hiddenPlates(doc);
     for (const feature of topLevel(doc)) {
-      if (!isBody(feature) || !feature.visible) continue;
+      if (!isBody(feature) || !feature.visible || hidden.has(plateOf(feature))) continue;
       try {
         if (made.openOf(feature)) open.push(feature.id);
         else

@@ -36,6 +36,10 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   every size in the document and in every command stays in mm.
 - **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
   fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
+- **Plates** are listed in `doc.plates` in the order they're shown, saved and exported (`move_plate`); a body
+  without a `plate_id` is on `plate-1`, wherever that sits. A plate marked `hidden` (`set_plate_visibility`) isn't
+  drawn, and every whole-design output leaves it out (`hiddenPlates`): the 3MF and STL ZIP, Save to Thingport, a
+  slicer's file and the print check. Exporting that one plate by its id still works.
 - **Deferred 3MF imports** keep an archive snapshot alongside the mesh assets. A plate holds a source reference until
   `load_source_plate` prepares its bodies and records the result as a revision. The same command serves Studio, Ask AI
   and MCP. Exports can prepare pending plates with temporary mesh assets. The viewport evaluates the active plate's

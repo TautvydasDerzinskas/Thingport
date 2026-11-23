@@ -31,13 +31,16 @@ read it again (studio_get_design) before building on something.
 
 ## Build plates and colors
 
-- studio_get_design lists the plates and the plate and color of each body. New bodies go on the first plate unless
-  you pass plate_id. studio_create_plate adds a named plate and returns its ID.
+- studio_get_design lists the plates in order and the plate and color of each body. New bodies go on plate-1 unless
+  you pass plate_id. studio_create_plate adds a named plate at the end and returns its ID.
+- studio_move_plate puts a plate at another position; the order is the order plates are saved and exported in.
+  studio_set_plate_visibility hides a plate (get_design marks it hidden): it stays in the design, but saving,
+  downloading, opening in a slicer and studio_check_print leave it out. Only hide a plate when the user asks.
 - Use studio_move_to_plate for existing bodies or sketches. Their local positions stay the same. Two different
   plates can have bodies at the same coordinates. Use studio_set_body_color with an RGB hex color on each body.
 - studio_import_model accepts defer_plates: true for a 3MF in a new design. The result lists pending_plate_ids,
   and studio_get_design marks those plates with pending_import. Use studio_load_source_plate with the plate_id
-  to bring in its bodies before editing or viewing that plate. Load all pending plates before studio_check_print.
+  to bring in its bodies before editing or viewing that plate. Load all shown pending plates before studio_check_print.
 - studio_view_design can show an individual plate by plate_id. Saving to the library preserves plates and colors in 3MF.
 
 ## Naming faces and edges

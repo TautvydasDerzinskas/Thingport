@@ -143,7 +143,7 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
     check: ReturnType<typeof checkDesign>;
   } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const unloaded = doc ? studioPlates(doc).find((plate) => plate.source) : undefined;
+  const unloaded = doc ? studioPlates(doc).find((plate) => plate.source && !plate.hidden) : undefined;
   useEffect(() => {
     if (!open || !doc || !designId || unloaded) return;
     let cancelled = false;

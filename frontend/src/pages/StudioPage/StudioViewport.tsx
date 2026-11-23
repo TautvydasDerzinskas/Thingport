@@ -18,6 +18,7 @@ import {
   inputsOf,
   isBody,
   plateOf,
+  studioPlates,
   sketchFrame,
   shapeContours,
   shapeOutline,
@@ -548,6 +549,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const bodies = topLevel(doc)
       .filter((feature) => plateOf(feature) === props.activePlate)
       .filter(isBody);
+    // A hidden plate's bodies are kept, only not drawn, so showing it again doesn't make them again.
+    const plateHidden = studioPlates(doc).some((plate) => plate.id === props.activePlate && plate.hidden);
     const wanted = new Map(bodies.map((feature) => [feature.id, shapeKey(doc, feature)]));
     const detailed = topologyRequest === "*" ? [...wanted.keys()] : topologyRequest.split(",");
     const needDetails = new Set(detailed);
@@ -577,7 +580,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         const body = s.bodies.get(feature.id);
         if (!body) continue;
         applyTransform(body.group, feature.transform);
-        body.group.visible = feature.visible;
+        body.group.visible = feature.visible && !plateHidden;
       }
       latest.current.onStats?.(
         bodies.flatMap((feature): BodyStats[] => {
@@ -681,11 +684,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const s = stage.current;
     if (!s) return;
     clear(s.sketches);
+    const plateHidden = studioPlates(props.document).some((plate) => plate.id === props.activePlate && plate.hidden);
     const shown = props.document.features.filter(
       (feature): feature is SketchFeature =>
         feature.type === "sketch" &&
         (feature.id === activeSketch ||
-          (feature.visible && plateOf(feature) === props.activePlate && topLevel(props.document).includes(feature))),
+          (feature.visible &&
+            !plateHidden &&
+            plateOf(feature) === props.activePlate &&
+            topLevel(props.document).includes(feature))),
     );
     for (const sketch of shown) {
       const lit = sketch.id === activeSketch || props.selected.includes(sketch.id);

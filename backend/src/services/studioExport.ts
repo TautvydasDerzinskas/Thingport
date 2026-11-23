@@ -1,7 +1,7 @@
 import { slicerProfile } from "../adapter";
 import { printerSummary } from "../printers/catalogue";
 import { printerTarget } from "../printers/targets";
-import { isBody, plateOf, studioPlates, topLevel } from "../studio/document.generated";
+import { hiddenPlates, isBody, plateOf, studioPlates, topLevel } from "../studio/document.generated";
 import { centeredPrinterOutline } from "../studio/printLayout.generated";
 import { HttpError } from "../utils/fileUtils";
 import { exportStudioGeometry } from "./studioInspect";
@@ -28,12 +28,14 @@ export async function exportStudioDesign(userId: string, design: StudioDesignOut
   const profile = options.slicer ? slicerProfile(options.slicer) : null;
   if (options.slicer && !profile) throw new HttpError(400, "That slicer isn't supported.");
   if (profile && profile.reads !== "bambu" && !options.plate) {
+    const hidden = hiddenPlates(document);
     const occupiedPlates = new Set(
       topLevel(document)
         .filter((feature) => isBody(feature) && feature.visible)
-        .map(plateOf),
+        .map(plateOf)
+        .filter((id) => !hidden.has(id)),
     );
-    for (const plate of plates) if (plate.source) occupiedPlates.add(plate.id);
+    for (const plate of plates) if (plate.source && !plate.hidden) occupiedPlates.add(plate.id);
     if (occupiedPlates.size > 1) throw new HttpError(400, "Choose a plate to open with this slicer.");
   }
   let target: StudioExportTarget | undefined;

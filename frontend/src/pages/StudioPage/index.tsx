@@ -81,6 +81,7 @@ import { BoxIcon, ExtrudeIcon, SeparateIcon } from "./studioIcons";
 import { measureBetweenInWorker, measureBoundsInWorker, measurePartsInWorker } from "./geometryClient";
 import { openModelAsDesign, type StudioArrival } from "./openModel";
 import StudioSourcePlate, { useSourcePlate } from "./StudioSourcePlate";
+import HiddenPlateNotice from "./HiddenPlateNotice";
 import OperationPanel from "./OperationPanel";
 import ParametersDialog from "./ParametersDialog";
 import StudioSettingsDialog from "./StudioSettingsDialog";
@@ -329,7 +330,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [partsHint, setPartsHint] = useState<{ design: string; mesh: string } | null>(null);
   const sourcePlate = useSourcePlate(
     designId,
-    plateInView,
+    // A hidden plate isn't drawn, so there's no need to load it.
+    plateInView?.hidden ? undefined : plateInView,
     design?.undone_source_plate_ids?.includes(activePlate) ?? false,
     run,
     setPartsHint,
@@ -995,7 +997,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   };
 
   const viewportArea = (() => {
-    if (plateInView && plateSource) return <StudioSourcePlate plate={plateInView} {...sourcePlate} />;
+    if (plateInView && plateSource && !plateInView.hidden)
+      return <StudioSourcePlate plate={plateInView} {...sourcePlate} />;
     if (noDesigns && !designId) {
       return (
         <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", p: 2 }}>
@@ -1079,6 +1082,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           tinted={operation?.kind === "separate" ? own : undefined}
           bottomInset={promptInset}
         />
+        {plateInView?.hidden && (
+          <HiddenPlateNotice
+            plate={plateInView}
+            onShow={() => void run("set_plate_visibility", { plate_id: plateInView.id, visible: true })}
+          />
+        )}
         {operation && (
           <OperationPanel
             op={operation}
