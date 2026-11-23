@@ -1,4 +1,5 @@
 import { authHeaders } from "../utils/auth";
+import type { SdkShared } from "../sdk/types";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
 import { headerRecord } from "./widgets";
 
@@ -272,6 +273,19 @@ export const toolsApi = {
       headers: authHeaders(),
     });
     if (!res.ok) return failed(res, "Failed to delete the tool's shared data");
+  },
+
+  replaceEntry: async (
+    id: string,
+    ...[previous, next]: Parameters<NonNullable<SdkShared["replace"]>>
+  ): Promise<boolean> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/replace-entry`, {
+      method: "POST",
+      ...json({ previous, next }),
+    });
+    if (res.status === 409) return false;
+    if (!res.ok) return failed(res, "Failed to update the tool's data");
+    return true;
   },
 
   audience: async (id: string): Promise<ToolAudience> => {

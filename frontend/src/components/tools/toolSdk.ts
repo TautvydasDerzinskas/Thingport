@@ -150,6 +150,14 @@ export function buildToolSdk({
       await toolsApi.sharedSet(id, key, { value, model: options?.model ?? null });
       toolSharedChanged(id);
     },
+    replace: tool.id
+      ? async (previous, next) => {
+          const id = saved("thingport.shared");
+          const replaced = await toolsApi.replaceEntry(id, previous, next);
+          if (replaced && (previous.store === "shared" || next.store === "shared")) toolSharedChanged(id);
+          return replaced;
+        }
+      : undefined,
     remove: async (key) => {
       const id = saved("thingport.shared");
       await toolsApi.sharedDelete(id, key);

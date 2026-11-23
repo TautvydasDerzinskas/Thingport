@@ -1363,6 +1363,21 @@ Keeps one of the user's entries, replacing their entry under the key. At most 25
 await thingport.shared.set(`job:${id}`, job, { model: modelId });
 ```
 
+#### `shared.replace(previous, next)`
+
+```ts
+thingport.shared.replace(previous: { key: string; store: "storage" | "shared"; value: unknown }, next: { key: string; store: "storage" | "shared"; value: unknown; model?: string }): Promise<boolean>
+```
+
+Replaces one of the user's existing entries if its value still matches. Changing its key or store moves it atomically, with the destination store's normal limits. An occupied destination is left alone. Available for saved tools.
+
+| Parameter  | What it is                                                                      |
+| ---------- | ------------------------------------------------------------------------------- |
+| `previous` | The entry the user read, including its original JSON value.                     |
+| `next`     | Where to keep the new value. A shared entry can name a model the user can open. |
+
+**Returns:** Whether the replacement was made. If the source is gone, has changed, or the move's destination is occupied, returns `false`.
+
 #### `shared.remove(key)`
 
 ```ts

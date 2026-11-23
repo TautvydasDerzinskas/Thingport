@@ -6,8 +6,8 @@ the number of notes on it. Its menu adds a note, opens the Notes window, and hid
 A new note starts in the middle of the picture, ready to type in. Drag it by its grip, or move it with the arrow keys
 from the grip, and pick in the toolbar under it whether it shows as a bubble or a sticky note, a sticky's colour, and
 who sees it. Personal notes are yours. Public notes are shared with everyone who can use the tool on this instance.
-Who sees a note can't be changed once it's saved, since the two kinds are kept in different stores.
-Selecting a note opens it in place; your own have a ⋮ menu to edit or delete them, and can be dragged while edited.
+Selecting a note opens it in place. For your own notes, use **⋮ → Edit** to change the visibility or other details,
+then save. Editing also lets you drag the note to a different spot.
 The window lists the notes you wrote, to search by model title or note text.
 
 The tool uses `thingport.storage` for personal notes and the viewer's settings (whether notes are hidden, and the
