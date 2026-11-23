@@ -142,6 +142,45 @@ describe("models that came with a generator script", () => {
     }
   });
 
+  it("judges a name kept before the naming rule as Customize does, in the list and the filter", async () => {
+    const trailing = await makeModel(`Trailing ${stamp}`);
+    const leading = await makeModel(`Leading ${stamp}`);
+    // As rows from before names were normalised can be: a trailing space, and a space before a leading dot.
+    const rows = [
+      await prisma.printFile.create({
+        data: {
+          printId: trailing,
+          role: "SUPPORTING",
+          filename: "Box.scad ",
+          mime: "text/plain",
+          size: 9,
+          storagePath: `legacy-${stamp}/a/Box.scad `,
+        },
+      }),
+      await prisma.printFile.create({
+        data: {
+          printId: leading,
+          role: "SUPPORTING",
+          filename: " .Box.scad",
+          mime: "text/plain",
+          size: 9,
+          storagePath: `legacy-${stamp}/b/ .Box.scad`,
+        },
+      }),
+    ];
+    try {
+      const scripts = async (id: string) =>
+        (await request(app).get(`/api/print/${id}`).set(auth())).body.generator_scripts.length > 0;
+      const only = (await request(app).get("/api/prints?limit=100&generative=1").set(auth())).body.map(
+        (item: { id: string }) => item.id,
+      );
+      expect([await scripts(trailing), only.includes(trailing)]).toEqual([true, true]);
+      expect([await scripts(leading), only.includes(leading)]).toEqual([false, false]);
+    } finally {
+      await prisma.printFile.deleteMany({ where: { id: { in: rows.map((row) => row.id) } } });
+    }
+  });
+
   it("starts as not withheld, which is what an uploaded model is", async () => {
     const res = await request(app).get(`/api/print/${plain}`).set(auth());
     expect(res.body.generator_script_withheld).toBe(false);
