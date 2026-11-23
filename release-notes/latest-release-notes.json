@@ -1,219 +1,242 @@
 {
-  "version": "1.7.0",
-  "title": "Open any 3MF file as if tailored for you",
-  "summary": "Thingport 1.7.0 opens any 3MF as if it had been made for your slicer and your printer, wherever it comes from, and the Thingport Grab extension downloads those copies straight from the model's page. There's more: free up gigabytes on the Administration → Storage page, import from QIDI Maker and VoxelShare, move in from another instance, earn achievements, and use Thingport in Simplified Chinese.",
-  "contributors": ["CandidB", "maxbrueckl", "nevergone", "SeoliteQ", "slewantoski", "truri83", "WEBzaytsev"],
+  "version": "1.8.0",
+  "title": "Studio opens your 3MFs, in colour and ready to print",
+  "summary": "Thingport 1.8.0 opens any 3MF in Studio with its plates and colours, and a design now carries its own print settings into your slicer. Most of the rest is what you asked for: a shared print queue and filament shelf, notes on your models, a 3D printing wiki, Send to your printer, the thumbnail you pick, sorting by name, and Thingport in German.",
+  "contributors": [
+    "bbright20",
+    "CandidB",
+    "DarkCeltic",
+    "gearaddict",
+    "JcMinarro",
+    "joriswill",
+    "nevergone",
+    "pleasantone",
+    "roadkingvrod",
+    "SeoliteQ",
+    "slewantoski",
+    "souldessin",
+    "tecbeat"
+  ],
   "items": [
     {
       "type": "feature",
       "highlight": true,
-      "title": "Made for your slicer and printer",
-      "description": "Whatever slicer you use and whatever printer you own, a 3MF from any site now opens as your own: colours, parts, plates and the designer's settings intact, laid out on your printer's bed. Tell Thingport what you print with: pick your slicers and add your printers in the Configuration dialog. It suggests printers from your library, and can even find them in your printer makers' accounts. Then click Open adapted on any model page.",
+      "title": "Studio: open a 3MF, colour it, set how it prints",
+      "description": "Open any 3MF from your library in Studio and it comes in whole: every plate, every part where the designer put it, in its colours. Colour parts, move them between plates and arrange each plate on your printer's bed. Then give the design a print profile in the new Print tab: start from a preset such as Strong, Outdoor or Vase, and change what you like. It travels in every 3MF Studio makes, opens straight in your slicer with your printer picked, and shows on the model's page once you save the design to your library.",
       "images": [
         {
-          "src": "screenshots/1.7.0-printers.webp",
-          "caption": "Add your printers in the Configuration dialog, or take the ones Thingport suggests"
+          "src": "screenshots/1.8.0-studio-3mf.webp",
+          "caption": "A 3MF opened in Studio: its parts in their colours, its plates under Objects / Plates"
         },
         {
-          "src": "screenshots/1.7.0-open-adapted.webp",
-          "caption": "Open adapted on the model page, made for your printer"
+          "src": "screenshots/1.8.0-studio-print-profile.webp",
+          "caption": "The Print tab: the Toy preset for Bambu Studio and a P1S, every setting a click away"
         },
         {
-          "src": "screenshots/1.7.0-which-printer.webp",
-          "caption": "Thingport asks once which printer a slicer's copies are for"
+          "src": "screenshots/1.8.0-studio-save.webp",
+          "caption": "Save to Thingport as a new model, or as one more print profile of a model you have"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/adapted-3mf.md"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/studio.md#plates-colors-and-export"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Download adapted, straight from the model's page",
-      "description": "The Thingport Grab browser extension puts a Download adapted button right beside the download button on nine model sites, MakerWorld and Printables among them. One click, and the 3MF is already made for your slicer and printer. It works even without a Thingport instance connected to the extension: just pick your slicer and printers in its popup.",
+      "title": "Print together: a shared queue and a filament shelf",
+      "description": "Two new tools for a household that prints together. Print queue: add a model from its page, or a whole selection at once, and everyone sees who has what queued, printing or printed on one shared board. Filament shelf: everyone's spools on one shelf, and on each model's page the filaments it needs and who has them. An admin installs them on the Administration → Tools page.",
       "images": [
         {
-          "src": "screenshots/1.7.0-grab-download-adapted.webp",
-          "caption": "Download adapted, right beside MakerWorld's own button"
+          "src": "screenshots/1.8.0-print-queue.webp",
+          "caption": "Print queue: the household's prints on one board"
         },
         {
-          "src": "screenshots/1.7.0-grab-adapt-settings.webp",
-          "caption": "Pick your slicer and printers in the extension's popup"
+          "src": "screenshots/1.8.0-filament-shelf.webp",
+          "caption": "Filament shelf: everyone's spools, and the filaments a model needs"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md#download-adapted-no-thingport-needed"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/tools.md#the-tools-in-the-repository"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Free up gigabytes in a few clicks",
-      "description": "The Administration → Storage page now shows what really fills your disk, and its Free up space button clears what nothing needs: old 3D previews, leftover slicer copies and, if you like, extra photos. New 3D previews take a fifth of the space they used to.",
+      "title": "Notes on your models",
+      "description": "Pin a note to any model's picture, as a speech bubble or a sticky note, just for you or for everyone. The Notes window keeps them all together, to search by model or by what they say.",
       "images": [
         {
-          "src": "screenshots/1.7.0-storage.webp",
-          "caption": "The Administration → Storage page: what fills your disk"
-        },
-        {
-          "src": "screenshots/1.7.0-free-up-space.webp",
-          "caption": "Free up space: pick what goes"
+          "src": "screenshots/1.8.0-notes.webp",
+          "caption": "Sticky notes and bubbles on a model's picture"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/storage.md#disk-space"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/tools.md#notes"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "QIDI Maker and VoxelShare: 23 sites to import from",
-      "description": "Two printer makers' model communities join in, QIDI Maker and VoxelShare, with their print profiles, collections and likes. Their slicers come along too: QIDI Studio and Flash Studio open what you import.",
+      "title": "The 3D Printing Wiki, with a quiz",
+      "description": "Print came out wrong? The new 3D Printing Wiki tool walks you through 46 problems to a fix, explains the slicer settings that matter, and names each one as Bambu Studio, OrcaSlicer, PrusaSlicer and Cura call it. Then try its quiz: pass the exam to earn the FDM Fundamentals badge.",
       "images": [
         {
-          "src": "screenshots/1.7.0-providers.webp",
-          "caption": "The newest sites on the Administration → Providers page"
+          "src": "screenshots/1.8.0-wiki.webp",
+          "caption": "Searching the 3D Printing Wiki for stringing"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/PROVIDER_SETUP.md"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/tools/3d-printing-wiki/README.md"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Move in from another instance",
-      "description": "The new Administration → Migrate page brings another Thingport instance's people and libraries over, online or from a backup of any release since 1.0.0, and never brings anything twice. It can bring a Manyfold library in too.",
+      "title": "Send it to your printer",
+      "description": "Send a model's file from its page straight to OctoPrint, Klipper or PrusaLink, to a Home Assistant, n8n or Node-RED webhook, or to an address of your own. Set your places up in the Configuration dialog under Send to: each person has their own.",
       "images": [
         {
-          "src": "screenshots/1.7.0-migrate.webp",
-          "caption": "The new Administration → Migrate page"
+          "src": "screenshots/1.8.0-send-to.webp",
+          "caption": "Send to places in the Configuration dialog: printers and webhooks"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/migrate.md"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/send-to.md"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Achievements: badges for what you do",
-      "description": "Earn badges, from bronze to holographic, for importing, downloading, designing in Studio, syncing collections, and a few secrets. They show on your My models page and on the Explore page. An admin turns them on in the Administration → Social page.",
+      "title": "Instructions and parts lists, open on the model page",
+      "description": "A model's supporting files get a tab of their own on its page, and open right there: PDFs, pictures, READMEs, scripts and parts lists. It's the first half of a bigger feature: adding them to your own models, and bringing every one in with your imports, comes in the next release.",
       "images": [
         {
-          "src": "screenshots/1.7.0-achievements.webp",
-          "caption": "Badges on the My models page"
+          "src": "screenshots/1.8.0-supporting-files.webp",
+          "caption": "A model's README, open on its page beside its other files"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/profile-and-activity.md#achievements"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/supporting-files.md"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "简体中文, and two China sites",
-      "description": "Thingport and the Thingport Grab extension now speak Simplified Chinese, and the China sites of Snapmaker Space and VoxelShare import too.",
+      "title": "Deutsch, and tools in your language",
+      "description": "Thingport and the Thingport Grab extension now speak German, and every tool in the repository but the new wiki speaks all nine of Thingport's languages.",
       "images": [
         {
-          "src": "screenshots/1.7.0-languages.webp",
-          "caption": "Simplified Chinese in the language list"
+          "src": "screenshots/1.8.0-languages.webp",
+          "caption": "Deutsch in the language list"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/appearance.md"
     },
     {
       "type": "feature",
-      "title": "One collection, several sources",
-      "description": "A synced collection can now follow lists on several sites at once: a MakerWorld collection and a Printables one, say.",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/synced-collections.md"
-    },
-    {
-      "type": "feature",
-      "title": "Files keep their folders",
-      "description": "When a designer sorts a model's files into folders, the folders come along, on the model page and in downloads.",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/importing.md#what-comes-with-a-model"
-    },
-    {
-      "type": "feature",
-      "title": "Thingport Grab in your language",
-      "description": "The Thingport Grab extension now speaks every language Thingport does.",
+      "title": "Pick a model's thumbnail",
+      "description": "Choose the picture a model's card shows: click Use as thumbnail on it in the Edit model dialog.",
       "images": [
         {
-          "src": "screenshots/1.7.0-grab-languages.webp",
-          "caption": "The extension's language, picked in its popup"
+          "src": "screenshots/1.8.0-thumbnail.webp",
+          "caption": "Use as thumbnail in the Edit model dialog"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/appearance.md"
     },
     {
       "type": "feature",
-      "title": "Puzzles solved, imports carried on",
-      "description": "When MakerWorld or MakerOnline wants a puzzle solved, the Thingport Grab extension shows it right there and carries on once it's solved.",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md#what-counts-as-importable"
+      "title": "Sort by name, and flip any sort",
+      "description": "Every list of models sorts by name now, Cable 2 before Cable 10. Click the chosen sort again to flip it: Newest becomes Oldest.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/organize-and-search.md#search"
     },
     {
       "type": "feature",
-      "title": "eufyMake's print profiles",
-      "description": "eufyMake's print files now import as print profiles, as on the other sites that have them.",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/eufymake.md"
+      "title": "A quicker model menu",
+      "description": "On the model page, the ⋯ menu opens with big tiles for Download, Open in your slicer, Add to collection and Edit. On cards, the rest waits in submenus.",
+      "images": [
+        {
+          "src": "screenshots/1.8.0-model-menu.webp",
+          "caption": "The model page's ⋯ menu, with tiles for what you do most"
+        }
+      ]
     },
     {
       "type": "feature",
-      "title": "Invite links without email",
-      "description": "No email server? The Invite users button on the Administration → Auth page now gives you a link to send yourself.",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/multi-user.md"
+      "title": "Parts that fit back together",
+      "description": "Split a part in Studio with pins and sockets, print a quick fit test, and apply the clearance that fits your printer.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/studio.md#changing-a-body"
     },
     {
       "type": "feature",
-      "title": "Thingport Bridge updates",
-      "description": "The Thingport Bridge desktop helper now tells you when a new version is out, and updating it on macOS finally works.",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/bridge/README.md#update"
+      "title": "Tools right where you need them",
+      "description": "Tools can add their actions to a model's menu and to a grid's selection, and their own parts to the model page. The Print cost estimator's Estimate print cost is one click from a file. An admin can now switch a tool off without uninstalling it, and update every tool at once.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/tools.md"
+    },
+    {
+      "type": "feature",
+      "title": "More for tool makers",
+      "description": "The tools SDK adds data a household shares, commands, parts of the model page and Thingport's own model picker.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/developers/sdk-reference.md"
+    },
+    {
+      "type": "feature",
+      "title": "Thingport Bridge says what went wrong",
+      "description": "When a model doesn't open, the Thingport Bridge desktop helper now tells you why and offers Try again. On macOS, it takes you to the Local Network setting that was blocking it.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/bridge/README.md#when-a-model-doesnt-open"
     },
     {
       "type": "improvement",
-      "title": "Love Thingport? The What's new dialog, the Administration → Overview page and the Thingport Grab popup now show ways to support it"
+      "title": "Behind a reverse proxy? A new guide says what it has to let through, and Thingport and the Thingport Grab extension now say when the proxy, not Thingport, turned a request down"
     },
     {
       "type": "improvement",
-      "title": "After a tool saves a model, an Open button takes you straight to it"
+      "title": "Studio keeps the Ask AI conversation beside the design while you look, and its design menu lists your recent designs"
     },
     {
       "type": "improvement",
-      "title": "The model page shows when a model was imported, and fits its category and size on one row"
+      "title": "Download all counts every file a model has, and its ZIP holds the prepared print too"
     },
     {
       "type": "improvement",
-      "title": "Free MyMiniFactory models with archived files import without signing in"
+      "title": "The Administration → Storage page shows supporting files and prepared prints apart"
     },
     {
       "type": "improvement",
-      "title": "Russian, Ukrainian and Belarusian translations are complete"
+      "title": "Errors on the models, search, tag and collection pages show as Thingport's own messages, not the browser's pop-ups"
     },
     {
       "type": "fix",
-      "title": "Rotated parts face the right way in 3D previews and model pictures"
+      "title": "3MFs from Windows' 3D Builder, and others that name their model differently, get 3D previews, card pictures and print checks"
     },
     {
       "type": "fix",
-      "title": "Importing several MakerWorld print profiles with the Thingport Grab extension no longer stalls or downloads ones you have"
+      "title": "Downloads keep their names, accents and spaces included, and a ZIP unzips whole on a Mac or Windows"
     },
     {
       "type": "fix",
-      "title": "Pairing the Thingport Grab extension survives the browser's permission prompt"
+      "title": "A disk that doesn't answer no longer makes a model's files look missing, and a repair keeps the files it didn't lose"
     },
     {
       "type": "fix",
-      "title": "Some Bambu Studio projects no longer show an empty plate in the 3D preview"
+      "title": "Deleting a model removes all of it, never half"
     },
     {
       "type": "fix",
-      "title": "A deleted Snapmaker Space model now says it's gone instead of failing"
+      "title": "A zip's __MACOSX folder and other leftovers no longer turn into broken models"
     },
     {
       "type": "fix",
-      "title": "More NexPrint models import, with their print profiles"
+      "title": "Zip, F3D and picture files download instead of offering a slicer that can't open them"
     },
     {
       "type": "fix",
-      "title": "The Social entry of the Administration menu keeps its icon when an ad blocker is on"
+      "title": "Moving quickly from one model to the next never shows the first one's details"
     },
     {
       "type": "fix",
-      "title": "Links and email addresses in plain-text model descriptions are no longer dropped"
+      "title": "Adding a picture to a model that had only its 3D render saves again"
     },
     {
       "type": "fix",
-      "title": "The model page's info panel no longer gets stuck out of reach on short screens"
+      "title": "Signing in behind an HTTPS reverse proxy keeps your session cookie secure"
+    },
+    {
+      "type": "fix",
+      "title": "Four messages about AI assistants, connected instances and chats now say what's true"
+    },
+    {
+      "type": "fix",
+      "title": "The Thingport Grab extension's missing translations are filled in"
     }
   ]
 }
