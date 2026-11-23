@@ -46,13 +46,14 @@ in [`tools/index.json`](../tools/index.json).
 | `version`     | Up to 20 characters, `1.0.0` by default. Shown to admins, and what **Update** offers them      |
 | `author`      | Up to 60 characters, with an optional `authorUrl`. The validator insists on an author          |
 | `iconUrl`     | An image address, `builtin:<group>/<name>`, `/api/icons/<file>`, or an SVG as a `data:` URL    |
+| `symbol`      | A one-colour SVG as a `data:` URL for its commands in a grid's toolbar, below                  |
 | `window`      | `{ width, height }` in pixels: 320–1920 by 240–1200, `960 × 640` by default                    |
 | `hosts`       | Up to 20 host names its `thingport.fetch` may reach. Empty means it reaches nothing            |
 | `category`    | `generators`, `planners`, `calculators`, `files`, `library` or `other`: the shelf it starts on |
 | `locales`     | The language codes it has labels for, up to 40                                                 |
 | `screenshots` | Up to 8 `{ "file", "caption" }`, captions up to 200 characters                                 |
 | `collection`  | The models it brings, below                                                                    |
-| `commands`    | Up to 10 things it offers on a model's page, below                                             |
+| `commands`    | Up to 10 actions for a model page or a grid selection, below                                   |
 | `modelPage`   | `{ info, tab: { title }, image }`: parts of every model's page the tool draws, below           |
 
 An SVG `iconUrl` keeps the icon inside the metadata, which is why the tools here use one.
@@ -93,41 +94,51 @@ the geometry behind them. The 3MF writer comes with it — `writeThreeMf(parts, 
 than handing over a dozen downloads. A 3MF carries one copy of a shape however many are wanted, so a part's name is
 where its count belongs: `"8x8 Core Tile x4"`.
 
-### Commands on a model's page
+### Commands on model pages and grids
 
-A tool that works on a model can offer that from the model's page: its `commands` show in the menu beside the Open
-button, under **Tools**, after a divider. Thingport reads them from the metadata, so it lists them without running the
-tool, and a tool with none changes nothing there.
+A tool can add commands to the **Tools** menu beside a model's Open button or to the selection toolbar in a model
+grid. Thingport reads the commands from the tool's metadata before loading its script. The grid's toolbar shows
+them in its edit mode, enabled once at least one model is selected. Several selection commands from the same tool
+share one button with a menu of their translated titles.
+
+The toolbar's icons are Thingport's own, in one colour, so a tool gives its commands a `symbol` there: an SVG as a
+`data:` URL, which Thingport tints the same way, so only its shape counts. The tool's `symbol` is its button's; a
+command's own `symbol` is its menu item's, and its button's when it's the tool's only selection command. Without
+either, the toolbar draws the tool's `iconUrl` in one colour, where it can.
 
 ```json
 "commands": [
   { "id": "estimate", "title": "Estimate print cost", "on": "file", "fileTypes": ["stl", "3mf", "gcode"] },
-  { "id": "queue", "title": "Add to my print queue", "window": false }
+  { "id": "batch", "title": "Process selected models", "on": "selection", "window": false }
 ]
 ```
 
-| Field       | What it does                                                                                       |
-| ----------- | -------------------------------------------------------------------------------------------------- |
-| `id`        | 1–40 lowercase letters, digits and dashes, different for each command                              |
-| `title`     | Up to 60 characters. A label `commands.<id>` in `locales/` translates it                           |
-| `on`        | `"model"` (default) for the model, or `"file"` for the file picked on the page                     |
-| `fileTypes` | For `"file"`: the endings it takes, without the dot (`"stl"`, `"gcode.3mf"`); any file when absent |
-| `window`    | `true` (default) opens the tool's window; `false` calls its `run` export with no window            |
+| Field       | What it does                                                                                           |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| `id`        | 1–40 lowercase letters, digits and dashes, different for each command                                  |
+| `title`     | Up to 60 characters. A label `commands.<id>` in `locales/` translates it                               |
+| `on`        | `"model"` (default) for a model, `"file"` for its selected file, or `"selection"` for a grid selection |
+| `fileTypes` | For `"file"`: the endings it takes, without the dot (`"stl"`, `"gcode.3mf"`); any file when absent     |
+| `window`    | `true` (default) opens the tool's window; `false` calls its `run` export with no window                |
+| `symbol`    | A one-colour SVG as a `data:` URL for its menu item in a grid's toolbar, as above                      |
 
 A command that opens the window finds what it was picked on in `thingport.context`: `{ command, modelId, fileId }`,
 `fileId` being one of the model's `files` for a command on a file (the prepared print isn't one, so a file command
-isn't offered for it). One with `"window": false` gets the same `thingport` in its `run` export, and reports back
-through `ui.toast`, asking through `ui.confirm` where it must:
+isn't offered for it). A selection command gets `{ command, modelIds }`, with the IDs selected at the time the action
+was picked, in grid order. A command with `"window": false` gets the same context in its `run` export and can use
+`ui.toast` and `ui.confirm`.
 
 ```js
 export async function run(command, thingport) {
-  const { modelId } = thingport.context;
-  // …do it, then say so
-  thingport.ui.toast(thingport.t("queued"), "success");
+  if (command !== "batch") return;
+  for (const id of thingport.context.modelIds ?? []) {
+    const model = await thingport.models.get(id);
+    await thingport.storage.set(`picked:${id}`, model.name);
+  }
 }
 ```
 
-Print cost estimator's **Estimate print cost** is the example in this repository.
+The Print cost estimator provides a file command and the Print queue provides both model and selection commands.
 
 ### Shared with the tool's other users
 

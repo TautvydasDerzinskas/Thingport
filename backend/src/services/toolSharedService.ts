@@ -41,7 +41,7 @@ const entrySchema = z.object({
 });
 export const replaceEntrySchema = z.object({
   previous: entrySchema,
-  next: entrySchema.extend({ model: sharedSetSchema.shape.model }),
+  next: entrySchema.extend({ model: sharedSetSchema.shape.model }).nullable(),
 });
 
 export const audienceSchema = z.object({
@@ -225,37 +225,37 @@ async function writeSharedData(
   });
 }
 
-/** Replaces an entry only if it still matches the caller's read. A move writes and removes in one transaction. */
+/** Updates, moves, or deletes an entry only if it still matches the caller's read. */
 export async function replaceToolEntry(
   user: ToolUser,
   toolId: string,
   { previous, next }: z.infer<typeof replaceEntrySchema>,
 ): Promise<boolean> {
   assertToolDataKey(previous.key);
-  assertToolDataKey(next.key);
-  if (previous.value === undefined || next.value === undefined) throw new HttpError(400, "Both values are required");
+  if (next) assertToolDataKey(next.key);
+  if (previous.value === undefined || (next && next.value === undefined))
+    throw new HttpError(400, "The entry values are required");
   const tool = await usableTool(user, toolId);
-  const model = next.store === "shared" && next.model ? await readableModel(user, next.model) : null;
+  const model = next?.store === "shared" && next.model ? await readableModel(user, next.model) : null;
   const where = { toolId: tool.id, userId: user.id };
   return prisma.$transaction(async (tx) => {
     // Take the locks in the same order for moves in either direction.
-    if (previous.store === "storage" || next.store === "storage") await lockToolStorage(tx, where);
-    if (previous.store === "shared" || next.store === "shared") await lockSharedStorage(tx, where);
+    if (previous.store === "storage" || next?.store === "storage") await lockToolStorage(tx, where);
+    if (previous.store === "shared" || next?.store === "shared") await lockSharedStorage(tx, where);
     const read = (entry: typeof previous) => {
       const query = { where: { toolId_userId_key: { ...where, key: entry.key } }, select: { value: true } } as const;
       return entry.store === "storage" ? tx.toolData.findUnique(query) : tx.toolSharedData.findUnique(query);
     };
     const current = await read(previous);
     if (!current || !isDeepStrictEqual(current.value, previous.value)) return false;
-    const moving = previous.store !== next.store || previous.key !== next.key;
-    if (moving) {
-      if (await read(next)) return false;
+    if (!next || previous.store !== next.store || previous.key !== next.key) {
+      if (next && (await read(next))) return false;
       const source = { ...where, key: previous.key };
       if (previous.store === "storage") await tx.toolData.deleteMany({ where: source });
       else await tx.toolSharedData.deleteMany({ where: source });
     }
-    if (next.store === "storage") await writeToolData(tx, where, next.key, next.value);
-    else await writeSharedData(tx, where, next.key, next.value, model);
+    if (next?.store === "storage") await writeToolData(tx, where, next.key, next.value);
+    if (next?.store === "shared") await writeSharedData(tx, where, next.key, next.value, model);
     return true;
   }, COUNTED_AFTER_LOCK);
 }

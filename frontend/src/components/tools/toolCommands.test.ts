@@ -41,6 +41,14 @@ describe("tool commands on the model page", () => {
     expect(ids("notes.pdf")).toEqual(["queue:queue"]);
   });
 
+  it("keeps selection commands in the grid and single-model commands on the model page", () => {
+    const bulk: ToolCommand = { id: "bulk", title: "Process selection", on: "selection", window: false };
+    const tools = [tool("a", [queue, estimate, bulk]), tool("b", undefined)];
+    expect(commandsFor(tools, "selection", "en").map((offered) => offered.key)).toEqual(["a:bulk"]);
+    expect(commandsFor(tools, null, "en").map((offered) => offered.key)).toEqual(["a:queue"]);
+    expect(commandsFor([], "selection", "en")).toEqual([]);
+  });
+
   it("leaves file commands out for the prepared print, which tools can't read, and with no file at all", () => {
     expect(takesFile(anyFile, { filename: "print.gcode.3mf", plateId: null })).toBe(false);
     expect(takesFile(anyFile, null)).toBe(false);

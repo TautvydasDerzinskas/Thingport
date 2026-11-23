@@ -9,29 +9,31 @@ import { sdkTheme } from "../../sdk/theme";
 import { scriptToast } from "../../sdk/toast";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
-import { commandsFor, type CommandFile, type OfferedCommand } from "./toolCommands";
-import type { SdkAudience } from "../../sdk/types";
+import { commandsFor, toolOpenPath, type CommandFile, type OfferedCommand } from "./toolCommands";
+import type { SdkAudience, SdkModel } from "../../sdk/types";
 import type { RunnableTool, ToolCollection, ToolContext } from "./toolSdk";
 import { useAskQueue } from "./useAskQueue";
+import type { ModelPickQuestion } from "./ToolModelPicker";
 import { useModelPageTools } from "./modelPageTools";
 
 // Loaded once a command is picked, so a page whose tools offer none carries none of the running.
 const ToolWindow = lazy(() => import("./ToolWindow"));
 const CollectionPickerDialog = lazy(() => import("./CollectionPickerDialog"));
 const ToolShareDialog = lazy(() => import("./ToolShareDialog"));
+const ToolModelPicker = lazy(() => import("./ToolModelPicker"));
+
+type CommandTarget = { modelId: string; file: CommandFile | null } | { modelIds: readonly string[] };
 
 /**
- * The tools' commands for a model and the file picked on its page, and what runs one: its tool's window opens on the
- * model, or for a command with `window: false` the script's `run` export is called with no window, its toasts and
- * confirmations the page's own. Where no tool offers any, `commands` is empty and `element` is nothing.
+ * The commands offered on a model page or for a grid selection. Each opens its tool's window or calls the script's
+ * `run` export with the page's toasts and confirmations.
  */
 export function useToolCommands(
-  modelId: string,
-  file: CommandFile | null,
+  target: CommandTarget,
   onUnauthorized?: () => void,
 ): {
   commands: OfferedCommand[];
-  run: (offered: OfferedCommand) => void;
+  run: (offered: OfferedCommand) => Promise<void>;
   element: ReactNode;
 } {
   const { t, i18n } = useTranslation("app");
@@ -42,12 +44,14 @@ export function useToolCommands(
   const confirm = useConfirm();
   const page = useModelPageTools();
   const language = matchLanguage(i18n.language);
+  const isSelection = "modelIds" in target;
+  const modelId = isSelection ? undefined : target.modelId;
   const [open, setOpen] = useState<{ tool: RunnableTool; context: ToolContext } | null>(null);
   const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
   const shares = useAskQueue<{ tool: { id: string; name: string } }, SdkAudience | null>();
-  // The model the page is on while this is mounted: a run's page actions are for the model it started on, and do
-  // nothing once the page has left it, though the page itself stays.
-  const onModel = useRef<string | null>(modelId);
+  const modelPicks = useAskQueue<ModelPickQuestion, SdkModel[]>();
+  // The model the page is on, undefined for a grid, and null after unmount. A run can act on that page while present.
+  const onModel = useRef<string | null | undefined>(modelId);
   useEffect(() => {
     onModel.current = modelId;
     return () => {
@@ -55,23 +59,32 @@ export function useToolCommands(
     };
   }, [modelId]);
 
+  const file = isSelection ? null : target.file;
   const filename = file?.filename ?? null;
   const plateId = file?.plateId ?? null;
+  const available = tools?.access.canUse ? tools.tools : null;
   const commands = useMemo(
     () =>
-      tools?.access.canUse ? commandsFor(tools.tools, filename === null ? null : { filename, plateId }, language) : [],
-    [tools, filename, plateId, language],
+      available
+        ? commandsFor(available, isSelection ? "selection" : filename === null ? null : { filename, plateId }, language)
+        : [],
+    [available, isSelection, filename, plateId, language],
   );
 
   const openModel = (id: string) => navigate(`/models/${encodeURIComponent(id)}`);
 
   const runWindowless = async (tool: RunnableTool, context: ToolContext) => {
     const here = () => onModel.current === context.modelId;
+    const openWindow = () => {
+      if (here()) setOpen({ tool, context: { modelId: context.modelId, modelIds: context.modelIds } });
+    };
+    const id = tool.id;
     try {
       const [{ buildToolSdk }, { loadToolModule }] = await Promise.all([import("./toolSdk"), import("./toolModule")]);
       // Never ended: a run may leave a question open after `run` returns, and nothing restarts it.
       const asks = picks.session();
       const shareAsks = shares.session();
+      const modelAsks = modelPicks.session();
       const thingport = buildToolSdk({
         tool,
         context,
@@ -85,7 +98,13 @@ export function useToolCommands(
         onResize: () => () => undefined,
         ui: {
           toast: (message, severity = "info", options) =>
-            toast(scriptToast(message, severity, options, { label: t("common:open"), openModel })),
+            toast(
+              scriptToast(message, severity, options, {
+                label: t("common:open"),
+                openModel,
+                openWindow: id ? () => (here() ? openWindow() : navigate(toolOpenPath(id))) : undefined,
+              }),
+            ),
           confirm: async (options) =>
             (await confirm({
               title: options.title,
@@ -94,6 +113,8 @@ export function useToolCommands(
               destructive: options.destructive,
             })) === true,
           pickCollection: (options) => asks.ask({ title: options?.title }),
+          pickModels: (options) =>
+            modelAsks.ask({ title: options?.title, confirmLabel: options?.confirmLabel, max: options?.max }),
           openModel,
           close: () => undefined,
           popover: () => {
@@ -105,9 +126,7 @@ export function useToolCommands(
           selectFile: (fileId) => {
             if (here()) page?.selectFile(fileId);
           },
-          openWindow: () => {
-            if (here()) setOpen({ tool, context: { modelId: context.modelId } });
-          },
+          openWindow,
         },
         pickAudience: () => shareAsks.ask({ tool: { id: tool.id ?? "", name: tool.manifest.name } }),
       });
@@ -129,15 +148,18 @@ export function useToolCommands(
     }
   };
 
-  const run = (offered: OfferedCommand) => {
-    const context: ToolContext = { modelId, command: offered.command.id };
+  const run = async (offered: OfferedCommand) => {
+    if (isSelection && target.modelIds.length === 0) return;
+    const context: ToolContext = isSelection
+      ? { modelIds: [...target.modelIds], command: offered.command.id }
+      : { modelId, command: offered.command.id };
     if (offered.command.on === "file" && plateId) context.fileId = plateId;
     if (offered.command.window) setOpen({ tool: offered.tool, context });
-    else void runWindowless(offered.tool, context);
+    else await runWindowless(offered.tool, context);
   };
 
   const element =
-    open || picks.shown || shares.shown ? (
+    open || picks.shown || shares.shown || modelPicks.open ? (
       <Suspense fallback={null}>
         {open && (
           <ToolWindow
@@ -165,6 +187,11 @@ export function useToolCommands(
             onClose={shares.answer}
           />
         )}
+        <ToolModelPicker
+          question={modelPicks.open ? modelPicks.shown : null}
+          onAnswer={modelPicks.answer}
+          onUnauthorized={onUnauthorized}
+        />
       </Suspense>
     ) : null;
 

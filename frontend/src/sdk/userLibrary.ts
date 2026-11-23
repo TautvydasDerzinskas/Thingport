@@ -54,7 +54,7 @@ function profileOf(plate: Plate): SdkPrintProfile | null {
   };
 }
 
-const toModel = (print: Print): SdkModel => ({
+export const toModel = (print: Print): SdkModel => ({
   id: print.id,
   name: print.title || print.name,
   description: print.notes ?? null,

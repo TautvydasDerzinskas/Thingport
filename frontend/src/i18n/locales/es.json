@@ -4139,6 +4139,9 @@
         "cancel": "Cancelar",
         "choose": "Elegir"
       },
+      "modelPicker": {
+        "title": "Elige modelos"
+      },
       "ai": {
         "or": "o",
         "open": "Usar IA",

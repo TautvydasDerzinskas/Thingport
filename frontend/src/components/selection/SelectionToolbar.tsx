@@ -120,16 +120,25 @@ type ActionProps = {
   hint?: string;
   icon: React.ReactNode;
   disabled?: boolean;
+  /** Whether the action's menu is open, for actions that open a menu. */
+  menuOpen?: boolean;
   onClick: (event: React.MouseEvent<HTMLElement>) => void;
 };
 
 /** An icon button in the selection toolbar, its label as tooltip and accessible name. */
-export function SelectionAction({ label, hint, icon, disabled = false, onClick }: ActionProps) {
+export function SelectionAction({ label, hint, icon, disabled = false, menuOpen, onClick }: ActionProps) {
   return (
     <Tooltip title={disabled && hint ? hint : label}>
       {/* A disabled button fires no events, so the span keeps the tooltip working. */}
       <span>
-        <IconButton size="small" aria-label={label} disabled={disabled} onClick={onClick}>
+        <IconButton
+          size="small"
+          aria-label={label}
+          aria-haspopup={menuOpen === undefined ? undefined : "menu"}
+          aria-expanded={menuOpen}
+          disabled={disabled}
+          onClick={onClick}
+        >
           {icon}
         </IconButton>
       </span>

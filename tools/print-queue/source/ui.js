@@ -1,5 +1,6 @@
 // The window: the household's prints on a board, Queued, Printing, Printed and Failed, each person's own to drag
-// between columns; and "Add to print queue" from a model's page, which runs without the window.
+// within Queued and between columns, and a card at the end of Queued that adds models. Grid selections can add or
+// remove jobs.
 
 import {
   JOB,
@@ -13,9 +14,12 @@ import {
   newId,
   newJob,
   people,
+  queueOrderAt,
   statusDate,
   writesInTurn,
 } from "./queue.js";
+
+const ADD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
 
 const MORE_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>';
@@ -70,13 +74,11 @@ async function jobsOn(shared, modelId) {
   }
 }
 
-/** "Add to print queue", from a model's page: asks first when someone has the model waiting or printing already. */
-export async function run(command, thingport) {
-  if (command !== "queue") return;
-  const { models, shared, ui, t, context } = thingport;
-  const model = await models.get(context.modelId);
+async function addModel({ models, shared, ui, t }, modelId, askAboutDuplicate) {
+  const model = await models.get(modelId);
   const { others, mine } = clashes(await allJobs(shared, { model: model.id }));
   if (others.length || mine.length) {
+    if (!askAboutDuplicate) return null;
     const printing = others.filter((entry) => entry.value.status === "printing");
     const title = printing.length
       ? t("dup.printing", { names: listNames(printing, t("and")) })
@@ -84,10 +86,105 @@ export async function run(command, thingport) {
         ? t("dup.queued", { names: listNames(others, t("and")) })
         : t("dup.mine");
     const message = t(others.length ? "dup.message" : "dup.again", { name: model.name });
-    if (!(await ui.confirm({ title, message, confirmLabel: t("dup.add") }))) return;
+    if (!(await ui.confirm({ title, message, confirmLabel: t("dup.add") }))) return null;
   }
   await saveJob(shared, `${JOB}${newId()}`, newJob(model));
-  ui.toast(t("toast.queued", { name: model.name }), "success");
+  return model;
+}
+
+function queueToast({ t, ui }, message, severity) {
+  ui.toast(message, severity, { openWindow: t("toast.openQueue") });
+}
+
+async function applyBatch(items, change) {
+  const result = { done: 0, skipped: 0, failed: 0, error: undefined };
+  for (const item of items) {
+    try {
+      if (await change(item)) result.done++;
+      else result.skipped++;
+    } catch (error) {
+      if (error?.name === "UnauthorizedError") throw error;
+      result.failed++;
+      result.error ??= error?.message || String(error);
+    }
+  }
+  return result;
+}
+
+// `toast` without the board's button, for what's done on the board itself.
+function reportBatch(thingport, { done, skipped, failed, error }, doneLabel, skippedLabel, toast = queueToast) {
+  const { t } = thingport;
+  const messages = [];
+  if (done) messages.push(t(doneLabel, { count: done }));
+  if (skipped) messages.push(t(skippedLabel, { count: skipped }));
+  if (failed) messages.push(t("toast.bulkFailed", { count: failed, error }));
+  if (messages.length) toast(thingport, messages.join(" · "), failed ? "error" : done ? "success" : "info");
+}
+
+/** Adds models in their order. Each duplicate check sees jobs saved earlier in the batch, including equivalent
+ *  copies. */
+function addModels(thingport, ids) {
+  return applyBatch(new Set(ids), (id) => addModel(thingport, id, false));
+}
+
+async function addSelection(thingport) {
+  reportBatch(
+    thingport,
+    await addModels(thingport, thingport.context.modelIds),
+    "toast.bulkAdded",
+    "toast.bulkSkipped",
+  );
+}
+
+/** Models picked on the board: one is added as from its page, asking about a duplicate; several as from a grid. */
+export async function addPicked(thingport) {
+  const { t, ui } = thingport;
+  const picked = await ui.pickModels({ title: t("add.title"), confirmLabel: t("add.confirm") });
+  if (!picked.length) return false;
+  const plain = ({ ui }, message, severity) => ui.toast(message, severity);
+  if (picked.length === 1) {
+    const model = await addModel(thingport, picked[0].id, true);
+    if (model) plain(thingport, t("toast.queued", { name: model.name }), "success");
+    return Boolean(model);
+  }
+  const result = await addModels(
+    thingport,
+    picked.map((model) => model.id),
+  );
+  reportBatch(thingport, result, "toast.bulkAdded", "toast.bulkSkipped", plain);
+  return result.done > 0;
+}
+
+async function removeSelection(thingport) {
+  const { context, shared, t, ui } = thingport;
+  const waiting = new Map();
+  for (const id of new Set(context.modelIds)) {
+    for (const entry of clashes(await jobsOn(shared, id)).mine) {
+      if (entry.value.status === "queued") waiting.set(entry.key, entry.value);
+    }
+  }
+  if (!waiting.size) return queueToast(thingport, t("toast.bulkNothingToRemove"), "info");
+  const sure = await ui.confirm({
+    title: t("remove.bulkTitle"),
+    message: t("remove.bulkMessage", { count: waiting.size }),
+    confirmLabel: t("remove.confirm"),
+    destructive: true,
+  });
+  if (!sure) return;
+
+  // Delete only the value we showed in the confirmation, in case it starts printing while the dialog is open.
+  const result = await applyBatch(waiting, ([key, value]) =>
+    inTurn(key, () => shared.replace({ key, store: "shared", value }, null)),
+  );
+  reportBatch(thingport, result, "toast.bulkRemoved", "toast.bulkChanged");
+}
+
+export async function run(command, thingport) {
+  if (command === "queue-selection") return addSelection(thingport);
+  if (command === "remove-selection") return removeSelection(thingport);
+  if (command !== "queue") return;
+  const model = await addModel(thingport, thingport.context.modelId, true);
+  if (model) queueToast(thingport, thingport.t("toast.queued", { name: model.name }), "success");
 }
 
 const TONE_COLOURS = {
@@ -216,7 +313,6 @@ export default function mount(thingport) {
   const { root, shared, models, ui, t, labels, language, context } = thingport;
   const shell = root.querySelector(".pq");
   const board = root.querySelector("#pq-board");
-  const empty = root.querySelector("#pq-empty");
   const peopleBar = root.querySelector(".pq-people");
   const shareLabel = root.querySelector("#pq-share-label");
 
@@ -294,6 +390,10 @@ export default function mount(thingport) {
       context.modelId ? allJobs(shared, { model: context.modelId }).catch(() => []) : [],
     ]);
     if (closed || read !== reads) return;
+    if (dragKey) {
+      due = true;
+      return;
+    }
     if (saving || at !== changes) {
       readAgain = true;
       if (!saving) settled();
@@ -371,22 +471,25 @@ export default function mount(thingport) {
       return;
     }
     const cols = columns(entries, who);
-    const any = STATUSES.some((status) => cols[status].length);
     // A card's button that had focus has it again in the card drawn for it, so a keyboard user isn't sent back.
     const focused = board.contains(document.activeElement) ? document.activeElement : null;
     const focusedCard = focused?.closest(".pq-card");
     const focusedClass = focused?.classList[0];
+    const focusedAdd = focused?.classList.contains("pq-add");
     drawing = new Set();
-    empty.hidden = any || who !== null;
-    board.hidden = !any && who === null;
+    // Adding is to the user's own queue, so it's offered on theirs and on everyone's, not on someone else's.
+    const canAdd = who === null || who === thingport.user?.id;
     for (const col of board.querySelectorAll(".pq-col")) {
-      const jobs = cols[col.dataset.status];
+      const status = col.dataset.status;
+      const jobs = cols[status];
       col.querySelector(".pq-count").textContent = jobs.length ? String(jobs.length) : "";
       const list = col.querySelector(".pq-list");
       list.replaceChildren(...jobs.map(card));
-      if (!jobs.length) list.innerHTML = `<li class="pq-none">${escapeHtml(t("board.none"))}</li>`;
+      if (status === "queued" && canAdd) list.append(addCard());
+      else if (!jobs.length) list.innerHTML = `<li class="pq-none">${escapeHtml(t("board.none"))}</li>`;
     }
     drawn = drawing;
+    if (focusedAdd) board.querySelector(".pq-add")?.focus();
     if (focusedCard && !focusedCard.isConnected && focusedClass !== undefined) {
       const again = board.querySelector(
         `.pq-card[data-who="${CSS.escape(focusedCard.dataset.who)}"][data-key="${CSS.escape(focusedCard.dataset.key)}"]`,
@@ -400,6 +503,27 @@ export default function mount(thingport) {
       first.scrollIntoView({ block: "nearest" });
     }
   }
+
+  function addCard() {
+    const li = document.createElement("li");
+    li.className = "pq-add-card";
+    li.innerHTML = `<button type="button" class="pq-add">${ADD_ICON}<span>${escapeHtml(t("add.card"))}</span></button>`;
+    return li;
+  }
+
+  // One pick at a time: a second could pass the duplicate check before the first's jobs are stored. The board isn't
+  // drawn again meanwhile, so the picker hands focus back to the card that opened it.
+  let adding = false;
+  const pickAndAdd = safely(async () => {
+    if (adding) return;
+    adding = true;
+    try {
+      if (await addPicked(thingport)) await load();
+    } finally {
+      adding = false;
+      if (due) refreshWhenIdle();
+    }
+  });
 
   /** One of the user's cards, by key, that can still be changed. */
   const find = (key) => entries?.find((entry) => entry.mine && entry.key === key && !removing.has(key));
@@ -454,6 +578,33 @@ export default function mount(thingport) {
     if (!entry || entry.value.status === status) return;
     const at = new Date();
     await keep(entry, (job) => moved(job, status, at));
+  });
+
+  const visibleQueue = () =>
+    columns(entries ?? [], who).queued.filter((entry) => !entry.mine || !removing.has(entry.key));
+
+  async function placeInQueue(entry, queue, next) {
+    if (entry.value.status !== "queued" && !next) return move(entry.key, "queued");
+    const queueOrder = queueOrderAt(queue, entry, next);
+    if (!queueOrder) return;
+    const at = new Date();
+    await keep(entry, (job) => ({ ...(job.status === "queued" ? job : moved(job, "queued", at)), queueOrder }));
+  }
+
+  const dropInQueue = safely(async (key, nextCard) => {
+    const entry = find(key);
+    if (!entry) return;
+    const queue = visibleQueue();
+    const next = nextCard && queue.find((job) => job.key === nextCard.key && (job.user?.id ?? "") === nextCard.who);
+    if (!nextCard || next) await placeInQueue(entry, queue, next);
+  });
+
+  const nudge = safely(async (key, direction) => {
+    const entry = find(key);
+    const queue = visibleQueue();
+    const index = queue.indexOf(entry);
+    if (index < 0 || !queue[index + direction]) return;
+    await placeInQueue(entry, queue, queue[index + (direction < 0 ? -1 : 2)]);
   });
 
   const remove = safely(async (key) => {
@@ -511,6 +662,12 @@ export default function mount(thingport) {
     const own = entry.mine && !removing.has(key);
     const items = [];
     if (own) {
+      if (entry.value.status === "queued") {
+        const queue = visibleQueue();
+        const at = queue.indexOf(entry);
+        if (at > 0) items.push({ label: t("order.up"), act: () => nudge(key, -1) });
+        if (at >= 0 && at < queue.length - 1) items.push({ label: t("order.down"), act: () => nudge(key, 1) });
+      }
       for (const status of STATUSES)
         if (status !== entry.value.status) items.push({ label: t(`move.${status}`), act: () => move(key, status) });
       items.push({
@@ -539,7 +696,7 @@ export default function mount(thingport) {
       button.textContent = item.label;
       if (item.danger) button.className = "pq-danger";
       button.addEventListener("click", () => {
-        closeMenu();
+        closeMenu({ restore: true });
         item.act();
       });
       element.append(button);
@@ -577,8 +734,9 @@ export default function mount(thingport) {
     }),
   );
 
-  // The cards: their menus, notes, and dragging the user's own between columns.
+  // The cards: their menus, notes, and dragging the user's own within the queue or between columns.
   board.addEventListener("click", (event) => {
+    if (event.target.closest(".pq-add")) return void pickAndAdd();
     const li = event.target.closest(".pq-card");
     if (!li) return;
     if (event.target.closest(".pq-more"))
@@ -597,29 +755,54 @@ export default function mount(thingport) {
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", dragKey);
   });
-  board.addEventListener("dragend", () => {
+  function clearDrop() {
+    for (const col of board.querySelectorAll(".pq-over")) col.classList.remove("pq-over");
+    board.querySelector("[data-pq-drop]")?.removeAttribute("data-pq-drop");
+  }
+
+  function finishDrag() {
     dragKey = null;
-    for (const node of board.querySelectorAll(".pq-dragging, .pq-over"))
-      node.classList.remove("pq-dragging", "pq-over");
-  });
+    board.querySelector(".pq-dragging")?.classList.remove("pq-dragging");
+    clearDrop();
+    if (due) refreshWhenIdle();
+  }
+
+  function queueDrop(col, y) {
+    const cards = [...col.querySelectorAll(".pq-card:not(.pq-dragging, .pq-removing)")];
+    const next = cards.find((card) => {
+      const rect = card.getBoundingClientRect();
+      return y < rect.top + rect.height / 2;
+    });
+    return { next, marker: next ?? cards.at(-1) };
+  }
+
+  board.addEventListener("dragend", finishDrag);
   board.addEventListener("dragover", (event) => {
     const col = event.target.closest(".pq-col");
     if (!col || !dragKey) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-    for (const other of board.querySelectorAll(".pq-over")) if (other !== col) other.classList.remove("pq-over");
+    clearDrop();
     col.classList.add("pq-over");
+    if (col.dataset.status === "queued") {
+      const { next, marker } = queueDrop(col, event.clientY);
+      if (marker) marker.dataset.pqDrop = next ? "before" : "after";
+    }
   });
   board.addEventListener("dragleave", (event) => {
     const col = event.target.closest(".pq-col");
-    if (col && !col.contains(event.relatedTarget)) col.classList.remove("pq-over");
+    if (col?.classList.contains("pq-over") && !col.contains(event.relatedTarget)) clearDrop();
   });
   board.addEventListener("drop", (event) => {
     const col = event.target.closest(".pq-col");
     if (!col || !dragKey) return;
     event.preventDefault();
-    col.classList.remove("pq-over");
-    move(dragKey, col.dataset.status);
+    const key = dragKey;
+    const status = col.dataset.status;
+    const target = status === "queued" ? queueDrop(col, event.clientY).next?.dataset : null;
+    finishDrag();
+    if (status === "queued") dropInQueue(key, target);
+    else move(key, status);
   });
 
   const onOutside = (event) => {
@@ -639,7 +822,7 @@ export default function mount(thingport) {
   // writing a note, using a menu or dragging; a refresh due then comes once the note is done.
   let due = false;
   const refreshWhenIdle = () => {
-    due = Boolean(menu || editing || dragKey);
+    due = Boolean(menu || editing || dragKey || adding);
     if (!due) void refresh();
   };
   function endEdit() {

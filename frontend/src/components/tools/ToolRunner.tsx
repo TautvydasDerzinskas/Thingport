@@ -10,7 +10,8 @@ import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
 import ToolShareDialog from "./ToolShareDialog";
-import type { SdkAudience } from "../../sdk/types";
+import ToolModelPicker, { type ModelPickQuestion } from "./ToolModelPicker";
+import type { SdkAudience, SdkModel } from "../../sdk/types";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
 import {
   buildToolSdk,
@@ -25,6 +26,7 @@ import { loadToolModule } from "./toolModule";
 import { useModelPageTools } from "./modelPageTools";
 import { useAskQueue } from "./useAskQueue";
 import { scriptToast } from "../../sdk/toast";
+import { toolOpenPath } from "./toolCommands";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 
 type Props = {
@@ -86,6 +88,7 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
   const [error, setError] = useState<string | null>(null);
   const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
   const shares = useAskQueue<object, SdkAudience | null>();
+  const modelPicks = useAskQueue<ModelPickQuestion, SdkModel[]>();
   const page = useModelPageTools();
   // The one popover the tool has open, kept while it closes so it can fade out.
   const [popover, setPopover] = useState<ShownPopover | null>(null);
@@ -148,6 +151,7 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
     // This run's questions, dropped when it stops so the next run's don't wait behind them.
     const asks = picks.session();
     const shareAsks = shares.session();
+    const modelAsks = modelPicks.session();
     const listeners = new Set<(size: { width: number; height: number }) => void>();
     const measure = () => ({ width: Math.round(frame.offsetWidth), height: Math.round(frame.offsetHeight) });
     let size = measure();
@@ -177,6 +181,10 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
       latest.current.onClose();
       latest.current.navigate(`/models/${encodeURIComponent(id)}`);
     };
+    const openWindow = () => {
+      if (!cancelled) latest.current.page?.openWindow(tool);
+    };
+    const toolId = tool.id;
     const thingport = buildToolSdk({
       tool,
       context: place ? { ...context, place } : context,
@@ -194,7 +202,17 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
       ui: {
         toast: (message, severity = "info", options) =>
           latest.current.toast(
-            scriptToast(message, severity, options, { label: latest.current.t("common:open"), openModel }),
+            scriptToast(message, severity, options, {
+              label: latest.current.t("common:open"),
+              openModel,
+              openWindow:
+                place && toolId
+                  ? () => {
+                      if (!cancelled && latest.current.page) openWindow();
+                      else latest.current.navigate(toolOpenPath(toolId));
+                    }
+                  : undefined,
+            }),
           ),
         confirm: async (options) =>
           (await latest.current.confirm({
@@ -204,6 +222,8 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
             destructive: options.destructive,
           })) === true,
         pickCollection: (options) => asks.ask({ title: options?.title }),
+        pickModels: (options) =>
+          modelAsks.ask({ title: options?.title, confirmLabel: options?.confirmLabel, max: options?.max }),
         openModel,
         // A part of a page isn't the tool's to close.
         close: () => (place ? undefined : latest.current.onClose()),
@@ -229,9 +249,7 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
         selectFile: (fileId) => {
           if (!cancelled) latest.current.page?.selectFile(fileId);
         },
-        openWindow: () => {
-          if (!cancelled) latest.current.page?.openWindow(tool);
-        },
+        openWindow,
       },
       pickAudience: () => shareAsks.ask({}),
     });
@@ -262,6 +280,7 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
       cancelled = true;
       asks.end();
       shareAsks.end();
+      modelAsks.end();
       closePopover();
       observer.disconnect();
       listeners.clear();
@@ -325,6 +344,11 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
           onUnauthorized={onUnauthorized}
           onClose={shares.answer}
         />
+        <ToolModelPicker
+          question={modelPicks.open ? modelPicks.shown : null}
+          onAnswer={modelPicks.answer}
+          onUnauthorized={onUnauthorized}
+        />
       </>
     );
   }
@@ -371,6 +395,11 @@ export default function ToolRunner({ tool, context, place, preview, onClose, onU
         tool={tool.id ? { id: tool.id, name: tool.manifest.name } : null}
         onUnauthorized={onUnauthorized}
         onClose={shares.answer}
+      />
+      <ToolModelPicker
+        question={modelPicks.open ? modelPicks.shown : null}
+        onAnswer={modelPicks.answer}
+        onUnauthorized={onUnauthorized}
       />
     </Box>
   );

@@ -29,4 +29,16 @@ describe("scriptToast", () => {
     toast.action?.onClick();
     expect(openModel).toHaveBeenCalledWith("m1");
   });
+
+  it("can open the calling tool through its host", () => {
+    const openModel = vi.fn<(id: string) => void>();
+    const openWindow = vi.fn<() => void>();
+    const options = { openWindow: "Open print queue" };
+    const toast = scriptToast("Removed", "success", options, { label: "Open", openModel, openWindow });
+    expect(toast.action?.label).toBe("Open print queue");
+    toast.action?.onClick();
+    expect(openWindow).toHaveBeenCalledOnce();
+    expect(openModel).not.toHaveBeenCalled();
+    expect(scriptToast("Removed", "success", options, { label: "Open", openModel }).action).toBeUndefined();
+  });
 });

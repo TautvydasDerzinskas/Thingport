@@ -3800,6 +3800,9 @@
         "cancel": "取消",
         "choose": "选择"
       },
+      "modelPicker": {
+        "title": "选择模型"
+      },
       "ai": {
         "or": "或",
         "open": "使用 AI",

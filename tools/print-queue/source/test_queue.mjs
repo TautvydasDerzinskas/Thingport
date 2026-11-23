@@ -13,9 +13,11 @@ import {
   newId,
   newJob,
   people,
+  queueOrderAt,
   summaryOf,
   writesInTurn,
 } from "./queue.js";
+import { addPicked, run } from "./ui.js";
 
 const dad = { id: "dad", name: "Dad", avatarUrl: null };
 const mum = { id: "mum", name: "Mum", avatarUrl: null };
@@ -102,6 +104,46 @@ test("the board sorts each column, the queue oldest first and the rest newest fi
   );
 });
 
+test("manual moves preserve the added dates and new or requeued jobs go to the end", () => {
+  const first = entry("job:1", me, newJob(model, at(1)), true);
+  const other = entry("job:2", dad, newJob(model, at(2)));
+  const third = entry("job:3", me, newJob(model, at(3)), true);
+  const entries = [third, other, first];
+  const ordered = (who) => columns(entries, who).queued;
+  const reorder = (entry, next) => {
+    const queueOrder = queueOrderAt(ordered(), entry, next);
+    assert.ok(queueOrder);
+    entry.value = { ...entry.value, queueOrder };
+  };
+
+  reorder(third, other);
+  assert.deepEqual(ordered(), [first, third, other]);
+  assert.equal(third.value.queuedAt, at(3).toISOString());
+  assert.equal(queueOrderAt(ordered(), third, other), null);
+  reorder(first, null);
+  assert.deepEqual(ordered(), [third, other, first]);
+  assert.deepEqual(ordered(me.id), [third, first]);
+  assert.deepEqual(other.value, newJob(model, at(2)));
+
+  const fourth = entry("job:4", me, newJob(model, at(4)), true);
+  entries.push(fourth);
+  assert.deepEqual(ordered(), [third, other, first, fourth]);
+  third.value = moved(moved(third.value, "printing", at(5)), "queued", at(6));
+  assert.equal(third.value.queueOrder, undefined);
+  assert.deepEqual(ordered(), [other, first, fourth, third]);
+});
+
+test("jobs added at the same time can repeatedly be placed between close positions", () => {
+  const entries = ["a", "b", "c"].map((id) => entry(`job:${id}`, me, newJob(model, at(1)), true));
+  assert.deepEqual(columns(entries.toReversed()).queued, entries);
+  for (let moves = 0; moves < 100; moves++) {
+    const [top, middle, bottom] = columns(entries).queued;
+    const order = queueOrderAt([top, middle, bottom], bottom, middle);
+    bottom.value = { ...bottom.value, queueOrder: order };
+    assert.deepEqual(columns(entries).queued, [top, bottom, middle]);
+  }
+});
+
 test("someone else's print waiting or happening is a clash; a finished one isn't", () => {
   const entries = [
     entry("job:1", dad, newJob(model, at(1))),
@@ -121,6 +163,142 @@ test("someone else's print waiting or happening is a clash; a finished one isn't
   assert.equal(listNames(others, "and"), "Dad and Mum");
   assert.equal(listNames([others[0], others[0]], "and"), "Dad");
   assert.equal(listNames([...others, entry("job:5", me, newJob(model, at(1)))], "and"), "Dad, Mum and Ann");
+});
+
+test("bulk add queues in grid order, skips active copies and reports failures while continuing", async () => {
+  const stored = [
+    entry("job:existing", dad, moved(newJob({ id: "busy", name: "Busy" }), "printing", at(1))),
+    entry("job:history", me, moved(newJob({ id: "last", name: "Last" }), "printed", at(1)), true),
+  ];
+  const saved = [];
+  const toasts = [];
+  const originalId = (id) => (id === "copy" ? "first" : id);
+  const thingport = {
+    context: { modelIds: ["busy", "first", "copy", "missing", "last", "first"] },
+    models: {
+      get: async (id) => {
+        if (id === "missing") throw new Error("No such model");
+        return { id, name: id };
+      },
+    },
+    shared: {
+      list: async ({ model }) => stored.filter(({ value }) => originalId(model) === originalId(value.modelId)),
+      set: async (key, value, { model }) => {
+        assert.equal(model, value.modelId);
+        stored.push(entry(key, me, value, true));
+        saved.push(model);
+      },
+    },
+    ui: {
+      confirm: () => assert.fail("bulk add does not open a confirmation for each duplicate"),
+      toast: (...args) => toasts.push(args),
+    },
+    t: (key, { count, error } = {}) => [key, count, error].filter(Boolean).join(" "),
+  };
+
+  await run("queue-selection", thingport);
+
+  assert.deepEqual(saved, ["first", "last"]);
+  assert.deepEqual(toasts, [
+    [
+      "toast.bulkAdded 2 · toast.bulkSkipped 2 · toast.bulkFailed 1 No such model",
+      "error",
+      { openWindow: "toast.openQueue" },
+    ],
+  ]);
+});
+
+test("bulk removal confirms once and removes only still-matching owned waiting jobs", async () => {
+  const byMe = newJob(model, at(1));
+  const first = entry("job:a", me, byMe, true);
+  const changing = entry("job:b", me, newJob(model, at(2)), true);
+  const other = entry("job:a", dad, byMe);
+  const printing = entry("job:c", me, moved(byMe, "printing", at(3)), true);
+  const printed = entry("job:d", me, moved(byMe, "printed", at(4)), true);
+  const unselected = entry("job:e", me, newJob({ id: "other", name: "Other" }, at(3)), true);
+  const stored = [first, changing, other, printing, printed, unselected];
+  const confirmations = [];
+  const toasts = [];
+  const written = [];
+  const thingport = {
+    context: { modelIds: [model.id, "copy"] },
+    shared: {
+      list: async ({ model: id }) => stored.filter(({ value }) => value.modelId === (id === "copy" ? model.id : id)),
+      replace: async ({ key, store, value }, next) => {
+        assert.equal(store, "shared");
+        assert.equal(next, null);
+        const index = stored.findIndex(
+          (candidate) => candidate.mine && candidate.key === key && candidate.value === value,
+        );
+        written.push(key);
+        if (index < 0) return false;
+        stored.splice(index, 1);
+        return true;
+      },
+    },
+    ui: {
+      confirm: async (options) => {
+        confirmations.push(options);
+        changing.value = moved(changing.value, "printing", at(5));
+        return true;
+      },
+      toast: (...args) => toasts.push(args),
+    },
+    t: (key, { count } = {}) => (count ? `${key} ${count}` : key),
+  };
+
+  await run("remove-selection", thingport);
+
+  assert.equal(confirmations.length, 1);
+  assert.equal(confirmations[0].message, "remove.bulkMessage 2");
+  assert.equal(confirmations[0].destructive, true);
+  assert.deepEqual(written, [first.key, changing.key]);
+  assert.deepEqual(stored, [changing, other, printing, printed, unselected]);
+  assert.deepEqual(toasts, [
+    ["toast.bulkRemoved 1 · toast.bulkChanged 1", "success", { openWindow: "toast.openQueue" }],
+  ]);
+});
+
+test("models picked on the board: one asks about a duplicate, several skip them, and no toast reopens the board", async () => {
+  const stored = [entry("job:busy", dad, newJob({ id: "busy", name: "Busy" }, at(1)))];
+  const saved = [];
+  const toasts = [];
+  const confirmations = [];
+  let picks = [];
+  const thingport = {
+    models: { get: async (id) => ({ id, name: id }) },
+    shared: {
+      list: async ({ model }) => stored.filter(({ value }) => value.modelId === model),
+      set: async (key, value) => {
+        stored.push(entry(key, me, value, true));
+        saved.push(value.modelId);
+      },
+    },
+    ui: {
+      pickModels: async (options) => {
+        assert.deepEqual(options, { title: "add.title", confirmLabel: "add.confirm" });
+        return picks;
+      },
+      confirm: async (options) => {
+        confirmations.push(options.title);
+        return true;
+      },
+      toast: (...args) => toasts.push(args),
+    },
+    t: (key, { count, name } = {}) => [key, count, name].filter(Boolean).join(" "),
+  };
+
+  assert.equal(await addPicked(thingport), false);
+  picks = [{ id: "busy" }];
+  assert.equal(await addPicked(thingport), true);
+  assert.deepEqual(confirmations, ["dup.queued"]);
+  picks = [{ id: "busy" }, { id: "new" }];
+  assert.equal(await addPicked(thingport), true);
+  assert.deepEqual(saved, ["busy", "new"]);
+  assert.deepEqual(toasts, [
+    ["toast.queued busy", "success"],
+    ["toast.bulkAdded 1 · toast.bulkSkipped 1", "success"],
+  ]);
 });
 
 test("ids differ without crypto.randomUUID", () => {
