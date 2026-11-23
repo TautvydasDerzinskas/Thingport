@@ -51,6 +51,8 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   const showToast = useToast();
   // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
   const [moreFailed, setMoreFailed] = useState(false);
+  // A quiet reload keeps the list on screen: no next page is added to it until the reload has replaced it.
+  const [reloading, setReloading] = useState(false);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
     loadingAtFirst: true,
   });
@@ -113,6 +115,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     const kept = returning();
     if (kept !== null) setOffset(kept);
     const background = isBackgroundReload() || kept !== null;
+    setReloading(background);
     if (!background) {
       // Only a successful replacement can make this list pageable again.
       setItems([]);
@@ -141,7 +144,10 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         if (cancelled) return;
         handleError(err, background ? undefined : t("models:errors.loadFailed"));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setReloading(false);
+        }
       }
     })();
     return () => {
@@ -218,7 +224,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore);
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore || reloading);
 
   return (
     <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>

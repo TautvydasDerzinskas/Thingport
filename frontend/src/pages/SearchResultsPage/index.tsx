@@ -44,6 +44,8 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
   const showToast = useToast();
   // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
   const [moreFailed, setMoreFailed] = useState(false);
+  // A quiet reload keeps the list on screen: no next page is added to it until the reload has replaced it.
+  const [reloading, setReloading] = useState(false);
   const [searchParams] = useSearchParams();
   const query = (searchParams.get("q") ?? "").trim();
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
@@ -86,6 +88,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       setItems([]);
       setHasMore(false);
       setLoading(false);
+      setReloading(false);
       return;
     }
     let cancelled = false;
@@ -93,6 +96,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
     const kept = returning();
     if (kept !== null) setOffset(kept);
     const quiet = background || kept !== null;
+    setReloading(quiet);
     if (!quiet) {
       // Only a successful replacement can make this list pageable again.
       setItems([]);
@@ -121,7 +125,10 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         if (cancelled) return;
         handleError(err, quiet ? undefined : t("models:errors.loadFailed"));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setReloading(false);
+        }
       }
     })();
     return () => {
@@ -160,7 +167,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore);
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore || reloading);
 
   return (
     <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>

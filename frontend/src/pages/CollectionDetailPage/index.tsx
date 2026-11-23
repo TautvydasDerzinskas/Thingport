@@ -66,6 +66,8 @@ function CollectionDetail({
   const showToast = useToast();
   // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
   const [moreFailed, setMoreFailed] = useState(false);
+  // A quiet reload keeps the list on screen: no next page is added to it until the reload has replaced it.
+  const [reloading, setReloading] = useState(false);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
     Print,
     Collection | null
@@ -157,6 +159,7 @@ function CollectionDetail({
     const kept = returning();
     if (kept !== null) setOffset(kept);
     const background = isBackgroundReload() || kept !== null;
+    setReloading(background);
     if (!background) {
       setLoading(true);
       setNotFound(false);
@@ -187,7 +190,10 @@ function CollectionDetail({
         if (handleError(err) || background) return;
         setNotFound(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setReloading(false);
+        }
       }
     })();
     return () => {
@@ -228,7 +234,7 @@ function CollectionDetail({
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore);
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore || reloading);
 
   if (loading && !collection) {
     return (
