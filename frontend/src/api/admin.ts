@@ -135,6 +135,9 @@ export type LogEntry = {
 
 export type StorageUsage = {
   model_bytes: number; // every plate + supporting/prepared file, across all users
+  /** Parts of model_bytes: the files kept beside the plates, and prepared prints. Absent from an older backend. */
+  supporting_bytes?: number;
+  prepared_bytes?: number;
   model_count: number;
   /** All of storage on disk; measured every few minutes at most. */
   total_bytes: number;

@@ -1414,11 +1414,13 @@
         "failed": "无法测量存储占用。",
         "kinds": {
           "models": "模型文件",
+          "supporting": "附加文件",
           "previews": "3D 预览",
           "old": "旧 3D 预览",
           "photos": "图片",
           "thumbnails": "缩略图和渲染图",
           "description": "描述图片",
+          "prepared": "切片文件",
           "slicer": "切片软件副本",
           "other": "其他"
         }
@@ -6156,6 +6158,10 @@
         "changeLater": "可在“配置”中更改",
         "open": "打开"
       }
+    },
+    "supporting": {
+      "title": "附加文件",
+      "actionsFor": "{{name}} 的操作"
     },
     "customizer": {
       "title": "自定义 {{model}}",

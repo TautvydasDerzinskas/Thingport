@@ -1549,11 +1549,13 @@
         "failed": "Nepavyko išmatuoti saugyklos.",
         "kinds": {
           "models": "Modelių failai",
+          "supporting": "Papildomi failai",
           "previews": "3D peržiūros",
           "old": "Senos 3D peržiūros",
           "photos": "Nuotraukos",
           "thumbnails": "Miniatiūros ir atvaizdai",
           "description": "Aprašymo paveikslėliai",
+          "prepared": "Paruošti spaudiniai",
           "slicer": "Pjaustyklės kopijos",
           "other": "Kita"
         }
@@ -6762,6 +6764,10 @@
         "changeLater": "pakeisti galima konfigūracijoje",
         "open": "Atverti"
       }
+    },
+    "supporting": {
+      "title": "Papildomi failai",
+      "actionsFor": "{{name}} veiksmai"
     },
     "customizer": {
       "title": "Keičiamas {{model}}",

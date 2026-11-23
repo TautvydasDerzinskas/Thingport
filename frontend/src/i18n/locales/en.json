@@ -1474,11 +1474,13 @@
         "failed": "Couldn't measure the storage.",
         "kinds": {
           "models": "Model files",
+          "supporting": "Supporting files",
           "previews": "3D previews",
           "old": "Old 3D previews",
           "photos": "Photos",
           "thumbnails": "Thumbnails and renders",
           "description": "Description images",
+          "prepared": "Prepared prints",
           "slicer": "Slicer copies",
           "other": "Other"
         }
@@ -6393,6 +6395,10 @@
         "changeLater": "change it in Configuration",
         "open": "Open"
       }
+    },
+    "supporting": {
+      "title": "Supporting files",
+      "actionsFor": "Actions for {{name}}"
     },
     "customizer": {
       "title": "Customizing {{model}}",

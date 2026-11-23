@@ -1534,11 +1534,13 @@
         "failed": "Impossible de mesurer le stockage.",
         "kinds": {
           "models": "Fichiers des modèles",
+          "supporting": "Fichiers annexes",
           "previews": "Aperçus 3D",
           "old": "Anciens aperçus 3D",
           "photos": "Photos",
           "thumbnails": "Miniatures et rendus",
           "description": "Images de la description",
+          "prepared": "Impressions préparées",
           "slicer": "Copies pour le trancheur",
           "other": "Autres"
         }
@@ -6645,6 +6647,10 @@
         "changeLater": "modifiable dans Configuration",
         "open": "Ouvrir"
       }
+    },
+    "supporting": {
+      "title": "Fichiers annexes",
+      "actionsFor": "Actions pour {{name}}"
     },
     "customizer": {
       "title": "Personnalisation de {{model}}",

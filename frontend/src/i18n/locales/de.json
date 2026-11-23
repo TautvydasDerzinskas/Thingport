@@ -1474,11 +1474,13 @@
         "failed": "Der Speicher konnte nicht gemessen werden.",
         "kinds": {
           "models": "Modelldateien",
+          "supporting": "Zusatzdateien",
           "previews": "3D-Vorschauen",
           "old": "Alte 3D-Vorschauen",
           "photos": "Fotos",
           "thumbnails": "Vorschaubilder und Renderings",
           "description": "Beschreibungsbilder",
+          "prepared": "Vorbereitete Drucke",
           "slicer": "Slicer-Kopien",
           "other": "Sonstiges"
         }
@@ -6398,6 +6400,10 @@
         "changeLater": "in der Konfiguration änderbar",
         "open": "Öffnen"
       }
+    },
+    "supporting": {
+      "title": "Zusatzdateien",
+      "actionsFor": "Aktionen für {{name}}"
     },
     "customizer": {
       "title": "{{model}} anpassen",
