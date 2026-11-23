@@ -3,7 +3,8 @@
 Take any part of your library with you.
 
 - **One model:** download its files one by one, or all of them as a ZIP. A model whose files are in folders keeps them
-  in the archive, and each folder can be downloaded as a ZIP of its own.
+  in the archive, and each folder can be downloaded as a ZIP of its own. The picker lists its
+  [supporting files](supporting-files.md) below its model files; downloading one isn't counted as a download of the model.
 - **A whole category, tag or collection:** **Download all models as zip** on its page puts every model in it into one
   archive.
 

@@ -16,6 +16,8 @@ export function legacyCaps(filename: string, role: "plate" | "supporting" | "pre
     openInStudio: drawn,
     // Customize went by the model's generator_scripts, which still say.
     customize: false,
+    // Nothing was shown in place.
+    view: null,
   };
 }
 

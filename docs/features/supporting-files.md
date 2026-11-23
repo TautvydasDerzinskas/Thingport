@@ -12,8 +12,12 @@ A model is more than its STL. Thingport keeps everything you need to print it in
   so the model can be generated again rather than only printed as its creator set it up.
 
 Supporting files come with the model: when you [upload a folder](../guides/upload-folders.md) with one model per
-folder, its images become photos and its manuals and notes are attached automatically. A list of them on the model
-page, and adding them to a model you already have, are on the way.
+folder, its images become photos and its manuals and notes are attached automatically.
+
+On the model page they're in the **Supporting files** tab of its description box, each with its type, folder and size.
+A file's **⋮** menu, or a right-click on it, downloads it or sends it to one of your [Send to](../guides/send-to.md)
+places that takes its type. The **Download** picker lists them below the model files, and a partner's model shows its
+supporting files in a list of their own. Adding them to a model you already have is on the way.
 
 ## Models you can generate again
 

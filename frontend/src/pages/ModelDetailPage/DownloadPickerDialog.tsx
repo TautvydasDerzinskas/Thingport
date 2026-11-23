@@ -18,13 +18,14 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
-import type { Plate } from "../../api/prints";
+import type { Plate, PrintFile } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import { useToastHost } from "../../components/ToastProvider";
 import { fileRowText } from "./fileRowText";
 import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
 import { folderLabel, groupByFolder, hasFolders, shortNames } from "../../utils/fileFolders";
+import TypeTile from "../../components/supportingFiles/TypeTile";
 
 type Props = {
   open: boolean;
@@ -37,7 +38,12 @@ type Props = {
   /** One folder of the model's (Plate.folder), with the folders in it, as a zip. */
   downloadFolderZip: (folder: string) => void;
   downloadPlate: (plate: Plate) => void;
+  /** The files kept beside the plates, from the model's detail (a list's model has none here). */
+  supportingFiles?: PrintFile[];
+  downloadSupporting?: (file: PrintFile) => void;
 };
+
+const NO_FILES: PrintFile[] = [];
 
 const folderOf = (plate: Plate) => plate.folder;
 
@@ -50,6 +56,8 @@ export default function DownloadPickerDialog({
   downloadAllZip,
   downloadFolderZip,
   downloadPlate,
+  supportingFiles = NO_FILES,
+  downloadSupporting,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   // A download that fails says so in here, where a screen reader and the keyboard can reach it.
@@ -144,6 +152,32 @@ export default function DownloadPickerDialog({
                 ))
               : sortedPlates.map(row)}
           </List>
+          {supportingFiles.length > 0 && downloadSupporting && (
+            <>
+              <Divider>{t("models:supporting.title")}</Divider>
+              <List disablePadding>
+                {supportingFiles.map((file) => (
+                  <ListItemButton
+                    key={file.id}
+                    onClick={() => downloadSupporting(file)}
+                    disabled={downloading}
+                    title={file.filename}
+                    sx={{ borderRadius: 1 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 60, pl: 0.75 }}>
+                      <TypeTile kind={file.content_kind} view={file.caps?.view} size={36} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={file.filename}
+                      secondary={[file.folder, formatFileSize(file.size)].filter(Boolean).join(" · ")}
+                      primaryTypographyProps={{ noWrap: true }}
+                      secondaryTypographyProps={{ noWrap: true }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            </>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

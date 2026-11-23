@@ -24,7 +24,18 @@ export type ContentKind =
 
 /** What the app may offer of a file, as the server works it out (capsOf in backend/src/files/kinds.ts). Absent from
  *  an older backend, where utils/fileCaps.ts's legacyCaps stands in. */
-export type FileCaps = { preview3d: boolean; openInSlicer: boolean; openInStudio: boolean; customize: boolean };
+export type FileCaps = {
+  preview3d: boolean;
+  openInSlicer: boolean;
+  openInStudio: boolean;
+  customize: boolean;
+  /** How it shows in place, where that's safe; null for a file that only downloads. Absent from an older backend. */
+  view?: FileView | null;
+};
+
+/** How a file shows in place: the browser's PDF viewer, a picture, Markdown, plain text (a script as code), or a
+ *  table. */
+export type FileView = "pdf" | "image" | "markdown" | "text" | "table";
 
 export type PreparedPrint = {
   printer?: string | null;

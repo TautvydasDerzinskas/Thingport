@@ -49,6 +49,10 @@ import { usePrintProfilesView } from "../../hooks/usePrintProfilesView";
 import { usePrintProfiles } from "./PrintProfiles/usePrintProfiles";
 import { profileEntries } from "./PrintProfiles/entries";
 import { plateCaps } from "../../utils/fileCaps";
+import ModelSupportingFiles from "./ModelSupportingFiles";
+
+// The description box's tab of the files kept beside the plates; no tool's id starts with "@".
+const SUPPORTING_TAB = "@supporting-files";
 
 type Props = {
   theme: ResolvedTheme;
@@ -299,7 +303,15 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     const translated = translator(tool.locales ?? {}, language)("modelPage.tab");
     return translated === "modelPage.tab" ? (tool.manifest.modelPage?.tab?.title ?? tool.manifest.name) : translated;
   };
-  const shownTab = tabTools.some((tool) => tool.id === descriptionTab) ? descriptionTab : "description";
+  // The files kept beside the plates get a tab of their own while the model has any.
+  const supportingCount = print.supporting_files?.length ?? 0;
+  const shownTab =
+    descriptionTab === SUPPORTING_TAB && supportingCount > 0
+      ? SUPPORTING_TAB
+      : tabTools.some((tool) => tool.id === descriptionTab)
+        ? descriptionTab
+        : "description";
+  const tabbed = tabTools.length > 0 || supportingCount > 0;
   const shownTabTool = tabTools.find((tool) => tool.id === shownTab) ?? null;
 
   return (
@@ -545,8 +557,9 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                 scrollMarginTop: 80,
               }}
             >
-              {/* With a tool that draws a tab of its own, the box is tabbed: the description, then each tool's. */}
-              {tabTools.length > 0 && (
+              {/* With a tool that draws a tab of its own, or files kept beside the plates, the box is tabbed: the
+                  description, each tool's, then the supporting files. */}
+              {tabbed && (
                 <Tabs
                   value={shownTab}
                   onChange={(_event, next: string) => setDescriptionTab(next)}
@@ -565,9 +578,25 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                       sx={{ minHeight: 42, gap: 0.75 }}
                     />
                   ))}
+                  {supportingCount > 0 && (
+                    <Tab
+                      value={SUPPORTING_TAB}
+                      label={
+                        <Stack component="span" direction="row" spacing={0.75} alignItems="baseline">
+                          <span>{t("models:supporting.title")}</span>
+                          <Box component="span" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                            {supportingCount}
+                          </Box>
+                        </Stack>
+                      }
+                      sx={{ minHeight: 42 }}
+                    />
+                  )}
                 </Tabs>
               )}
-              {shownTabTool ? (
+              {shownTab === SUPPORTING_TAB ? (
+                <ModelSupportingFiles print={print} onUnauthorized={onUnauthorized} />
+              ) : shownTabTool ? (
                 <ToolPart
                   key={shownTabTool.id}
                   tool={shownTabTool}
@@ -580,7 +609,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               ) : (
                 <>
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                    {!tabTools.length && (
+                    {!tabbed && (
                       <Typography
                         variant="subtitle1"
                         fontWeight={700}
