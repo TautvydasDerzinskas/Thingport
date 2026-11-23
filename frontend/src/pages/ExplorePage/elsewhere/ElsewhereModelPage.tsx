@@ -30,6 +30,8 @@ import { useSlicerChoice, type ModelFile } from "../../ModelDetailPage/useOpenIn
 import ElsewhereGone from "./ElsewhereGone";
 import RemoteCopyPanel from "./RemoteCopyPanel";
 import SupportingFilesList, { type SupportingItem } from "../../../components/supportingFiles/SupportingFilesList";
+import CircularProgress from "@mui/material/CircularProgress";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 
 const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" } as const;
 
@@ -307,6 +309,17 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
                   zipCount={offered}
                   onDownloadZip={() => void downloadZip()}
                 />
+              )}
+              {/* With no file for the box, its menu's ZIP isn't there: the supporting files get their own. */}
+              {!selected && offered > 1 && (
+                <Button
+                  variant="outlined"
+                  disabled={downloading}
+                  onClick={() => void downloadZip()}
+                  startIcon={downloading ? <CircularProgress size={14} /> : <DownloadOutlinedIcon fontSize="small" />}
+                >
+                  {t("models:detail.downloadAllZip", { count: offered })}
+                </Button>
               )}
               {supporting.length > 0 && (
                 <Box>
