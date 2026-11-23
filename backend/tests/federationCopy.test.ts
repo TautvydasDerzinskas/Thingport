@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../src/db";
+import { PENDING_STORAGE_PATH } from "../src/modelFiles/pending";
 import { originOf } from "../src/federation/addresses";
 import { invalidateAllowlist } from "../src/federation/allowlist";
 import {
@@ -297,6 +298,27 @@ describe("a partner's model, copied", () => {
     });
     const images = published.image as Record<string, unknown>[];
     expect(images.map((image) => image["thingport:generated"] ?? false)).toEqual([false, true]);
+  });
+
+  it("publishes no file still being saved", async () => {
+    // A save under way: its row is made before its place is claimed.
+    const pending = await prisma.printFile.create({
+      data: {
+        printId: sourceId,
+        role: "SUPPORTING",
+        filename: "Coming.txt",
+        mime: "text/plain",
+        size: 9,
+        storagePath: PENDING_STORAGE_PATH,
+      },
+    });
+    try {
+      const page = (await modelsPage(owner.id)) as { orderedItems: Record<string, unknown>[] };
+      const model = page.orderedItems.find((item) => item.id === `${ORIGIN}/api/ap/models/${sourceId}`)!;
+      expect((model.attachment as { name: string }[]).map((file) => file.name)).toEqual(["bin.3mf", "notes.txt"]);
+    } finally {
+      await prisma.printFile.delete({ where: { id: pending.id } });
+    }
   });
 
   it("is the same model in the copier's library", async () => {

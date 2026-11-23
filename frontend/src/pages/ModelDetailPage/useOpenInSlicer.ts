@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { type Plate, type Print, printsApi } from "../../api/prints";
+import { type FileCaps, type Plate, type Print, printsApi } from "../../api/prints";
 import type { UserPrinter } from "../../api/printers";
 import { planAdaptation, type AdaptPlan, type PrinterChoice } from "../../adapter/plan.generated";
 import { slicerProfile } from "../../adapter/slicers/index.generated";
 import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
+import { legacyCaps, plateCaps } from "../../utils/fileCaps";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 
 /** A file of the model a slicer can open or the user can download: a plate, or the prepared print when it
@@ -21,6 +22,8 @@ export type ModelFile = {
   size?: number | null;
   /** The folder it's in (Plate.folder), which the model page groups its files by. */
   folder?: string | null;
+  /** What may be offered of it: Open in slicer only where Bridge opens it. */
+  caps: FileCaps;
 };
 export type SlicerTarget = ModelFile & { href: string };
 /** A plate's copy made for the slicer (src/adapter in the backend): `plan` says what it changes, `printer` the
@@ -56,12 +59,22 @@ function isAdaptable3mf(filename: string): boolean {
 }
 
 /** The prepared print first, when it isn't a plate, then the plates in order. */
-export function modelFiles(print: Print): ModelFile[] {
+export function modelFiles(
+  print: Pick<Print, "plates" | "slicer_url" | "slicer_filename" | "prepared_print">,
+): ModelFile[] {
   const sortedPlates = print.plates.toSorted((a, b) => a.position - b.position);
   const out: ModelFile[] = [];
   if (print.slicer_url && !sortedPlates.some((p) => p.url === print.slicer_url)) {
     const filename = print.slicer_filename ?? "";
-    out.push({ key: PREPARED_KEY, url: print.slicer_url, filename, launchFilename: filename, index: -1, plate: null });
+    out.push({
+      key: PREPARED_KEY,
+      url: print.slicer_url,
+      filename,
+      launchFilename: filename,
+      index: -1,
+      plate: null,
+      caps: print.prepared_print?.caps ?? legacyCaps(filename, "prepared"),
+    });
   }
   sortedPlates.forEach((plate, index) => {
     const launchFilename =
@@ -74,9 +87,15 @@ export function modelFiles(print: Print): ModelFile[] {
       index,
       plate,
       folder: plate.folder ?? null,
+      caps: plateCaps(plate),
     });
   });
   return out;
+}
+
+/** The files a slicer is offered: those Bridge opens, so no zip, F3D or picture plate. */
+export function slicerFilesOf(files: readonly ModelFile[]): ModelFile[] {
+  return files.filter((file) => file.caps.openInSlicer);
 }
 
 /** Whether the copies the user's printers decide can be offered in `slicerId` yet: in a slicer that loads a printer's
@@ -172,14 +191,15 @@ export function useOpenInSlicer(print: Print) {
   }, [printersFailed, reloadPrinters]);
 
   const files = useMemo(() => modelFiles(print), [print]);
-  const canOpen = Boolean(print.slicer_url) && files.length > 0;
+  const slicerFiles = useMemo(() => slicerFilesOf(files), [files]);
+  const canOpen = Boolean(print.slicer_url) && slicerFiles.length > 0;
 
   const targets = useMemo<SlicerTarget[]>(
     () =>
       slicerOption && canOpen
-        ? files.map((file) => ({ ...file, href: slicerHref(slicerOption.id, file, bridged) }))
+        ? slicerFiles.map((file) => ({ ...file, href: slicerHref(slicerOption.id, file, bridged) }))
         : [],
-    [files, canOpen, slicerOption, bridged],
+    [slicerFiles, canOpen, slicerOption, bridged],
   );
 
   const adaptedTargets = useMemo<AdaptedTarget[]>(() => {
@@ -189,9 +209,9 @@ export function useOpenInSlicer(print: Print) {
     // Until the user's printers are known, a copy for a slicer that loads a printer's presets isn't the one to offer.
     if (!printersKnownFor(slicerOption.id, { loaded: printersLoaded, failed: printersFailed })) return [];
     const remembered = printers.find((p) => p.printer.id === slicerPrinters[slicerOption.id]) ?? null;
-    return adaptedTargetsFor(files, slicerOption.id, bridged, printers, remembered);
+    return adaptedTargetsFor(slicerFiles, slicerOption.id, bridged, printers, remembered);
   }, [
-    files,
+    slicerFiles,
     print.prepared_print,
     slicerOption,
     bridged,

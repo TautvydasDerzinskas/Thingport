@@ -6,6 +6,7 @@ import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import { UnauthorizedError } from "../../api/client";
 import { tagsApi } from "../../api/tags";
+import { useToast } from "../../components/ToastProvider";
 
 type Props = {
   tag: string;
@@ -18,6 +19,7 @@ type Props = {
  *  optimistic flip taking precedence. */
 export default function TagBookmarkButton({ tag, bookmarked, onUnauthorized, onBookmarksChanged }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  const showToast = useToast();
   const [override, setOverride] = useState<boolean | null>(null);
   const isBookmarked = override ?? bookmarked;
   const pendingRef = useRef(false);
@@ -37,7 +39,7 @@ export default function TagBookmarkButton({ tag, bookmarked, onUnauthorized, onB
         return;
       }
       console.error(err);
-      alert(t("models:tags.bookmarkFailed"));
+      showToast({ message: t("models:tags.bookmarkFailed"), severity: "error" });
     } finally {
       pendingRef.current = false;
     }

@@ -6,7 +6,8 @@ import type { SortDirection } from "../utils/sortDirection";
 import { getLinkedAuthorIds } from "./authorService";
 import { systemCollectionKeyForId } from "./collectionService";
 import { rankedPrintIds } from "./searchService";
-import { extensionsOf } from "../files/kinds";
+import { extensionsOf, kindOfStored } from "../files/kinds";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 
 // The library listing's filters and order, shared by GET /prints and the MCP tools so both list the
 // same models for the same filters.
@@ -125,16 +126,20 @@ export async function buildPrintWhere(
   if (filters.licenseAllows?.length) andClauses.push({ licenseAllows: { hasEvery: filters.licenseAllows } });
   if (filters.licensed) andClauses.push({ license: { not: Prisma.DbNull } });
   if (filters.generative) {
-    // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
-    // generated rather than only printed: any script the kind table knows.
-    andClauses.push({
-      files: {
-        some: {
-          role: "SUPPORTING",
-          OR: extensionsOf("script").map((ext) => ({ filename: { endsWith: ext, mode: "insensitive" as const } })),
-        },
+    // A generator script is kept beside a model, never as one of its plates, so this is what marks one as generated
+    // rather than only printed. Each file is judged as the model's generator_scripts judge it, by the kind table on its
+    // normalised name (so one named with a leading dot is junk): the query only gathers the files that may be scripts.
+    const candidates = await prisma.printFile.findMany({
+      where: {
+        role: "SUPPORTING",
+        storagePath: { not: PENDING_STORAGE_PATH },
+        print: { userId },
+        OR: extensionsOf("script").map((ext) => ({ filename: { contains: ext, mode: "insensitive" as const } })),
       },
+      select: { printId: true, filename: true },
     });
+    const scripted = candidates.filter((file) => kindOfStored(file.filename) === "script").map((file) => file.printId);
+    andClauses.push({ id: { in: [...new Set(scripted)] } });
   }
   // Matched as the search palette matches, so its "see all results" lists what it found.
   const rankedIds = q ? await rankedPrintIds(userId, q) : null;

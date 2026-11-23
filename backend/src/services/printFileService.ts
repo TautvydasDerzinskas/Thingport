@@ -13,13 +13,11 @@ import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printServic
 import { reuseMarker, shareStoredCopy } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { normalizeGeneratorScript } from "../utils/scriptLineEndings";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 import { fileState, type StorageSite } from "../modelFiles/storageFs";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
 
 const log = createLogger("model-files");
-
-// The storagePath a file's row has from when it's made until its place is claimed.
-export const PENDING_STORAGE_PATH = "pending";
 
 export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">): string {
   const candidate = path.resolve(STORAGE, printFile.storagePath);
@@ -51,7 +49,8 @@ export async function printFileStillNames(
 
 export async function listSupportingFiles(printId: string): Promise<PrintFile[]> {
   return prisma.printFile.findMany({
-    where: { printId, role: "SUPPORTING" },
+    // One still "pending" is a save under way, with no file yet.
+    where: { printId, role: "SUPPORTING", storagePath: { not: PENDING_STORAGE_PATH } },
     orderBy: [{ filename: "asc" }, { id: "asc" }],
   });
 }

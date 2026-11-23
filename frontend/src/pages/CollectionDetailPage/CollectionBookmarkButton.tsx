@@ -6,6 +6,7 @@ import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import { UnauthorizedError } from "../../api/client";
 import { collectionsApi } from "../../api/collections";
+import { useToast } from "../../components/ToastProvider";
 
 type Props = {
   collectionId: string;
@@ -24,6 +25,7 @@ export default function CollectionBookmarkButton({
   onToggled,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  const showToast = useToast();
   const [override, setOverride] = useState<boolean | null>(null);
   const isBookmarked = override ?? bookmarked;
   const pendingRef = useRef(false);
@@ -44,7 +46,7 @@ export default function CollectionBookmarkButton({
         return;
       }
       console.error(err);
-      alert(t("models:collections.bookmarkFailed"));
+      showToast({ message: t("models:collections.bookmarkFailed"), severity: "error" });
     } finally {
       pendingRef.current = false;
     }

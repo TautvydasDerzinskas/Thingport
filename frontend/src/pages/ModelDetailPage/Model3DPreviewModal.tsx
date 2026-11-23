@@ -17,7 +17,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { type Print, printsApi } from "../../api/prints";
-import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf } from "../../utils/fileExtensions";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import ModelViewer, {
@@ -36,6 +35,7 @@ import { shortNames } from "../../utils/fileFolders";
 import type { ProfileEntry } from "./PrintProfiles/entries";
 import PreviewProfilePanel, { type PreviewPlateRow } from "./PrintProfiles/PreviewProfilePanel";
 import type { ModelFile } from "./useOpenInSlicer";
+import { plateCaps } from "../../utils/fileCaps";
 
 // Light mode keeps a product-shot style grey; dark mode uses the page background so it doesn't glare.
 const LIGHT_PREVIEW_BG = "#e7e7ea";
@@ -92,7 +92,7 @@ export default function Model3DPreviewModal({
   );
   const activePlate = sortedPlates.find((p) => p.id === activePlateId) || sortedPlates[0];
   const ext = activePlate ? extOf(activePlate.filename) : "";
-  const is3d = Boolean(activePlate) && MODEL_EXTS.has(ext);
+  const is3d = activePlate ? plateCaps(activePlate).preview3d : false;
 
   // Plates inside the active .3mf, reset when the file changes; `platesRead` once the viewer has said, even of none.
   const [internalPlates, setInternalPlates] = useState<PlateSummary[]>([]);
@@ -137,6 +137,7 @@ export default function Model3DPreviewModal({
               index,
               plate,
               folder: plate.folder ?? null,
+              caps: plateCaps(plate),
             }))
         : [],
     [profileMode, profileEntries, sortedPlates],

@@ -1,5 +1,6 @@
+import path from "node:path";
 import table from "./kinds.json";
-import { isJunk, splitName, type NormalName } from "./names";
+import { isJunk, normalizeFileName, splitName, type NormalName } from "./names";
 
 // One table of what each file is, by its name alone (kinds.json, published as docs/features/file-kinds.md by
 // npm run kinds:sync). The extension sets the code used before it are views of it, in LEGACY, so each still holds
@@ -45,6 +46,11 @@ export function kindOf(name: NormalName): Kind {
   return BY_NAME.get(name.toLowerCase()) ?? BY_EXTENSION.get(splitName(name).ext.toLowerCase()) ?? "other";
 }
 
+/** A stored file's kind. A name kept before the naming rule goes through it first, which changes no other name. */
+export function kindOfStored(name: string): Kind {
+  return kindOf(normalizeFileName(name));
+}
+
 /** A kind's extensions. */
 export function extensionsOf(kind: Kind): readonly string[] {
   return KINDS.find((row) => row.kind === kind)?.extensions ?? [];
@@ -84,3 +90,53 @@ export const LEGACY = {
   /** What the library importer keeps as photos: rasters and GIFs. */
   libraryImage: new Set([...photo, ".gif"]),
 } as const;
+
+/** What a file is to its model: one of its plates, a file kept beside them, or its prepared print. */
+export type FileRole = "plate" | "supporting" | "prepared";
+
+/** What the web app can do with a file, worked out here so it never offers what the server or Bridge can't. */
+export type Caps = {
+  /** The 3D viewer shows it, and a card can draw it. */
+  preview3d: boolean;
+  /** Open in slicer offers it: a mesh, laser or sliced file whose extension Bridge opens. */
+  openInSlicer: boolean;
+  /** Studio opens it as a new design. */
+  openInStudio: boolean;
+  /** Customize generates the model again from it: an OpenSCAD script. */
+  customize: boolean;
+};
+
+/**
+ * What Thingport Bridge opens: `isModelFile` in bridge/cmd/thingport-bridge/main.go, pinned by tests/files/kinds.test.ts.
+ * An installed Bridge never updates itself, so nothing it refuses is offered, a .gco among them. It reads only the last
+ * extension, so a .gcode.3mf goes as a .3mf.
+ */
+export const BRIDGE_OPENS: ReadonlySet<string> = new Set([
+  ".stl",
+  ".3mf",
+  ".step",
+  ".stp",
+  ".obj",
+  ".glb",
+  ".gltf",
+  ".f3d",
+  ".lbrn",
+  ".lbrn2",
+  ".gcode",
+  ".bgcode",
+]);
+
+const FOR_SLICERS: ReadonlySet<Kind> = new Set(["mesh", "laser", "sliced"]);
+
+/** What a file can do, by its kind, its name and what it is to its model. The 3D viewer reads a name's last extension, as
+ *  Bridge does, so a sliced .gcode.3mf plate is drawn as the 3MF it also is. Junk can do nothing. */
+export function capsOf(kind: Kind, name: string, role: FileRole): Caps {
+  const ext = path.extname(name).toLowerCase();
+  const drawn = kind !== "junk" && role === "plate" && LEGACY.renderable.has(ext);
+  return {
+    preview3d: drawn,
+    openInSlicer: role !== "supporting" && FOR_SLICERS.has(kind) && BRIDGE_OPENS.has(ext),
+    openInStudio: drawn,
+    customize: kind === "script",
+  };
+}

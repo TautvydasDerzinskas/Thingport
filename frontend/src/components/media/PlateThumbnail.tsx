@@ -1,8 +1,8 @@
 import Box from "@mui/material/Box";
 import { type Plate, printsApi } from "../../api/prints";
-import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf } from "../../utils/fileExtensions";
 import { ModelSnapshot } from "./ModelViewer/ModelSnapshot";
+import { plateCaps } from "../../utils/fileCaps";
 
 type Props = {
   plate: Plate;
@@ -24,7 +24,7 @@ export default function PlateThumbnail({ plate, size = 32 }: Props) {
       />
     );
   }
-  if (MODEL_EXTS.has(ext)) {
+  if (plateCaps(plate).preview3d) {
     return (
       <Box sx={boxSx}>
         <ModelSnapshot url={printsApi.fileUrl(plate.url)} ext={ext} plateId={plate.id} theme="light" compact />

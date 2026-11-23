@@ -41,7 +41,8 @@ import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobR
 import { jobPayload } from "./services/importJobService";
 import type { LineOut, OwnQueue, QueueJobRow, QueueJobView } from "./services/importQueueService";
 import type { ImportOutcome } from "./services/modelNotifications";
-import { extensionsOf } from "./files/kinds";
+import { capsOf, kindOfStored, type Caps, type FileRole, type Kind } from "./files/kinds";
+import { withPlace } from "./modelFiles/pending";
 
 export type UserOut = {
   id: string;
@@ -106,6 +107,9 @@ export type PreparedPrintOut = {
   estimated_seconds?: number | null;
   format?: string | null;
   removable: boolean;
+  /** As a plate's, when the prepared print is a file of its own; null when the plates themselves are the sliced files. */
+  content_kind?: Kind | null;
+  caps?: Caps | null;
 };
 
 export type PlateOut = {
@@ -138,6 +142,11 @@ export type PlateOut = {
   /** What kind of 3MF it is (src/adapter/format.ts), from which the page tells which slicers get an adapted copy;
    *  null for other files, and for an older 3MF until its model is opened. */
   format: ThreeMfFormat | null;
+  /** What the file is, by the kind table (files/kinds.ts). Named apart from MCP's `kind` and Send to's `file_kind`,
+   *  which say what a file is to its model. */
+  content_kind: Kind;
+  /** What the web app can do with it (capsOf in files/kinds.ts). */
+  caps: Caps;
 };
 
 export type PrintFileOut = {
@@ -148,6 +157,9 @@ export type PrintFileOut = {
   mime: string;
   size: number;
   url: string;
+  /** As PlateOut's. */
+  content_kind: Kind;
+  caps: Caps;
 };
 
 export type PreviewImageOut = {
@@ -204,6 +216,9 @@ export type PrintOut = {
   /** Any plate carries colours of its own; see PlateOut.own_colors. */
   own_colors: boolean;
   supporting_file_count: number;
+  /** The files kept beside its plates, as GET /print/:id/files lists them, on the detail fetch only: a list of models
+   *  carries supporting_file_count instead. */
+  supporting_files?: PrintFileOut[];
   /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
    *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
    *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */
@@ -317,6 +332,7 @@ export function renderUrl(plate: { id: string; filename: string }, home: AssetHo
 }
 
 export function toPlateOut(printId: string, plate: Plate, home: AssetHome): PlateOut {
+  const kind = kindOfStored(plate.filename);
   return {
     id: plate.id,
     print_id: printId,
@@ -333,6 +349,8 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     own_colors: modelColorImagePath(plate.id, home) !== null,
     profile_id: plate.sourceInstanceId ?? null,
     format: storedFormat(plate.format),
+    content_kind: kind,
+    caps: capsOf(kind, plate.filename, "plate"),
   };
 }
 
@@ -381,6 +399,8 @@ export function toPreviewImageOut(image: PreviewImage, home: AssetHome): Preview
 }
 
 export function toPrintFileOut(printFile: PrintFile): PrintFileOut {
+  const kind = kindOfStored(printFile.filename);
+  const role: FileRole = printFile.role === "PREPARED" ? "prepared" : "supporting";
   return {
     id: printFile.id,
     filename: printFile.filename,
@@ -388,7 +408,19 @@ export function toPrintFileOut(printFile: PrintFile): PrintFileOut {
     mime: printFile.mime,
     size: printFile.size,
     url: `/print/${printFile.printId}/files/${printFile.id}`,
+    content_kind: kind,
+    caps: capsOf(kind, printFile.filename, role),
   };
+}
+
+/** The files kept beside a model's plates, as GET /print/:id/files lists them: by name, none still being saved. */
+export function supportingFilesOut(files: PrintFile[]): PrintFileOut[] {
+  const byName = (a: PrintFile, b: PrintFile) =>
+    a.filename < b.filename ? -1 : a.filename > b.filename ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  return withPlace(files)
+    .filter((file) => file.role === "SUPPORTING")
+    .toSorted(byName)
+    .map(toPrintFileOut);
 }
 
 function storageParentDir(plates: Plate[]): string | null {
@@ -414,17 +446,19 @@ export function toPrintOut(
 ): PrintOut {
   const sortedPlates = plates.toSorted((a, b) => a.position - b.position);
   const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p, print.assetsPath));
-  const supporting = files.filter((f) => f.role === "SUPPORTING");
+  // One still "pending" is a save under way, with no file yet.
+  const placed = withPlace(files);
+  const supporting = placed.filter((f) => f.role === "SUPPORTING");
   const supportingCount = supporting.length;
-  // By the script kind's extensions alone, as the Generative filter counts them: a stored script whose name starts with
-  // a dot is still the model's script.
-  const scriptExtensions = extensionsOf("script");
+  // By the kind table, as the Generative filter counts them: a script named with a leading dot is junk, as macOS's "._"
+  // copies are, so it isn't the model's script.
   const generatorScripts = supporting
-    .filter((f) => scriptExtensions.some((ext) => f.filename.toLowerCase().endsWith(ext)))
+    .filter((f) => kindOfStored(f.filename) === "script")
     .map((f) => ({ id: f.id, filename: f.filename, folder: f.folder ?? null }));
   // The model's own files: LICENSE.txt is Thingport's, written from its licence.
   const totalSize =
-    plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);
+    plates.reduce((sum, p) => sum + p.size, 0) +
+    placed.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);
   const previewImageOuts = (previewImages ?? [])
     .toSorted((a, b) => a.position - b.position)
     .map((image) => toPreviewImageOut(image, print.assetsPath))
@@ -446,6 +480,8 @@ export function toPrintOut(
       estimated_seconds: (meta.estimated_seconds as number | null) ?? null,
       format: (meta.format as string | null) ?? null,
       removable: true,
+      content_kind: kindOfStored(preparedFile.filename),
+      caps: capsOf(kindOfStored(preparedFile.filename), preparedFile.filename, "prepared"),
     };
     slicerUrl = `/print/${print.id}/prepared-print`;
     slicerFilename = preparedFile.filename;
@@ -459,6 +495,8 @@ export function toPrintOut(
       estimated_seconds: (meta.estimated_seconds as number | null) ?? null,
       format: (meta.format as string | null) ?? null,
       removable: false,
+      content_kind: null,
+      caps: null,
     };
     slicerUrl = plateOuts[0]?.url ?? null;
     slicerFilename = preparedFilename(print.name, { format: meta.format as string });

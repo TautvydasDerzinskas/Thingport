@@ -19,9 +19,21 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
   are its `LEGACY` views, pinned to what each held. Outside it, a new `Set` or array literal opening with an extension, or
   a `.endsWith(".…")` test, fails `tests/files/kinds.test.ts` unless that file is listed there with its reason. `npm run kinds:sync` writes
   [features/file-kinds.md](features/file-kinds.md) from it, and Format checks the page.
+- **What a file can do comes with it.** `capsOf` (`files/kinds.ts`) works out from a file's kind, name and role what
+  the web app may offer of it: the 3D viewer, Open in slicer (only what Bridge's `isModelFile` opens, as an installed
+  Bridge never updates), Studio and Customize. Every plate and file in the REST API carries it as `caps`, with its kind
+  as `content_kind`: named apart from MCP's `kind` and Send to's `file_kind`, which say what a file is to its model. The
+  web app reads `caps`; `legacyCaps` (`frontend/src/utils/fileCaps.ts`) stands in, frozen, for an older backend.
+  Pinned by `tests/files/kinds.test.ts`, `tests/fileKindsPayload.test.ts`, `tests/mcpDescriptions.test.ts` and
+  `frontend/src/utils/fileCaps.test.ts`.
+- **No list shows a save under way.** A `PrintFile` row still at `"pending"` is in no list of a model's files: the
+  detail and its counts and size, `GET /print/:id/files`, MCP, the Generative filter and what partners are published.
+  Pinned by `tests/fileKindsPayload.test.ts`, `tests/mcp.test.ts`, `tests/generativeFilter.test.ts` and
+  `tests/federationCopy.test.ts`.
 - **One rule for junk.** `isJunk` (`files/names.ts`) decides what a computer left among files. `/upload`, the zip
-  listing, `/import/zip` (before its empty check and its job's total) and the consume folder drop it. Pinned by the
-  cases table (A14, C14 and Z14) and `tests/upgradeCompat.test.ts`'s older Grab.
+  listing, `/import/zip` (before its empty check and its job's total) and the consume folder drop it. Customize and the
+  Generative filter go by it too, so a script named with a leading dot isn't one. Pinned by the cases table (A14, C14
+  and Z14), `tests/upgradeCompat.test.ts`'s older Grab and `tests/generativeFilter.test.ts`.
 - **Fs 1: only a missing file counts as missing.** Whether a plate's or a `PrintFile`'s file is there is asked through
   the file door (`modelFiles/storageFs.ts`): `fileState` answers file, missing or not-a-file, `openStored` opens one.
   Only ENOENT and ENOTDIR mean missing, and a folder isn't a file. Any other error (EIO, EACCES, ELOOP) stops the

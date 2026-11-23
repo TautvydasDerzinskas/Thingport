@@ -37,6 +37,8 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useToast } from "../../components/ToastProvider";
+import LoadMoreFailed from "../../components/LoadMoreFailed";
 
 const PAGE_SIZE = 24;
 
@@ -66,6 +68,11 @@ export default function ModelsPage({
   viewer,
 }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
+  const showToast = useToast();
+  // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
+  const [moreFailed, setMoreFailed] = useState(false);
+  // A quiet reload keeps the list on screen: no next page is added to it until the reload has replaced it.
+  const [reloading, setReloading] = useState(false);
   const mobile = useMediaQuery((muiTheme: Theme) => muiTheme.breakpoints.down("md"));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -121,6 +128,7 @@ export default function ModelsPage({
     if (renamed) {
       // A title can move the model across a page boundary while the next page is on its way.
       listRun.current += 1;
+      setMoreFailed(false);
       reloadAfterRename.current = true;
       setHasMore(false);
       setLoading(true);
@@ -183,7 +191,7 @@ export default function ModelsPage({
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 
@@ -209,12 +217,15 @@ export default function ModelsPage({
 
   useEffect(() => {
     const run = ++listRun.current;
+    // A reloaded list may page again, whatever its last next page did.
+    setMoreFailed(false);
     setLoadingMore(false);
     const renamed = reloadAfterRename.current;
     reloadAfterRename.current = false;
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
     const kept = renamed ? null : returning();
     const background = (isBackgroundReload() || kept !== null) && !renamed;
+    setReloading(background);
     if (!background) {
       // Only a successful replacement can make this list pageable again.
       setItems([]);
@@ -247,7 +258,10 @@ export default function ModelsPage({
         if (run !== listRun.current) return;
         handleError(err, background ? undefined : t("models:errors.loadFailed"));
       } finally {
-        if (run === listRun.current) setLoading(false);
+        if (run === listRun.current) {
+          setLoading(false);
+          setReloading(false);
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,13 +302,14 @@ export default function ModelsPage({
       setHasMore(result.hasMore);
     } catch (err) {
       if (run !== listRun.current) return;
-      handleError(err, t("models:errors.loadFailed"));
+      handleError(err);
+      setMoreFailed(true);
     } finally {
       if (run === listRun.current) setLoadingMore(false);
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore || reloading);
 
   const createCategory = async (name: string, parentId: string | null, kind: CategoryKind) => {
     try {
@@ -505,7 +520,12 @@ export default function ModelsPage({
                 ))}
                 {loadingMore && <CardSkeletons count={5} />}
               </Box>
-              {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
+              {hasMore &&
+                (moreFailed ? (
+                  <LoadMoreFailed message={t("models:errors.loadFailed")} onRetry={() => setMoreFailed(false)} />
+                ) : (
+                  <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />
+                ))}
             </Stack>
           ) : (
             <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>

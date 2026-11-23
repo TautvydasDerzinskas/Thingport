@@ -1,0 +1,81 @@
+[
+  {
+    "name": "search_models",
+    "title": "Search models",
+    "description": "Search the library by words in a model's title, tags, creator or description. Also returns matching collections and tags. Start here to find a model by what it is. A model's file_count counts its plates (the 3D files), supporting_file_count the files kept beside them.",
+    "inputs": {
+      "query": "Words to look for, e.g. 'benchy' or 'cable clip'.",
+      "limit": "How many models to return, up to 25."
+    }
+  },
+  {
+    "name": "list_models",
+    "title": "List models",
+    "description": "List models, optionally filtered by tags, category, collection, author or what their licence allows, newest first unless sorted otherwise. Filters combine: a model must match every one given. A model's file_count counts its plates (the 3D files), supporting_file_count the files kept beside them.",
+    "inputs": {
+      "query": "Only models matching these words, as in search_models.",
+      "tags": "Only models that have every one of these tags.",
+      "category_id": "Only models in this category (an id from list_categories).",
+      "collection_id": "Only models in this collection (an id from list_collections, or 'favorites' or 'history').",
+      "author_id": "Only models by this author (an id from a model's author), or 'self' for the user's own.",
+      "license_allows": "Only models whose licence allows every one of these: share (pass the files on unchanged), remix (change it), commercial (commercial use, selling prints included). A model with no known licence never matches.",
+      "sort": "newest (default), popular (most viewed), downloads (most printed), relevance (needs query), or name (A–Z).",
+      "sort_direction": "Defaults to ascending for name, descending otherwise.",
+      "limit": "How many to return, up to 50.",
+      "offset": "How many to skip, for the next page."
+    }
+  },
+  {
+    "name": "get_model",
+    "title": "Get a model",
+    "description": "Everything about one model: its description, files, tags, category, author, collections, where it was imported from, and how often it was viewed and printed. files are its plates (the 3D files); supporting_files are the files kept beside them (instructions, scripts, pictures and the like). Each has content_kind, what the file is (mesh, laser, sliced, cad, script, picture, document, archive and so on); list_model_files gives their ids and links. A file that is one of the print profiles the model was imported with carries `print_profile`: its name, whether the designer or the community made it, the printer, settings, print time in minutes, filament in grams, and its build plates. `license` is its licence as its source lists it or its owner picked: its id (SPDX where there is one), name, link, what it allows of share (pass the files on unchanged), remix and commercial, whether it asks for credit or for remixes under the same licence, and any terms the site or creator added; null when nothing says. Change it with edit_model.",
+    "inputs": {
+      "id": "The model's id, from search_models or list_models."
+    }
+  },
+  {
+    "name": "list_model_files",
+    "title": "List a model's files",
+    "description": "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file takes. kind is what the file is to the model (plate, supporting or prepared); content_kind is what the file is (mesh, laser, sliced, cad, script, picture, document, archive and so on). folder is the folder its source kept it in, levels joined by '/' (e.g. 'USB C version/Handles'; often the model's variants), or null; a name is unique within its folder, not the whole model. api_path (on the server's own address) or download_url, when the server knows its address, opens with the same token as 'Authorization: Bearer' if it may read Model files.",
+    "inputs": {
+      "model_id": "The model's id, from search_models or list_models."
+    }
+  },
+  {
+    "name": "get_model_file",
+    "title": "Get a model file",
+    "description": "One of a model's files, base64-encoded, up to 10 MB: e.g. to slice or convert it. Find its id with list_model_files. A bigger file comes without its contents; fetch it by its download_url or api_path.",
+    "inputs": {
+      "model_id": "The model's id.",
+      "file_id": "The file's id, from list_model_files."
+    }
+  },
+  {
+    "name": "add_model_files",
+    "title": "Add files to a model",
+    "description": "Add files to one of the user's models, as its page's Add files does: e.g. a fixed version of a part, or a variant. 3D files (STL, 3MF, STEP, OBJ) become plates, other files supporting files; a sliced print (G-code, a sliced 3MF) takes the place of the model's own. `kind` overrides that. Files go as base64, up to 24 MB in all.",
+    "inputs": {
+      "model_id": "The model's id, from search_models or list_models.",
+      "files": "The files to add."
+    }
+  },
+  {
+    "name": "remove_model_file",
+    "title": "Remove a model file",
+    "description": "Delete one of a model's files for good: a plate, a supporting file or its sliced print, by its id from list_model_files. A model's only plate can't be removed. Only remove what the user asked to.",
+    "inputs": {
+      "model_id": "The model's id.",
+      "file_id": "The file's id, from list_model_files."
+    }
+  },
+  {
+    "name": "rename_model_file",
+    "title": "Rename a model file",
+    "description": "Rename one of a model's plates (its 3D files), by its id from list_model_files. A name another plate has gets a number added; the extension should stay the same.",
+    "inputs": {
+      "model_id": "The model's id.",
+      "file_id": "The plate's id, from list_model_files.",
+      "name": "Its new name with its extension, e.g. bracket-left.stl."
+    }
+  }
+]
