@@ -292,7 +292,8 @@ export default function SupportingFileViewer({
               px: 1,
               py: 0.75,
               maxWidth: narrow ? 220 : "none",
-              borderRadius: "10px",
+              // The theme's corners: square in the dark theme.
+              borderRadius: 1,
               justifyContent: "flex-start",
               textAlign: "left",
               bgcolor: current ? "action.selected" : "transparent",
@@ -344,7 +345,7 @@ export default function SupportingFileViewer({
             px: 0.75,
             minWidth: 20,
             height: 20,
-            borderRadius: "10px",
+            borderRadius: 1,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
