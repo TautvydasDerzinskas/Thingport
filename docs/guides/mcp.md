@@ -100,6 +100,10 @@ them, `studio_create_design` and `studio_delete_design`, and one tool for each s
 piece of a model of several its own body. It's off for a new token. They change only your Studio designs,
 never your models.
 
+The permission stays one: a token with it gets every Studio tool, including ones a later version of Thingport adds,
+without turning it on again. Turned on while an admin lets MCP only read, it gives Studio's reading tools, and the ones
+that change a design wait until you turn it on again with read and change allowed.
+
 To open a large 3MF one plate at a time, set `defer_plates: true` in `studio_import_model` on a new design.
 The result includes `pending_plate_ids`, and `studio_get_design` marks those plates with `pending_import`.
 Call `studio_load_source_plate` with the `plate_id` before viewing or editing that plate's bodies. Load all pending

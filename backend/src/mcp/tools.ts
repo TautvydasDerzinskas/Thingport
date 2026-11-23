@@ -1639,3 +1639,50 @@ export function mcpToolCatalog(access: McpAccess) {
 export const DEFAULT_MCP_TOOL_NAMES = MCP_TOOLS.filter(
   (tool) => tool.group !== "studio" && (tool.readOnly || tool.defaultOn),
 ).map((tool) => tool.name);
+
+// Studio's tools are one permission, so a token keeps it as one grant that means its tools as they are now, a step
+// added later included, rather than the list there was when it was ticked. Turned on while the instance's MCP access
+// offered only reading, it's the read grant: Studio's tools that only read, until it's turned on again for the rest.
+export const STUDIO_GRANT = "group:studio";
+export const STUDIO_READ_GRANT = "group:studio-read";
+const STUDIO_TOOLS = MCP_TOOLS.filter((tool) => tool.group === "studio");
+const STUDIO_WRITES = new Set(STUDIO_TOOLS.filter((tool) => !tool.readOnly).map((tool) => tool.name));
+const STUDIO_ENTRIES = new Set([STUDIO_GRANT, STUDIO_READ_GRANT, ...STUDIO_TOOLS.map((tool) => tool.name)]);
+const isStudioEntry = (name: string) => STUDIO_ENTRIES.has(name) || name.startsWith("studio_");
+
+/** A token's tools as they're stored: Studio's, named one by one or as its grant, become the one grant. A Studio tool
+ *  that changes a design makes it the whole grant. */
+export function storedMcpTools(names: readonly string[]): string[] {
+  const rest = [...new Set(names.filter((name) => !isStudioEntry(name)))];
+  const studio = names.filter(isStudioEntry);
+  if (!studio.length) return rest;
+  const writes = studio.some((name) => name === STUDIO_GRANT || STUDIO_WRITES.has(name));
+  return [...rest, writes ? STUDIO_GRANT : STUDIO_READ_GRANT];
+}
+
+/** The tools a token's stored list gives it, by name: Studio's grant as every Studio tool there is now (only those that
+ *  read, for the read grant). A list stored before the grant, which names Studio's tools one by one, gives them all the
+ *  same way. */
+export function grantedMcpTools(stored: readonly string[]): string[] {
+  const kept = storedMcpTools(stored);
+  const granted = kept.filter((name) => name !== STUDIO_GRANT && name !== STUDIO_READ_GRANT);
+  if (kept.includes(STUDIO_GRANT)) granted.push(...STUDIO_TOOLS.map((tool) => tool.name));
+  else if (kept.includes(STUDIO_READ_GRANT))
+    granted.push(...STUDIO_TOOLS.filter((tool) => tool.readOnly).map((tool) => tool.name));
+  return granted;
+}
+
+/** What a token's tools become when its user saves the ones the instance's access offers: the chosen ones, plus those
+ *  the access hides, which keep their tick. Studio stays one choice: still on, it keeps the whole grant even while the
+ *  access shows only its reading tools; turned off, it's off whatever the access hides. */
+export function mergeMcpTools(
+  stored: readonly string[],
+  chosen: readonly string[],
+  offered: ReadonlySet<string>,
+): string[] {
+  const hidden = stored.filter((name) => !isStudioEntry(name) && !offered.has(name));
+  const next = storedMcpTools([...chosen, ...hidden]);
+  if (next.includes(STUDIO_READ_GRANT) && storedMcpTools(stored).includes(STUDIO_GRANT))
+    return next.map((name) => (name === STUDIO_READ_GRANT ? STUDIO_GRANT : name));
+  return next;
+}

@@ -8,7 +8,16 @@ import type { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { PENDING_STORAGE_PATH } from "../src/modelFiles/pending";
-import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
+import {
+  DEFAULT_MCP_TOOL_NAMES,
+  grantedMcpTools,
+  MCP_TOOLS,
+  mcpImportTiming,
+  mergeMcpTools,
+  STUDIO_GRANT,
+  STUDIO_READ_GRANT,
+  storedMcpTools,
+} from "../src/mcp/tools";
 import { setMcpAccess } from "../src/services/settingsService";
 
 // /api/mcp end to end: who gets in, which tools each token sees, and that every tool only ever
@@ -1064,5 +1073,102 @@ describe("the instance's MCP access", () => {
     const names = await toolNames(writer.token);
     for (const tool of WRITE_TOOLS) expect(names).toContain(tool);
     expect(names).not.toContain("library_stats");
+  });
+});
+
+describe("Studio's one permission", () => {
+  const studio = MCP_TOOLS.filter((tool) => tool.group === "studio");
+  const STUDIO_NAMES = studio.map((tool) => tool.name);
+  const STUDIO_READS = studio.filter((tool) => tool.readOnly).map((tool) => tool.name);
+  let user: Account;
+  const stored = async () =>
+    (await prisma.user.findUniqueOrThrow({ where: { id: user.userId }, select: { apiTokenMcpTools: true } }))
+      .apiTokenMcpTools;
+  const store = (tools: string[]) =>
+    prisma.user.update({ where: { id: user.userId }, data: { apiTokenMcpTools: tools } });
+  const offeredNames = async () =>
+    (await request(app).get("/api/profile/api-token").set(auth(user.session))).body.available_mcp_tools.map(
+      (tool: { name: string }) => tool.name,
+    ) as string[];
+  const save = (tools: string[]) =>
+    request(app).put("/api/profile/api-token/mcp-tools").set(auth(user.session)).send({ mcp_tools: tools });
+
+  beforeAll(async () => {
+    const registered = await register("studio-grant");
+    user = { ...registered, token: await apiToken(registered.session) };
+  });
+  afterEach(() => setMcpAccess("write"));
+
+  it("is stored as one grant, which stands for Studio's tools as they are now", () => {
+    expect(storedMcpTools(["library_stats", "studio_get_design", "studio_add_box"])).toEqual([
+      "library_stats",
+      STUDIO_GRANT,
+    ]);
+    expect(storedMcpTools(["studio_get_design"])).toEqual([STUDIO_READ_GRANT]);
+    expect(storedMcpTools(["library_stats"])).toEqual(["library_stats"]);
+    expect(grantedMcpTools(["library_stats", STUDIO_GRANT]).toSorted()).toEqual(
+      ["library_stats", ...STUDIO_NAMES].toSorted(),
+    );
+    expect(grantedMcpTools([STUDIO_READ_GRANT]).toSorted()).toEqual(STUDIO_READS.toSorted());
+    // A tool that's no longer there, from a list stored long ago, is still read as Studio's.
+    expect(grantedMcpTools(["studio_add_box", "studio_retired_tool"])).toEqual(STUDIO_NAMES);
+    const readOffer = new Set([...READ_TOOL_NAMES, ...STUDIO_READS]);
+    expect(mergeMcpTools([STUDIO_GRANT, "import_model"], [...STUDIO_READS], readOffer)).toEqual([
+      "import_model",
+      STUDIO_GRANT,
+    ]);
+    expect(mergeMcpTools([STUDIO_GRANT, "import_model"], ["library_stats"], readOffer)).toEqual([
+      "library_stats",
+      "import_model",
+    ]);
+  });
+
+  it("gives a token ticked before newer Studio tools existed every Studio tool there is now", async () => {
+    // How a token kept the permission before: the Studio tools there were when it was ticked, by name.
+    await store([...DEFAULT_MCP_TOOL_NAMES, "studio_get_design", "studio_add_box"]);
+    const names = await toolNames(user.token);
+    for (const name of STUDIO_NAMES) expect(names).toContain(name);
+    expect(names).toEqual(expect.arrayContaining(["studio_move_plate", "studio_set_plate_visibility"]));
+    const call = await callTool(user.token, "studio_list_designs");
+    expect(call.isError).toBe(false);
+
+    // The profile page sees every Studio tool ticked, so its switch is on; saving keeps the one grant.
+    const profile = await request(app).get("/api/profile/api-token").set(auth(user.session));
+    expect(profile.body.mcp_tools).toEqual(expect.arrayContaining(STUDIO_NAMES));
+    expect((await save(profile.body.mcp_tools)).status).toBe(200);
+    const kept = await stored();
+    expect(kept).toContain(STUDIO_GRANT);
+    expect(kept.filter((name) => name.startsWith("studio_"))).toEqual([]);
+
+    // Off is off.
+    expect((await save(DEFAULT_MCP_TOOL_NAMES)).body.mcp_tools.some((name: string) => name.startsWith("studio_"))).toBe(
+      false,
+    );
+    expect(await stored()).not.toContain(STUDIO_GRANT);
+  });
+
+  it("turned on while MCP only reads, gives Studio's reading tools and nothing that changes a design", async () => {
+    await store(DEFAULT_MCP_TOOL_NAMES);
+    await setMcpAccess("read");
+    expect((await save(await offeredNames())).status).toBe(200);
+    expect(await stored()).toContain(STUDIO_READ_GRANT);
+    await setMcpAccess("write");
+    const names = await toolNames(user.token);
+    expect(names).toContain("studio_get_design");
+    expect(names).not.toContain("studio_add_box");
+  });
+
+  it("keeps a whole grant through a save while MCP only reads, and turns off there too", async () => {
+    await store([...DEFAULT_MCP_TOOL_NAMES, STUDIO_GRANT]);
+    await setMcpAccess("read");
+    const offered = await offeredNames();
+    expect((await save(offered.filter((name) => name !== "library_stats"))).status).toBe(200);
+    expect(await stored()).toContain(STUDIO_GRANT);
+    await setMcpAccess("write");
+    expect(await toolNames(user.token)).toContain("studio_add_box");
+
+    await setMcpAccess("read");
+    expect((await save(offered.filter((name) => !name.startsWith("studio_")))).status).toBe(200);
+    expect((await stored()).some((name) => name.startsWith("group:studio") || name.startsWith("studio_"))).toBe(false);
   });
 });

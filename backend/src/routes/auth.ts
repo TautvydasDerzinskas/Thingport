@@ -22,7 +22,15 @@ import {
   setApiTokenRestScopes,
 } from "../services/apiTokenService";
 import { API_TOKEN_SCOPE_IDS, DEFAULT_API_TOKEN_SCOPE_IDS, apiTokenScopeCatalog } from "../services/apiTokenScopes";
-import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOL_NAMES, mcpToolCatalog, mcpToolsFor } from "../mcp/tools";
+import {
+  DEFAULT_MCP_TOOL_NAMES,
+  grantedMcpTools,
+  MCP_TOOL_NAMES,
+  mcpToolCatalog,
+  mcpToolsFor,
+  mergeMcpTools,
+  storedMcpTools,
+} from "../mcp/tools";
 import { getMcpAccess, type McpAccess } from "../services/settingsService";
 import { toUserOut } from "../dto";
 import { endOtherSessions, endSession, refreshSession, startSession } from "../services/sessionService";
@@ -412,10 +420,12 @@ router.patch(
 
 // The API token itself is only in the response that generates it; this shows which one is in use.
 // Generating and revoking can't be done with the token itself: requireAuth lets it only read.
-/** The token with what it can be allowed: the REST scopes, and what the instance's MCP access offers. */
-function withMcpCatalog<T>(token: T, access: McpAccess) {
+/** The token with what it can be allowed: the REST scopes, and what the instance's MCP access offers. Its tools are the
+ *  ones it's given now, Studio's grant as each of Studio's tools, as the profile page ticks them. */
+function withMcpCatalog<T extends { mcp_tools: string[] }>(token: T, access: McpAccess) {
   return {
     ...token,
+    mcp_tools: grantedMcpTools(token.mcp_tools),
     available_rest_scopes: apiTokenScopeCatalog(),
     mcp_access: access,
     available_mcp_tools: mcpToolCatalog(access),
@@ -460,7 +470,7 @@ router.post(
     if (body.mcp_tools) assertMcpToolsOffered(body.mcp_tools, access);
     const token = await generateApiToken(
       req.userId!,
-      body.mcp_tools ?? DEFAULT_MCP_TOOL_NAMES,
+      storedMcpTools(body.mcp_tools ?? DEFAULT_MCP_TOOL_NAMES),
       body.rest_scopes ?? DEFAULT_API_TOKEN_SCOPE_IDS,
     );
     res.json(withMcpCatalog(token, access));
@@ -482,8 +492,8 @@ router.put(
     assertMcpToolsOffered(body.mcp_tools, access);
     // Tools the access hides keep their tick, so turning MCP back to read and change restores them.
     const offered = new Set(mcpToolsFor(access).map((tool) => tool.name));
-    const hidden = (await getApiToken(req.userId!)).mcp_tools.filter((name) => !offered.has(name));
-    const token = await setApiTokenMcpTools(req.userId!, [...body.mcp_tools, ...hidden]);
+    const stored = (await getApiToken(req.userId!)).mcp_tools;
+    const token = await setApiTokenMcpTools(req.userId!, mergeMcpTools(stored, body.mcp_tools, offered));
     res.json(withMcpCatalog(token, access));
     void createLog({
       userId: req.userId!,
