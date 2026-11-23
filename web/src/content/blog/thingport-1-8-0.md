@@ -160,9 +160,11 @@ languages.
 
 ## Thank you
 
-This release is mostly yours: it fixes what you reported, builds what you asked for, and speaks German thanks to a
-whole translation. Thanks to [CandidB](https://github.com/CandidB), [gearaddict](https://github.com/gearaddict),
-[joriswill](https://github.com/joriswill), who translated Thingport into German,
+Thanks to [joriswill](https://github.com/joriswill) for the code in this release: the pull request that started
+Thingport's German translation, which every change since has kept up to date.
+
+And thanks to everyone whose reports and requests made it into 1.8.0: [CandidB](https://github.com/CandidB),
+[gearaddict](https://github.com/gearaddict), [joriswill](https://github.com/joriswill),
 [pleasantone](https://github.com/pleasantone), [roadkingvrod](https://github.com/roadkingvrod),
 [SeoliteQ](https://github.com/SeoliteQ), [slewantoski](https://github.com/slewantoski) and
 [tecbeat](https://github.com/tecbeat)! Keep them coming: the
