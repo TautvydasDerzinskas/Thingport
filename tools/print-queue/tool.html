@@ -168,6 +168,32 @@
     color: var(--tp-text-muted);
     font-size: 12px;
   }
+  .pq-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px;
+    border: 1.5px dashed color-mix(in srgb, var(--tp-text) 24%, transparent);
+    border-radius: 8px;
+    color: var(--tp-text-muted);
+    transition:
+      border-color 150ms,
+      color 150ms,
+      background-color 150ms;
+  }
+  .pq-add:hover {
+    border-color: var(--tp-accent);
+    color: var(--tp-accent);
+    background: color-mix(in srgb, var(--tp-accent) 6%, transparent);
+  }
+  .pq-add svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
   .pq-card {
     position: relative;
     display: flex;
@@ -186,6 +212,22 @@
   }
   .pq-card.pq-dragging {
     opacity: 0.45;
+  }
+  .pq-card[data-pq-drop]::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset-inline: 3px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--tp-accent);
+    pointer-events: none;
+  }
+  .pq-card[data-pq-drop="before"]::after {
+    top: -5px;
+  }
+  .pq-card[data-pq-drop="after"]::after {
+    bottom: -5px;
   }
   .pq-card.pq-removing {
     opacity: 0.45;
@@ -340,20 +382,6 @@
     border-top: 1px solid var(--tp-divider);
     margin: 6px 0;
   }
-  .pq-empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    text-align: center;
-    color: var(--tp-text-muted);
-  }
-  .pq-empty b {
-    color: var(--tp-text);
-    font-size: 14px;
-  }
   .pq-skeleton {
     height: 54px;
     border-radius: 8px;
@@ -425,9 +453,5 @@
       </h3>
       <ol class="pq-list"></ol>
     </section>
-  </div>
-  <div class="pq-empty" id="pq-empty" hidden>
-    <b data-t="board.emptyTitle">Nothing in the queue yet</b>
-    <span data-t="board.emptyHint">On a model's page, pick Add to print queue.</span>
   </div>
 </div>

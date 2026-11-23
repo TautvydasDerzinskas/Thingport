@@ -148,12 +148,14 @@ describe("metadata", () => {
         commands: [
           { id: "queue", title: "Add to queue", window: false },
           { id: "estimate", title: "Estimate", on: "file", fileTypes: ["STL", "gcode.3mf"] },
+          { id: "batch", title: "Process selection", on: "selection", window: false },
         ],
       }),
     );
     expect(commands).toEqual([
       { id: "queue", title: "Add to queue", on: "model", window: false },
       { id: "estimate", title: "Estimate", on: "file", fileTypes: ["stl", "gcode.3mf"], window: true },
+      { id: "batch", title: "Process selection", on: "selection", window: false },
     ]);
   });
 
@@ -172,6 +174,21 @@ describe("metadata", () => {
       /without the dot/,
     );
     expect(() => parseToolManifest(manifest([{ id: "a", title: "A", fileTypes: ["stl"] }]))).toThrow(/on: "file"/);
+  });
+
+  it("takes one-colour symbols only as inline SVGs", () => {
+    const svg = "data:image/svg+xml;charset=utf-8,%3Csvg%2F%3E";
+    const parsed = parseToolManifest(
+      JSON.stringify({ name: "x", symbol: svg, commands: [{ id: "a", title: "A", symbol: svg }] }),
+    );
+    expect(parsed.symbol).toBe(svg);
+    expect(parsed.commands[0].symbol).toBe(svg);
+    expect(() => parseToolManifest(JSON.stringify({ name: "x", symbol: "https://example.com/a.svg" }))).toThrow(
+      /data: URL/,
+    );
+    expect(() =>
+      parseToolManifest(JSON.stringify({ name: "x", commands: [{ id: "a", title: "A", symbol: "builtin:x/y" }] })),
+    ).toThrow(/data: URL/);
   });
 
   it("takes the parts of a model's page it draws", () => {

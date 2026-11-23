@@ -52,7 +52,11 @@ export function isJob(value) {
 export function moved(job, status, now = new Date()) {
   const at = now.toISOString();
   // Back in the queue: at its end, as though queued now.
-  if (status === "queued") return { ...job, status, queuedAt: at, startedAt: null, finishedAt: null };
+  if (status === "queued") {
+    const queued = { ...job, status, queuedAt: at, startedAt: null, finishedAt: null };
+    delete queued.queueOrder;
+    return queued;
+  }
   if (status === "printing") return { ...job, status, startedAt: at, finishedAt: null };
   return { ...job, status, finishedAt: at };
 }
@@ -90,20 +94,55 @@ export function chipsOf(entries) {
     .toSorted((a, b) => Number(b.mine) - Number(a.mine) || (a.user?.name ?? "").localeCompare(b.user?.name ?? ""));
 }
 
-/** Shared entries that are jobs, with each one's user, in the board's columns: the queue oldest first, as it's worked
- *  through, and the rest newest first. `who` keeps only one person's, by id. */
+function queuePosition(entry) {
+  const order = entry.value.queueOrder;
+  const placed = typeof order?.date === "string" && typeof order.index === "string" && /^\d+$/.test(order.index);
+  // Equal dates and simultaneous moves still have a stable order. The final nonzero digit leaves room to insert
+  // before any position, even when its index starts with several zeroes.
+  const id = `${entry.user?.id ?? ""}/${entry.key}`;
+  const tie = id
+    .split("")
+    .map((char) => String(char.charCodeAt(0)).padStart(5, "0"))
+    .join("");
+  return { date: placed ? order.date : entry.value.queuedAt, index: `${placed ? order.index : "5"}${tie}1` };
+}
+
+// Decimal strings compared as text. Extend the index when two neighbours leave no gap at the current digit.
+function indexBetween(after, before) {
+  let index = "";
+  for (let i = 0; ; i++) {
+    const low = Number(after[i] ?? "0");
+    const high = before ? Number(before[i] ?? "0") : 10;
+    if (high - low > 1) return index + Math.floor((low + high) / 2);
+    index += low;
+    if (low < high) before = "";
+  }
+}
+
+/** A position before `next`, or at the end when dropped after every card. A move updates just one owner's job. */
+export function queueOrderAt(queue, entry, next) {
+  const at = next ? queue.indexOf(next) : queue.length;
+  const previous = queue[at - 1];
+  if (at < 0 || entry === next || entry === previous || (!previous && !next)) return null;
+  const upper = next && queuePosition(next);
+  const lower = previous && queuePosition(previous);
+  const date = upper?.date ?? lower.date;
+  if (lower?.date === date && lower.index === upper?.index) return null;
+  return { date, index: indexBetween(lower?.date === date ? lower.index : "", upper?.index ?? "") };
+}
+
+/** The queue follows the added date until cards are moved. Other columns show the latest status changes first. */
 export function columns(entries, who = null) {
   const jobs = entries.filter((entry) => entry.key.startsWith(JOB) && isJob(entry.value));
   const mine = who ? jobs.filter((entry) => entry.user?.id === who) : jobs;
   return Object.fromEntries(
     STATUSES.map((status) => {
       const here = mine.filter((entry) => entry.value.status === status);
-      here.sort((a, b) =>
-        status === "queued"
-          ? a.value.queuedAt.localeCompare(b.value.queuedAt)
-          : statusDate(b.value).localeCompare(statusDate(a.value)),
-      );
-      return [status, here];
+      if (status !== "queued")
+        return [status, here.sort((a, b) => statusDate(b.value).localeCompare(statusDate(a.value)))];
+      const ranked = here.map((entry) => ({ entry, ...queuePosition(entry) }));
+      ranked.sort((a, b) => a.date.localeCompare(b.date) || (a.index < b.index ? -1 : Number(a.index > b.index)));
+      return [status, ranked.map(({ entry }) => entry)];
     }),
   );
 }

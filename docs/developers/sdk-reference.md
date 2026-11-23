@@ -738,11 +738,11 @@ thingport.ui.toast(message: string, severity?: SdkSeverity, options?: SdkToastOp
 
 Shows a short message in Thingport's own toast.
 
-| Parameter  | What it is                                                                           |
-| ---------- | ------------------------------------------------------------------------------------ |
-| `message`  | What to say.                                                                         |
-| `severity` | How it looks: `"info"` when left out.                                                |
-| `options`  | `openModel`: a model's id, for an Open button on the toast that leaves for its page. |
+| Parameter  | What it is                                                                                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `message`  | What to say.                                                                                                                                                                    |
+| `severity` | How it looks: `"info"` when left out.                                                                                                                                           |
+| `options`  | `openModel`: a model's id, for an Open button on the toast that leaves for its page. A tool can instead supply `openWindow` with the label for a button opening its own window. |
 
 See [`SdkSeverity`](#sdkseverity), [`SdkToastOptions`](#sdktoastoptions).
 
@@ -800,6 +800,28 @@ The same dialog as `collections.pick`.
 **Returns:** The collection, or `null` when the user cancels.
 
 See [`SdkCollection`](#sdkcollection).
+
+#### `ui.pickModels(options?)`
+
+_Tools only_
+
+```ts
+thingport.ui.pickModels(options?: { title?: string; confirmLabel?: string; max?: number }): Promise<SdkModel[]>
+```
+
+Thingport's model picker: the user's own models, newest first, found as they type.
+
+| Parameter | What it is                                                                                                                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `options` | `title`: what the dialog asks. `confirmLabel`: its button, which shows the count after it. `max`: how many can be picked, 1 to 100, 20 when left out; with 1, a click picks straight away. |
+
+**Returns:** The picked models in the order they were picked, or an empty array when the user cancels.
+
+See [`SdkModel`](#sdkmodel).
+
+```js
+const picked = await thingport.ui.pickModels({ title: t("add.title"), confirmLabel: t("add.confirm") });
+```
 
 #### `ui.close()`
 
@@ -1211,10 +1233,16 @@ See [`SdkPerson`](#sdkperson).
 _Tools only_
 
 ```ts
-thingport.context: { modelId?: string; fileId?: string; command?: string; place?: "info" | "tab" | "image" }
+thingport.context: {
+    modelId?: string;
+    modelIds?: readonly string[];
+    fileId?: string;
+    command?: string;
+    place?: "info" | "tab" | "image";
+  }
 ```
 
-What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`, the file picked there, one of the model's `files`. A command with `window: false` gets the same, in its `run`. A part of a model's page (`modelPage` in the metadata) gets `modelId`, `fileId`, the file picked on the page, and `place`: `"info"`, `"tab"` or `"image"`. The part is drawn again when another file is picked.
+What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`, the file picked there, one of the model's `files`. A command `on: "selection"` gets `modelIds`, the selected models in grid order when the action was picked. A command with `window: false` gets its context in `run`. A part of a model's page (`modelPage` in the metadata) gets `modelId`, `fileId`, the file picked on the page, and `place`: `"info"`, `"tab"` or `"image"`. The part is drawn again when another file is picked.
 
 ```js
 const { command, modelId, fileId } = thingport.context;
@@ -1366,17 +1394,17 @@ await thingport.shared.set(`job:${id}`, job, { model: modelId });
 #### `shared.replace(previous, next)`
 
 ```ts
-thingport.shared.replace(previous: { key: string; store: "storage" | "shared"; value: unknown }, next: { key: string; store: "storage" | "shared"; value: unknown; model?: string }): Promise<boolean>
+thingport.shared.replace(previous: { key: string; store: "storage" | "shared"; value: unknown }, next: { key: string; store: "storage" | "shared"; value: unknown; model?: string } | null): Promise<boolean>
 ```
 
 Replaces one of the user's existing entries if its value still matches. Changing its key or store moves it atomically, with the destination store's normal limits. An occupied destination is left alone. Available for saved tools.
 
-| Parameter  | What it is                                                                      |
-| ---------- | ------------------------------------------------------------------------------- |
-| `previous` | The entry the user read, including its original JSON value.                     |
-| `next`     | Where to keep the new value. A shared entry can name a model the user can open. |
+| Parameter  | What it is                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------------- |
+| `previous` | The entry the user read, including its original JSON value.                                                    |
+| `next`     | Where to keep the new value, or `null` to delete the entry. A shared entry can name a model the user can open. |
 
-**Returns:** Whether the replacement was made. If the source is gone, has changed, or the move's destination is occupied, returns `false`.
+**Returns:** Whether the change succeeded. If the source is gone, has changed, or the move's destination is occupied, returns `false`.
 
 #### `shared.remove(key)`
 
@@ -1714,9 +1742,10 @@ type SdkSeverity = "success" | "info" | "warning" | "error";
 
 What a toast can carry besides its message.
 
-| Field        | Type     | What it is                                                                                                                                                                                                                                                                      |
-| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `openModel?` | `string` | A model's id: the toast gets an Open button that leaves for the model's page, as `ui.openModel` does, and stays up longer so it can be reached. Pass it whenever the toast says a model was saved or changed. An older Thingport instance shows the message without the button. |
+| Field         | Type     | What it is                                                                                                                                                                                                                                                                      |
+| ------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openModel?`  | `string` | A model's id: the toast gets an Open button that leaves for the model's page, as `ui.openModel` does, and stays up longer so it can be reached. Pass it whenever the toast says a model was saved or changed. An older Thingport instance shows the message without the button. |
+| `openWindow?` | `string` | Label for a button opening the calling tool's window. Available from its commands and model page parts.                                                                                                                                                                         |
 
 ### `SdkToolModel`
 

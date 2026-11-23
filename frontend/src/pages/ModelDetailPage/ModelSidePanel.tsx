@@ -210,8 +210,10 @@ export default function ModelSidePanel({
   const sendTo = useSendTo(print.id, selectedFile, onUnauthorized);
   // What the installed tools offer to do with it, on the picked file where a command takes one.
   const toolCommands = useToolCommands(
-    print.id,
-    selectedFile ? { filename: selectedFile.filename, plateId: selectedFile.plate?.id ?? null } : null,
+    {
+      modelId: print.id,
+      file: selectedFile ? { filename: selectedFile.filename, plateId: selectedFile.plate?.id ?? null } : null,
+    },
     onUnauthorized,
   );
 

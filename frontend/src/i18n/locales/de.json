@@ -3971,6 +3971,9 @@
         "cancel": "Abbrechen",
         "choose": "Wählen"
       },
+      "modelPicker": {
+        "title": "Modelle wählen"
+      },
       "ai": {
         "or": "oder",
         "open": "KI verwenden",

@@ -148,6 +148,22 @@ describe("shared entries", () => {
     expect(await list(son)).toHaveLength(1);
   });
 
+  it("conditionally deletes only an unchanged entry owned by the caller", async () => {
+    writeRepo();
+    toolId = await install();
+    const previous = { key: "job:1", store: "shared", value: { status: "queued" } };
+    const remove = (person: Person) =>
+      request(app).post(`/api/tools/${toolId}/replace-entry`).set(auth(person.token)).send({ previous, next: null });
+
+    expect((await share(dad, previous.key, previous)).status).toBe(204);
+    expect((await remove(son)).status).toBe(409);
+    expect((await share(dad, previous.key, { value: { status: "printing" } })).status).toBe(204);
+    expect((await share(son, previous.key, previous)).status).toBe(204);
+    expect((await remove(dad)).status).toBe(409);
+    expect((await remove(son)).status).toBe(204);
+    expect(await list(dad)).toMatchObject([{ mine: true, value: { status: "printing" } }]);
+  });
+
   it("are read by everyone who uses the tool, and changed only by whoever wrote them", async () => {
     writeRepo();
     toolId = await install();

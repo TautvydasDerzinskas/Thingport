@@ -4249,6 +4249,9 @@
         "cancel": "Atšaukti",
         "choose": "Pasirinkti"
       },
+      "modelPicker": {
+        "title": "Pasirinkite modelius"
+      },
       "ai": {
         "or": "arba",
         "open": "Pasitelk AI",

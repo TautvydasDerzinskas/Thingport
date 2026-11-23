@@ -56,8 +56,8 @@ export type ToolUi = SdkToolUi;
 export const toCollection = toSdkCollection;
 
 /** What a tool was opened on, where it was opened from something rather than from the Tools page: a model, and from
- *  one of its commands, which one and the file it was picked on; or, for a part of a model's page, which part. */
-export type ToolContext = { modelId?: string; fileId?: string; command?: string; place?: ModelPagePlace };
+ *  one of its commands, which one and what was selected; or, for a part of a model's page, which part. */
+export type ToolContext = ToolSdk["context"];
 
 /** Where on a model's page a tool draws a part, and the export that draws it. */
 export type ModelPagePlace = "info" | "tab" | "image";
@@ -154,7 +154,7 @@ export function buildToolSdk({
       ? async (previous, next) => {
           const id = saved("thingport.shared");
           const replaced = await toolsApi.replaceEntry(id, previous, next);
-          if (replaced && (previous.store === "shared" || next.store === "shared")) toolSharedChanged(id);
+          if (replaced && (previous.store === "shared" || next?.store === "shared")) toolSharedChanged(id);
           return replaced;
         }
       : undefined,

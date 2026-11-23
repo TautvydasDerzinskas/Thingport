@@ -26,6 +26,9 @@ export type ToolManifest = {
   description: string;
   /** As a widget's: one of Thingport's icons (`builtin:…`), an uploaded one (`/api/icons/…`) or an image address. */
   iconUrl?: string;
+  /** A one-colour SVG as a `data:` URL, tinted like Thingport's own icons where the tool's commands sit among
+   *  them: a grid's selection toolbar. */
+  symbol?: string;
   version: string;
   author?: string;
   authorUrl?: string;
@@ -41,24 +44,27 @@ export type ToolManifest = {
   collection?: { name: string; description?: string; models: ToolModelSpec[] };
   /** The languages it has labels for, as `locales/<code>.json` beside tool.json. */
   locales?: string[];
-  /** What it offers to do with a model, from the model page's main button menu. */
+  /** Actions for the model page and the grid selection toolbar. */
   commands?: ToolCommand[];
   /** Parts of every model's page it draws itself: in the info box, a tab of the description box, and the picture's
    *  top right corner. */
   modelPage?: { info?: boolean; tab?: { title: string }; image?: boolean };
 };
 
-/** Something a tool offers to do with a model, listed on the model page without the tool running. Its title
+/** An action contributed by a tool to a model page or a grid's selection toolbar. Its title
  *  translates through the tool's labels, as `commands.<id>`. */
 export type ToolCommand = {
   id: string;
   title: string;
-  /** "file": the file picked on the model page, as `thingport.context.fileId`; "model": the model as a whole. */
-  on: "model" | "file";
+  /** The model, the file picked on its page, or the models selected in a grid. */
+  on: "model" | "file" | "selection";
   /** The file types a "file" command takes, without the dot; any when left out. */
   fileTypes?: string[];
   /** False for one the tool's `run` export does without opening its window. */
   window: boolean;
+  /** Its own one-colour SVG, as the tool's `symbol`, for its menu item and for its button when it's the tool's only
+   *  selection command. */
+  symbol?: string;
 };
 
 /** Another of the instance's users as a tool shows them: a name and an avatar, never an email. */

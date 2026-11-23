@@ -35,6 +35,9 @@ import BulkEditCollectionsDialog from "./BulkEditCollectionsDialog";
 import BulkEditTagsDialog from "./BulkEditTagsDialog";
 import MergeModelsDialog from "./MergeModelsDialog";
 import SelectionToolbar, { SelectionAction } from "../selection/SelectionToolbar";
+import ToolSymbol from "../tools/ToolSymbol";
+import type { OfferedCommand } from "../tools/toolCommands";
+import { useToolCommands } from "../tools/useToolCommands";
 
 type Props = {
   selection: ModelSelection;
@@ -87,6 +90,8 @@ export default function ModelSelectionToolbar({
   const [aiEnabled, setAiEnabled] = useState(false);
   const [descriptionsEnabled, setDescriptionsEnabled] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
+  const [runningTool, setRunningTool] = useState<string | null>(null);
+  const [toolMenu, setToolMenu] = useState<{ id: string; anchor: HTMLElement } | null>(null);
   const [aiMenuAnchor, setAiMenuAnchor] = useState<HTMLElement | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
@@ -97,9 +102,22 @@ export default function ModelSelectionToolbar({
   const disabledProviders = useDisabledProviders();
   const { active, selected } = selection;
   const ids = selected.map((item) => item.id);
+  const toolCommands = useToolCommands({ modelIds: active ? ids : [] }, onUnauthorized);
   const count = ids.length;
   const allFavorite = count > 0 && selected.every((item) => item.is_favorite);
-  const disabled = count === 0 || busy !== null;
+  const actionRunning = busy !== null || runningTool !== null;
+  const disabled = count === 0 || actionRunning;
+  const commandsByTool = new Map<string, OfferedCommand[]>();
+  for (const offered of toolCommands.commands) {
+    const group = commandsByTool.get(offered.tool.id);
+    if (group) group.push(offered);
+    else commandsByTool.set(offered.tool.id, [offered]);
+  }
+  const menuCommands = toolMenu && !disabled ? commandsByTool.get(toolMenu.id) : undefined;
+  const toolMenuOpen = Boolean(menuCommands);
+  useEffect(() => {
+    if (!toolMenuOpen) setToolMenu(null);
+  }, [toolMenuOpen]);
   // An AI run is one request, so unlike delete and favourite it can't be split.
   const tooManyForAi = count > BULK_LIMIT;
   // Models a tool brought can be favourited, downloaded and put in collections, but not changed: with any of them
@@ -279,12 +297,48 @@ export default function ModelSelectionToolbar({
 
   const favoriteLabel = allFavorite ? t("models:detail.removeFromFavorites") : t("models:detail.addToFavorites");
 
+  const runTool = async (offered: OfferedCommand) => {
+    setToolMenu(null);
+    setRunningTool(offered.tool.id);
+    try {
+      await toolCommands.run(offered);
+    } finally {
+      setRunningTool(null);
+    }
+  };
+
+  // A tool's own symbol for its button; one command alone may bring its own.
+  const symbolFor = (offered: OfferedCommand, alone: boolean) => (
+    <ToolSymbol
+      symbol={(alone ? offered.command.symbol : undefined) ?? offered.tool.manifest.symbol}
+      iconUrl={offered.tool.manifest.iconUrl}
+    />
+  );
+
+  const toolActions = [...commandsByTool].map(([id, commands]) => {
+    const [first] = commands;
+    const hasMenu = commands.length > 1;
+    return (
+      <SelectionAction
+        key={id}
+        label={hasMenu ? first.tool.manifest.name : first.label}
+        menuOpen={hasMenu ? toolMenu?.id === id : undefined}
+        icon={runningTool === id ? <CircularProgress size={18} /> : symbolFor(first, !hasMenu)}
+        disabled={disabled}
+        onClick={(event) => {
+          if (hasMenu) setToolMenu({ id, anchor: event.currentTarget });
+          else void runTool(first);
+        }}
+      />
+    );
+  });
+
   return (
     <SelectionToolbar
       selection={selection}
       total={total}
       hasMore={hasMore}
-      busy={busy !== null}
+      busy={actionRunning}
       labels={{
         enter: t("models:selection.enter"),
         exit: t("models:selection.exit"),
@@ -293,6 +347,22 @@ export default function ModelSelectionToolbar({
       }}
       dialogs={
         <>
+          {toolCommands.element}
+          {toolMenu && menuCommands && (
+            <Menu
+              anchorEl={toolMenu.anchor}
+              open
+              onClose={() => setToolMenu(null)}
+              slotProps={{ list: { "aria-label": menuCommands[0].tool.manifest.name } }}
+            >
+              {menuCommands.map((offered) => (
+                <MenuItem key={offered.key} onClick={() => void runTool(offered)}>
+                  <ListItemIcon>{symbolFor(offered, true)}</ListItemIcon>
+                  <ListItemText>{offered.label}</ListItemText>
+                </MenuItem>
+              ))}
+            </Menu>
+          )}
           <Menu anchorEl={aiMenuAnchor} open={Boolean(aiMenuAnchor)} onClose={() => setAiMenuAnchor(null)}>
             {aiEnabled && (
               <MenuItem onClick={() => void categorize()} disabled={categorization.running || tooManyForAi}>
@@ -436,6 +506,7 @@ export default function ModelSelectionToolbar({
           (e) => setAiMenuAnchor(e.currentTarget),
           toolHint,
         )}
+      {toolActions}
     </SelectionToolbar>
   );
 }

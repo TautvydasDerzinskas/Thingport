@@ -253,6 +253,8 @@ export interface SdkToastOptions {
    * instance shows the message without the button.
    */
   openModel?: string;
+  /** Label for a button opening the calling tool's window. Available from its commands and model page parts. */
+  openWindow?: string;
 }
 
 /** A model a tool from the repository brings, as `toolModels()` lists it. */
@@ -710,7 +712,8 @@ export interface SdkUi {
    *
    * @param message What to say.
    * @param severity How it looks: `"info"` when left out.
-   * @param options `openModel`: a model's id, for an Open button on the toast that leaves for its page.
+   * @param options `openModel`: a model's id, for an Open button on the toast that leaves for its page. A tool can
+   * instead supply `openWindow` with the label for a button opening its own window.
    * @example
    * const model = await thingport.models.create({ name, files });
    * thingport.ui.toast(t("save.done", { name: model.name }), "success", { openModel: model.id });
@@ -742,6 +745,16 @@ export interface ToolUi extends SdkUi {
    * @returns The collection, or `null` when the user cancels.
    */
   pickCollection(options?: { title?: string }): Promise<SdkCollection | null>;
+  /**
+   * Thingport's model picker: the user's own models, newest first, found as they type.
+   *
+   * @param options `title`: what the dialog asks. `confirmLabel`: its button, which shows the count after it. `max`:
+   * how many can be picked, 1 to 100, 20 when left out; with 1, a click picks straight away.
+   * @returns The picked models in the order they were picked, or an empty array when the user cancels.
+   * @example
+   * const picked = await thingport.ui.pickModels({ title: t("add.title"), confirmLabel: t("add.confirm") });
+   */
+  pickModels(options?: { title?: string; confirmLabel?: string; max?: number }): Promise<SdkModel[]>;
   /** Closes the tool's window, as `close()` does. In a part of a model's page it does nothing. */
   close(): void;
   /**
@@ -885,12 +898,12 @@ export interface SdkShared {
    * atomically, with the destination store's normal limits. An occupied destination is left alone. Available for saved tools.
    *
    * @param previous The entry the user read, including its original JSON value.
-   * @param next Where to keep the new value. A shared entry can name a model the user can open.
-   * @returns Whether the replacement was made. If the source is gone, has changed, or the move's destination is occupied, returns `false`.
+   * @param next Where to keep the new value, or `null` to delete the entry. A shared entry can name a model the user can open.
+   * @returns Whether the change succeeded. If the source is gone, has changed, or the move's destination is occupied, returns `false`.
    */
   replace?(
     previous: { key: string; store: "storage" | "shared"; value: unknown },
-    next: { key: string; store: "storage" | "shared"; value: unknown; model?: string },
+    next: { key: string; store: "storage" | "shared"; value: unknown; model?: string } | null,
   ): Promise<boolean>;
   /**
    * Removes one of the user's entries.
@@ -1199,7 +1212,8 @@ export interface ToolSdk extends SdkBase {
   /**
    * What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a
    * model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`,
-   * the file picked there, one of the model's `files`. A command with `window: false` gets the same, in its `run`.
+   * the file picked there, one of the model's `files`. A command `on: "selection"` gets `modelIds`, the selected
+   * models in grid order when the action was picked. A command with `window: false` gets its context in `run`.
    * A part of a model's page (`modelPage` in the metadata) gets `modelId`, `fileId`, the file picked on the page, and
    * `place`: `"info"`, `"tab"` or `"image"`. The part is drawn again when another file is picked.
    *
@@ -1208,7 +1222,13 @@ export interface ToolSdk extends SdkBase {
    * const { command, modelId, fileId } = thingport.context;
    * if (command === "estimate") measure(await thingport.models.file(modelId, fileId));
    */
-  context: { modelId?: string; fileId?: string; command?: string; place?: "info" | "tab" | "image" };
+  context: {
+    modelId?: string;
+    modelIds?: readonly string[];
+    fileId?: string;
+    command?: string;
+    place?: "info" | "tab" | "image";
+  };
   /**
    * The static preview available to a model page's `modelImage` contribution when an overlay can be drawn.
    * Draw on `root` to place elements over the preview. Use `key` to identify the gallery image or rendered plate

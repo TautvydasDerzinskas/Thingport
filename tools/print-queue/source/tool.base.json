@@ -1,9 +1,10 @@
 {
   "name": "Print queue",
-  "description": "A print queue the household shares: add models from their pages, see who has what queued or printing, drag each print to Printing, Printed or Failed, and keep the history.",
-  "version": "1.0.1",
+  "description": "A print queue the household shares: add models from their pages, a grid or the board itself, see who has what queued or printing, drag each print to Printing, Printed or Failed, and keep the history.",
+  "version": "1.2.0",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "symbol": "symbols/board.svg",
   "window": {
     "width": 1100,
     "height": 700
@@ -16,10 +17,43 @@
       "id": "queue",
       "title": "Add to print queue",
       "on": "model",
-      "window": false
+      "window": false,
+      "symbol": "symbols/add.svg"
+    },
+    {
+      "id": "queue-selection",
+      "title": "Add to print queue",
+      "on": "selection",
+      "window": false,
+      "symbol": "symbols/add.svg"
+    },
+    {
+      "id": "remove-selection",
+      "title": "Remove from print queue",
+      "on": "selection",
+      "window": false,
+      "symbol": "symbols/remove.svg"
     }
   ],
   "modelPage": {
     "info": true
-  }
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/board.webp",
+      "caption": "Opened from a model's page: the household's prints on one board, that model's own outlined, and Add model waiting at the end of the queue."
+    },
+    {
+      "file": "screenshots/card-menu-dark.webp",
+      "caption": "In the dark theme, your own card's menu: move it up or down the queue, on to Printing, Printed or Failed, or give it a note."
+    },
+    {
+      "file": "screenshots/add-models.webp",
+      "caption": "Add model opens Thingport's model picker: tick a few and they join the end of your queue."
+    },
+    {
+      "file": "screenshots/person-dark.webp",
+      "caption": "Filtered to one person in the dark theme: what Dad has queued, printing and failed, with his notes."
+    }
+  ]
 }
