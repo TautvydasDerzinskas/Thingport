@@ -72,6 +72,23 @@ export async function readErrorMessage(res: Response, fallback: string) {
   return res.ok ? fallback : proxyErrorMessage(res.status);
 }
 
+/** An error from a route that may send a stable `code`. Those come as `{ error, code }`, any other error the route
+ *  throws as `{ detail }`, so the message is read from either. */
+export async function readCodedError(
+  res: Response,
+  fallback: string,
+): Promise<{ message: string; code: string | null }> {
+  let record: Record<string, unknown> = {};
+  try {
+    const body: unknown = await res.clone().json();
+    if (typeof body === "object" && body !== null) record = body as Record<string, unknown>;
+  } catch {}
+  return {
+    message: typeof record.error === "string" ? record.error : await readErrorMessage(res, fallback),
+    code: typeof record.code === "string" ? record.code : null,
+  };
+}
+
 /** Like `assertOk`, but a failure carries the server's own message. */
 export async function assertOkWithMessage(res: Response, fallback: string) {
   if (res.status === 401) throw new UnauthorizedError();

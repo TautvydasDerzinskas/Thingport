@@ -303,6 +303,7 @@ async function categorizeOne(
       const applied = await setPrintCategory(userId, print.id, answer.categoryId, "AI", {
         expected,
         clearSuggestion: true,
+        keepIfFilesStay: true,
       });
       if (applied) return "applied";
       return "unchanged";
@@ -407,7 +408,14 @@ export async function acceptAiSuggestion(userId: string, printId: string): Promi
   if (!category) throw new HttpError(409, "Suggested category no longer exists", "stale");
   // A provider's is the mapped category an import would have filed it under, so it's recorded the same way.
   const source = suggestion.data.provider ? "RULE" : "AI";
-  await setPrintCategory(userId, print.id, category.id, source, { clearSuggestion: true });
+  // A name the category already has is numbered, as moving it there any other way does: auto mode leaves exactly
+  // those for review, so refusing here would leave them nowhere to go. Files that can't follow stay where their rows
+  // say, as with assigning a category: an error here would leave the change saved and the suggestion gone.
+  await setPrintCategory(userId, print.id, category.id, source, {
+    clearSuggestion: true,
+    renameIfTaken: true,
+    keepIfFilesStay: true,
+  });
 }
 
 /** Offers the category a provider's own maps to, in the slot an AI suggestion takes: it's reviewed the same way, and

@@ -2,7 +2,7 @@ import type { ThreeMfFormat } from "../adapter/format.generated";
 import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import type { SortDirection } from "../utils/sortDirection";
-import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
+import { apiBase, assertOk, readCodedError, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
 
 /** What a file is, by the server's kind table (backend/src/files/kinds.ts). */
@@ -757,18 +757,8 @@ export const printsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
-      let body: unknown;
-      try {
-        body = await res.json();
-      } catch {
-        body = null;
-      }
-      const record = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
-      throw new PrintApiError(
-        typeof record.error === "string" ? record.error : `AI recategorization failed (${res.status})`,
-        res.status,
-        typeof record.code === "string" ? record.code : null,
-      );
+      const { message, code } = await readCodedError(res, `AI recategorization failed (${res.status})`);
+      throw new PrintApiError(message, res.status, code);
     }
   },
 
