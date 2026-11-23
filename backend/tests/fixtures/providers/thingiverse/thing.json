@@ -1,0 +1,25 @@
+{
+  "id": 9990001,
+  "name": "Test Articulated Widget",
+  "description": "A **test** widget for import verification.",
+  "instructions": "1. Print both parts.<br>2. Snap the wheels on.",
+  "tags": [{ "name": "Widget" }, { "name": "Test Fixture" }],
+  "thumbnail": "https://cdn.thingiverse.com/assets/test/thumb.jpg",
+  "default_image": { "url": "https://cdn.thingiverse.com/assets/test/preview.jpg" },
+  "categories_url": "https://api.thingiverse.com/things/9990001/categories",
+  "creator": {
+    "id": 424242,
+    "name": "TestCreator",
+    "public_url": "https://www.thingiverse.com/TestCreator",
+    "thumbnail": "https://cdn.thingiverse.com/renders/test/creator.jpg",
+    "cover": "https://cdn.thingiverse.com/renders/test/creator-cover.jpg"
+  },
+  "zip_data": {
+    "files": [
+      { "name": "body.stl", "url": "https://cdn.thingiverse.com/assets/test/body.stl" },
+      { "name": "wheels.stl", "url": "https://cdn.thingiverse.com/assets/test/wheels.stl" },
+      { "name": "instructions.pdf", "url": "https://cdn.thingiverse.com/assets/test/instructions.pdf" }
+    ],
+    "images": [{ "name": "render.png", "url": "https://cdn.thingiverse.com/renders/test/render.png" }]
+  }
+}

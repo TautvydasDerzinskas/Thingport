@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
 import pkg from "../package.json" with { type: "json" };
 import { buildManifest, COOKIE_HOSTS, PROVIDER_MATCHES, TARGETS } from "./manifest.js";
 
@@ -19,6 +20,18 @@ describe("browser manifests", () => {
       expect(JSON.stringify(buildManifest(target, pkg))).not.toContain("upgrade-insecure-requests");
     }
     expect(buildManifest("firefox", pkg).content_security_policy).toEqual({ extension_pages: "script-src 'self'" });
+  });
+
+  // Chrome refuses a manifest whose description, in any language, runs past 132 characters.
+  it("keeps every translated description within 132 characters", () => {
+    const locales = new URL("../public/_locales/", import.meta.url);
+    const names = readdirSync(locales);
+    expect(names.length).toBeGreaterThan(1);
+    for (const locale of names) {
+      const messages = JSON.parse(readFileSync(new URL(`${locale}/messages.json`, locales), "utf8"));
+      const description: string = messages.extensionDescription.message;
+      expect([...description].length, locale).toBeLessThanOrEqual(132);
+    }
   });
 
   // Snapshotted at a fixed version, so a release bumping package.json doesn't break them.

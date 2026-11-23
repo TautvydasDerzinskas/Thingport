@@ -355,7 +355,7 @@
             }
           },
           "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
-          "writeConfirmMessage": "This tool changes your library. An assistant connected with this token will be able to use it without asking you each time. Nothing it does deletes models.",
+          "writeConfirmMessage": "This tool changes your library. An assistant connected with this token will be able to use it without asking you each time.",
           "writeConfirm": "Turn on",
           "adminOff": "An admin has turned MCP off on this Thingport instance.",
           "adminReadOnly": "An admin allows only the tools that read.",
@@ -1474,11 +1474,13 @@
         "failed": "Couldn't measure the storage.",
         "kinds": {
           "models": "Model files",
+          "supporting": "Supporting files",
           "previews": "3D previews",
           "old": "Old 3D previews",
           "photos": "Photos",
           "thumbnails": "Thumbnails and renders",
           "description": "Description images",
+          "prepared": "Prepared prints",
           "slicer": "Slicer copies",
           "other": "Other"
         }
@@ -2246,6 +2248,7 @@
           "custom_widgets_changed": "Changed which custom widgets are allowed",
           "tool_installed": "Tool installed",
           "tool_uninstalled": "Tool uninstalled",
+          "tool_availability_changed": "Tool availability changed",
           "tools_access_changed": "Changed access to tools",
           "model_copied": "Model copied",
           "social_settings_changed": "Social features changed",
@@ -2388,6 +2391,10 @@
         "folderSummary_one": "{{count}} file · {{size}}",
         "folderSummary_other": "{{count}} files · {{size}}",
         "ofModel": "model \"{{name}}\"",
+        "cantRead": "Can't read",
+        "cantReadFolder": "Can't read this folder",
+        "unreadable_one": "The disk couldn't read {{count}} thing here. It may still be there.",
+        "unreadable_other": "The disk couldn't read {{count}} things here. They may still be there.",
         "kind": {
           "plate": "Model file",
           "file": "Supporting file",
@@ -2592,6 +2599,13 @@
           "update": "Update",
           "installed": "Installed {{name}}",
           "updated": "Updated {{name}}",
+          "updateAll": "Update all",
+          "updates_one": "{{count}} update: {{names}}",
+          "updates_other": "{{count}} updates: {{names}}",
+          "updatingAll": "Updating {{name}}: {{done}} of {{total}}",
+          "updatedAll_one": "Updated {{count}} tool",
+          "updatedAll_other": "Updated {{count}} tools",
+          "updateAllFailed": "Couldn't update {{names}}: {{error}}",
           "installFailed": "Couldn't install the tool",
           "installedVersion": "Installed {{version}}",
           "updateTo": "Update to {{version}}",
@@ -2622,6 +2636,11 @@
           "openHint": "Open {{name}} — double-click",
           "notInstalled": "Not installed",
           "isInstalled": "installed",
+          "enable": "Enable",
+          "disable": "Disable",
+          "disabled": "Disabled",
+          "disabledBanner": "Disabled: hidden from everyone's Tools page. Its data and models stay.",
+          "availabilityError": "Couldn't change tool availability.",
           "version": "v{{version}}",
           "tileLabel": "{{name}}, {{state}}: press Enter for what it is, the context menu key for more",
           "shelfHint": "Double-click a tool for what it is and what can be done with it; right-click an installed one for its menu.",
@@ -2686,7 +2705,7 @@
           "infoTitle": "What connecting instances does",
           "infoPair": "Other Thingport instances you connect with become partners: their people, public collections and models show up here as if they were on this instance, and yours there.",
           "infoApprove": "You approve every instance before it connects. Your users can ask you to connect with one.",
-          "infoShare": "Only what's public goes across: libraries, private collections and settings stay here.",
+          "infoShare": "Public content, collections shared with people on connected instances, and chats with them can cross between instances. Libraries, private collections, and settings stay here.",
           "infoOff": "Turning it off hides partners and stops talking to them. Nothing is deleted, and it's all back when it's on again.",
           "settingsLoadFailed": "Couldn't load the settings for connected instances.",
           "keyAria": "Key: {{key}}",
@@ -3483,7 +3502,119 @@
         "appearance": "Appearance",
         "providers": "Providers",
         "slicer": "Slicer",
-        "printers": "Printer"
+        "printers": "Printer",
+        "sendTo": "Send to"
+      },
+      "sendTo": {
+        "title": "Send to",
+        "subtitle": "Send models to your printers, webhooks and other apps.",
+        "add": "Add",
+        "more": "More",
+        "moreFor": "More for {{name}}",
+        "import": "Import…",
+        "export": "Export",
+        "exportHint": "As a file to share, without keys",
+        "emptyTitle": "Nothing to send to yet",
+        "emptyHint": "Add OctoPrint, Klipper or PrusaLink, a webhook, or an address of your own.",
+        "needsKey": "Needs its API key",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteTitle": "Delete {{name}}?",
+        "deleteMessage": "It's no longer offered on models' pages.",
+        "saved": "{{name}} saved",
+        "imported_one": "Added {{count}} destination",
+        "imported_other": "Added {{count}} destinations",
+        "importFailed": "That isn't a Send to file",
+        "test": "Test",
+        "testOk": "It answers ({{status}})",
+        "placementLabel": "Where {{name}} shows",
+        "groups": {
+          "printers": "Printers",
+          "webhooks": "Webhooks",
+          "own": "Your own"
+        },
+        "kinds": {
+          "octoprint": "OctoPrint",
+          "moonraker": "Klipper",
+          "prusalink": "PrusaLink",
+          "homeassistant": "Home Assistant",
+          "n8n": "n8n",
+          "nodered": "Node-RED",
+          "link": "Custom link",
+          "request": "Custom request"
+        },
+        "hints": {
+          "octoprint": "Uploads to OctoPrint",
+          "moonraker": "Moonraker, for Mainsail and Fluidd",
+          "prusalink": "Prusa's own, on the MK4, XL, MINI and CORE One",
+          "homeassistant": "A webhook automation",
+          "n8n": "A webhook workflow",
+          "nodered": "An http in node",
+          "link": "An address the browser opens",
+          "request": "Thingport's server sends the file"
+        },
+        "placement": {
+          "button": "Button",
+          "menu": "Menu"
+        },
+        "fields": {
+          "name": "Name",
+          "address": "Address",
+          "webhook": "Webhook address",
+          "apiKey": "API key",
+          "stored": "Stored",
+          "apiKeyStored": "Stored. Type a new one to replace it.",
+          "apiKeyOptional": "Only if Moonraker asks for one",
+          "apiKeyRemove": "Remove the key",
+          "after": "After the upload",
+          "justUpload": "Just upload",
+          "startPrinting": "Start printing",
+          "url": "Address",
+          "opens": "Opens in",
+          "opensHelp": "A named tab is reused, so sending again goes to the same tab. The page in it can also send Thingport's tab elsewhere, so use one only for an address you trust.",
+          "newTab": "New tab",
+          "namedTab": "Named tab",
+          "sameTab": "This tab",
+          "tabName": "Tab name",
+          "method": "Method",
+          "send": "Send",
+          "sendHelp": "The file in a form, as most uploads take it; the file itself as the request's body; or JSON with a link to the file, valid for an hour.",
+          "multipart": "The file in a form",
+          "raw": "The file itself",
+          "json": "JSON with a link",
+          "formFields": "Form",
+          "fileField": "File field",
+          "fileFieldHint": "The file goes in this field",
+          "fieldName": "Field",
+          "fieldValue": "Value",
+          "remove": "Remove",
+          "addField": "Field",
+          "headers": "Headers",
+          "headersHelp": "A secret header's value is kept on the server and never shown again.",
+          "headerName": "Header",
+          "headerValue": "Value",
+          "secret": "Secret",
+          "secretHelp": "Keep the value on the server, never shown again",
+          "addHeader": "Header",
+          "thenOpen": "Then open",
+          "thenOpenHelp": "Offered once it's sent, such as the printer's own page.",
+          "fileTypes": "Only for files",
+          "fileTypesHelp": "File endings, such as gcode. Empty: offered for any file.",
+          "anyFile": "Any file",
+          "showAs": "Show as"
+        },
+        "reasons": {
+          "auth": "Refused the key ({{status}})",
+          "not_found": "Nothing at that address ({{status}})",
+          "conflict": "Has that file already",
+          "too_large": "The file is too large for it",
+          "unsupported": "Doesn't take that kind of file",
+          "redirect": "Sent Thingport elsewhere ({{status}}), which isn't followed",
+          "http": "Answered {{status}}",
+          "timeout": "Didn't answer in time",
+          "unreachable": "Couldn't be reached",
+          "blocked": "That address is off limits"
+        }
       }
     },
     "providers": {
@@ -3810,7 +3941,22 @@
       },
       "runner": {
         "failed": "{{name}} stopped with an error",
-        "noExport": "The script has no default export to call"
+        "noExport": "The script has no default export to call",
+        "noRun": "The script has no run export for a command without a window",
+        "commandFailed": "{{name}} couldn't do that: {{error}}",
+        "noPartExport": "The script has no {{name}} export to draw this part",
+        "partFailed": "{{name}} couldn't show this",
+        "noPopover": "A command without a window has no popover"
+      },
+      "share": {
+        "title": "Who sees your {{name}}?",
+        "everyone": "Everyone",
+        "people": "Only people I pick",
+        "everyoneHint": "Everyone who can use tools here sees what you share in it.",
+        "picked_one": "Shared with {{count}} person",
+        "picked_other": "Shared with {{count}} people",
+        "onlyYou": "Nobody picked yet, so only you see it.",
+        "loadFailed": "Couldn't read whom this reaches, so it can't be changed yet."
       },
       "picker": {
         "title": "Choose a collection",
@@ -3821,6 +3967,9 @@
         "count_other": "{{count}} models",
         "cancel": "Cancel",
         "choose": "Choose"
+      },
+      "modelPicker": {
+        "title": "Choose models"
       },
       "ai": {
         "or": "or",
@@ -4074,7 +4223,6 @@
         "sweep": "Sweep"
       },
       "tree": {
-        "heading": "Features",
         "empty": "Nothing here yet",
         "expand": "Expand",
         "collapse": "Collapse"
@@ -4149,6 +4297,8 @@
         "front": "Front",
         "right": "Right",
         "fit": "Fit to view",
+        "hand": "Hand mode",
+        "handNavigation": "Drag with the left button or one finger to pan. Drag with the right button or two fingers to rotate. Scroll or pinch to zoom.",
         "navigation": "Right-drag turns the view, middle-drag (or Shift + right-drag) moves it, the wheel zooms. Left-drag draws a box to select: from left to right it takes what's wholly inside, from right to left also what it touches. Shift adds to the selection."
       },
       "properties": {
@@ -4209,13 +4359,73 @@
         },
         "cornerRadius": "Corner radius"
       },
+      "print": {
+        "customBed": "Custom bed",
+        "arrange": "Arrange plate",
+        "spacing": "Spacing",
+        "overflow": "Use new plates for overflow",
+        "tooLarge": "Studio couldn’t find a placement at this spacing for {{parts}}.",
+        "needsOverflow": "Enable overflow or reduce the spacing.",
+        "arrangeEmpty": "This plate has no visible bodies to arrange.",
+        "plateLimit": "This layout would exceed Studio’s plate limit.",
+        "previewPlate": "New plate {{number}}",
+        "lockPosition": "Lock position for arrangement",
+        "unlockPosition": "Unlock position for arrangement",
+        "connectors": "Pins and sockets",
+        "separatePlates": "Put the second part on a new plate",
+        "pinDiameter": "Pin diameter",
+        "pinDepth": "Pin depth",
+        "clearance": "Radial clearance",
+        "pinCount": "Pin count",
+        "offsetU": "Offset U",
+        "offsetV": "Offset V",
+        "fitPlate": "Fit test",
+        "fitHelp": "Print one cropped pin and a matching socket for each clearance. Each socket is marked in millimetres.",
+        "variant": "Clearance {{number}}",
+        "makeFitPlate": "Create fit test plate",
+        "useFit": "Use measured clearance",
+        "clearanceParameter": "Clearance parameter",
+        "filaments": "Filament assignments",
+        "slot": "Loaded slot",
+        "automatic": "Automatic",
+        "material": "Material",
+        "unmapped": "Colors without an assigned slot ({{number}}) use automatic assignment.",
+        "tooManySlots": "This slicer supports up to {{limit}} filament slots. Reduce the number of colors before exporting.",
+        "saveSlots": "Save assignments"
+      },
+      "plates": {
+        "label": "Build plate",
+        "actions": "Plate actions",
+        "add": "Add plate",
+        "rename": "Rename plate",
+        "delete": "Delete empty plate",
+        "defaultName": "Plate {{count}}",
+        "move": "Move to plate",
+        "color": "Body color",
+        "clearColor": "Clear",
+        "applyColor": "Apply",
+        "exportStl": "Export as STL",
+        "openSlicer": "Open with slicer",
+        "slicer": "Slicer",
+        "printer": "Printer and nozzle",
+        "noPreset": "Use slicer’s current printer",
+        "oneAtATime": "This slicer opens one plate at a time.",
+        "matchFilaments": "Match the project's color slots to your loaded filaments in the slicer.",
+        "download3mf": "Download 3MF",
+        "open": "Open"
+      },
       "design": {
-        "none": "No design",
         "new": "New design",
         "open": "Open…",
         "openTitle": "Open a design",
         "rename": "Rename design",
-        "export": "Download STL",
+        "save": "Save design",
+        "export": {
+          "title": "Export",
+          "format": "File format",
+          "threeMf": "Download one 3MF with all populated plates and their colors.",
+          "stlZip": "Download a ZIP with one STL per populated plate."
+        },
         "delete": "Delete design",
         "deleteTitle": "Delete “{{name}}”?",
         "deleteMessage": "The design and its history are deleted for good.",
@@ -4223,10 +4433,19 @@
         "emptyTitle": "No designs yet",
         "emptyHint": "Start one, then build it from shapes and sketches.",
         "untitled": "Untitled design",
+        "menu": {
+          "quickActions": "Quick actions",
+          "new": "New",
+          "open": "Open",
+          "slicer": "Slicer",
+          "recent": "Recent",
+          "edited": "Edited {{time}}"
+        },
         "nothingToExport": "Nothing visible to download",
         "features_one": "{{count}} feature",
         "features_other": "{{count}} features",
         "saveToLibrary": "Save to Thingport",
+        "libraryModelName": "Model name",
         "saving": "Saving to Thingport…",
         "saved": "Saved “{{name}}” to your library",
         "openSaved": "Open"
@@ -4264,10 +4483,12 @@
       },
       "panels": {
         "label": "Panels",
-        "features": "Features",
+        "features": "Objects / Plates",
         "properties": "Properties",
         "hide": "Hide {{panel}}",
-        "show": "Show {{panel}}"
+        "show": "Show {{panel}}",
+        "print": "Print",
+        "rightPanel": "Properties / Print"
       },
       "viewCube": {
         "label": "View cube: click a face, edge or corner to look from there, drag it to turn the view",
@@ -4478,6 +4699,45 @@
           "closed": "Closed"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Levelling the build plate…",
+          "Sharpening the pencils…",
+          "Squaring up the grid…",
+          "Zeroing the origin…",
+          "Tightening the belts…",
+          "Calibrating the axes…",
+          "Lining up the planes…",
+          "Counting the triangles…",
+          "Rounding off the fillets…",
+          "Warming up the nozzle…",
+          "Unpacking the toolbox…",
+          "Measuring twice, cutting once…"
+        ]
+      },
+      "importModel": {
+        "loadingStudio": "Loading Thingport Studio…",
+        "preparing": "Preparing {{filename}} for Thingport Studio…",
+        "failed": "Couldn’t open {{filename}} in Thingport Studio",
+        "platePreparing": "Preparing {{name}}…",
+        "plateFailed": "Couldn’t prepare {{name}}",
+        "loadPlate": "Load build plate",
+        "checkUnloaded": "Open {{name}} before checking the whole design for printing.",
+        "archiveLimit": "This 3MF archive exceeds Studio’s reading limit.",
+        "noPlates": "Studio couldn’t find any readable build plates in this 3MF.",
+        "plateLimit": "A build plate can contain up to {{objects}} objects and {{plateTriangles}} triangles.",
+        "bodyLimit": "Each imported body can contain up to {{bodyTriangles}} triangles.",
+        "missingParts": "This 3MF references model parts that are missing from the file.",
+        "noBodies": "Studio couldn’t read any printable bodies.",
+        "readFailed": "Studio couldn’t read the model file.",
+        "tooManyPlates": "A Studio design can contain up to {{plates}} build plates.",
+        "tooManyObjects": "A Studio design can contain up to {{objects}} bodies and features.",
+        "loadPlateFirst": "Load this build plate first.",
+        "platePending": "Bodies load when you open this plate.",
+        "filamentsPending": "Open the remaining build plates to see all filament colors.",
+        "geometryFailed": "Studio couldn’t process this geometry."
+      },
       "imported": {
         "parts_one": "The model came in as one body of {{count}} part",
         "parts_other": "The model came in as one body of {{count}} separate parts",
@@ -4662,16 +4922,8 @@
       "settings": {
         "title": "Studio settings",
         "sections": {
-          "assistant": "Ask AI",
           "units": "Units",
           "grid": "Grid"
-        },
-        "assistantIntro": "Where Ask AI shows its conversation.",
-        "layout": "Layout",
-        "layoutHelp": "Bar: under the view, one line while the AI works, the rest when you open it. Side panel: beside the view, so nothing covers the model.",
-        "layouts": {
-          "bar": "Bar",
-          "panel": "Side panel"
         },
         "failed": "Couldn't save the setting.",
         "unitsIntro": "What sizes are shown and typed in. Sizes stay exactly as they are; only how they read changes.",
@@ -4704,11 +4956,189 @@
           "snap": "Snap to grid",
           "snapHelp": "Sketch points and moved bodies snap to the finest grid lines that show. Off, they go where you point."
         }
+      },
+      "printProfile": {
+        "title": "Print profile",
+        "presets": "Presets",
+        "empty": "No print profile yet",
+        "emptyHint": "Pick a preset for this design, or let AI choose from what it's for.",
+        "choosePreset": "Choose a preset",
+        "change": "Change",
+        "changed": "changed",
+        "custom": "Custom",
+        "suggestAi": "Suggest with AI",
+        "aiWorking": "AI is choosing…",
+        "suggested": "Suggested",
+        "suggestedPreset": "Suggested: {{preset}}",
+        "byAi": "Chosen by AI",
+        "slicer": "Slicer",
+        "printer": "Printer",
+        "anyPrinter": "Any printer",
+        "material": "Material",
+        "anyMaterial": "Any material",
+        "settings": "Settings",
+        "slicerDefault": "Slicer default",
+        "setIt": "Set",
+        "noneCarried": "{{slicer}} reads none of these from a 3MF.",
+        "setCount_one": "{{count}} set",
+        "setCount_other": "{{count}} set",
+        "reset": "Use the slicer's own",
+        "nativeName": "In {{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} doesn't read this from a 3MF: set it there.",
+        "remove": "Remove print profile",
+        "on": "On",
+        "off": "Off",
+        "aiPrompt": "Choose a print profile for this design from what it's for: what I asked for and the descriptions of the models it was made from. Set it with the print profile tool, and tell me why in one sentence.",
+        "aiPromptSlicer": "I slice with {{name}} (slicer id {{id}}).",
+        "aiPromptPrinter": "My printer is the {{name}} (printer id {{id}}) with a {{nozzle}} mm nozzle.",
+        "category": {
+          "quality": "Quality",
+          "strength": "Strength",
+          "speed": "Speed",
+          "support": "Support",
+          "others": "Others"
+        },
+        "setting": {
+          "layer_height": "Layer height",
+          "wall_loops": "Walls",
+          "top_shell_layers": "Top layers",
+          "bottom_shell_layers": "Bottom layers",
+          "top_shell_thickness": "Top thickness",
+          "wall_generator": "Wall generator",
+          "sparse_infill_density": "Infill density",
+          "sparse_infill_pattern": "Infill pattern",
+          "initial_layer_speed": "First layer speed",
+          "outer_wall_speed": "Outer wall speed",
+          "inner_wall_speed": "Inner wall speed",
+          "sparse_infill_speed": "Infill speed",
+          "enable_support": "Supports",
+          "support_type": "Support type",
+          "support_threshold_angle": "Support angle",
+          "support_on_build_plate_only": "Supports from the plate only",
+          "brim_type": "Brim",
+          "brim_width": "Brim width",
+          "raft_layers": "Raft layers",
+          "seam_position": "Seam position",
+          "seam_slope_type": "Scarf seam",
+          "wall_sequence": "Wall order",
+          "top_surface_pattern": "Top pattern",
+          "ironing_type": "Ironing",
+          "fuzzy_skin": "Fuzzy skin",
+          "spiral_mode": "Spiral vase"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Classic",
+          "grid": "Grid",
+          "gyroid": "Gyroid",
+          "cubic": "Cubic",
+          "adaptivecubic": "Adaptive cubic",
+          "triangles": "Triangles",
+          "honeycomb": "Honeycomb",
+          "lightning": "Lightning",
+          "zig_zag": "Rectilinear",
+          "concentric": "Concentric",
+          "normal_auto_": "Normal",
+          "tree_auto_": "Tree",
+          "no_brim": "None",
+          "outer_only": "Outer",
+          "auto_brim": "Auto",
+          "aligned": "Aligned",
+          "nearest": "Nearest",
+          "back": "Back",
+          "random": "Random",
+          "none": "None",
+          "external": "Outer wall",
+          "all": "All walls",
+          "inner_wall_outer_wall": "Inner first",
+          "outer_wall_inner_wall": "Outer first",
+          "inner_outer_inner_wall": "Inner, outer, inner",
+          "monotonic": "Monotonic",
+          "monotonicline": "Monotonic lines",
+          "no_ironing": "None",
+          "topmost": "Topmost surface",
+          "top": "All top surfaces",
+          "solid": "All solid layers"
+        },
+        "preset": {
+          "standard": {
+            "title": "Standard",
+            "purpose": "Everyday parts"
+          },
+          "fine": {
+            "title": "Fine detail",
+            "purpose": "Figures, small text"
+          },
+          "draft": {
+            "title": "Quick draft",
+            "purpose": "Prototypes, fit checks"
+          },
+          "strong": {
+            "title": "Strong",
+            "purpose": "Brackets, hooks, gears"
+          },
+          "outdoor": {
+            "title": "Outdoor",
+            "purpose": "Sun and rain"
+          },
+          "water": {
+            "title": "Water contact",
+            "purpose": "Planters, trays"
+          },
+          "toy": {
+            "title": "Toy",
+            "purpose": "Sturdy, for children"
+          },
+          "flexible": {
+            "title": "Flexible",
+            "purpose": "TPU grips, bumpers"
+          },
+          "heat": {
+            "title": "Heat-resistant",
+            "purpose": "Cars, motors, lamps"
+          },
+          "vase": {
+            "title": "Vase",
+            "purpose": "One continuous wall"
+          },
+          "smooth": {
+            "title": "Smooth top",
+            "purpose": "Signs, lids"
+          }
+        },
+        "check": {
+          "material": "{{preset}} parts do better in {{suits}} than in {{material}}.",
+          "not_carried": "{{slicer}} doesn't read {{keys}} from a 3MF: set them there.",
+          "food_contact": "A print profile doesn't make a part food-safe: the material, the printer's parts and cleaning matter too.",
+          "toy": "Round sharp edges, and leave out small loose pieces for young children.",
+          "vase_bodies": "Spiral vase prints one body with one wall: keep one body per plate."
+        }
+      },
+      "save": {
+        "destination": "Where to save",
+        "newModel": "New model",
+        "addToModel": "Add to a model",
+        "pickModel": "Your models",
+        "profiles_one": "{{count}} profile",
+        "profiles_other": "{{count}} profiles",
+        "noProfiles": "No profiles yet",
+        "chooseMyself": "Choose myself",
+        "chooseMyselfHint": "Presets and settings",
+        "suggestAiHint": "From what it's for",
+        "without": "Save without",
+        "withoutHint": "Geometry only",
+        "editProfile": "Edit",
+        "profileName": "Profile name",
+        "askAi": "Ask AI to choose",
+        "willHave_one": "“{{name}}” will have {{count}} profile",
+        "willHave_other": "“{{name}}” will have {{count}} profiles",
+        "addProfile": "Add profile",
+        "addedProfile": "Added “{{profile}}” to “{{name}}”"
       }
     },
     "chats": {
       "open": "Open",
-      "off": "Chats are off on this instance. An admin can turn them on in Administration > Users.",
+      "off": "Chats are off on this instance. An admin can turn them on in Administration > Social.",
       "welcome": "Pick a chat, or start a new one.",
       "deletedUser": "Deleted user",
       "today": "Today",
@@ -4794,7 +5224,7 @@
       "chatActions": "Chat actions",
       "notFound": "This chat isn't there any more, or isn't yours to see.",
       "backToChats": "Back to chats",
-      "notAMember": "This private room is only for its members. You can add yourself under Edit room.",
+      "notAMember": "This private room is only for its members. If it's hosted here, you can add yourself under Edit room. If it's hosted on a connected instance, an admin there can add you.",
       "readingRoom": "You're reading this room. Join it to write and be notified.",
       "recipientGone": "This person's account has been deleted, so messages can't be sent.",
       "emptyRoom": "Nothing's been said here yet.",
@@ -4975,6 +5405,11 @@
           "rule": "Keep collections in sync from {{count}} different sites",
           "stat": "Synced from {{count}} sites"
         },
+        "fdmFundamentals": {
+          "name": "FDM Fundamentals",
+          "rule": "Score at least 80% on the 3D Printing Wiki quiz.",
+          "stat": "Passed the FDM quiz"
+        },
         "weatherGuest": {
           "name": "Met the guest",
           "rule": "A secret. You found it.",
@@ -5018,6 +5453,8 @@
     }
   },
   "common": {
+    "newTab": "(opens in a new tab)",
+    "backTo": "Back: {{name}}",
     "save": "Save",
     "cancel": "Cancel",
     "close": "Close",
@@ -5054,7 +5491,13 @@
     "language": "Language",
     "more": "More",
     "moreActions": "More actions",
-    "open": "Open"
+    "open": "Open",
+    "proxyErrors": {
+      "refused": "A proxy in front of this Thingport instance answered with HTTP {{status}}, and no message from Thingport came through. The proxy's logs say why, and {{url}} lists the settings Thingport needs.",
+      "tooLarge": "This request was too large for a proxy or web server in front of this Thingport instance (HTTP 413). Raise its body size limit: see {{url}}",
+      "noAnswer": "This Thingport instance isn't answering (HTTP {{status}}). It may be starting up or stopped, or a proxy in front of it can't reach it.",
+      "timedOut": "This Thingport instance took too long to answer, and a proxy in front of it gave up (HTTP 504). Its time limit may be too short: see {{url}}"
+    }
   },
   "library": {
     "grid": {
@@ -5604,7 +6047,13 @@
       "newest": "Newest",
       "popular": "Popular",
       "downloads": "Downloads",
-      "relevance": "Relevance"
+      "relevance": "Relevance",
+      "oldest": "Oldest",
+      "leastPopular": "Least popular",
+      "fewestDownloads": "Fewest downloads",
+      "leastRelevant": "Least relevant",
+      "fewestModels": "Fewest models",
+      "reverseAlphabetical": "{{label}} (Z–A)"
     },
     "card": {
       "unknownAuthor": "Unknown",
@@ -5698,6 +6147,16 @@
       "rejected": "Suggestion rejected.",
       "revertMessage": "This model gets back the description it had before the AI changed it.",
       "suggestionPending": "Accept or reject the suggestion first"
+    },
+    "actionsMenu": {
+      "openIn": "Open in",
+      "ai": "AI",
+      "quickActions": "Quick actions",
+      "categorize": "Categorize",
+      "recategorize": "Recategorize",
+      "improve": "Improve description",
+      "adapted": "{{slicer}}, adapted",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "Model",
@@ -5915,6 +6374,15 @@
       "moreOpenOptions": "Other slicers and downloads",
       "openActions": "Open or download",
       "openInHeading": "Open in",
+      "toolsHeading": "Tools",
+      "sendTo": {
+        "heading": "Send to",
+        "button": "Send to {{name}}",
+        "openIn": "Open in {{name}}",
+        "sent": "Sent to {{name}}",
+        "failed": "{{name}}: {{reason}}",
+        "openAfter": "Open"
+      },
       "toolOwned": "Belongs to a tool",
       "toolOwnedHint": "It can't be edited or deleted",
       "customize": "Customize…",
@@ -5930,6 +6398,20 @@
         "changeLater": "change it in Configuration",
         "open": "Open"
       }
+    },
+    "supporting": {
+      "title": "Supporting files",
+      "actionsFor": "Actions for {{name}}",
+      "open": "Open",
+      "openInTab": "Open in a new tab",
+      "newTab": "New tab",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "noPreview": "No preview for {{type}} files",
+      "tooLargeToPreview": "Too large to preview",
+      "previewFailed": "Couldn't show this file",
+      "firstRows": "Showing the first {{count}} rows",
+      "firstColumns": "Showing the first {{count}} columns"
     },
     "customizer": {
       "title": "Customizing {{model}}",
@@ -6017,6 +6499,11 @@
       "authorWillBeYou": "You (after Update)",
       "previewImages": "Preview images",
       "thumbnailBadge": "Thumbnail",
+      "useAsThumbnail": "Use as thumbnail",
+      "previewImagesHelp": "Model cards show the first picture, unless Model cards is set to 3D renders in Appearance. Put another one first to change it.",
+      "removeImage": "Remove picture",
+      "moveImageLeft": "Move left",
+      "moveImageRight": "Move right",
       "newBadge": "New",
       "modelFiles": "Model files",
       "addFiles": "Add files",
@@ -6454,7 +6941,8 @@
       "summaryFailed": "Couldn't calculate the download size. Please try again.",
       "empty": "No downloadable model files found.",
       "downloading": "Downloading…",
-      "failed": "Failed to download the zip file. Please try again."
+      "failed": "Failed to download the zip file. Please try again.",
+      "tooLarge": "That's too much for one zip: at most 65,534 files and about 4 GB. Download fewer models at once, or the files one by one."
     },
     "errors": {
       "loadFailed": "Unable to load models.",

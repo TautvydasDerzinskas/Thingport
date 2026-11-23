@@ -1,15 +1,22 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import type { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { STORAGE } from "../src/config";
 import { deletePrint } from "../src/services/printEditService";
 import { setToolsAccess } from "../src/services/settingsService";
 import { parseToolManifest } from "../src/services/toolFormat";
-import { setToolsRepoForTest, syncToolModels, toolFetchSettled, toolsSource } from "../src/services/toolsService";
+import {
+  STORAGE_KEY,
+  setToolsRepoForTest,
+  syncToolModels,
+  toolFetchSettled,
+  toolsSource,
+} from "../src/services/toolsService";
 import { toolLocks } from "../src/routes/toolLocks";
 
 const app = createApp();
@@ -132,6 +139,67 @@ describe("metadata", () => {
     expect(parseToolManifest('{"name":"x","category":"planners"}').category).toBe("planners");
     expect(() => parseToolManifest('{"name":"x","category":"gadgets"}')).toThrow(/category/);
   });
+
+  it("takes the commands it offers on the model page, defaulting to a model and a window", () => {
+    expect(parseToolManifest('{"name":"x"}').commands).toEqual([]);
+    const { commands } = parseToolManifest(
+      JSON.stringify({
+        name: "x",
+        commands: [
+          { id: "queue", title: "Add to queue", window: false },
+          { id: "estimate", title: "Estimate", on: "file", fileTypes: ["STL", "gcode.3mf"] },
+          { id: "batch", title: "Process selection", on: "selection", window: false },
+        ],
+      }),
+    );
+    expect(commands).toEqual([
+      { id: "queue", title: "Add to queue", on: "model", window: false },
+      { id: "estimate", title: "Estimate", on: "file", fileTypes: ["stl", "gcode.3mf"], window: true },
+      { id: "batch", title: "Process selection", on: "selection", window: false },
+    ]);
+  });
+
+  it("refuses commands it couldn't tell apart or offer", () => {
+    const manifest = (commands: unknown) => JSON.stringify({ name: "x", commands });
+    expect(() =>
+      parseToolManifest(
+        manifest([
+          { id: "a", title: "A" },
+          { id: "a", title: "B" },
+        ]),
+      ),
+    ).toThrow(/share an id/);
+    expect(() => parseToolManifest(manifest([{ id: "Open In", title: "A" }]))).toThrow(/lowercase/);
+    expect(() => parseToolManifest(manifest([{ id: "a", title: "A", on: "file", fileTypes: [".stl"] }]))).toThrow(
+      /without the dot/,
+    );
+    expect(() => parseToolManifest(manifest([{ id: "a", title: "A", fileTypes: ["stl"] }]))).toThrow(/on: "file"/);
+  });
+
+  it("takes one-colour symbols only as inline SVGs", () => {
+    const svg = "data:image/svg+xml;charset=utf-8,%3Csvg%2F%3E";
+    const parsed = parseToolManifest(
+      JSON.stringify({ name: "x", symbol: svg, commands: [{ id: "a", title: "A", symbol: svg }] }),
+    );
+    expect(parsed.symbol).toBe(svg);
+    expect(parsed.commands[0].symbol).toBe(svg);
+    expect(() => parseToolManifest(JSON.stringify({ name: "x", symbol: "https://example.com/a.svg" }))).toThrow(
+      /data: URL/,
+    );
+    expect(() =>
+      parseToolManifest(JSON.stringify({ name: "x", commands: [{ id: "a", title: "A", symbol: "builtin:x/y" }] })),
+    ).toThrow(/data: URL/);
+  });
+
+  it("takes the parts of a model's page it draws", () => {
+    expect(
+      parseToolManifest(JSON.stringify({ name: "x", modelPage: { tab: { title: "Filaments" }, image: true } }))
+        .modelPage,
+    ).toEqual({ info: false, tab: { title: "Filaments" }, image: true });
+    expect(() => parseToolManifest(JSON.stringify({ name: "x", modelPage: { tab: { title: "" } } }))).toThrow(
+      /modelPage/,
+    );
+  });
 });
 
 describe("the Tools page's arrangement", () => {
@@ -148,6 +216,19 @@ describe("the Tools page's arrangement", () => {
     // Changing the order mustn't forget where a tool was put.
     const sorted = await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ sort: "name" });
     expect(sorted.body).toEqual({ layout: "flat", sort: "name", categories: { abc: "files" } });
+
+    await request(app)
+      .patch("/api/settings/tools-view")
+      .set(auth(memberToken))
+      .send({ sortDirection: "desc" })
+      .expect(200);
+    const reopened = await request(app).get("/api/settings/tools-view").set(auth(memberToken)).expect(200);
+    expect(reopened.body).toEqual({
+      layout: "flat",
+      sort: "name",
+      sortDirection: "desc",
+      categories: { abc: "files" },
+    });
 
     expect(
       (await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ layout: "sideways" })).status,
@@ -255,6 +336,54 @@ describe("installing", () => {
     expect(res.body.tools.map((t: { slug: string }) => t.slug)).toEqual(["planner"]);
     expect(res.body.tools[0].installed).toBeNull();
     expect((await request(app).get("/api/admin/tools").set(auth(memberToken))).status).toBe(403);
+  });
+
+  it("disables a repository tool without removing its data or model copies, even across updates", async () => {
+    writeRepo();
+    const admin = auth(adminToken);
+    const member = auth(memberToken);
+    const availability = "/api/admin/tools/planner/availability";
+    const catalog = async () => (await request(app).get("/api/admin/tools").set(admin)).body.tools[0].installed;
+    expect((await request(app).patch(availability).set(admin).send({ enabled: false })).status).toBe(404);
+    const toolId = await install();
+    const storage = `/api/tools/${toolId}/storage/preferences`;
+    const collection = await prisma.collection.findFirstOrThrow({ where: { userId: memberId, toolId } });
+    expect(await catalog()).toMatchObject({ id: toolId, enabled: true });
+    expect((await request(app).get("/api/tools/status").set(member)).body.ids).toEqual([toolId]);
+    expect(
+      (
+        await request(app)
+          .put(storage)
+          .set(member)
+          .send({ value: { layout: "wide" } })
+      ).status,
+    ).toBe(204);
+    expect((await request(app).patch(availability).set(member).send({ enabled: false })).status).toBe(403);
+    expect((await request(app).patch(availability).set(admin).send({ enabled: "false" })).status).toBe(400);
+
+    expect((await request(app).patch(availability).set(admin).send({ enabled: false })).status).toBe(204);
+    expect(await catalog()).toMatchObject({ id: toolId, enabled: false, models: { ready: 2 } });
+    expect((await request(app).get("/api/tools/status").set(member)).body.ids).toEqual([]);
+    for (const headers of [member, admin]) {
+      expect((await request(app).get("/api/tools").set(headers)).body.tools).toEqual([]);
+      const read = await request(app).get(storage).set(headers);
+      expect(read.status).toBe(403);
+      expect(read.body.code).toBe("TOOL_DISABLED");
+      expect((await request(app).get(`/api/tools/${toolId}/shared`).set(headers)).status).toBe(403);
+      expect((await request(app).get(`/api/tools/${toolId}/models`).set(headers)).status).toBe(403);
+    }
+    expect((await request(app).get(`/api/prints?collection_id=${collection.id}`).set(member)).body).toHaveLength(2);
+
+    writeRepo("1.0.1");
+    expect(await install()).toBe(toolId);
+    expect(await catalog()).toMatchObject({ id: toolId, enabled: false, version: "1.0.1" });
+
+    expect((await request(app).patch(availability).set(admin).send({ enabled: true })).status).toBe(204);
+    expect((await request(app).get("/api/tools").set(member)).body.tools[0]).toMatchObject({
+      id: toolId,
+      collectionId: collection.id,
+    });
+    expect((await request(app).get(storage).set(member)).body).toMatchObject({ value: { layout: "wide" } });
   });
 
   it("gives every user a fixed collection of the tool's models, listed last", async () => {
@@ -433,6 +562,68 @@ describe("installing", () => {
     // Asking twice is a mistake, not a second import.
     expect((await request(app).post("/api/admin/tools/planner/import-models").set(auth(adminToken))).status).toBe(400);
     expect((await request(app).post("/api/admin/tools/planner/import-models").set(auth(memberToken))).status).toBe(403);
+  });
+
+  it("keeps the instance's models through an update sent without them", async () => {
+    writeRepo();
+    const toolId = await install();
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
+
+    // A page that read the tool before its models came in still sends models: false with the update.
+    writeRepo("1.0.1");
+    const updated = await request(app)
+      .post("/api/admin/tools/planner/install")
+      .set(auth(adminToken))
+      .send({ models: false });
+    expect(updated.status).toBe(200);
+    expect(updated.body).toMatchObject({ version: "1.0.1", models: { total: 2, imported: true } });
+    await toolFetchSettled(toolId);
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
+  });
+
+  it("keeps models another admin imports while an update without them is being written", async () => {
+    writeRepo();
+    const admin = auth(adminToken);
+    const first = await request(app).post("/api/admin/tools/planner/install").set(admin).send({ models: false });
+    expect(first.status).toBe(200);
+    const toolId = first.body.id as string;
+
+    writeRepo("1.0.1");
+    const upsert = prisma.tool.upsert.bind(prisma.tool);
+    let reached!: () => void;
+    const updateWriting = new Promise<void>((resolve) => (reached = resolve));
+    let importWritten!: () => void;
+    const imported = new Promise<void>((resolve) => (importWritten = resolve));
+    // The update has read the tool, still without models, and the import comes before it writes. Once they go one
+    // at a time the import never writes in between, so the update stops waiting for it after a while.
+    const spy = vi.spyOn(prisma.tool, "upsert").mockImplementation((async (args: Prisma.ToolUpsertArgs) => {
+      if (args.update.modelsSha !== null) {
+        const written = await upsert(args);
+        importWritten();
+        return written;
+      }
+      reached();
+      await Promise.race([imported, new Promise((resolve) => setTimeout(resolve, 1000))]);
+      return upsert(args);
+    }) as never);
+    try {
+      const update = request(app)
+        .post("/api/admin/tools/planner/install")
+        .set(admin)
+        .send({ models: false })
+        .then((res) => res);
+      await updateWriting;
+      const importing = await request(app).post("/api/admin/tools/planner/import-models").set(admin);
+      expect(importing.status).toBe(200);
+      expect((await update).status).toBe(200);
+    } finally {
+      spy.mockRestore();
+    }
+    expect((await prisma.tool.findUniqueOrThrow({ where: { id: toolId } })).modelsSha).not.toBeNull();
+    await toolFetchSettled(toolId);
+    await syncToolModels({ id: memberId, role: "MEMBER" });
+    expect(await prisma.print.count({ where: { userId: memberId, toolId } })).toBe(2);
   });
 
   it("leaves a tool's models where the admin wipes a user's own", async () => {
@@ -662,6 +853,9 @@ describe("users' own tools", () => {
     });
     expect((await request(app).get(base).set(as)).body.keys).toMatchObject([{ key: "plan" }]);
     expect((await request(app).put(`${base}/bad key`).set(as).send({ value: 1 })).status).toBe(400);
+    // A client resolves these in a path, even escaped, so they're never keys; dots among other characters are.
+    expect(["..", "."].filter((key) => STORAGE_KEY.test(key))).toEqual([]);
+    expect(["...", "a.b", ".x"].every((key) => STORAGE_KEY.test(key))).toBe(true);
     expect((await request(app).delete(`${base}/plan`).set(as)).status).toBe(204);
     expect((await request(app).get(base).set(as)).body.keys).toEqual([]);
     // Another user can't reach someone's own tool at all.

@@ -52,8 +52,11 @@ For a tool, the type is `ToolSdk`.
 | [`library`](#libraryname)                 |   ✓    |  ✓   | A library Thingport carries, for a job a script can't fit inside itself.                                                                                      |
 | [`libraries`](#libraries)                 |   ✓    |  ✓   | The names `library()` takes.                                                                                                                                  |
 | [`tool`](#tool)                           |        |  ✓   | The tool itself.                                                                                                                                              |
-| [`context`](#context)                     |        |  ✓   | What the tool was opened on: `{ modelId }` when it's opened on a model, and empty when it's opened from the Tools page.                                       |
+| [`user`](#user)                           |        |  ✓   | Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and picture before they've shared anything.     |
+| [`context`](#context)                     |        |  ✓   | What the tool was opened on, empty when it's opened from the Tools page.                                                                                      |
+| [`preview`](#preview)                     |        |  ✓   | The static preview available to a model page's `modelImage` contribution when an overlay can be drawn.                                                        |
 | [`storage`](#storage)                     |        |  ✓   | JSON kept for this user and this tool, so the window opens where they left it.                                                                                |
+| [`shared`](#shared)                       |        |  ✓   | JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that shows the ones about it.                        |
 | [`toolModels`](#toolmodels)               |        |  ✓   | The models a tool from the repository brings, by the keys its metadata gives them.                                                                            |
 | [`fetchToolModels`](#fetchtoolmodelskeys) |        |  ✓   | Fetches the tool's models that aren't here yet and gives the user their copies.                                                                               |
 
@@ -735,11 +738,11 @@ thingport.ui.toast(message: string, severity?: SdkSeverity, options?: SdkToastOp
 
 Shows a short message in Thingport's own toast.
 
-| Parameter  | What it is                                                                           |
-| ---------- | ------------------------------------------------------------------------------------ |
-| `message`  | What to say.                                                                         |
-| `severity` | How it looks: `"info"` when left out.                                                |
-| `options`  | `openModel`: a model's id, for an Open button on the toast that leaves for its page. |
+| Parameter  | What it is                                                                                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `message`  | What to say.                                                                                                                                                                    |
+| `severity` | How it looks: `"info"` when left out.                                                                                                                                           |
+| `options`  | `openModel`: a model's id, for an Open button on the toast that leaves for its page. A tool can instead supply `openWindow` with the label for a button opening its own window. |
 
 See [`SdkSeverity`](#sdkseverity), [`SdkToastOptions`](#sdktoastoptions).
 
@@ -798,6 +801,28 @@ The same dialog as `collections.pick`.
 
 See [`SdkCollection`](#sdkcollection).
 
+#### `ui.pickModels(options?)`
+
+_Tools only_
+
+```ts
+thingport.ui.pickModels(options?: { title?: string; confirmLabel?: string; max?: number }): Promise<SdkModel[]>
+```
+
+Thingport's model picker: the user's own models, newest first, found as they type.
+
+| Parameter | What it is                                                                                                                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `options` | `title`: what the dialog asks. `confirmLabel`: its button, which shows the count after it. `max`: how many can be picked, 1 to 100, 20 when left out; with 1, a click picks straight away. |
+
+**Returns:** The picked models in the order they were picked, or an empty array when the user cancels.
+
+See [`SdkModel`](#sdkmodel).
+
+```js
+const picked = await thingport.ui.pickModels({ title: t("add.title"), confirmLabel: t("add.confirm") });
+```
+
 #### `ui.close()`
 
 _Tools only_
@@ -806,7 +831,66 @@ _Tools only_
 thingport.ui.close(): void
 ```
 
-Closes the tool's window, as `close()` does.
+Closes the tool's window, as `close()` does. In a part of a model's page it does nothing.
+
+#### `ui.popover(anchor, draw, options?)`
+
+_Tools only_
+
+```ts
+thingport.ui.popover(anchor: Element, draw: (root: HTMLElement) => void | (() => void), options?: { placement?: "bottom" | "top" | "left" | "right"; width?: number }): { close(): void }
+```
+
+Opens Thingport's popover beside an element of the tool's, with an empty element for the tool to draw into, the theme on it as CSS variables. It closes on a click outside it, on Escape, or with `close()`, and `draw`'s returned function runs then.
+
+| Parameter | What it is                                                                                            |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| `anchor`  | The element it opens beside, such as the button that opened it.                                       |
+| `draw`    | Draws the popover's content into `root`; may return a cleanup.                                        |
+| `options` | `placement`: which side of `anchor`, `"bottom"` when left out. `width`: in pixels, 320 when left out. |
+
+**Returns:** Closes it.
+
+```js
+button.onclick = () =>
+  thingport.ui.popover(button, (root) => {
+    root.textContent = "Hi";
+  });
+```
+
+#### `ui.showTab()`
+
+_Tools only_
+
+```ts
+thingport.ui.showTab(): void
+```
+
+On a model's page, shows the tool's tab in the description box and scrolls to it. Does nothing where the tool has no tab, or off a model's page.
+
+#### `ui.selectFile(fileId)`
+
+_Tools only_
+
+```ts
+thingport.ui.selectFile(fileId: string): void
+```
+
+On a model's page, picks one of the model's files, as picking it in the side panel does, so every part follows it.
+
+| Parameter | What it is                  |
+| --------- | --------------------------- |
+| `fileId`  | One of the model's `files`. |
+
+#### `ui.openWindow()`
+
+_Tools only_
+
+```ts
+thingport.ui.openWindow(): void
+```
+
+Opens the tool's own window, on the model when there is one.
 
 ### `achievements`
 
@@ -835,6 +919,20 @@ Gives the user a secret badge this widget or tool hides: an easter egg Thingport
 ```js
 root.addEventListener("dblclick", () => thingport.achievements?.unlock("guest"));
 ```
+
+#### `achievements.unlockWithStatus(key)`
+
+```ts
+thingport.achievements.unlockWithStatus(key: string): Promise<"earned" | "unavailable" | "retry">
+```
+
+Requests a secret badge and reports the outcome. Use `thingport.achievements?.unlockWithStatus?.(key)` when supporting hosts with an older SDK.
+
+| Parameter | What it is                                                          |
+| --------- | ------------------------------------------------------------------- |
+| `key`     | The secret's name, as Thingport's catalogue has it for this script. |
+
+**Returns:** `"earned"` when the user has it, `"unavailable"` when achievements are off, the secret is unknown, or the script is an unsaved draft, and `"retry"` when the request could not be confirmed. Repeating a claim is safe.
 
 ### `close()`
 
@@ -1118,15 +1216,55 @@ thingport.tool: { id: string | null; slug: string; name: string; version: string
 
 The tool itself. `id` is null in the editor's preview of a tool not saved yet; `source` is `"repo"` for one installed from the repository and `"own"` for the user's own.
 
+### `user`
+
+_Tools only_
+
+```ts
+thingport.user: SdkPerson | null
+```
+
+Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and picture before they've shared anything. Null only where nobody is signed in.
+
+See [`SdkPerson`](#sdkperson).
+
 ### `context`
 
 _Tools only_
 
 ```ts
-thingport.context: { modelId?: string }
+thingport.context: {
+    modelId?: string;
+    modelIds?: readonly string[];
+    fileId?: string;
+    command?: string;
+    place?: "info" | "tab" | "image";
+  }
 ```
 
-What the tool was opened on: `{ modelId }` when it's opened on a model, and empty when it's opened from the Tools page.
+What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`, the file picked there, one of the model's `files`. A command `on: "selection"` gets `modelIds`, the selected models in grid order when the action was picked. A command with `window: false` gets its context in `run`. A part of a model's page (`modelPage` in the metadata) gets `modelId`, `fileId`, the file picked on the page, and `place`: `"info"`, `"tab"` or `"image"`. The part is drawn again when another file is picked.
+
+```js
+const { command, modelId, fileId } = thingport.context;
+if (command === "estimate") measure(await thingport.models.file(modelId, fileId));
+```
+
+### `preview`
+
+_Tools only_
+
+```ts
+thingport.preview?: { key: string; root: HTMLElement }
+```
+
+The static preview available to a model page's `modelImage` contribution when an overlay can be drawn. Draw on `root` to place elements over the preview. Use `key` to identify the gallery image or rendered plate on this model, and pass it to `shared.list` to match the preview on other copies.
+
+```js
+const { preview } = thingport;
+if (preview) {
+  preview.root.dataset.preview = preview.key;
+}
+```
 
 ### `storage`
 
@@ -1146,9 +1284,9 @@ thingport.storage.get(key: string): Promise<any>
 
 What's kept under a key.
 
-| Parameter | What it is                                       |
-| --------- | ------------------------------------------------ |
-| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`. |
+| Parameter | What it is                                                                  |
+| --------- | --------------------------------------------------------------------------- |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone. |
 
 **Returns:** The value as it was kept, or `undefined` when nothing is.
 
@@ -1164,10 +1302,10 @@ thingport.storage.set(key: string, value: unknown): Promise<void>
 
 Keeps a value under a key, replacing what was there. At most 1 MB a value as JSON, 20 MB and 2,000 keys a tool.
 
-| Parameter | What it is                                       |
-| --------- | ------------------------------------------------ |
-| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`. |
-| `value`   | Anything JSON can hold.                          |
+| Parameter | What it is                                                                  |
+| --------- | --------------------------------------------------------------------------- |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone. |
+| `value`   | Anything JSON can hold.                                                     |
 
 ```js
 await thingport.storage.set("last", { width: 60 });
@@ -1195,6 +1333,125 @@ Every key kept.
 
 ```js
 const drafts = (await thingport.storage.keys()).filter((key) => key.startsWith("draft:"));
+```
+
+### `shared`
+
+_Tools only_
+
+```ts
+thingport.shared: SdkShared
+```
+
+JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that shows the ones about it. In the editor's preview of a tool not saved yet, it reads nothing and keeps nothing.
+
+#### `shared.list(options?)`
+
+```ts
+thingport.shared.list(options?: { prefix?: string; model?: string; before?: string; preview?: string }): Promise<SdkSharedEntry[]>
+```
+
+The entries the user may read, newest first: their own and everyone else's that reach them, 5,000 at most a read. When a read gives that many, there may be more: read again with `before` set to the last one's `cursor`.
+
+| Parameter | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `options` | Use `prefix` to filter by the start of each key, `model` to find entries about that model or any copy of it (the same original or imported from the same page), and `before` to continue after an entry's cursor. To get `previewMatch` on the results, pass `thingport.preview.key` as `preview` along with `model` and the key prefix, which can be an empty string. Use keys of the form `<prefix><writer's model ID>:<preview key>:<suffix>`. |
+
+See [`SdkSharedEntry`](#sdksharedentry).
+
+```js
+const queued = (await thingport.shared.list({ prefix: "job:", model: modelId })).filter((e) => !e.mine);
+```
+
+```js
+// Every entry, however many there are.
+let page = await thingport.shared.list();
+const all = [...page];
+while (page.length === 5000) {
+  page = await thingport.shared.list({ before: page.at(-1).cursor });
+  all.push(...page);
+}
+```
+
+#### `shared.set(key, value, options?)`
+
+```ts
+thingport.shared.set(key: string, value: unknown, options?: { model?: string }): Promise<void>
+```
+
+Keeps one of the user's entries, replacing their entry under the key. At most 256 KB a value as JSON, 5 MB and 5,000 entries a user.
+
+| Parameter | What it is                                                                                                             |
+| --------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.                                            |
+| `value`   | Anything JSON can hold.                                                                                                |
+| `options` | `model`: the model it's about, one the user can open, so `list({ model })` finds it from that model or any copy of it. |
+
+```js
+await thingport.shared.set(`job:${id}`, job, { model: modelId });
+```
+
+#### `shared.replace(previous, next)`
+
+```ts
+thingport.shared.replace(previous: { key: string; store: "storage" | "shared"; value: unknown }, next: { key: string; store: "storage" | "shared"; value: unknown; model?: string } | null): Promise<boolean>
+```
+
+Replaces one of the user's existing entries if its value still matches. Changing its key or store moves it atomically, with the destination store's normal limits. An occupied destination is left alone. Available for saved tools.
+
+| Parameter  | What it is                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------------- |
+| `previous` | The entry the user read, including its original JSON value.                                                    |
+| `next`     | Where to keep the new value, or `null` to delete the entry. A shared entry can name a model the user can open. |
+
+**Returns:** Whether the change succeeded. If the source is gone, has changed, or the move's destination is occupied, returns `false`.
+
+#### `shared.remove(key)`
+
+```ts
+thingport.shared.remove(key: string): Promise<void>
+```
+
+Removes one of the user's entries.
+
+| Parameter | What it is |
+| --------- | ---------- |
+| `key`     | The key.   |
+
+#### `shared.audience()`
+
+```ts
+thingport.shared.audience(): Promise<SdkAudience>
+```
+
+Whom the user's entries reach now.
+
+See [`SdkAudience`](#sdkaudience).
+
+#### `shared.share()`
+
+```ts
+thingport.shared.share(): Promise<SdkAudience | null>
+```
+
+Opens Thingport's own dialog asking whom the user's entries reach: everyone who can use the tool, or only the people they pick.
+
+**Returns:** What they chose, or `null` when they closed it.
+
+See [`SdkAudience`](#sdkaudience).
+
+#### `shared.onChange(listener)`
+
+```ts
+thingport.shared.onChange(listener: () => void): () => void
+```
+
+Calls `listener` when this tool's shared entries are changed on this page: by its window, a command, or one of its parts of a model's page. A part uses it to show the change at once.
+
+**Returns:** A function that stops it.
+
+```js
+const stop = thingport.shared.onChange(() => void draw());
 ```
 
 ### `toolModels()`
@@ -1255,6 +1512,7 @@ Thingport's colours and font, as the theme the user has on shows them.
 | `error`           | `string`            | `--tp-error`      | Something failed.                                                                                                                                                                        |
 | `warning`         | `string`            | `--tp-warning`    | Something needs a look.                                                                                                                                                                  |
 | `success`         | `string`            | `--tp-success`    | Something worked.                                                                                                                                                                        |
+| `info`            | `string`            | `--tp-info`       | Something waiting, or to know about.                                                                                                                                                     |
 | `fontFamily`      | `string`            | `--tp-font`       | The font stack Thingport's own text is set in.                                                                                                                                           |
 
 ### `SdkSize`
@@ -1307,24 +1565,73 @@ A model in the user's library.
 
 One of a model's 3D files.
 
-| Field  | Type     | What it is                                                   |
-| ------ | -------- | ------------------------------------------------------------ |
-| `id`   | `string` |                                                              |
-| `name` | `string` | Its file name, with the extension.                           |
-| `size` | `number` | In bytes.                                                    |
-| `url`  | `string` | An address it can be read from as the user, e.g. by `fetch`. |
+| Field     | Type                      | What it is                                                                                                                                                                                                    |
+| --------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | `string`                  |                                                                                                                                                                                                               |
+| `name`    | `string`                  | Its file name, with the extension: unique within its folder, not the whole model.                                                                                                                             |
+| `folder`  | `string \| null`          | The folder of the model it's in, levels joined by "/" ("USB C version/Handles"); null at the top. A copy of the model keeps it, as it does the name.                                                          |
+| `size`    | `number`                  | In bytes.                                                                                                                                                                                                     |
+| `url`     | `string`                  | An address it can be read from as the user, e.g. by `fetch`.                                                                                                                                                  |
+| `profile` | `SdkPrintProfile \| null` | The print profile this file is, where it's one: as Thingport read it from the provider's page and the 3MF, so it costs no request to the provider. Null for a file that isn't a profile, or one not read yet. |
+
+### `SdkPrintProfile`
+
+A print profile, as a model's page shows it.
+
+| Field       | Type                                                                  | What it is                                                                                                        |
+| ----------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string \| null`                                                      | The provider's id for it, the same in every copy of the model; null for a file whose own 3MF names the filaments. |
+| `name`      | `string \| null`                                                      | Its title, as the provider or the 3MF names it.                                                                   |
+| `printer`   | `string \| null`                                                      | The printer it's set up for ("Bambu Lab P1S").                                                                    |
+| `filaments` | `SdkFilament[]`                                                       | Each filament it prints with, once, in the order the slicer has them.                                             |
+| `plates`    | `{ index: number; name: string \| null; filaments: SdkFilament[] }[]` | Its build plates, numbered from 1, with the filaments each uses.                                                  |
+
+### `SdkFilament`
+
+A filament a print profile uses. Unknown facts are null.
+
+| Field   | Type             | What it is                                               |
+| ------- | ---------------- | -------------------------------------------------------- |
+| `type`  | `string \| null` | The material, as the profile names it: "PLA", "PETG-CF". |
+| `color` | `string \| null` | "#RRGGBB".                                               |
+| `grams` | `number \| null` | How much the profile, or the plate, uses.                |
+| `brand` | `string \| null` | Who makes it, where the profile says ("Bambu Lab").      |
+
+### `SdkContentKind`
+
+What a file is, by Thingport's table of file kinds: a 3D mesh, a laser project, a sliced print, a CAD source, an OpenSCAD script, a picture, a document, a licence, an archive and so on. Anything it doesn't know is `"other"`.
+
+```ts
+type SdkContentKind =
+  | "mesh"
+  | "laser"
+  | "sliced"
+  | "cad"
+  | "script"
+  | "picture"
+  | "document"
+  | "licence"
+  | "archive"
+  | "scene-part"
+  | "cg-scene"
+  | "program"
+  | "junk"
+  | "other";
+```
 
 ### `SdkRelatedFile`
 
 A file kept beside a model rather than being one of its plates: a generator script, a readme, a diagram.
 
-| Field  | Type     | What it is     |
-| ------ | -------- | -------------- |
-| `id`   | `string` |                |
-| `name` | `string` |                |
-| `type` | `string` | Its MIME type. |
-| `size` | `number` | In bytes.      |
-| `url`  | `string` |                |
+| Field         | Type                     | What it is                                                                                                   |
+| ------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `id`          | `string`                 |                                                                                                              |
+| `name`        | `string`                 |                                                                                                              |
+| `type`        | `string`                 | Its MIME type.                                                                                               |
+| `size`        | `number`                 | In bytes.                                                                                                    |
+| `url`         | `string`                 |                                                                                                              |
+| `contentKind` | `SdkContentKind \| null` | What the file is, e.g. `"script"` or `"document"`; null from a Thingport too old to say.                     |
+| `folder`      | `string \| null`         | The folder its model's source kept it in, levels joined by "/" (e.g. "Instructions/Printed"); null for none. |
 
 ### `SdkModelPage`
 
@@ -1435,9 +1742,10 @@ type SdkSeverity = "success" | "info" | "warning" | "error";
 
 What a toast can carry besides its message.
 
-| Field        | Type     | What it is                                                                                                                                                                                                                                                                      |
-| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `openModel?` | `string` | A model's id: the toast gets an Open button that leaves for the model's page, as `ui.openModel` does, and stays up longer so it can be reached. Pass it whenever the toast says a model was saved or changed. An older Thingport instance shows the message without the button. |
+| Field         | Type     | What it is                                                                                                                                                                                                                                                                      |
+| ------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openModel?`  | `string` | A model's id: the toast gets an Open button that leaves for the model's page, as `ui.openModel` does, and stays up longer so it can be reached. Pass it whenever the toast says a model was saved or changed. An older Thingport instance shows the message without the button. |
+| `openWindow?` | `string` | Label for a button opening the calling tool's window. Available from its commands and model page parts.                                                                                                                                                                         |
 
 ### `SdkToolModel`
 
@@ -1564,5 +1872,39 @@ One of the things a 3MF holds.
 | `mesh`  | `SdkMesh`                              |                                                                                                                                                |
 | `name?` | `string`                               | What a slicer's object list calls it. A count belongs here, "8x8 Core Tile x4", since a 3MF holds one copy of a shape however many are wanted. |
 | `at?`   | `{ x: number; y: number; z?: number }` | Millimetres from the origin. Left out, the part stays where its mesh is, so several land on top of each other: see `layoutRow`.                |
+
+### `SdkPerson`
+
+Another of the instance's users, as a tool sees them: never their email.
+
+| Field       | Type             | What it is |
+| ----------- | ---------------- | ---------- |
+| `id`        | `string`         |            |
+| `name`      | `string`         |            |
+| `avatarUrl` | `string \| null` |            |
+
+### `SdkSharedEntry`
+
+One of the entries the tool's users share, as the reader sees it.
+
+| Field           | Type                | What it is                                                                                        |
+| --------------- | ------------------- | ------------------------------------------------------------------------------------------------- |
+| `key`           | `string`            |                                                                                                   |
+| `value`         | `any`               |                                                                                                   |
+| `user`          | `SdkPerson \| null` | Who wrote it.                                                                                     |
+| `mine`          | `boolean`           | Whether the reader wrote it, and so may change it.                                                |
+| `modelId`       | `string \| null`    | The model it's about, as its writer has it: another user's id may not be one the reader can open. |
+| `previewMatch?` | `boolean`           | Whether the entry refers to the requested preview, including on an equivalent model copy.         |
+| `updatedAt`     | `string`            |                                                                                                   |
+| `cursor`        | `string`            | Where it is in the order a read gives: `before` in the next read, for the entries after it.       |
+
+### `SdkAudience`
+
+Whom the user's shared entries in this tool reach: everyone who can use it, or only `people`.
+
+| Field      | Type          | What it is |
+| ---------- | ------------- | ---------- |
+| `everyone` | `boolean`     |            |
+| `people`   | `SdkPerson[]` |            |
 
 <!-- /sdk:reference -->

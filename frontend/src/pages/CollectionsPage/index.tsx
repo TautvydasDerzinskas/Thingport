@@ -24,7 +24,8 @@ import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
-import SortTabs from "../../components/controls/SortTabs";
+import SortTabs, { type SortOption } from "../../components/controls/SortTabs";
+import { useListSort } from "../../hooks/useListSort";
 import MergeDialog, { type MergeItem } from "../../components/MergeDialog";
 import SelectionToolbar, { SelectionAction } from "../../components/selection/SelectionToolbar";
 import { renderPreviewContent } from "../../components/media/renderPreviewContent";
@@ -63,7 +64,8 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const sort = useListSort<SortMode>("newest");
+  const { value: sortMode, direction } = sort;
   const [hiddenTypes, setHiddenTypes] = useState(readHiddenTypes);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
@@ -111,11 +113,19 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
     const shown = collections.filter((c) => !hiddenTypes.includes(collectionType(c)));
     const system = shown.filter((c) => c.system_key);
     const own = shown.filter(isOwn);
-    const byName = (a: Collection, b: Collection) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-    if (sortMode === "name") own.sort(byName);
-    if (sortMode === "models") own.sort((a, b) => b.item_count - a.item_count || byName(a, b));
+    const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+    const byName = (a: Collection, b: Collection) => collator.compare(a.name, b.name);
+    const sign = direction === "asc" ? 1 : -1;
+    if (sortMode === "name") own.sort((a, b) => sign * byName(a, b));
+    if (sortMode === "models") own.sort((a, b) => sign * (a.item_count - b.item_count) || byName(a, b));
+    if (sortMode === "newest" && direction === "asc") {
+      // The date order from the server groups tool collections after the user's collections.
+      own.sort(
+        (a, b) => Number(Boolean(a.tool_id)) - Number(Boolean(b.tool_id)) || a.created_at.localeCompare(b.created_at),
+      );
+    }
     return [...system, ...own];
-  }, [collections, sortMode, hiddenTypes]);
+  }, [collections, sortMode, direction, hiddenTypes]);
 
   const selection = useSelection(sorted, collectionKey, isOwn);
   const { selected } = selection;
@@ -229,10 +239,11 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
     });
   };
 
-  const sortOptions: { value: SortMode; label: string }[] = [
-    { value: "newest", label: t("models:sort.newest") },
-    { value: "name", label: t("models:tags.sortByName") },
-    { value: "models", label: t("models:collections.sortByModels") },
+  const nameLabel = t("models:tags.sortByName");
+  const sortOptions: SortOption<SortMode>[] = [
+    { value: "newest", label: t("models:sort.newest"), reverseLabel: t("models:sort.oldest") },
+    { value: "name", label: nameLabel, reverseLabel: t("models:sort.reverseAlphabetical", { label: nameLabel }) },
+    { value: "models", label: t("models:collections.sortByModels"), reverseLabel: t("models:sort.fewestModels") },
   ];
   const ownCount = sorted.filter(isOwn).length;
   const disabled = count === 0 || busy !== null;
@@ -303,7 +314,7 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
           </SelectionToolbar>
         )}
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-          <SortTabs value={sortMode} options={sortOptions} onChange={setSortMode} />
+          <SortTabs {...sort} options={sortOptions} />
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <CollectionFiltersButton hidden={hiddenTypes} onChange={changeHiddenTypes} />
         </Box>

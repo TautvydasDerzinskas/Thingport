@@ -1,0 +1,49 @@
+{
+  "name": "Filament shelf",
+  "description": "The household's filament spools on one shelf: everyone adds what they have, and each model's page shows which filaments it needs and who has them.",
+  "version": "1.0.2",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1100,
+    "height": 720
+  },
+  "hosts": [],
+  "category": "planners",
+  "locales": [
+    "en",
+    "lt",
+    "es",
+    "fr",
+    "ru",
+    "uk",
+    "be",
+    "zh",
+    "de"
+  ],
+  "modelPage": {
+    "tab": {
+      "title": "Filaments"
+    },
+    "image": true
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/shelf.webp",
+      "caption": "Opened on a model: the household's spools, whose each is and how much is left, and the model's three filaments, two already on the shelf and one still to get."
+    },
+    {
+      "file": "screenshots/material-dark.webp",
+      "caption": "In the dark theme, filtered to one material: every PLA spool in the house, with its brand, line and how much is left on it."
+    },
+    {
+      "file": "screenshots/card-menu.webp",
+      "caption": "Your own spools are yours to edit, mark used up or take off the shelf; everyone else's are theirs."
+    },
+    {
+      "file": "screenshots/add-needed-dark.webp",
+      "caption": "Adding what the model needs, in the dark theme: the form starts from the missing filament's material and colour."
+    }
+  ],
+  "iconUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2224%22%20r%3D%2214%22%20fill%3D%22%2326a69a%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2224%22%20r%3D%2210.5%22%20fill%3D%22%234db6ac%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2224%22%20r%3D%225%22%20fill%3D%22%23004d40%22%2F%3E%3Ccircle%20cx%3D%2218%22%20cy%3D%2224%22%20r%3D%222.6%22%20fill%3D%22%23e0f2f1%22%2F%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2227%22%20r%3D%2210.5%22%20fill%3D%22%23ef6c00%22%2F%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2227%22%20r%3D%227.8%22%20fill%3D%22%23ffa726%22%2F%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2227%22%20r%3D%223.8%22%20fill%3D%22%23bf360c%22%2F%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2227%22%20r%3D%221.9%22%20fill%3D%22%23fff3e0%22%2F%3E%3C%2Fsvg%3E"
+}

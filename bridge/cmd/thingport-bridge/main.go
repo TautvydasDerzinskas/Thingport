@@ -63,10 +63,7 @@ func main() {
 
 	cfg, cfgDir := loadConfig()
 	setupLogging(cfg, cfgDir)
-
-	if err := handleProtocol(arg, cfg); err != nil {
-		log.Printf("error: %v", err)
-	}
+	serveLink(arg, cfg)
 }
 
 func printUsage() {
@@ -86,13 +83,59 @@ func runInstallAndReport() {
 	fmt.Println("You can now use \"Open in Bambu Studio\" from Thingport.")
 }
 
-func handleProtocol(raw string, cfg Config) error {
+// link is a thingport:// open request that passed the checks in parseLink.
+type link struct {
+	downloadURL string
+	filename    string
+	slicerID    string
+}
+
+// How long a download keeps retrying while macOS blocks the local network. Its permission prompt fails the
+// first try before anyone can answer, and someone who has just opened the setting needs a moment to switch it.
+const (
+	promptWait   = 10 * time.Second
+	settingsWait = time.Minute
+)
+
+// The error dialog, which tests replace.
+var ask = askAboutFailure
+
+// serveLink opens one thingport:// link and, when that fails, says why and offers to try again.
+func serveLink(raw string, cfg Config) {
+	l, err := parseLink(raw)
+	if err != nil {
+		// Any website can make a thingport:// link, so a malformed or refused one is only logged: a dialog for
+		// it would let one pester people.
+		log.Printf("error: %v", err)
+		return
+	}
+	log.Printf("open request version=%s slicer=%s url=%s filename=%s", version, l.slicerID, redactURL(l.downloadURL), l.filename)
+	wait := promptWait
+	for {
+		err := openLink(l, cfg, wait)
+		if err == nil {
+			return
+		}
+		log.Printf("error: %v", err)
+		switch ask(explain(l, err)) {
+		case choiceRetry:
+			wait = promptWait
+		case choiceSettings:
+			openLocalNetworkSettings()
+			wait = settingsWait
+		default:
+			return
+		}
+	}
+}
+
+func parseLink(raw string) (link, error) {
 	parsed, err := url.Parse(raw)
 	if err != nil {
-		return fmt.Errorf("parse url: %w", scrubURL(err))
+		return link{}, fmt.Errorf("parse url: %w", scrubURL(err))
 	}
 	if parsed.Scheme != scheme {
-		return fmt.Errorf("unexpected scheme: %s", parsed.Scheme)
+		return link{}, fmt.Errorf("unexpected scheme: %s", parsed.Scheme)
 	}
 
 	action := strings.Trim(parsed.Host, "/")
@@ -103,75 +146,104 @@ func handleProtocol(raw string, cfg Config) error {
 		action = "open"
 	}
 	if action != "open" {
-		return fmt.Errorf("unsupported action: %s", action)
+		return link{}, fmt.Errorf("unsupported action: %s", action)
 	}
 
 	q := parsed.Query()
 	downloadURL := strings.TrimSpace(q.Get("url"))
 	if downloadURL == "" {
-		return errors.New("missing url parameter")
+		return link{}, errors.New("missing url parameter")
 	}
 	if !strings.HasPrefix(downloadURL, "http://") && !strings.HasPrefix(downloadURL, "https://") {
-		return fmt.Errorf("unsupported url: %s", redactURL(downloadURL))
+		return link{}, fmt.Errorf("unsupported url: %s", redactURL(downloadURL))
+	}
+	// Refused here, as a request can't be made from it, rather than failing in the download with a dialog.
+	download, err := url.Parse(downloadURL)
+	if err != nil {
+		return link{}, fmt.Errorf("parse download url: %w", scrubURL(err))
+	}
+	if download.Host == "" {
+		return link{}, fmt.Errorf("download url has no host: %s", redactURL(downloadURL))
 	}
 
 	filename := strings.TrimSpace(q.Get("filename"))
 	if filename == "" {
-		if u, err := url.Parse(downloadURL); err == nil {
-			filename = path.Base(u.Path)
-		}
+		filename = path.Base(download.Path)
 	}
 	filename = sanitizeFilename(filename)
 	// Any website can make a thingport:// link, and a file that isn't a model may be a program the OS
 	// runs when it's opened. Thingport only ever hands over models, so refuse the rest before fetching.
 	if !isModelFile(filename) {
-		return fmt.Errorf("refused %q: not a model file", filename)
+		return link{}, fmt.Errorf("refused %q: not a model file", filename)
 	}
 
 	slicerID := strings.ToLower(strings.TrimSpace(q.Get("slicer")))
-	log.Printf("open request version=%s slicer=%s url=%s filename=%s", version, slicerID, redactURL(downloadURL), filename)
+	return link{downloadURL: downloadURL, filename: filename, slicerID: slicerID}, nil
+}
 
+// openLink downloads the file and hands it to the slicer. wait is how long to keep trying while macOS blocks
+// the local network.
+func openLink(l link, cfg Config, wait time.Duration) error {
 	downloadDir := resolveDownloadDir(cfg)
 	if err := os.MkdirAll(downloadDir, 0755); err != nil {
-		return fmt.Errorf("create download dir: %w", err)
+		return &saveError{dir: downloadDir, err: fmt.Errorf("create download dir: %w", err)}
 	}
 
-	targetPath := uniquePath(downloadDir, filename)
-	if err := downloadFile(downloadURL, targetPath); err != nil {
+	targetPath := uniquePath(downloadDir, l.filename)
+	if err := retryWhileBlocked(wait, func() error { return downloadFile(l.downloadURL, targetPath) }); err != nil {
 		return err
 	}
 
-	if slicerID == "" || slicerID == "other" {
+	if l.slicerID == "" || l.slicerID == "other" {
 		log.Printf("open with default app path=%s", targetPath)
-		return openWithDefault(targetPath)
+		return launchFailed("", openWithDefault(targetPath))
 	}
 
-	cmd, args := resolveSlicerCommand(slicerID, cfg)
+	cmd, args := resolveSlicerCommand(l.slicerID, cfg)
 	if cmd == "" {
 		// Otherwise a slicer that isn't found looks, in the log, like one that was launched.
-		log.Printf("slicer not found slicer=%s; open with default app path=%s", slicerID, targetPath)
-		return openWithDefault(targetPath)
+		log.Printf("slicer not found slicer=%s; open with default app path=%s", l.slicerID, targetPath)
+		return launchFailed("", openWithDefault(targetPath))
 	}
 
 	log.Printf("launch slicer command=%s args=%v", cmd, args)
-	return launchCommand(cmd, args, targetPath)
+	return launchFailed(cmd, launchCommand(cmd, args, targetPath))
 }
 
-func setupLogging(cfg Config, cfgDir string) {
-	logPath := cfg.LogFile
-	if logPath == "" {
-		logPath = filepath.Join(cfgDir, "bridge.log")
+// Polled while macOS blocks the local network. A blocked connection fails at once, without sending anything.
+var blockedPoll = time.Second
+
+// retryWhileBlocked runs fetch until it gets past macOS's local network block, or wait runs out.
+func retryWhileBlocked(wait time.Duration, fetch func() error) error {
+	deadline := time.Now().Add(wait)
+	for {
+		err := fetch()
+		if err == nil || !localNetworkBlocked(err) || time.Now().Add(blockedPoll).After(deadline) {
+			return err
+		}
+		time.Sleep(blockedPoll)
 	}
-	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
+}
+
+// Where the log is, for the error dialog to point at. Empty when it couldn't be opened.
+var logPath string
+
+func setupLogging(cfg Config, cfgDir string) {
+	p := cfg.LogFile
+	if p == "" {
+		p = filepath.Join(cfgDir, "bridge.log")
+	}
+	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
 		log.SetOutput(os.Stderr)
 		return
 	}
-	f, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(p, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		log.SetOutput(os.Stderr)
 		return
 	}
 	log.SetOutput(f)
+	logPath = p
 }
 
 func loadConfig() (Config, string) {
@@ -270,14 +342,19 @@ func downloadFile(downloadURL, targetPath string) error {
 	}
 	defer res.Body.Close()
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("download failed: %s", res.Status)
+		return &statusError{code: res.StatusCode, status: res.Status}
 	}
 	out, err := os.Create(targetPath)
 	if err != nil {
-		return fmt.Errorf("create file: %w", err)
+		return &saveError{dir: filepath.Dir(targetPath), err: fmt.Errorf("create file: %w", err)}
 	}
-	defer out.Close()
-	if _, err := io.Copy(out, res.Body); err != nil {
+	_, err = io.Copy(out, res.Body)
+	if closeErr := out.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		// Half a file would push the next try to a "-1" name, and the slicer would never want it.
+		_ = os.Remove(targetPath)
 		return fmt.Errorf("save file: %w", err)
 	}
 	return nil

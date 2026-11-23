@@ -28,7 +28,7 @@ Thingport into your language, see [docs/TRANSLATING.md](docs/TRANSLATING.md) -- 
    The type also decides the next version of what you touched (`feat:` minor, `fix:` and `perf:` patch, `!`
    major; anything else none). The backend, the frontend, Bridge and the browser extension are each versioned on
    their own, from the commits under their folder: the backend, frontend and Bridge when a release is merged into
-   `main`, the extension weekly -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
+   `main`, the extension when a maintainer releases it -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
    Each gets a `CHANGELOG.md` and a GitHub release.
 
 4. **Push** to your fork and open a pull request against `develop`.
@@ -78,7 +78,9 @@ changes early, but only for the project it touches: the backend's when it change
 when it changes `frontend/**`, once any running backend build has finished. Only a release, merged into `main`,
 gets a version and `:latest`. It isn't tested again there, since its pull request was, so merge one only once
 that pull request's checks have passed: `main`'s rules don't require it. When a release changes both projects,
-their images go out together, the backend's first, so nobody pulls a new frontend for an old backend.
+their images go out together, the backend's first, so nobody pulls a new frontend for an old backend. Afterwards
+`main` goes back into `develop` by pull request, with a merge commit; it only brings the versions and changelogs, so
+its title gets `[skip ci]` added (`back-merge-pr.yml`) and merging it runs nothing on `develop`.
 
 If you're a brand-new GitHub account, your first PR's workflows wait for a maintainer to approve
 them before running. That's a GitHub setting, not something wrong with your PR.
@@ -91,12 +93,12 @@ reviewer otherwise has to reconstruct your reasoning from scratch.
 
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
 
-CodeRabbit reviews pull requests into `develop`, and each push to them. An account kept for it watches CodeRabbit's
-checks and the pushes, and asks for what a pull request is still owed once it's due, so there's no need to ask yourself:
-`@coderabbitai review` for a push it didn't review (`full review` if it never reviewed the pull request, stacked ones
-included), the same ask again once a rate limit's wait is over, and `full review` when a review had nothing to say or
-CodeRabbit answers "Already reviewed the last commit". Comment `@coderabbitai pause` to stop its reviews of your pull
-request, and `@coderabbitai resume` to start them again.
+CodeRabbit reviews a pull request into `develop` when it's opened or marked ready for review, and after that only
+when someone asks: once you've pushed the fixes for a round, comment `@coderabbitai review`. It doesn't review pushes on
+its own or answer replies in its threads, so mention `@coderabbitai` only to ask it something. An account kept for it
+asks again when CodeRabbit refused an ask under its rate limit, once the wait is over, and for a first review that was
+rate limited or never came. It never asks for a full review by itself. Comment `@coderabbitai pause` to stop its
+reviews of your pull request, and `@coderabbitai resume` to start them again.
 
 ## Adding a provider
 
@@ -127,6 +129,12 @@ Connected Thingport instances see each other's people as if they were on one ins
 work for a partner's people too. Each social route says how it crosses to partners in
 `backend/src/federation/socialSurfaces.ts`, and a test fails for one that doesn't. How it's built, the security rules
 and the steps for a federating feature are in [docs/FEDERATION_DEVELOPMENT.md](docs/FEDERATION_DEVELOPMENT.md).
+
+## Working on model files and storage
+
+How a model's files are stored, moved, imported and deleted is being rebuilt in small pull requests. The rules that
+code follows today, and how its reviews run, are in [docs/STORAGE_DEVELOPMENT.md](docs/STORAGE_DEVELOPMENT.md); a pull
+request that puts a new rule in force adds it there.
 
 ## Code style
 

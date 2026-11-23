@@ -10,9 +10,11 @@ import type { Peer, RemoteModel, RemotePerson } from "@prisma/client";
 import type { Request, Response as ExpressResponse } from "express";
 import { IMPORT_MAX_BYTES } from "../config";
 import { prisma } from "../db";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
-import { folderPath, normalizeFolder } from "../utils/fileFolder";
-import { writeZip } from "../utils/zipWriter";
+import { HttpError } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
+import { ZipPaths } from "../files/zipPaths";
+import { folderLevels, normalizeFolder } from "../utils/fileFolder";
+import { writeZip, zipFits } from "../utils/zipWriter";
 import { originOf } from "./addresses";
 import type { RemoteFileDetails } from "./remoteIndex";
 import { signedGet } from "./signedFetch";
@@ -162,6 +164,13 @@ export async function fetchRemoteFile(
 const MAX_ZIPS = 2;
 const zipping = new Set<string>();
 
+/** Where each of a partner's model's files goes in its ZIP: in its folder, as the partner keeps it, and every path once
+ *  (files/zipPaths.ts). */
+export function remoteZipPaths(files: readonly Pick<RemoteFile, "name" | "folder">[]): string[] {
+  const zip = new ZipPaths();
+  return files.map((file) => zip.file(zip.nested("", folderLevels(file.folder), "model"), file.name));
+}
+
 /** Every file of the model, fetched and zipped for `userId`, then sent: all of them no bigger than an import, and
  *  given up as soon as the viewer is gone. */
 export async function sendRemoteZip(
@@ -186,23 +195,22 @@ export async function sendRemoteZip(
   let dir: string | null = null;
   try {
     dir = await fsp.mkdtemp(path.join(os.tmpdir(), "thingport-remote-zip-"));
-    const taken = new Set<string>();
+    const fetchable = files.flatMap((file, index) => (file.url ? [{ file, index }] : []));
+    const arcnames = remoteZipPaths(fetchable.map(({ file }) => file));
     const entries: { arcname: string; filePath: string }[] = [];
     let total = 0;
-    for (const [index, file] of files.entries()) {
-      if (!file.url) continue;
+    for (const [n, { index }] of fetchable.entries()) {
       if (viewer.signal.aborted) throw new Error("The viewer left");
       const dest = path.join(dir, `${index}`);
       await fetchRemoteFile(model, index, dest, { signal: viewer.signal, maxBytes: IMPORT_MAX_BYTES - total });
       total += (await fsp.stat(dest)).size;
-      // In its folder, as the partner keeps it. Two files may still share a place: the later one gets a number.
-      const name = sanitizeFilename(file.name) || `file-${index}`;
-      let arcname = folderPath(file.folder, name);
-      for (let n = 2; taken.has(arcname); n++) arcname = folderPath(file.folder, `${n}-${name}`);
-      taken.add(arcname);
-      entries.push({ arcname, filePath: dest });
+      entries.push({ arcname: arcnames[n], filePath: dest });
     }
     if (viewer.signal.aborted) throw new Error("The viewer left");
+    // An import's limit can be set past what a zip without ZIP64 holds.
+    if (!zipFits(entries)) {
+      throw new HttpError(413, "Too big to zip here: download its files one at a time", "zip_too_big");
+    }
     await writeZip(zipPath, entries);
   } catch (err) {
     zipping.delete(userId);
@@ -211,7 +219,7 @@ export async function sendRemoteZip(
   } finally {
     if (dir) await fsp.rm(dir, { recursive: true, force: true }).catch(() => {});
   }
-  res.download(zipPath, `${sanitizeFilename(model.title) || "model"}.zip`, () => {
+  res.download(zipPath, `${normalizeFileName(model.title)}.zip`, () => {
     zipping.delete(userId);
     fs.rm(zipPath, { force: true }, () => undefined);
   });

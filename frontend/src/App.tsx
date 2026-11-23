@@ -3,7 +3,17 @@ import { useTranslation } from "react-i18next";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AppLayout from "./components/Layout/AppLayout";
@@ -38,6 +48,8 @@ import DashboardAdminPage from "./pages/DashboardAdminPage";
 import ToolsAdminPage from "./pages/ToolsAdminPage";
 import ToolsPage from "./pages/ToolsPage";
 import { useStudioEnabled } from "./hooks/useStudioEnabled";
+import StudioModelImport, { StudioSplash } from "./pages/StudioPage/StudioModelImport";
+import type { StudioArrival } from "./pages/StudioPage/openModel";
 import UsersPage from "./pages/UsersPage";
 import SocialAdminPage from "./pages/SocialAdminPage";
 import LogsPage from "./pages/LogsPage";
@@ -85,13 +97,35 @@ import ScrollReset from "./components/Layout/ScrollReset";
 // Heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
 const StudioPage = React.lazy(() => import("./pages/StudioPage"));
 
+/** A model's page made new for each model, so nothing of one (its state, or an answer still on its way) shows on the
+ *  next. */
+function ModelRoute(props: React.ComponentProps<typeof ModelDetailPage>) {
+  const { printId } = useParams();
+  return <ModelDetailPage key={printId} {...props} />;
+}
+
+/** A partner's model's page, likewise made new for each model. */
+function ElsewhereModelRoute(props: React.ComponentProps<typeof ElsewhereModelPage>) {
+  const { modelId } = useParams();
+  return <ElsewhereModelPage key={modelId} {...props} />;
+}
+
 /** /studio when the backend has Studio; home when it's older than Studio, once that's known. */
 function StudioRoute({ isAdmin, onUnauthorized }: { isAdmin: boolean; onUnauthorized: () => void }) {
+  const { t } = useTranslation("app");
   const enabled = useStudioEnabled();
-  if (enabled === null) return null;
-  if (!enabled) return <Navigate to="/" replace />;
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const openModel = (location.state as StudioArrival | null)?.openModel;
+  if (enabled === false) return <Navigate to="/" replace />;
+  // Only a fresh click imports a file. Reloading or revisiting its history entry opens Studio normally.
+  if (enabled && navigationType === "PUSH" && openModel) {
+    return <StudioModelImport key={location.key} request={openModel} onUnauthorized={onUnauthorized} />;
+  }
+  const loading = <StudioSplash label={t("studio.importModel.loadingStudio")} />;
+  if (enabled === null) return loading;
   return (
-    <React.Suspense fallback={null}>
+    <React.Suspense fallback={loading}>
       <StudioPage isAdmin={isAdmin} onUnauthorized={onUnauthorized} />
     </React.Suspense>
   );
@@ -277,7 +311,7 @@ function AppShell({
         <Route
           path="/models/:printId"
           element={
-            <ModelDetailPage
+            <ModelRoute
               theme={resolvedTheme}
               onSelectCategory={setCategoryId}
               onUnauthorized={onUnauthorized}
@@ -316,7 +350,7 @@ function AppShell({
         />
         <Route
           path="/explore/elsewhere/models/:modelId"
-          element={<ElsewhereModelPage onUnauthorized={onUnauthorized} />}
+          element={<ElsewhereModelRoute onUnauthorized={onUnauthorized} />}
         />
         <Route
           path="/explore/elsewhere/collections/:collectionId"
@@ -340,7 +374,7 @@ function AppShell({
         <Route
           path="/explore/models/:printId"
           element={
-            <ModelDetailPage
+            <ModelRoute
               theme={resolvedTheme}
               onSelectCategory={setCategoryId}
               onUnauthorized={onUnauthorized}
@@ -559,9 +593,9 @@ export default function App() {
     resetHoverSlideshowEnabled();
     resetCustomWidgets();
     resetTools();
-    resetToolsView();
     resetUserPrinters();
     storeToken(tok);
+    resetToolsView();
     storeUser(loggedInUser);
     setToken(tok);
     setUser(loggedInUser);
@@ -591,8 +625,8 @@ export default function App() {
   const expireSession = React.useCallback(() => {
     resetCustomWidgets();
     resetTools();
-    resetToolsView();
     clearToken();
+    resetToolsView();
     setToken(null);
     setShowExpiredToast(true);
   }, []);
@@ -641,6 +675,7 @@ export default function App() {
         const stored = readUser();
         if ((stored?.id ?? null) !== userId.current) {
           resetUserPrinters();
+          resetToolsView();
           setSessionKey((key) => key + 1);
         }
         setToken(readToken());
@@ -679,9 +714,9 @@ export default function App() {
     await authApi.logout();
     resetCustomWidgets();
     resetTools();
-    resetToolsView();
     resetUserPrinters();
     clearToken();
+    resetToolsView();
     clearUser();
     setToken(null);
     setUser(null);

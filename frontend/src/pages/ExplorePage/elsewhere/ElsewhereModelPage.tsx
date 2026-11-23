@@ -23,15 +23,15 @@ import { useToast } from "../../../components/ToastProvider";
 import UserAvatar from "../../../components/UserAvatar";
 import { switchSlicer } from "../../../hooks/useSlicerPreference";
 import { saveResponseToDisk } from "../../../utils/downloadResponse";
-import { extOf } from "../../../utils/fileExtensions";
+import { legacyPartnerCaps } from "../../../utils/fileCaps";
 import ModelFileSelect from "../../ModelDetailPage/ModelFileSelect";
 import OpenInSlicerButton from "../../ModelDetailPage/OpenInSlicerButton";
 import { useSlicerChoice, type ModelFile } from "../../ModelDetailPage/useOpenInSlicer";
 import ElsewhereGone from "./ElsewhereGone";
 import RemoteCopyPanel from "./RemoteCopyPanel";
-
-// What slicers open; anything else is downloaded instead.
-const SLICES = new Set(["stl", "3mf", "step", "stp", "obj"]);
+import SupportingFilesList, { type SupportingItem } from "../../../components/supportingFiles/SupportingFilesList";
+import CircularProgress from "@mui/material/CircularProgress";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 
 const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" } as const;
 
@@ -87,32 +87,44 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
   const [downloading, setDownloading] = useState(false);
   // Those it can be had of, through this instance. Two can share a name: told apart by where they are in the list,
   // which never changes here.
-  const files = useMemo<ModelFile[]>(
-    () =>
-      (model?.files ?? []).flatMap((file, position) =>
-        file.url
-          ? [
-              {
-                key: `${position}:${file.name}`,
-                url: file.url,
-                filename: file.name,
-                launchFilename: file.name,
-                index: position,
-                plate: null,
-                size: file.size,
-                folder: file.folder ?? null,
-              },
-            ]
-          : [],
-      ),
-    [model],
-  );
+  // The files kept beside the plates have a list of their own; the rest are the box's, to open or download.
+  const { files, supporting } = useMemo(() => {
+    const box: ModelFile[] = [];
+    const beside: SupportingItem[] = [];
+    (model?.files ?? []).forEach((file, position) => {
+      if (!file.url) return;
+      const key = `${position}:${file.name}`;
+      const folder = file.folder ?? null;
+      if (file.role === "supporting") {
+        beside.push({
+          key,
+          name: file.name,
+          folder,
+          size: file.size,
+          url: file.url,
+          kind: file.content_kind,
+          caps: file.caps,
+        });
+        return;
+      }
+      box.push({
+        key,
+        url: file.url,
+        filename: file.name,
+        launchFilename: file.name,
+        index: position,
+        plate: null,
+        size: file.size,
+        folder,
+        caps: file.caps ?? legacyPartnerCaps(file.name),
+      });
+    });
+    return { files: box, supporting: beside };
+  }, [model]);
+  const offered = files.length + supporting.length;
   // The first a slicer opens, until one is picked.
   const selected =
-    files.find((file) => file.key === selectedKey) ??
-    files.find((file) => SLICES.has(extOf(file.filename))) ??
-    files[0] ??
-    null;
+    files.find((file) => file.key === selectedKey) ?? files.find((file) => file.caps.openInSlicer) ?? files[0] ?? null;
 
   const copied = useCallback(
     (copiedId: string, copyId: string) =>
@@ -129,7 +141,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
       severity: "error",
     });
   };
-  const download = async (file: ModelFile) => {
+  const download = async (file: Pick<ModelFile, "url" | "filename">) => {
     setDownloading(true);
     try {
       const res = await fetch(printsApi.fileUrl(file.url));
@@ -277,10 +289,10 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
           </Box>
 
           {/* A copy made already stays reachable, even with the files no longer offered. */}
-          {(files.length > 0 || model.library_copy_id) && (
+          {(offered > 0 || model.library_copy_id) && (
             <RemoteCopyPanel key={model.id} model={model} onCopied={copied} onUnauthorized={onUnauthorized} />
           )}
-          {files.length > 0 ? (
+          {offered > 0 ? (
             <>
               {selected && files.length > 1 && (
                 <ModelFileSelect files={files} selected={selected} onSelect={(file) => setSelectedKey(file.key)} />
@@ -288,15 +300,39 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
               {selected && (
                 <OpenInSlicerButton
                   file={selected}
-                  canOpen={SLICES.has(extOf(selected.filename))}
+                  canOpen={selected.caps.openInSlicer}
                   slicerOption={slicerOption}
                   slicerOptions={slicerOptions}
                   onOpened={(slicerId) => void switchSlicer(slicerId)}
                   downloading={downloading}
                   onDownload={() => void download(selected)}
-                  zipCount={files.length}
+                  zipCount={offered}
                   onDownloadZip={() => void downloadZip()}
                 />
+              )}
+              {/* With no file for the box, its menu's ZIP isn't there: the supporting files get their own. */}
+              {!selected && offered > 1 && (
+                <Button
+                  variant="outlined"
+                  disabled={downloading}
+                  onClick={() => void downloadZip()}
+                  startIcon={downloading ? <CircularProgress size={14} /> : <DownloadOutlinedIcon fontSize="small" />}
+                >
+                  {t("models:detail.downloadAllZip", { count: offered })}
+                </Button>
+              )}
+              {supporting.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                    {t("models:supporting.title")}
+                  </Typography>
+                  <SupportingFilesList
+                    items={supporting}
+                    onDownload={(item) => {
+                      if (item.url) void download({ url: item.url, filename: item.name });
+                    }}
+                  />
+                </Box>
               )}
             </>
           ) : (

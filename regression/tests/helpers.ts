@@ -94,7 +94,26 @@ export class Api {
     return res.json();
   }
 
-  /** The only write: test setup that isn't itself under test. */
+  /** Test setup, not itself under test: a model made of one file, and its id. */
+  async upload(file: FilePayload): Promise<string> {
+    const res = await this.request.post("/api/upload", {
+      headers: { Authorization: `Bearer ${this.token}` },
+      multipart: { files: file },
+    });
+    if (!res.ok()) throw new Error(`POST /api/upload -> ${res.status()}${why(res.status())}`);
+    return ((await res.json()) as { prints: { id: string }[] }).prints[0].id;
+  }
+
+  /** Test setup: a file kept beside a model's plates. */
+  async addFile(printId: string, file: FilePayload): Promise<void> {
+    const res = await this.request.post(`/api/print/${printId}/files`, {
+      headers: { Authorization: `Bearer ${this.token}` },
+      multipart: { file },
+    });
+    if (!res.ok()) throw new Error(`POST /api/print/${printId}/files -> ${res.status()}${why(res.status())}`);
+  }
+
+  /** Test setup, like the two above. */
   async setConsume(patch: { mode?: ConsumeSettings["mode"]; user_id?: string }) {
     const res = await this.request.patch("/api/settings/consume", {
       headers: { Authorization: `Bearer ${this.token}` },
@@ -146,8 +165,8 @@ function adminToken(): string {
 }
 
 /**
- * `api` checks results as the admin. `alerts` collects window.alert() messages (how uploads report
- * failures); a test that expects one empties the array, otherwise any alert fails it.
+ * `api` checks results as the admin. `alerts` collects window.alert() messages: the app shows none (its messages are
+ * toasts), so any alert fails the test.
  */
 export const test = base.extend<{ api: Api; alerts: string[] }>({
   api: async ({ request }, use) => {

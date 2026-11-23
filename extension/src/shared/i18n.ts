@@ -2,6 +2,7 @@ import en from "./locales/en.json";
 import ru from "./locales/ru.json";
 import uk from "./locales/uk.json";
 import be from "./locales/be.json";
+import de from "./locales/de.json";
 import es from "./locales/es.json";
 import fr from "./locales/fr.json";
 import lt from "./locales/lt.json";
@@ -10,13 +11,13 @@ import zh from "./locales/zh.json";
 // Runtime catalogs are deliberately independent of WebExtension `_locales`: Chrome does not
 // support Belarusian (`be`), while every choice must work in Chrome, Edge and Firefox.
 
-export const LOCALES = ["en", "ru", "uk", "be", "es", "fr", "lt", "zh"] as const;
+export const LOCALES = ["en", "ru", "uk", "be", "de", "es", "fr", "lt", "zh"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export type TranslationValues = Record<string, string | number>;
 type Messages = Record<string, string>;
 
-export const catalogs: Record<Locale, Messages> = { en, ru, uk, be, es, fr, lt, zh };
+export const catalogs: Record<Locale, Messages> = { en, ru, uk, be, de, es, fr, lt, zh };
 let activeLocale: Locale = "en";
 
 export function detectLocale(languages: readonly string[] = navigator.languages): Locale {
@@ -49,6 +50,14 @@ export function translate(locale: Locale, key: string, values: TranslationValues
 
 export function t(key: string, values: TranslationValues = {}): string {
   return translate(activeLocale, key, values);
+}
+
+/** Format a displayed decimal using Grab's chosen language, which can differ from the browser's. */
+export function formatDecimal(value: number, fractionDigits: number): string {
+  return value.toLocaleString(activeLocale, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
 }
 
 export function applyTranslations(root: ParentNode = document): void {

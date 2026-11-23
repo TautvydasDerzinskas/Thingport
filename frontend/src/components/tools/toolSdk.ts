@@ -1,11 +1,14 @@
-import { toolsApi, type ToolLocales, type ToolManifest } from "../../api/tools";
+import { toolsApi, type ToolLocales, type ToolManifest, type ToolPerson } from "../../api/tools";
 import { applyLabels, translator, type Translate } from "../../sdk/labels";
 import { LIBRARIES, library } from "../../sdk/libraries";
 import type {
+  SdkAudience,
   SdkCollection,
   SdkFileInput,
   SdkLanguage,
   SdkModel,
+  SdkPerson,
+  SdkShared,
   SdkStorage,
   SdkTheme,
   ToolSdk,
@@ -14,6 +17,8 @@ import type {
 import { buildUserLibrary, toCollection as toSdkCollection } from "../../sdk/userLibrary";
 import { apiAsUser, downloadFile } from "../../sdk/widgetSdk";
 import { buildAchievements } from "../../sdk/achievements";
+import { onToolSharedChange, toolSharedChanged } from "./toolSharedEvents";
+import { readUser } from "../../utils/auth";
 
 // The `thingport` object a tool's script gets. Most of it is the SDK a dashboard widget gets as well — the theme,
 // the libraries, the labels and the user's library all come from `src/sdk/` — and what's added here is what only a
@@ -50,13 +55,24 @@ export type ToolUi = SdkToolUi;
 /** A collection as a tool sees it; the picker dialog hands its choice back through this. */
 export const toCollection = toSdkCollection;
 
-/** What a tool was opened on, where it was opened from something rather than from the Tools page. */
-export type ToolContext = { modelId?: string };
+/** What a tool was opened on, where it was opened from something rather than from the Tools page: a model, and from
+ *  one of its commands, which one and what was selected; or, for a part of a model's page, which part. */
+export type ToolContext = ToolSdk["context"];
+
+/** Where on a model's page a tool draws a part, and the export that draws it. */
+export type ModelPagePlace = "info" | "tab" | "image";
+export const PLACE_EXPORTS: Record<ModelPagePlace, "modelInfo" | "modelTab" | "modelImage"> = {
+  info: "modelInfo",
+  tab: "modelTab",
+  image: "modelImage",
+};
 
 type Build = {
   tool: RunnableTool;
   context?: ToolContext;
   root: HTMLElement;
+  /** An image contribution can optionally draw over the visible static preview. */
+  preview?: ToolSdk["preview"];
   selector: string;
   theme: ToolTheme;
   language: string;
@@ -64,13 +80,19 @@ type Build = {
   size: () => { width: number; height: number };
   onResize: (listener: (size: { width: number; height: number }) => void) => () => void;
   ui: ToolUi;
+  /** Thingport's dialog asking whom the user's shared entries reach; what they chose, or null when closed. */
+  pickAudience: () => Promise<SdkAudience | null>;
 };
+
+const person = (p: ToolPerson | null): SdkPerson | null =>
+  p && { id: p.id, name: p.display_name, avatarUrl: p.avatar_url };
 
 /** The object a tool's default export is called with. */
 export function buildToolSdk({
   tool,
   context,
   root,
+  preview,
   selector,
   theme,
   language,
@@ -78,8 +100,11 @@ export function buildToolSdk({
   size,
   onResize,
   ui,
+  pickAudience,
 }: Build): ToolSdk {
   const translate: Translate = translator(tool.locales ?? {}, language);
+  // Kept with the session, as the app keeps it, so every place a tool runs knows who's signed in.
+  const viewer = readUser();
   // An unsaved tool's data lasts as long as its preview does.
   const draftData = new Map<string, unknown>();
   const saved = (what: string) => {
@@ -105,9 +130,54 @@ export function buildToolSdk({
       tool.id ? (await toolsApi.storageKeys(tool.id)).map((entry) => entry.key) : [...draftData.keys()],
   };
 
+  // Each entry is the writer's; the tool's parts of a model's page are told when one changes.
+  const shared: SdkShared = {
+    list: async (options) =>
+      tool.id
+        ? (await toolsApi.sharedList(tool.id, options)).map((entry) => ({
+            key: entry.key,
+            value: entry.value,
+            user: person(entry.user),
+            mine: entry.mine,
+            modelId: entry.model_id,
+            previewMatch: entry.preview_match,
+            updatedAt: entry.updated_at,
+            cursor: entry.cursor,
+          }))
+        : [],
+    set: async (key, value, options) => {
+      const id = saved("thingport.shared");
+      await toolsApi.sharedSet(id, key, { value, model: options?.model ?? null });
+      toolSharedChanged(id);
+    },
+    replace: tool.id
+      ? async (previous, next) => {
+          const id = saved("thingport.shared");
+          const replaced = await toolsApi.replaceEntry(id, previous, next);
+          if (replaced && (previous.store === "shared" || next?.store === "shared")) toolSharedChanged(id);
+          return replaced;
+        }
+      : undefined,
+    remove: async (key) => {
+      const id = saved("thingport.shared");
+      await toolsApi.sharedDelete(id, key);
+      toolSharedChanged(id);
+    },
+    audience: async () => {
+      const audience = await toolsApi.audience(saved("thingport.shared"));
+      return { everyone: audience.everyone, people: audience.people.flatMap((p) => person(p) ?? []) };
+    },
+    share: () => {
+      saved("thingport.shared");
+      return pickAudience();
+    },
+    onChange: (listener) => (tool.id ? onToolSharedChange(tool.id, listener) : () => undefined),
+  };
+
   // What each member does is written once, in sdk/types.ts, which the reference is generated from.
   return {
     root,
+    preview,
     selector,
     library,
     libraries: LIBRARIES,
@@ -127,6 +197,7 @@ export function buildToolSdk({
       version: tool.manifest.version,
       source: tool.source,
     },
+    user: viewer && { id: viewer.id, name: viewer.display_name, avatarUrl: viewer.avatar_url ?? null },
     context: { ...context },
     models,
     // Only a tool has a "save where?" dialog to offer.
@@ -135,6 +206,7 @@ export function buildToolSdk({
     fetchToolModels: async (keys: string[]) =>
       tool.id ? toolsApi.fetchNeededModels(tool.id, keys) : { ready: [], failed: [] },
     storage,
+    shared,
     fetch: (url: string, init?: RequestInit) => toolsApi.fetchVia(saved("thingport.fetch"), url, init),
     api: apiAsUser,
     download: downloadFile,

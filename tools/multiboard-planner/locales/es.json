@@ -104,5 +104,17 @@
   "unused.title": "Espacio sin usar",
   "wall.height": "Alto",
   "wall.title": "Tamaño de la pared",
-  "wall.width": "Ancho"
+  "wall.width": "Ancho",
+  "parts.tiles": "Paneles",
+  "parts.optional": "Opcional",
+  "parts.count": "Paneles: {count}",
+  "parts.empty": "Aún no hay piezas.",
+  "error.largeTitle": "Pared demasiado grande",
+  "error.large": "Hacen falta unos {estimate} paneles. Comprueba el tamaño y las unidades o elige un panel mayor (límite: {limit} paneles).",
+  "error.dimensionsTitle": "Dimensiones incorrectas",
+  "error.dimensions": "Introduce una anchura y una altura mayores que cero.",
+  "error.smallTitle": "Panel demasiado pequeño",
+  "error.small": "Este montaje necesita paneles mayores de {size}×{size}.",
+  "error.noFitTitle": "No cabe ningún panel",
+  "error.noFit": "Para paneles de {size}×{size}, la pared debe medir al menos {required} de ancho y de alto. Elige un panel menor."
 }

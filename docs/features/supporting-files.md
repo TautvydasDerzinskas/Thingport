@@ -11,9 +11,21 @@ A model is more than its STL. Thingport keeps everything you need to print it in
 - **The script it was generated from:** where a model was published with its OpenSCAD source, that comes in too,
   so the model can be generated again rather than only printed as its creator set it up.
 
-Add supporting files or a prepared print from the model page. When you
-[upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and its manuals
-and notes are attached automatically.
+Supporting files come with the model: when you [upload a folder](../guides/upload-folders.md) with one model per
+folder, its images become photos and its manuals and notes are attached automatically.
+
+On the model page they're in the **Supporting files** tab of its description box, each with its type, folder and size.
+Click one to read it in place: a PDF in your browser's own viewer, a picture, Markdown, plain text and OpenSCAD
+scripts, or a CSV or TSV as a table, with the model's other files beside it. Back closes it, and **Copy link** copies a
+link to the model's page with that file open (never the file's own address). Other files, SVGs and web pages among
+them, download instead. A file's **⋮** menu, or a right-click on it, also downloads it or sends it to one of your
+[Send to](../guides/send-to.md) places that takes its type. The **Download** picker lists them below the model files, and a partner's model shows its
+supporting files in a list of their own. Adding them to a model you already have is on the way.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/58_supporting_file_viewer.png">
+  <img src="../../frontend/src/assets/screenshots/light/58_supporting_file_viewer.png" alt="A model's README open in the supporting files viewer, the model's other files beside it" width="100%">
+</picture>
 
 ## Models you can generate again
 

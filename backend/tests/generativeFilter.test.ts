@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
+import { prisma } from "../src/db";
+import { PENDING_STORAGE_PATH } from "../src/modelFiles/pending";
 
 // A model is "generative" when it came with the script it was generated from. The script is kept beside the
 // model, never as one of its plates, so that is what the filter and the listing both go by.
@@ -103,6 +105,80 @@ describe("models that came with a generator script", () => {
     expect(print.generator_scripts).toEqual([]);
     const notes = await request(app).get(`/api/print/${model}/files/${files[0].id}`).set(auth());
     expect(notes.text).toBe("one\r\ntwo\r\n");
+  });
+
+  it("counts no script whose name starts with a dot, which the kind table calls junk, in the list or the filter", async () => {
+    const model = await makeModel(`Dotted ${stamp}`);
+    // As a macOS "._" copy is, kept beside the model like any other file.
+    await attachFile(model, "._generator.scad", "size = 10;\n");
+
+    const print = (await request(app).get(`/api/print/${model}`).set(auth())).body;
+    expect(print.generator_scripts).toEqual([]);
+    expect(print.supporting_files.map((file: { content_kind: string }) => file.content_kind)).toEqual(["junk"]);
+    const only = await request(app).get("/api/prints?limit=100&generative=1").set(auth());
+    expect(only.body.map((item: { id: string }) => item.id)).not.toContain(model);
+  });
+
+  it("counts no script still being saved", async () => {
+    const model = await makeModel(`Saving ${stamp}`);
+    // A save under way: its row is made before its place is claimed.
+    const pending = await prisma.printFile.create({
+      data: {
+        printId: model,
+        role: "SUPPORTING",
+        filename: "Coming.scad",
+        mime: "text/plain",
+        size: 9,
+        storagePath: PENDING_STORAGE_PATH,
+      },
+    });
+    try {
+      const print = (await request(app).get(`/api/print/${model}`).set(auth())).body;
+      expect(print.generator_scripts).toEqual([]);
+      const only = await request(app).get("/api/prints?limit=100&generative=1").set(auth());
+      expect(only.body.map((item: { id: string }) => item.id)).not.toContain(model);
+    } finally {
+      await prisma.printFile.delete({ where: { id: pending.id } });
+    }
+  });
+
+  it("judges a name kept before the naming rule as Customize does, in the list and the filter", async () => {
+    const trailing = await makeModel(`Trailing ${stamp}`);
+    const leading = await makeModel(`Leading ${stamp}`);
+    // As rows from before names were normalised can be: a trailing space, and a space before a leading dot.
+    const rows = [
+      await prisma.printFile.create({
+        data: {
+          printId: trailing,
+          role: "SUPPORTING",
+          filename: "Box.scad ",
+          mime: "text/plain",
+          size: 9,
+          storagePath: `legacy-${stamp}/a/Box.scad `,
+        },
+      }),
+      await prisma.printFile.create({
+        data: {
+          printId: leading,
+          role: "SUPPORTING",
+          filename: " .Box.scad",
+          mime: "text/plain",
+          size: 9,
+          storagePath: `legacy-${stamp}/b/ .Box.scad`,
+        },
+      }),
+    ];
+    try {
+      const scripts = async (id: string) =>
+        (await request(app).get(`/api/print/${id}`).set(auth())).body.generator_scripts.length > 0;
+      const only = (await request(app).get("/api/prints?limit=100&generative=1").set(auth())).body.map(
+        (item: { id: string }) => item.id,
+      );
+      expect([await scripts(trailing), only.includes(trailing)]).toEqual([true, true]);
+      expect([await scripts(leading), only.includes(leading)]).toEqual([false, false]);
+    } finally {
+      await prisma.printFile.deleteMany({ where: { id: { in: rows.map((row) => row.id) } } });
+    }
   });
 
   it("starts as not withheld, which is what an uploaded model is", async () => {

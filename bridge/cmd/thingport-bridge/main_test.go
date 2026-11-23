@@ -80,7 +80,7 @@ func TestIsModelFile(t *testing.T) {
 	}
 }
 
-func TestHandleProtocolRefusesWhatIsntAModelBeforeDownload(t *testing.T) {
+func TestParseLinkRefusesWhatIsntAModel(t *testing.T) {
 	hits := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits++
@@ -95,9 +95,9 @@ func TestHandleProtocolRefusesWhatIsntAModelBeforeDownload(t *testing.T) {
 		"thingport://open?url=" + url.QueryEscape(server.URL+"/x") + "&filename=evil.terminal&slicer=orcaslicer",
 	}
 	for _, link := range links {
-		err := handleProtocol(link, Config{DownloadDir: t.TempDir()})
+		_, err := parseLink(link)
 		if err == nil || !strings.Contains(err.Error(), "not a model file") {
-			t.Errorf("handleProtocol(%q) = %v, expected a refusal", link, err)
+			t.Errorf("parseLink(%q) = %v, expected a refusal", link, err)
 		}
 	}
 	if hits != 0 {
@@ -146,16 +146,22 @@ func TestDownloadTLSErrorDoesNotLeakSignedURL(t *testing.T) {
 	defer log.SetOutput(oldLog)
 
 	protocolURL := "thingport://open?url=" + url.QueryEscape(downloadURL) + "&slicer=crealityprintlink&filename=model.stl"
-	err := handleProtocol(protocolURL, Config{DownloadDir: t.TempDir()})
-	if err == nil {
-		t.Fatal("expected TLS verification failure")
+	var asked []problem
+	stubAsk(t, func(p problem) choice { asked = append(asked, p); return choiceClose })
+	serveLink(protocolURL, Config{DownloadDir: t.TempDir()})
+	if len(asked) != 1 {
+		t.Fatalf("expected one error dialog, got %d", len(asked))
 	}
 	// The cause stays, for whoever reads the log; only the URL's sign-in goes.
-	if !strings.Contains(err.Error(), "certificate") || !strings.Contains(err.Error(), "/api/t/REDACTED/") {
-		t.Fatalf("expected the certificate error with the URL redacted, got %v", err)
+	if !strings.Contains(logs.String(), "certificate") || !strings.Contains(logs.String(), "/api/t/REDACTED/") {
+		t.Fatalf("expected the certificate error with the URL redacted, got %q", logs.String())
 	}
-	if strings.Contains(err.Error(), token) || strings.Contains(logs.String(), token) {
-		t.Fatalf("signed URL credential leaked in error or log: error=%v logs=%q", err, logs.String())
+	if !strings.Contains(asked[0].reason, "certificate") {
+		t.Fatalf("dialog doesn't say it's the certificate: %q", asked[0].reason)
+	}
+	dialog := asked[0].title + asked[0].reason + asked[0].detail
+	if strings.Contains(logs.String(), token) || strings.Contains(dialog, token) {
+		t.Fatalf("signed URL credential leaked in log or dialog: logs=%q dialog=%q", logs.String(), dialog)
 	}
 }
 
@@ -233,7 +239,7 @@ func TestFindMacCommandResolvesQIDIStudio(t *testing.T) {
 	}
 }
 
-func TestHandleProtocolRejectsUntrustedShapesBeforeDownload(t *testing.T) {
+func TestParseLinkRejectsUntrustedShapes(t *testing.T) {
 	tests := []string{
 		"https://thingport.example/file",
 		"thingport://delete?url=https://thingport.example/file",
@@ -242,8 +248,8 @@ func TestHandleProtocolRejectsUntrustedShapesBeforeDownload(t *testing.T) {
 	}
 
 	for _, raw := range tests {
-		if err := handleProtocol(raw, Config{}); err == nil {
-			t.Fatalf("handleProtocol(%q) unexpectedly succeeded", raw)
+		if _, err := parseLink(raw); err == nil {
+			t.Fatalf("parseLink(%q) unexpectedly succeeded", raw)
 		}
 	}
 }

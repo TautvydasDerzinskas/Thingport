@@ -18,7 +18,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
+import { useTheme, type Theme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import FolderIcon from "@mui/icons-material/Folder";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
@@ -29,8 +29,16 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import ThreeDRotationOutlinedIcon from "@mui/icons-material/ThreeDRotationOutlined";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
-import { adminApi, type StorageFile, type StorageFileKind, type StorageListing } from "../../api/admin";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import {
+  adminApi,
+  type StorageFile,
+  type StorageFileKind,
+  type StorageFolder,
+  type StorageListing,
+} from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
+import { statusTint } from "../../theme";
 import { readUser } from "../../utils/auth";
 import { formatFileSize } from "../../utils/fileSize";
 
@@ -50,6 +58,11 @@ const KIND_ICONS: Record<StorageFileKind, typeof InsertDriveFileOutlinedIcon> = 
   preview: ThreeDRotationOutlinedIcon,
   slicer: LayersOutlinedIcon,
 };
+
+// A row the disk couldn't read: the warning sign in place of its icon, and its line in the theme's warning text, which
+// stays readable small on a light panel.
+const unreadableIcon = <WarningAmberIcon sx={{ color: "warning.main" }} />;
+const unreadableLine = { sx: { color: (theme: Theme) => statusTint(theme, "warning").text } };
 
 /** The managed model files, and the supporting files, pictures, 3D previews and slicer copies beside them, as they're
  *  laid out on disk now: a folder per user, then the storage structure. */
@@ -137,61 +150,125 @@ export default function StorageBrowserDialog({ onClose, onUnauthorized }: Props)
           </Typography>
         )}
         {listing && !empty && (
-          <List dense disablePadding>
-            {listing.folders.map((entry) => (
-              <ListItemButton key={entry.path} onClick={() => setFolder(entry.path)}>
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  {atTop ? (
-                    <PersonOutlineIcon color="action" />
-                  ) : entry.pictures ? (
-                    <PhotoLibraryIcon sx={{ color: "info.light" }} />
-                  ) : (
-                    <FolderIcon sx={{ color: "warning.light" }} />
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={entry.label ?? entry.name}
-                  secondary={t("adminSettings.storageBrowser.folderSummary", {
-                    count: entry.files,
-                    size: formatFileSize(entry.bytes),
-                  })}
-                  primaryTypographyProps={{ sx: { wordBreak: "break-all" } }}
-                />
-              </ListItemButton>
-            ))}
-            {listing.files.map((file) => (
-              <FileRow
-                key={file.path}
-                file={file}
-                // Another user's model isn't one an admin can open.
-                onOpen={file.owner_id === me ? () => navigate(`/models/${file.print_id}`) : undefined}
-              />
-            ))}
-          </List>
+          <StorageListingView
+            listing={listing}
+            atTop={atTop}
+            me={me}
+            onOpenFolder={setFolder}
+            onOpenModel={(printId) => navigate(`/models/${printId}`)}
+          />
         )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function FileRow({ file, onOpen }: { file: StorageFile; onOpen?: () => void }) {
+/** A folder's folders and files, with one warning above them when the disk couldn't read some of what's here. */
+export function StorageListingView({
+  listing,
+  atTop,
+  me,
+  onOpenFolder,
+  onOpenModel,
+}: {
+  listing: StorageListing;
+  atTop: boolean;
+  me: string | undefined;
+  onOpenFolder: (path: string) => void;
+  onOpenModel: (printId: string) => void;
+}) {
   const { t } = useTranslation("app");
-  const Icon = KIND_ICONS[file.kind];
+  // The folder itself counts when the disk couldn't list all of it.
+  const unreadable =
+    (listing.error_code ? 1 : 0) +
+    listing.folders.filter((entry) => entry.error_code !== null).length +
+    listing.files.filter((file) => file.location === "unreadable").length;
+  return (
+    <>
+      {unreadable > 0 && (
+        <Alert severity="warning" sx={{ mx: 2, mt: 2, mb: 1 }}>
+          {t("adminSettings.storageBrowser.unreadable", { count: unreadable })}
+          {/* The folder's own code, as an unreadable row shows its. */}
+          {listing.error_code ? ` · ${listing.error_code}` : null}
+        </Alert>
+      )}
+      <List dense disablePadding>
+        {listing.folders.map((entry) => (
+          <FolderRow key={entry.path} entry={entry} atTop={atTop} onOpen={() => onOpenFolder(entry.path)} />
+        ))}
+        {listing.files.map((file) => (
+          <FileRow
+            key={file.path}
+            file={file}
+            // Another user's model isn't one an admin can open.
+            onOpen={file.owner_id === me ? () => onOpenModel(file.print_id) : undefined}
+          />
+        ))}
+      </List>
+    </>
+  );
+}
+
+function FolderRow({ entry, atTop, onOpen }: { entry: StorageFolder; atTop: boolean; onOpen: () => void }) {
+  const { t } = useTranslation("app");
+  const unreadable = entry.error_code !== null;
   const content = (
     <>
       <ListItemIcon sx={{ minWidth: 36 }}>
-        <Icon color="action" />
+        {unreadable ? (
+          unreadableIcon
+        ) : atTop ? (
+          <PersonOutlineIcon color="action" />
+        ) : entry.pictures ? (
+          <PhotoLibraryIcon sx={{ color: "info.light" }} />
+        ) : (
+          <FolderIcon sx={{ color: "warning.light" }} />
+        )}
       </ListItemIcon>
+      <ListItemText
+        primary={entry.label ?? entry.name}
+        secondary={
+          unreadable
+            ? [t("adminSettings.storageBrowser.cantReadFolder"), entry.error_code].join(" · ")
+            : t("adminSettings.storageBrowser.folderSummary", {
+                count: entry.files,
+                size: formatFileSize(entry.bytes),
+              })
+        }
+        primaryTypographyProps={{ sx: { wordBreak: "break-all" } }}
+        secondaryTypographyProps={unreadable ? unreadableLine : undefined}
+      />
+    </>
+  );
+  // With nothing listed below a folder the disk couldn't list, there's nothing to open.
+  return unreadable && !entry.files ? (
+    <ListItem>{content}</ListItem>
+  ) : (
+    <ListItemButton onClick={onOpen}>{content}</ListItemButton>
+  );
+}
+
+function FileRow({ file, onOpen }: { file: StorageFile; onOpen?: () => void }) {
+  const { t } = useTranslation("app");
+  const Icon = KIND_ICONS[file.kind];
+  const unreadable = file.location === "unreadable";
+  const content = (
+    <>
+      <ListItemIcon sx={{ minWidth: 36 }}>{unreadable ? unreadableIcon : <Icon color="action" />}</ListItemIcon>
       <ListItemText
         primary={file.name}
         secondary={[
+          ...(unreadable ? [t("adminSettings.storageBrowser.cantRead"), file.error_code] : []),
           formatFileSize(file.size),
           t(`adminSettings.storageBrowser.kind.${file.kind}`),
           t("adminSettings.storageBrowser.ofModel", { name: file.print_name }),
-        ].join(" · ")}
+        ]
+          .filter(Boolean)
+          .join(" · ")}
         primaryTypographyProps={{ sx: { wordBreak: "break-all" } }}
+        secondaryTypographyProps={unreadable ? unreadableLine : undefined}
       />
-      {file.location !== "managed" && (
+      {(file.location === "source" || file.location === "missing") && (
         <Chip
           size="small"
           color={file.location === "missing" ? "error" : "default"}

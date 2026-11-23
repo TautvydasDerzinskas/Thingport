@@ -1,4 +1,6 @@
 import { authHeaders } from "../utils/auth";
+import type { SortDirection } from "../utils/sortDirection";
+import type { SendTargetSummary } from "./sendTargets";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
 import type { ProviderId } from "../providers/index.generated";
@@ -49,11 +51,16 @@ export type SlicerSettings = {
   unadapted: string[];
   /** The printer (a catalogue id of one of the user's) each slicer's adapted copies are made for; one not listed asks. */
   printers: Record<string, string>;
+  /** Where they send models from a model's page (Configuration → Send to). */
+  sendTargets: SendTargetSummary[];
 };
+
+/** The slicer settings as the server sends them: what's older than a field leaves it out. */
+type SlicerSettingsBody = Partial<Omit<SlicerSettings, "sendTargets">> & { send_targets?: SendTargetSummary[] };
 
 /** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. One
  *  older than `bridged` sends none through the Bridge. */
-function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
+function toSlicerSettings(body: SlicerSettingsBody): SlicerSettings {
   const slicer = body.slicer ?? null;
   return {
     slicer,
@@ -61,6 +68,7 @@ function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
     bridged: body.bridged ?? [],
     unadapted: body.unadapted ?? [],
     printers: body.printers ?? {},
+    sendTargets: body.send_targets ?? [],
   };
 }
 
@@ -335,21 +343,26 @@ export type ToolLayout = "flat" | "categories";
 /** The orders the Tools page offers. */
 export type ToolSort = "name" | "newest" | "author";
 /** How the user arranged their Tools page; `categories` holds only the tools they moved themselves. */
-export type ToolsView = { layout: ToolLayout; sort: ToolSort; categories: Record<string, string> };
+export type ToolsView = {
+  layout: ToolLayout;
+  sort: ToolSort;
+  sortDirection?: SortDirection;
+  categories: Record<string, string>;
+};
 
 export const settingsApi = {
-  getToolsView: async (): Promise<ToolsView> => {
-    const res = await fetch(`${apiBase()}/settings/tools-view`, { headers: authHeaders() });
+  getToolsView: async (token: string | null): Promise<ToolsView> => {
+    const res = await fetch(`${apiBase()}/settings/tools-view`, { headers: authHeaders(undefined, token) });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to load the Tools page's layout");
     return res.json();
   },
 
   /** Changes only what's given, so switching the layout keeps where the user put each tool. */
-  updateToolsView: async (patch: Partial<ToolsView>): Promise<ToolsView> => {
+  updateToolsView: async (patch: Partial<ToolsView>, token: string): Promise<ToolsView> => {
     const res = await fetch(`${apiBase()}/settings/tools-view`, {
       method: "PATCH",
-      headers: authHeaders({ "Content-Type": "application/json" }),
+      headers: authHeaders({ "Content-Type": "application/json" }, token),
       body: JSON.stringify(patch),
     });
     if (res.status === 401) throw new UnauthorizedError();

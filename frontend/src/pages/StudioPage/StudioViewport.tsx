@@ -11,10 +11,13 @@ import Tooltip from "@mui/material/Tooltip";
 import { alpha, useTheme } from "@mui/material/styles";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import { paletteForTheme } from "../../utils/modelLoaders";
+import { bedOutline } from "../../studio/printLayout";
+import type { BodyCheck } from "../../studio/printCheck";
 import {
   featureById,
   inputsOf,
   isBody,
+  plateOf,
   sketchFrame,
   shapeContours,
   shapeOutline,
@@ -38,8 +41,8 @@ import { createViewCube, type ViewCube, type ViewCubeStyle } from "./viewCube";
 // The design in 3D: Z up, on a bed of 10 mm squares. It only shows the document and reports what the pointer did; the
 // page turns that into commands, so nothing changes here that an assistant couldn't change the same way.
 //
-// The mouse works as in most CAD: the left button selects (a click, or a box dragged over empty space), the right
-// button turns the view, the middle one (or Shift with the right) moves it, the wheel zooms.
+// The left button selects in Edit and pans in Hand mode. The right button orbits, the middle one pans, and the
+// wheel zooms.
 
 /** "select" only picks; the others also put the gizmo on the one body selected. */
 export type StudioMode = "select" | "translate" | "rotate" | "scale";
@@ -58,6 +61,11 @@ export type PickRequest = {
   /** A dashed line between two points, as the measure tool shows a distance. */
   line?: [Vec3, Vec3] | null;
 };
+
+function showsEdgeGuides(request: PickRequest | null, id: string): boolean {
+  return request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
+}
+
 export type Picked = { body: string } &
   /** `region` is the face's triangles in the world, for measuring it. */
   (
@@ -88,6 +96,9 @@ type Props = {
   document: StudioDocument;
   selected: readonly string[];
   mode: StudioMode;
+  handMode: boolean;
+  activePlate: string;
+  printIssue?: { id: string; highlights?: BodyCheck["highlights"] };
   /** The sketch being drawn on, and with what. */
   sketch: { id: string; tool: SketchTool } | null;
   onSelect: (id: string | null, additive: boolean) => void;
@@ -146,7 +157,7 @@ function shapeKey(doc: StudioDocument, feature: BodyFeature): string {
     parts.push(input);
   };
   inputsOf(feature).forEach(visit);
-  const { transform: _transform, name: _name, visible: _visible, ...shape } = feature;
+  const { transform: _transform, name: _name, visible: _visible, color: _color, plate_id: _plate, ...shape } = feature;
   parts.push(shape);
   return JSON.stringify(parts);
 }
@@ -217,6 +228,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     /** What picking shows: what's under the pointer, and what's been picked. */
     hoverLayer: THREE.Group;
     chosenLayer: THREE.Group;
+    printIssues: THREE.Group;
     drawing: Drawing | null;
     pointer: Pointer | null;
     hovered: string | null;
@@ -283,8 +295,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
 
     const orbit = new OrbitControls(camera, renderer.domElement);
     orbit.target.set(0, 0, 0);
-    // The left button selects; the right turns the view (Shift with it moves it), the middle moves it.
-    orbit.mouseButtons = { LEFT: -1 as THREE.MOUSE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+    orbit.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
+    orbit.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
 
     let frame = 0;
     let cube: ViewCube | null = null;
@@ -388,7 +400,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const preview = new THREE.Group();
     const hoverLayer = new THREE.Group();
     const chosenLayer = new THREE.Group();
-    scene.add(bed, sketches, sketchGrid, preview, hoverLayer, chosenLayer);
+    const printIssues = new THREE.Group();
+    scene.add(bed, sketches, sketchGrid, preview, hoverLayer, chosenLayer, printIssues);
     const grids = { bed: new AdaptiveGrid(), sketch: new AdaptiveGrid() };
     grids.bed.setPlane(
       new THREE.Vector3(),
@@ -446,6 +459,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       preview,
       hoverLayer,
       chosenLayer,
+      printIssues,
       drawing: null,
       pointer: null,
       hovered: null,
@@ -469,7 +483,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       gizmo.dispose();
       orbit.dispose();
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
           object.geometry.dispose();
           (Array.isArray(object.material) ? object.material : [object.material]).forEach((m) => m.dispose());
         }
@@ -505,25 +519,47 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 }),
       );
     s.bed.add(axis(new THREE.Vector3(BED / 2, 0, 0.01), colors.x), axis(new THREE.Vector3(0, BED / 2, 0.01), colors.y));
+    const setup = props.document.print_setup;
+    if (setup) {
+      s.bed.add(
+        new THREE.LineLoop(
+          new THREE.BufferGeometry().setFromPoints(
+            bedOutline(setup.bed, setup.outline).map(([x, y]) => new THREE.Vector3(x, y, 0.02)),
+          ),
+          new THREE.LineBasicMaterial({ color: colors.accent, transparent: true, opacity: 0.8 }),
+        ),
+      );
+    }
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey]);
+  }, [colorKey, props.document.print_setup]);
   // A grid setting changed, or the design's units: drawn again with them.
   useEffect(() => {
     stage.current?.render();
   }, [props.grid, props.document.units]);
 
   // --- Bodies: made again only when their shape changed; moving one only moves it ---
+  const topologyRequest = props.pick && props.pick.kind !== "body" ? (props.pick.bodies?.join(",") ?? "*") : "";
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
     const doc = props.document;
     const generation = ++s.generation;
-    const bodies = topLevel(doc).filter(isBody);
+    const bodies = topLevel(doc)
+      .filter((feature) => plateOf(feature) === props.activePlate)
+      .filter(isBody);
     const wanted = new Map(bodies.map((feature) => [feature.id, shapeKey(doc, feature)]));
+    const detailed = topologyRequest === "*" ? [...wanted.keys()] : topologyRequest.split(",");
+    const needDetails = new Set(detailed);
     // Gone, or changed shape: made again below if it's still there. What's on screen stays until what replaces it is
     // ready, so the view doesn't blink, and a tool can still be pointed at it meanwhile.
-    const outgoing = [...s.bodies].filter(([id, body]) => wanted.get(id) !== body.key);
+    const outgoing = [...s.bodies].filter(
+      ([id, body]) => wanted.get(id) !== body.key || (needDetails.has(id) && !body.picking.faceOf.length),
+    );
+    for (const [id, body] of outgoing) {
+      if (featureById(doc, id) && !wanted.has(id)) body.group.visible = false;
+    }
+    s.render();
     const drop = () => {
       for (const [id, body] of outgoing) {
         if (s.bodies.get(id) !== body) continue;
@@ -567,12 +603,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       .filter((feature) => !s.bodies.has(feature.id) || outgoing.some(([id]) => id === feature.id))
       .map((feature) => feature.id);
     if (!stale.length) {
+      latest.current.onBusy(false);
       drop();
       place();
       return;
     }
     latest.current.onBusy(true);
-    void evaluateInWorker(props.designId, doc, stale).then((answer) => {
+    void evaluateInWorker(props.designId, doc, stale, detailed).then((answer) => {
       if (generation !== s.generation || !stage.current) return;
       latest.current.onBusy(false);
       drop();
@@ -583,8 +620,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         const indexed = new THREE.BufferGeometry();
         indexed.setAttribute("position", new THREE.BufferAttribute(body.mesh.positions, 3));
         indexed.setIndex(new THREE.BufferAttribute(body.mesh.indices, 1));
-        const geometry = toCreasedNormals(indexed, CREASE);
-        indexed.dispose();
+        const { dense } = body;
+        const geometry = dense ? indexed : toCreasedNormals(indexed, CREASE);
+        if (dense) indexed.computeVertexNormals();
+        else indexed.dispose();
         const mesh = new THREE.Mesh(
           geometry,
           new THREE.MeshStandardMaterial({
@@ -598,7 +637,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           }),
         );
         const edges = new THREE.LineSegments(
-          new THREE.EdgesGeometry(geometry, 30),
+          dense ? new THREE.BufferGeometry() : new THREE.EdgesGeometry(geometry, 30),
           new THREE.LineBasicMaterial({ transparent: true }),
         );
         const edgeLines = new THREE.LineSegments(
@@ -607,7 +646,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           ),
           new THREE.LineBasicMaterial({ color: colors.accent, transparent: true, opacity: 0.55, depthTest: false }),
         );
-        edgeLines.visible = false;
+        edgeLines.visible = showsEdgeGuides(latest.current.pick, body.id);
         edgeLines.renderOrder = 2;
         edgeLines.userData.featureId = body.id;
         const group = new THREE.Group();
@@ -628,9 +667,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       }
       latest.current.onErrors(Object.fromEntries(s.errors));
       place();
+      const issue = latest.current.printIssue;
+      const located = issue && stale.includes(issue.id) && s.bodies.get(issue.id);
+      if (located)
+        frame(s.camera.position.clone().sub(s.orbit.target).normalize(), new THREE.Box3().setFromObject(located.group));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.document]);
+  }, [props.document, props.activePlate, topologyRequest]);
 
   // --- Sketches: their outlines on their planes ---
   const activeSketch = props.sketch?.id ?? null;
@@ -641,7 +684,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const shown = props.document.features.filter(
       (feature): feature is SketchFeature =>
         feature.type === "sketch" &&
-        (feature.id === activeSketch || (feature.visible && topLevel(props.document).includes(feature))),
+        (feature.id === activeSketch ||
+          (feature.visible && plateOf(feature) === props.activePlate && topLevel(props.document).includes(feature))),
     );
     for (const sketch of shown) {
       const lit = sketch.id === activeSketch || props.selected.includes(sketch.id);
@@ -672,7 +716,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     }
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.document, props.selected, activeSketch, colorKey]);
+  }, [props.document, props.selected, activeSketch, colorKey, props.activePlate]);
 
   // --- Selection in the accent colour; what's under the pointer a little of it ---
   const paint = () => {
@@ -686,7 +730,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const material = body.mesh.material as THREE.MeshStandardMaterial;
       // Told apart by hue, the accent's turned on by the golden ratio for each, so neighbours never look alike.
       const tint = tinted.indexOf(id);
-      const base = tint >= 0 ? colors.accent.clone().offsetHSL(tint * 0.382, 0, 0) : colors.model;
+      const feature = featureById(latest.current.document, id);
+      const color = feature && isBody(feature) && feature.color;
+      const base =
+        tint >= 0 ? colors.accent.clone().offsetHSL(tint * 0.382, 0, 0) : color ? new THREE.Color(color) : colors.model;
       material.color.copy(base).lerp(colors.accent, on ? 0.35 : hover ? 0.15 : 0);
       material.emissive.copy(colors.accent);
       material.emissiveIntensity = on ? 0.12 : hover ? 0.05 : 0;
@@ -701,8 +748,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   const attachGizmo = () => {
     const s = stage.current;
     if (!s) return;
-    const { selected, sketch, mode } = latest.current;
-    const body = mode !== "select" && selected.length === 1 && !sketch ? s.bodies.get(selected[0]) : undefined;
+    const { selected, sketch, mode, handMode, pick } = latest.current;
+    const body =
+      mode !== "select" && selected.length === 1 && !sketch && !handMode && !pick
+        ? s.bodies.get(selected[0])
+        : undefined;
     if (body && body.group.visible && mode !== "select") {
       if (s.gizmo.object !== body.group) s.gizmo.attach(body.group);
       s.gizmo.setMode(mode);
@@ -726,13 +776,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const s = stage.current;
     if (!s) return;
     const request = latest.current.pick;
-    for (const [id, body] of s.bodies)
-      body.edgeLines.visible = request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
+    for (const [id, body] of s.bodies) body.edgeLines.visible = showsEdgeGuides(request, id);
     clear(s.chosenLayer);
     if (!request) clear(s.hoverLayer);
-    // The gizmo would take the clicks a tool wants.
-    if (request && s.gizmo.object) s.gizmo.detach();
-    else attachGizmo();
+    attachGizmo();
     if (request) {
       const box = new THREE.Box3();
       for (const body of s.bodies.values()) if (body.group.visible) box.expandByObject(body.group);
@@ -816,6 +863,32 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     s.moveCamera(to.position, to.target);
   };
 
+  useEffect(() => {
+    const s = stage.current;
+    if (!s) return;
+    clear(s.printIssues);
+    const issue = props.printIssue;
+    if (issue) {
+      const body = s.bodies.get(issue.id);
+      if (body)
+        frame(s.camera.position.clone().sub(s.orbit.target).normalize(), new THREE.Box3().setFromObject(body.group));
+      const mark = (points: readonly Vec3[], color: string) => {
+        if (!points.length) return;
+        const positions = new THREE.BufferGeometry().setFromPoints(points.map((at) => new THREE.Vector3(...at)));
+        const cloud = new THREE.Points(
+          positions,
+          new THREE.PointsMaterial({ color, size: 8, sizeAttenuation: false, depthTest: false }),
+        );
+        cloud.renderOrder = 5;
+        s.printIssues.add(cloud);
+      };
+      mark(issue.highlights?.overhang ?? [], theme.palette.warning.main);
+      mark(issue.highlights?.thinWalls ?? [], theme.palette.error.main);
+    }
+    s.render();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.printIssue, colorKey]);
+
   const cancelBox = () => {
     const s = stage.current;
     if (!s?.pointer?.boxing) return false;
@@ -823,6 +896,36 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     if (boxRef.current) boxRef.current.style.display = "none";
     return true;
   };
+
+  useEffect(() => {
+    const s = stage.current;
+    if (!s) return;
+    const { handMode } = props;
+    s.orbit.mouseButtons.LEFT = handMode ? THREE.MOUSE.PAN : (-1 as THREE.MOUSE);
+    s.orbit.touches.ONE = handMode ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
+    s.orbit.touches.TWO = handMode ? THREE.TOUCH.DOLLY_ROTATE : THREE.TOUCH.DOLLY_PAN;
+    if (handMode && s.gizmo.dragging) {
+      if (s.gizmo.object) s.gizmo.reset();
+      s.gizmo.detach();
+      s.gizmo.pointerUp(null);
+    }
+    s.gizmo.enabled = !handMode;
+    s.renderer.domElement.style.cursor = "";
+    if (handMode) {
+      cancelBox();
+      s.pointer = null;
+      s.hovered = null;
+      clear(s.hoverLayer);
+      if (s.drawing?.tool === "rectangle" || s.drawing?.tool === "circle") {
+        s.drawing = null;
+        clear(s.preview);
+      }
+      paint();
+    }
+    s.preview.visible = !handMode;
+    attachGizmo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.handMode]);
 
   useImperativeHandle(ref, () => ({
     fit: () => {
@@ -844,7 +947,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const s = stage.current;
       if (!s) return Promise.resolve(null);
       s.settleCamera();
-      const hidden = [s.gizmo.getHelper(), s.hoverLayer, s.chosenLayer, s.preview, s.sketchGrid];
+      const hidden = [s.gizmo.getHelper(), s.hoverLayer, s.chosenLayer, s.preview, s.sketchGrid, s.printIssues];
       const shown = hidden.map((object) => object.visible);
       hidden.forEach((object) => (object.visible = false));
       snapshotting.current = true;
@@ -1132,6 +1235,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
 
     const onPointerDown = (event: PointerEvent) => {
       s.settleCamera();
+      if (latest.current.handMode) return;
       s.pointer = { x: event.clientX, y: event.clientY, button: event.button, boxing: false };
       const sketch = activeSketchFeature();
       const tool = latest.current.sketch?.tool;
@@ -1201,6 +1305,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const body = s.bodies.get(id)!;
       if (request.kind === "body") return { picked: { kind: "body", body: id }, show: null };
       const faceIndex = body.picking.faceOf[hit.faceIndex as number];
+      if (faceIndex === undefined) return null;
       const normal = new THREE.Vector3(...body.picking.faces[faceIndex].normal)
         .applyMatrix3(new THREE.Matrix3().getNormalMatrix(body.group.matrixWorld))
         .normalize();
@@ -1267,6 +1372,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       if (hoverFrame) return;
       hoverFrame = requestAnimationFrame(() => {
         hoverFrame = 0;
+        if (latest.current.handMode) return;
         if (latest.current.pick) return pickHover(event);
         const id = latest.current.sketch || s.gizmo.dragging ? null : pick(event);
         if (id === s.hovered) return;
@@ -1277,6 +1383,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (latest.current.handMode) return;
       const sketch = activeSketchFeature();
       if (s.drawing && sketch) {
         const at = onPlane(event, sketch);
@@ -1309,6 +1416,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     const onPointerUp = (event: PointerEvent) => {
+      if (latest.current.handMode) return;
       const start = s.pointer;
       s.pointer = null;
       const sketch = activeSketchFeature();
@@ -1357,6 +1465,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     const onDoubleClick = () => {
+      if (latest.current.handMode) return;
       finishPolygon();
       finishChain();
     };
@@ -1365,6 +1474,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const onContextMenu = (event: MouseEvent) => event.preventDefault();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (latest.current.handMode) return;
       if (s.drawing?.tool === "chain") {
         // Enter closes it straight back to its start; Backspace takes back the last click.
         if (event.key === "Enter") {
@@ -1417,7 +1527,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         sx={{
           position: "absolute",
           inset: 0,
-          cursor: props.sketch || props.pick ? "crosshair" : "default",
+          cursor: props.handMode ? "grab" : props.sketch || props.pick ? "crosshair" : "default",
+          "& canvas:active": { cursor: props.handMode ? "grabbing" : undefined },
           touchAction: "none",
         }}
       />
@@ -1468,7 +1579,7 @@ function clear(group: THREE.Group) {
     const child = group.children[0];
     group.remove(child);
     child.traverse((object) => {
-      if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+      if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
         object.geometry.dispose();
         (Array.isArray(object.material) ? object.material : [object.material]).forEach((m) => m.dispose());
       }

@@ -29,6 +29,17 @@ read it again (studio_get_design) before building on something.
 - studio_get_design lists every feature, each body's size and volume, and problems (a feature that couldn't be made
   and why). Check problems after each step.
 
+## Build plates and colors
+
+- studio_get_design lists the plates and the plate and color of each body. New bodies go on the first plate unless
+  you pass plate_id. studio_create_plate adds a named plate and returns its ID.
+- Use studio_move_to_plate for existing bodies or sketches. Their local positions stay the same. Two different
+  plates can have bodies at the same coordinates. Use studio_set_body_color with an RGB hex color on each body.
+- studio_import_model accepts defer_plates: true for a 3MF in a new design. The result lists pending_plate_ids,
+  and studio_get_design marks those plates with pending_import. Use studio_load_source_plate with the plate_id
+  to bring in its bodies before editing or viewing that plate. Load all pending plates before studio_check_print.
+- studio_view_design can show an individual plate by plate_id. Saving to the library preserves plates and colors in 3MF.
+
 ## Naming faces and edges
 
 Faces and edges aren't stored as such: a body is a mesh. Name them by where they are, in the world:
@@ -85,12 +96,12 @@ Faces and edges aren't stored as such: a body is a mesh. Name them by where they
   lies on the bed, for printing.
 - set_transform (absolute) and scale_feature (a factor) move, turn and size a body.
 - update_feature changes any feature's numbers later, e.g. a fillet's radius or a hole's diameter.
-- studio_save_to_library saves the design to the user's library as a new model (an STL, a picture and their requests
+- studio_save_to_library saves the design to the user's library as a new model (a 3MF with its plates and colors, a picture and their requests
   as its description). Save only when the user asks.
 - import_model brings in a library model's STL, 3MF, STEP, OBJ or GLB (find it with search_models). A closed mesh works
-  with everything above; one with gaps can only be moved, scaled and exported. A model of several pieces comes in as
-  one body, and the reply says how many: separate_parts splits it, and the pieces of one with gaps that are closed
-  themselves can then be combined.
+  with everything above; one with gaps can only be moved, scaled and exported. A 3MF imports each printable object
+  with its plate, placement, and any uniform body color. A body that contains several loose meshes can be split
+  with separate_parts.
 
 ## Recipes
 
@@ -114,8 +125,9 @@ A bent pipe:
 2. sweep sketch-1 along [[0, -60, 40], [0, 0, 40], [0, 0, 100]], smooth false: 60 mm along +Y, then up.
 
 A model cut in two for printing:
-1. import_model the library model; split it with plane { point: [0, 0, h / 2], normal: [0, 0, 1] }.
-2. Optionally hole both parts at matching points for dowel pins.
+1. import_model the library model. Split it with plane { point: [0, 0, h / 2], normal: [0, 0, 1] }.
+2. Give split a connector for matching pins and sockets and separate_plates to place the second half on another plate.
+3. make_fit_test makes cropped samples with candidate clearances. Use apply_fit_clearance when the user reports a fit.
 
 A name tag:
 1. add_box 60 × 20 × 3; fillet its four vertical edges with radius 3.
@@ -124,6 +136,8 @@ A name tag:
 Check a part meant for printing with studio_check_print (floating or sunk bodies, overlaps, overhangs, thin walls,
 loose pieces), and a fit or a clearance with studio_measure (the gap between two bodies, or their overlap). As CAD
 does, the check judges a thread as the plain cylinder it's cut on, so its ridges aren't counted as overhang or thin walls.
+The check uses the saved print_setup unless overridden. Arrange a plate with arrange_plate, preserve specific body
+positions with lock_plate_positions, and use set_filament_slots to map its body colors before Bambu-compatible export.
 
 For a design someone will want to change, set_parameter names its key numbers, each with its unit (wall = 2 mm,
 hole_d = 5 mm, holes = 6 with unit none) and set_expression makes features follow them (width = wall * 2 + 30 mm):
@@ -131,4 +145,26 @@ one change to a parameter then changes them all. Formulas know units: a length f
 number, and a bare number added to a length is in the design's display_units, so write units in (30 mm) to be sure.
 
 Look at the result with studio_view_design (iso, top, front, right...) as you go.
+
+## Print profiles
+
+A design has one print profile (print_profile in studio_get_design): the slicer settings it's meant to print with. It
+goes into every 3MF the design is exported, opened or saved as, made for its slicer and printer, and shows as a print
+profile on the saved model's page. Set it with set_print_profile: start from a preset, change single settings by
+Bambu Studio's key names, and say why in reason, which the person reads. Presets (for a 0.4 mm nozzle; the slicer's
+own preset for the printer covers what they leave out):
+
+- standard: everyday parts (0.2 mm, 2 walls, 15% grid). fine: figures, miniatures, small text (0.12 mm, 3 walls).
+- draft: fast prototypes (0.28 mm, 10%). strong: brackets, mounts, hooks, gears (5 walls, 35% gyroid; PETG, ABS, ASA, PA).
+- outdoor: sun and rain (4 walls, 25%, brim; ASA or PETG). water: planters, trays, bath parts (4 walls, 6 top and
+  bottom layers; PETG; never claim food safety). toy: sturdy toys (4 walls, 20%; PLA or PETG).
+- flexible: TPU bumpers and grips. heat: car interiors, motors, lamps (ASA, ABS, PC). vase: one continuous wall,
+  one body per plate. smooth: signs and lids with an ironed top.
+
+Choose from what the design is for: the user's requests, and the descriptions of the models it was made from
+(made_from in studio_get_design). Prefer the person's slicer and printer when they're known, and keep the material in
+step with the filament slots. Speeds (initial_layer_speed, outer_wall_speed, inner_wall_speed, sparse_infill_speed, in
+mm/s) reach only Bambu Studio and the slicers built on it. profile_checks lists what to tell the person, such as a material that doesn't suit the
+preset or settings their slicer won't take from a 3MF. studio_save_to_library with model_id adds the design to one
+of the user's models as one more print profile.
 `;

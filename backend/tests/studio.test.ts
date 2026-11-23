@@ -1,17 +1,23 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
+import JSZip from "jszip";
+import { readBambuPackage, readBambuModels } from "../src/adapter/readers/bambuProject";
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS } from "../src/mcp/tools";
-import { STUDIO_COMMAND_LIST } from "../src/studio/commands.generated";
-import { decodeMesh } from "../src/studio/meshAsset.generated";
+import { addMesh, STUDIO_COMMAND_LIST } from "../src/studio/commands.generated";
+import { emptyDocument, LIMITS } from "../src/studio/document.generated";
+import { decodeMesh, encodeMesh } from "../src/studio/meshAsset.generated";
 import { resolvePlateFilePath } from "../src/services/printCreation";
 import { studioAssetDir } from "../src/services/studioService";
+import { exportStudioGeometry } from "../src/services/studioInspect";
+import { HttpError } from "../src/utils/fileUtils";
 
 // Studio end to end: designs are their owner's, every change is a command kept as a revision, and every command is
 // an MCP tool an assistant can run the same way.
@@ -30,6 +36,12 @@ async function register(label: string): Promise<string> {
     .send({ displayName: `Studio ${label}`, email, password: "password123" });
   if (res.status !== 200) throw new Error(`register ${label}: ${res.status} ${JSON.stringify(res.body)}`);
   return res.body.token;
+}
+
+function readBinary(res: NodeJS.ReadableStream, done: (error: Error | null, body: Buffer) => void) {
+  const chunks: Buffer[] = [];
+  res.on("data", (chunk: Buffer) => chunks.push(chunk));
+  res.on("end", () => done(null, Buffer.concat(chunks)));
 }
 
 async function command(session: string, id: string, name: string, args: Record<string, unknown> = {}) {
@@ -70,6 +82,209 @@ describe("Studio", () => {
     // One after the other: on a new instance the first account is its admin, and a second at the same time is turned away.
     alice = await register("alice");
     bob = await register("bob");
+  });
+
+  it("uses the same printer setup for MCP print checks and arrangement and writes selected filament slots", async () => {
+    const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Print workflow" }))
+      .body;
+    const token = await mcpToken(alice);
+    const tool = (name: string, args: Record<string, unknown> = {}) =>
+      callTool(token, `studio_${name}`, { design_id: design.id, ...args });
+    const setup = { printer: "bambulab-p1s", nozzle: "0.4", bed: [24, 24, 256], minWall: 0.8 };
+    expect((await command(alice, design.id, "set_print_setup", { setup })).status).toBe(200);
+    const savedPrinter = await request(app)
+      .put("/api/me/printers/bambulab-p1s")
+      .set(auth(alice))
+      .send({ nozzle: "0.6" });
+    expect(savedPrinter.body.nozzle).toBe("0.6");
+    expect(savedPrinter.body.exact_nozzles.orcaslicer).toContain("0.4");
+    const shape = { width: 14, depth: 14, height: 4 };
+    const red = (await tool("add_box", { ...shape, color: "#ff0000" })).data.created[0];
+    const blue = (await tool("add_box", { ...shape, color: "#0000ff", position: [30, 0, 0] })).data.created[0];
+    const check = (await tool("check_print")).data;
+    expect(check.printer).toBe(setup.printer);
+    expect(check.bodies).toMatchObject([
+      { id: red, fitsBed: true },
+      { id: blue, fitsBed: false },
+    ]);
+    expect((await tool("lock_plate_positions", { feature_ids: [red], locked: true })).isError).toBe(false);
+    expect((await tool("arrange_plate", { plate_id: "plate-1" })).isError).toBe(true);
+    expect((await tool("arrange_plate", { plate_id: "plate-1", overflow: true })).data.created).toEqual(["plate-2"]);
+    expect((await tool("check_print")).data.ready).toBe(true);
+
+    expect(
+      (
+        await tool("set_filament_slots", {
+          slots: [
+            { color: "#ff0000", slot: 3, material: "PETG" },
+            { color: "#0000ff", slot: 1, material: "PLA" },
+          ],
+        })
+      ).isError,
+    ).toBe(false);
+    const file = await request(app)
+      .get(`/api/studio/designs/${design.id}/export/3mf/orcaslicer/bambulab-p1s/0.4/-/Workflow.3mf`)
+      .set(auth(alice))
+      .buffer(true)
+      .parse(readBinary);
+    expect(file.status).toBe(200);
+    const pkg = await readBambuPackage(file.body);
+    expect(pkg.config.filament_colour).toEqual(["#0000FF", "#B0B0B0", "#FF0000"]);
+    expect(pkg.config.filament_type).toEqual(["PLA", "PLA", "PETG"]);
+    expect(pkg.config.printer_settings_id).toBe("Bambu Lab P1S 0.4 nozzle");
+    expect(Object.values(pkg.modelSettings).map(({ extruder }) => extruder)).toEqual([3, 1]);
+    const missingNozzle = await request(app)
+      .get(`/api/studio/designs/${design.id}/export/3mf/orcaslicer/bambulab-p1s/0.7/-/Workflow.3mf`)
+      .set(auth(alice));
+    expect(missingNozzle.status).toBe(400);
+  });
+
+  it("measures fit samples against the saved bed before writing a revision", async () => {
+    const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Fit samples" })).body;
+    const { id } = design;
+    await command(alice, id, "add_box", { width: 40, depth: 30, height: 20 });
+    const split = await command(alice, id, "split", {
+      feature_id: "box-1",
+      plane: { point: [0, 0, 10], normal: [0, 0, 1] },
+      connector: { diameter: 3, depth: 3, clearance: 0.2, offset: [0, 0], count: 1, spacing: 10 },
+    });
+    expect(split.status).toBe(200);
+    const setup = { printer: "small-bed", nozzle: "0.4", bed: [12, 12, 20], minWall: 0.8 };
+    const chosen = await command(alice, id, "set_print_setup", { setup });
+    const args = { feature_id: split.body.created[0], clearances: [0.2] };
+    const refused = await command(alice, id, "make_fit_test", args);
+    expect(refused.status).toBe(422);
+    expect(refused.body.code).toBe("studio_fit_outside");
+    const persisted = await request(app).get(`/api/studio/designs/${id}`).set(auth(alice));
+    expect(persisted.body.version).toBe(chosen.body.design.version);
+    expect(persisted.body.document.plates).toBeUndefined();
+    await command(alice, id, "set_print_setup", { setup: { ...setup, bed: [50, 50, 20] } });
+    const created = await command(alice, id, "make_fit_test", args);
+    expect(created.status).toBe(200);
+    expect(created.body.created).toHaveLength(2);
+    expect(created.body.design.document.plates.at(-1).name).toBe("Fit test");
+  });
+
+  it("keeps saved circular beds and catalogue outlines in exported 3MF settings", async () => {
+    const { body: design } = await request(app)
+      .post("/api/studio/designs")
+      .set(auth(alice))
+      .send({ name: "Printer outlines" });
+    await command(alice, design.id, "add_box", { width: 12, depth: 12, height: 4 });
+    const setup = {
+      printer: "flsun-q5",
+      nozzle: "0.4",
+      bed: [200, 200, 200],
+      minWall: 0.8,
+      outline: { shape: "circle" },
+    };
+    expect((await command(alice, design.id, "set_print_setup", { setup })).status).toBe(200);
+    async function exportArea(target: string) {
+      const response = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/3mf/${target}/-/Outline.3mf`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse(readBinary);
+      expect(response.status).toBe(200);
+      const project = await readBambuPackage(response.body);
+      return (project.config.printable_area as string[]).map((point) => point.split("x").map(Number));
+    }
+    const saved = await exportArea("-/-/-");
+    expect(saved.length).toBeGreaterThan(4);
+    for (const [x, y] of saved) expect(Math.hypot(x - 100, y - 100)).toBeCloseTo(100, 5);
+    const circle = await exportArea("orcaslicer/flsun-q5/0.4");
+    expect(circle.length).toBeGreaterThan(4);
+    for (const [x, y] of circle) expect(Math.hypot(x, y)).toBeCloseTo(100, 5);
+    const polygon = await exportArea("orcaslicer/deltamaker-2/0.35");
+    expect(polygon).toEqual([
+      [-69, -120],
+      [-138, 0],
+      [-69, 120],
+      [69, 120],
+      [138, 0],
+      [69, -120],
+    ]);
+    expect(
+      (await command(alice, design.id, "set_transform", { feature_id: "box-1", position: [85, 90, 0] })).status,
+    ).toBe(200);
+    for (const printer of ["flsun-q5/0.4", "deltamaker-2/0.35"]) {
+      const response = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/3mf/orcaslicer/${printer}/-/Outline.3mf`)
+        .set(auth(alice));
+      expect(response.status).toBe(422);
+      expect(response.body.detail).toMatch(/box-1 is outside the build volume/);
+    }
+    await exportArea("orcaslicer/bambulab-p1s/0.4");
+    await command(alice, design.id, "set_visibility", { feature_id: "box-1", visible: false });
+    await command(alice, design.id, "add_cylinder", { radius: 90, height: 4 });
+    expect(await exportArea("orcaslicer/flsun-q5/0.4")).toEqual(circle);
+  });
+
+  it("refuses a 3MF body that Studio could not reopen", async () => {
+    const assetDir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-dense-body-"));
+    const triangles = LIMITS.meshTriangles + 1;
+    const indices = new Uint32Array(triangles * 3);
+    for (let i = 0; i < indices.length; i += 3) {
+      indices[i + 1] = 1;
+      indices[i + 2] = 2;
+    }
+    const asset_id = "dense";
+    try {
+      fs.writeFileSync(
+        path.join(assetDir, `${asset_id}.tpsm`),
+        encodeMesh({
+          positions: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+          indices,
+        }),
+      );
+      const { document } = addMesh(
+        emptyDocument(),
+        {
+          asset_id,
+          solid: false,
+          triangles,
+          size: [1, 1, 0],
+          source: { model_id: "fixture", file_id: "fixture", file_name: "dense.stl", model_title: "Dense body" },
+        },
+        {},
+      );
+      const result = await exportStudioGeometry({ name: "Dense body", document, assetDir, format: "3mf" });
+      expect(result).toMatchObject({
+        status: "refused",
+        reason: expect.stringMatching(/1,000,000 triangles per 3MF body/),
+      });
+    } finally {
+      fs.rmSync(assetDir, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses a seventeenth filament and reuses an inactive assignment's slot", async () => {
+    const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Filament limit" }))
+      .body;
+    const colors = Array.from({ length: 17 }, (_, i) => `#${(i + 1).toString(16).padStart(6, "0")}`);
+    for (const [i, color] of colors.entries()) {
+      expect(
+        (await command(alice, design.id, "add_box", { width: 2, depth: 2, height: 2, color, position: [5 * i, 0, 0] }))
+          .status,
+      ).toBe(200);
+    }
+    expect(
+      (
+        await command(alice, design.id, "set_filament_slots", {
+          slots: colors.slice(0, 16).map((color, i) => ({ color, slot: i + 1, material: "PLA" })),
+        })
+      ).status,
+    ).toBe(200);
+    const url = `/api/studio/designs/${design.id}/export/3mf/orcaslicer/-/-/-/Filament.3mf`;
+    const refused = await request(app).get(url).set(auth(alice));
+    expect(refused.status).toBe(422);
+    expect(refused.body.detail).toMatch(/16 filament slots/);
+    await command(alice, design.id, "set_visibility", { feature_id: "box-1", visible: false });
+    const exported = await request(app).get(url).set(auth(alice)).buffer(true).parse(readBinary);
+    expect(exported.status).toBe(200);
+    const pkg = await readBambuPackage(exported.body);
+    expect(pkg.config.filament_colour).toHaveLength(16);
+    expect(pkg.config.filament_colour?.[0]).toBe(colors[16].toUpperCase());
   });
 
   it("says it's on, and keeps each user's designs to themselves", async () => {
@@ -191,11 +406,22 @@ describe("Studio", () => {
     expect(read.data.bodies[0].volume_mm3).toBeGreaterThan(volume * 0.95);
     expect(read.data.bodies[0].volume_mm3).toBeLessThan(volume * 1.05);
 
+    const { body: otherPlate } = await command(alice, design.id, "create_plate", { name: "Another plate" });
+    const conflict = await command(alice, design.id, "trace_picture", {
+      picture_id: kept.body.id,
+      width: 18,
+      sketch_id: "sketch-1",
+      index: 0,
+      plate_id: otherPlate.created[0],
+    });
+    expect(conflict.status).toBe(400);
+    expect(conflict.body.detail).toMatch(/sketch-1 is on plate-1/);
     const again = await command(alice, design.id, "trace_picture", {
       picture_id: kept.body.id,
       width: 18,
       sketch_id: "sketch-1",
       index: 0,
+      plate_id: "plate-1",
     });
     expect(again.status).toBe(200);
     expect(again.body.design.document.features[0].shapes[0]).toMatchObject({ type: "trace", width: 18, height: 18 });
@@ -207,7 +433,126 @@ describe("Studio", () => {
     expect(missing.status).toBe(400);
   });
 
-  it("saves a design to the library: its STL, its picture, and what was asked as its description", async () => {
+  it("exports only populated plates with colored thumbnails in an adapted project", async () => {
+    const { body: design } = await request(app)
+      .post("/api/studio/designs")
+      .set(auth(alice))
+      .send({ name: "Two plates" });
+    const token = await mcpToken(alice);
+    const tool = (name: string, args = {}) => callTool(token, `studio_${name}`, { design_id: design.id, ...args });
+    const empty = (await tool("create_plate", { name: "Spare" })).data.created[0];
+    const arrangeEmpty = await command(alice, design.id, "arrange_plate", { plate_id: empty });
+    expect(arrangeEmpty.status).toBe(400);
+    expect(arrangeEmpty.body.code).toBe("studio_arrange_empty");
+    const plate = (await tool("create_plate", { name: "Lids" })).data.created[0];
+    const box = { width: 12, depth: 12, height: 5 };
+    const red = (await tool("add_box", { ...box, color: "#ff0000" })).data.created[0];
+    const blue = (await tool("add_box", box)).data.created[0];
+    expect((await tool("set_body_color", { feature_ids: [blue], color: "#0000FF" })).isError).toBe(false);
+    expect((await tool("move_to_plate", { feature_ids: [blue], plate_id: plate })).isError).toBe(false);
+    expect((await tool("check_print")).data.overlaps).toEqual([]);
+    const state = (await tool("get_design")).data;
+    expect(state.plates).toEqual([
+      { id: "plate-1", name: "Plate 1", feature_ids: [red] },
+      { id: empty, name: "Spare", feature_ids: [] },
+      { id: plate, name: "Lids", feature_ids: [blue] },
+    ]);
+    expect(state.bodies).toMatchObject([
+      { id: red, color: "#ff0000", plate_id: "plate-1" },
+      { id: blue, color: "#0000ff", plate_id: plate },
+    ]);
+    expect((await tool("undo")).isError).toBe(false);
+    expect((await tool("get_design")).data.plates[2].feature_ids).toEqual([]);
+    expect((await tool("redo")).isError).toBe(false);
+
+    const exportPath = `/studio/designs/${design.id}/export/3mf/orcaslicer/bambulab-p1s/0.4/-/Two.3mf`;
+    expect((await request(app).get(`/api${exportPath}`).set(auth(bob))).status).toBe(404);
+    const before = await prisma.print.count();
+    const file = await request(app)
+      .get(`/api/t/${encodeURIComponent(alice)}${exportPath}`)
+      .buffer(true)
+      .parse(readBinary);
+    expect(file.status).toBe(200);
+    expect(await prisma.print.count()).toBe(before);
+    const pkg = await readBambuPackage(file.body);
+    expect(pkg.plates.map(({ id, name, instances }) => [id, name, instances.length])).toEqual([
+      ["1", "Plate 1", 1],
+      ["2", "Lids", 1],
+    ]);
+    expect(pkg.modelSettingsXml?.match(/key="thumbnail_file" value="[^"]+"/g)).toEqual([
+      'key="thumbnail_file" value="Metadata/plate_1.png"',
+      'key="thumbnail_file" value="Metadata/plate_2.png"',
+    ]);
+    expect(pkg.zip.file("Metadata/plate_3.png")).toBeNull();
+    expect(await pkg.zip.file("_rels/.rels")!.async("string")).toContain('Target="/Metadata/plate_1.png"');
+    const redThumb = await sharp(await pkg.zip.file("Metadata/plate_1.png")!.async("nodebuffer")).stats();
+    const blueThumb = await sharp(await pkg.zip.file("Metadata/plate_2.png")!.async("nodebuffer")).stats();
+    expect(redThumb.channels[0].max).toBeGreaterThan(0);
+    expect(redThumb.channels[2].max).toBe(0);
+    expect(blueThumb.channels[0].max).toBe(0);
+    expect(blueThumb.channels[2].max).toBeGreaterThan(0);
+    expect(pkg.config).toMatchObject({
+      printer_settings_id: "Bambu Lab P1S 0.4 nozzle",
+      filament_colour: ["#FF0000", "#0000FF"],
+    });
+    const models = await readBambuModels(pkg);
+    expect(models["3d/3dmodel.model"].buildItems).toHaveLength(2);
+    expect(Object.values(pkg.modelSettings).map((obj) => obj.extruder)).toEqual([1, 2]);
+
+    const prusa = `/api/studio/designs/${design.id}/export/3mf/prusaslicer/-/-`;
+    expect((await request(app).get(`${prusa}/-/Two.3mf`).set(auth(alice))).status).toBe(400);
+    const single = await request(app).get(`${prusa}/${plate}/Lids.3mf`).set(auth(alice)).buffer(true).parse(readBinary);
+    expect(single.status).toBe(200);
+    const zip = await JSZip.loadAsync(single.body);
+    expect(await zip.file("Metadata/thumbnail.png")!.async("nodebuffer")).toEqual(
+      await pkg.zip.file("Metadata/plate_2.png")!.async("nodebuffer"),
+    );
+    const mesh = await zip.file("3D/3dmodel.model")!.async("string");
+    expect(mesh).toMatch(/#0000ff/i);
+    expect(mesh).not.toMatch(/#ff0000/i);
+  });
+
+  it("exports a plate as STL and packages each populated plate into an STL ZIP", async () => {
+    const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Test STL" });
+    const base = `/api/studio/designs/${design.id}/export`;
+    const download = (format: string, plate = "-", token = alice) =>
+      request(app).get(`${base}/${format}/-/-/-/${plate}/Test`).set(auth(token)).buffer(true).parse(readBinary);
+    const box = { width: 12, depth: 12, height: 5 };
+    expect((await command(alice, design.id, "rename_plate", { plate_id: "plate-1", name: "Tray/A" })).status).toBe(200);
+    expect((await command(alice, design.id, "add_box", { ...box, color: "#ff0000" })).status).toBe(200);
+    const one = await download("stl-zip");
+    expect(one.status).toBe(200);
+    expect(one.headers["content-type"]).toBe("application/zip");
+    expect(Object.keys((await JSZip.loadAsync(one.body)).files)).toEqual(["1 - Tray_A.stl"]);
+
+    const spare = (await command(alice, design.id, "create_plate", { name: "Spare" })).body.created[0];
+    const second = (await command(alice, design.id, "create_plate", { name: "Tray/A" })).body.created[0];
+    expect((await command(alice, design.id, "add_box", { ...box, position: [20, 0, 0] })).status).toBe(200);
+    expect((await command(alice, design.id, "add_box", { ...box, plate_id: second })).status).toBe(200);
+    const hidden = (await command(alice, design.id, "add_box", { ...box, plate_id: second })).body.created[0];
+    expect((await command(alice, design.id, "set_visibility", { feature_id: hidden, visible: false })).status).toBe(
+      200,
+    );
+
+    const first = await download("stl", "plate-1");
+    expect(first.status).toBe(200);
+    expect(first.headers["content-type"]).toBe("model/stl");
+    expect(first.headers["content-disposition"]).toContain("Test STL - Tray_A.stl");
+    expect(first.body.readUInt32LE(80)).toBe(24);
+    expect((await download("stl", spare)).status).toBe(400);
+    expect((await download("stl", "plate-999")).status).toBe(400);
+    expect((await download("stl-zip", "-", bob)).status).toBe(404);
+
+    const zipped = await download("stl-zip");
+    expect(zipped.status).toBe(200);
+    expect(zipped.headers["content-disposition"]).toContain("Test STL.zip");
+    const archive = await JSZip.loadAsync(zipped.body);
+    expect(Object.keys(archive.files)).toEqual(["1 - Tray_A.stl", "3 - Tray_A.stl"]);
+    expect(await archive.file("1 - Tray_A.stl")!.async("nodebuffer")).toEqual(first.body);
+    expect((await archive.file("3 - Tray_A.stl")!.async("nodebuffer")).readUInt32LE(80)).toBe(12);
+  }, 60_000);
+
+  it("saves a design to the library: its 3MF, its picture, and what was asked as its description", async () => {
     const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Tag" });
     const empty = await request(app).post(`/api/studio/designs/${design.id}/save-to-library`).set(auth(alice)).send({});
     expect(empty.status).toBe(400);
@@ -240,12 +585,20 @@ describe("Studio", () => {
     const model = saved.body.model;
     expect(model.title).toBe("Tag");
     expect(model.notes).toBe("- Make a tag\n- Make it 4 mm thick");
-    expect(model.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["Tag.stl"]);
+    expect(model.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["Tag.3mf"]);
     expect(model.preview_images).toHaveLength(1);
     const plate = await prisma.plate.findFirstOrThrow({ where: { printId: model.id } });
-    const stl = fs.readFileSync(resolvePlateFilePath(plate)!);
-    // A binary STL of the box: 12 triangles.
-    expect(stl.readUInt32LE(80)).toBe(12);
+    const project = await readBambuPackage(fs.readFileSync(resolvePlateFilePath(plate)!));
+    expect(project.plates).toHaveLength(1);
+    expect(project.zip.file("Metadata/plate_1.png")).not.toBeNull();
+    const download = await request(app)
+      .get(`/api/studio/designs/${design.id}/export/auto/-/-/-/-/Tag.stl`)
+      .set(auth(alice))
+      .buffer(true)
+      .parse(readBinary);
+    expect(download.status).toBe(200);
+    expect(download.headers["content-disposition"]).toContain("Tag.stl");
+    expect(download.body.readUInt32LE(80)).toBe(12);
 
     // An assistant saves it too, and the server pictures it.
     const token = await mcpToken(alice);
@@ -256,6 +609,157 @@ describe("Studio", () => {
       include: { previewImages: true },
     });
     expect(again?.previewImages).toHaveLength(1);
+  });
+
+  it("keeps a print profile with the design, writes it into the 3MF and shows it as the model's print profile", async () => {
+    const token = await mcpToken(alice);
+    const designFor = async (name: string) => {
+      const created = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name });
+      await command(alice, created.body.id, "add_box", { width: 30, depth: 20, height: 4 });
+      return created.body.id as string;
+    };
+    const hook = await designFor("Hose hook");
+
+    // A preset, one setting changed on it, and what it's for.
+    const set = await command(alice, hook, "set_print_profile", {
+      profile: {
+        preset: "outdoor",
+        settings: { wall_loops: 6 },
+        slicer: "orcaslicer",
+        reason: "It hangs in the garden.",
+      },
+    });
+    expect(set.status).toBe(200);
+    expect(set.body.design.document.print_profile).toMatchObject({
+      preset: "outdoor",
+      material: "ASA",
+      slicer: "orcaslicer",
+      by: "person",
+      settings: { wall_loops: 6, sparse_infill_density: 25, brim_width: 5 },
+    });
+    expect(
+      (await command(alice, hook, "set_print_profile", { profile: { settings: { wall_loops: 99 } } })).status,
+    ).toBe(400);
+    // An assistant's change says so, and the design tells it what to warn about.
+    await callTool(token, "studio_set_print_profile", {
+      design_id: hook,
+      profile: { settings: { seam_position: "back", layer_height: null, outer_wall_speed: 150 } },
+    });
+    const read = await callTool(token, "studio_get_design", { design_id: hook });
+    expect(read.data.print_profile).toMatchObject({ by: "mcp", settings: { seam_position: "back" } });
+    expect(read.data.print_profile.settings.layer_height).toBeUndefined();
+    expect(read.data.profile_checks).toEqual([]);
+
+    // Saved as a new model, its 3MF carries the settings and its plate is a print profile.
+    const saved = await request(app).post(`/api/studio/designs/${hook}/save-to-library`).set(auth(alice)).send({});
+    expect(saved.status).toBe(201);
+    const modelId = saved.body.model.id as string;
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: modelId } });
+    expect(plate.sourceInstanceId).toMatch(/^studio-[0-9a-f]{16}$/);
+    expect(plate.profile).toMatchObject({
+      studio: { title: "Outdoor ASA", description: "It hangs in the garden.", creator: "Studio alice", designId: hook },
+    });
+    const zip = await JSZip.loadAsync(fs.readFileSync(resolvePlateFilePath(plate)!));
+    const config = JSON.parse(await zip.file("Metadata/project_settings.config")!.async("string"));
+    expect(config).toMatchObject({
+      wall_loops: "6",
+      sparse_infill_density: "25%",
+      brim_type: "outer_only",
+      brim_width: "5",
+      seam_position: "back",
+      // Bambu Studio keeps speeds per nozzle, as a list.
+      outer_wall_speed: ["150"],
+    });
+    expect(config.layer_height).toBeUndefined();
+    expect(String(config.different_settings_to_system[0]).split(";").toSorted()).toEqual([
+      "bottom_shell_layers",
+      "brim_type",
+      "brim_width",
+      "outer_wall_speed",
+      "seam_position",
+      "sparse_infill_density",
+      "sparse_infill_pattern",
+      "top_shell_layers",
+      "wall_loops",
+    ]);
+
+    // The model page reads it like an imported profile, from its 3MF, with Studio's name for it.
+    const profilesOf = async (id: string) => {
+      await request(app).post(`/api/print/${id}/profiles/fill`).set(auth(alice));
+      for (let i = 0; i < 50; i++) {
+        const res = await request(app).get(`/api/print/${id}/profiles`).set(auth(alice));
+        if (!res.body.pending && !res.body.filling) return res.body.profiles as Record<string, Record<string, unknown>>;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      throw new Error("The profiles were never read");
+    };
+    expect((await profilesOf(modelId))[plate.id]).toMatchObject({
+      title: "Outdoor ASA",
+      description: "It hangs in the garden.",
+      creator: "Studio alice",
+      walls: 6,
+      infill: "25%",
+    });
+
+    // Another design goes onto the same model as a second profile; one without a profile can't, nor onto Bob's model.
+    const second = await designFor("Hose hook, strong");
+    await command(alice, second, "set_print_profile", { profile: { preset: "strong", name: "Heavy hose" } });
+    const added = await callTool(token, "studio_save_to_library", { design_id: second, model_id: modelId });
+    expect(added.data).toMatchObject({ model_id: modelId });
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates).toHaveLength(2);
+    expect(plates[1].sourceInstanceId).toMatch(/^studio-/);
+    expect(plates[1].filename).toBe("Heavy hose.3mf");
+    expect((await profilesOf(modelId))[plates[1].id]).toMatchObject({ title: "Heavy hose", walls: 5 });
+
+    const bare = await designFor("Bare");
+    const refused = await request(app)
+      .post(`/api/studio/designs/${bare}/save-to-library`)
+      .set(auth(alice))
+      .send({ model_id: modelId });
+    expect(refused.status).toBe(400);
+    expect(refused.body.code).toBe("studio_profile_required");
+    const bobsModel = await request(app).post("/api/studio/designs").set(auth(bob)).send({ name: "Bob's" });
+    await command(bob, bobsModel.body.id, "add_box", { width: 10, depth: 10, height: 10 });
+    const bobs = await request(app)
+      .post(`/api/studio/designs/${bobsModel.body.id}/save-to-library`)
+      .set(auth(bob))
+      .send({});
+    expect(
+      (
+        await request(app)
+          .post(`/api/studio/designs/${second}/save-to-library`)
+          .set(auth(alice))
+          .send({ model_id: bobs.body.model.id })
+      ).status,
+    ).toBe(404);
+
+    // Made for a printer: the 3MF names the slicer's presets for it, and keeps the profile's changes over them.
+    await command(alice, second, "set_print_profile", {
+      profile: { slicer: "orcaslicer", printer: { id: "bambulab-p1s", nozzle: "0.4" } },
+    });
+    const forPrinter = await request(app)
+      .post(`/api/studio/designs/${second}/save-to-library`)
+      .set(auth(alice))
+      .send({});
+    const printerPlate = await prisma.plate.findFirstOrThrow({ where: { printId: forPrinter.body.model.id } });
+    const printerZip = await JSZip.loadAsync(fs.readFileSync(resolvePlateFilePath(printerPlate)!));
+    const printerConfig = JSON.parse(await printerZip.file("Metadata/project_settings.config")!.async("string"));
+    expect(printerConfig.printer_settings_id).toMatch(/P1S/);
+    expect(printerConfig.print_settings_id).toMatch(/0\.20mm/);
+    expect(printerConfig).toMatchObject({ wall_loops: "5", sparse_infill_density: "35%" });
+    expect(String(printerConfig.different_settings_to_system[0]).split(";")).toContain("wall_loops");
+    expect((await profilesOf(forPrinter.body.model.id))[printerPlate.id]).toMatchObject({
+      title: "Heavy hose",
+      printer: expect.stringMatching(/P1S/),
+      walls: 5,
+    });
+
+    // Cleared, the next save has no profile.
+    await command(alice, hook, "set_print_profile", { profile: null });
+    const plain = await request(app).post(`/api/studio/designs/${hook}/save-to-library`).set(auth(alice)).send({});
+    const plainPlate = await prisma.plate.findFirstOrThrow({ where: { printId: plain.body.model.id } });
+    expect(plainPlate.sourceInstanceId).toBeNull();
   });
 
   it("keeps each person's Studio settings: where the assistant shows, and the units new designs start in", async () => {
@@ -419,6 +923,32 @@ describe("Studio", () => {
       .set(auth(alice))
       .send({ mcp_tools: [...DEFAULT_MCP_TOOL_NAMES, ...STUDIO_TOOLS] });
     const token = res.body.token as string;
+    const listed = await request(app)
+      .post("/api/mcp")
+      .set(auth(token))
+      .set("Accept", "application/json, text/event-stream")
+      .send({ jsonrpc: "2.0", id: nextRpc++, method: "tools/list", params: {} });
+    const tools = listed.body.result.tools as { name: string; annotations?: { destructiveHint?: boolean } }[];
+    for (const name of [
+      "update_split_connector",
+      "apply_fit_clearance",
+      "set_print_setup",
+      "lock_plate_positions",
+      "arrange_plate",
+      "rename_plate",
+      "move_to_plate",
+      "set_body_color",
+      "set_filament_slots",
+    ]) {
+      expect(tools.find((tool) => tool.name === `studio_${name}`)?.annotations).toMatchObject({
+        destructiveHint: true,
+      });
+    }
+    for (const name of ["create_plate", "make_fit_test"]) {
+      expect(tools.find((tool) => tool.name === `studio_${name}`)?.annotations).toMatchObject({
+        destructiveHint: false,
+      });
+    }
 
     const created = await callTool(token, "studio_create_design", { name: "From an assistant" });
     const id = created.data.design_id as string;
@@ -447,6 +977,8 @@ describe("Studio", () => {
     const view = await callTool(token, "studio_view_design", { design_id: id, views: ["iso", "top"], size: 128 });
     expect(view.isError).toBe(false);
     expect(view.content.filter((part) => part.type === "image")).toHaveLength(2);
+    const emptyPlate = await callTool(token, "studio_view_design", { design_id: id, plate_id: "" });
+    expect(emptyPlate).toMatchObject({ isError: true, text: expect.stringMatching(/plate doesn't belong/) });
 
     // The page sees what the assistant did.
     const page = await request(app).get(`/api/studio/designs/${id}`).set(auth(alice));
@@ -564,15 +1096,333 @@ describe("Studio", () => {
         .join("\n");
     }
 
-    async function upload(session: string, filename: string, text: string) {
+    async function upload(session: string, filename: string, data: string | Buffer) {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-studio-"));
       const file = path.join(dir, filename);
-      fs.writeFileSync(file, text);
+      fs.writeFileSync(file, data);
       const res = await request(app).post("/api/upload").set(auth(session)).attach("files", file);
       fs.rmSync(dir, { recursive: true, force: true });
       if (res.status !== 200) throw new Error(`upload: ${res.status} ${JSON.stringify(res.body)}`);
       return { modelId: res.body.prints[0].id as string, fileId: res.body.prints[0].plates[0].id as string };
     }
+
+    it("cleans up a failed import only while the new design is untouched", async () => {
+      const create = async () => (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const unused = await create();
+      const edited = await create();
+      const discard = (design: { id: string; version: number }, session = alice) =>
+        request(app)
+          .delete(`/api/studio/designs/${design.id}`)
+          .set(auth(session))
+          .send({ expected_version: design.version });
+      expect((await discard(unused, bob)).status).toBe(404);
+      expect((await discard(unused)).status).toBe(204);
+      expect((await command(alice, edited.id, "add_box", { width: 10, depth: 10, height: 10 })).status).toBe(200);
+      const refused = await discard(edited);
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe("studio_design_changed");
+      const kept = await request(app).get(`/api/studio/designs/${edited.id}`).set(auth(alice));
+      expect(kept.body.document.features).toMatchObject([{ id: "box-1" }]);
+      expect((await command(alice, edited.id, "undo")).status).toBe(200);
+      expect((await discard(edited)).status).toBe(409);
+
+      const withConversation = await create();
+      await prisma.studioMessage.create({ data: { designId: withConversation.id, role: "user", text: "A bracket" } });
+      expect((await discard(withConversation)).status).toBe(409);
+    });
+
+    it("loads one 3MF build plate at a time from the design's own source snapshot", async () => {
+      const zip = new JSZip();
+      zip.file(
+        "3D/3dmodel.model",
+        `<model unit="millimeter"><resources><object id="1" type="model"><mesh>
+          <vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices>
+          <triangles><triangle v1="0" v2="1" v3="2"/></triangles>
+        </mesh></object></resources>
+          <build><item objectid="1" plate_id="1"/><item objectid="1" plate_id="2"/></build>
+        </model>`,
+      );
+      const { modelId, fileId } = await upload(
+        alice,
+        "Lazy plates.3mf",
+        await zip.generateAsync({ type: "nodebuffer" }),
+      );
+      const previewUrl = `/api/plate/${fileId}/preview.glb`;
+      const manifest = await request(app).get(previewUrl).query({ plates: 1 }).set(auth(alice));
+      expect(manifest.status).toBe(200);
+      expect(manifest.body.plates.map((plate: { index: number }) => plate.index)).toEqual([1, 2]);
+      expect((await request(app).get(previewUrl).query({ plates: 1 }).set(auth(bob))).status).toBe(404);
+      const query = { buildPlate: 2, projectVersion: manifest.body.version };
+      const ready = async () => {
+        const preview = await request(app).get(previewUrl).query(query).set(auth(alice)).buffer(true).parse(readBinary);
+        expect(preview.status).toBe(200);
+        const metadata = JSON.parse(preview.body.toString("utf8", 20, 20 + preview.body.readUInt32LE(12)));
+        const plateNodes = metadata.nodes
+          .map((node: { name?: string }) => node.name)
+          .filter((name?: string) => name?.startsWith("plate-"));
+        expect(plateNodes).toEqual(["plate-2"]);
+      };
+      // Generating the preview can start both rendering and packing workers on a cold cache.
+      await expect.poll(ready, { timeout: 30_000 }).toBeUndefined();
+
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const opened = await command(alice, design.id, "import_model", {
+        model_id: modelId,
+        file_id: fileId,
+        defer_plates: true,
+      });
+      expect(opened.status).toBe(200);
+      expect(opened.body.design.document.features).toEqual([]);
+      expect(
+        opened.body.design.document.plates.map((plate: { source: { index: number } }) => plate.source.index),
+      ).toEqual([1, 2]);
+      expect(opened.body.design.document.plates).toMatchObject([{ default_name: 1 }, { default_name: 2 }]);
+      const token = await mcpToken(alice);
+      const listed = await callTool(token, "studio_get_design", { design_id: design.id });
+      expect(listed.data.pending_plate_ids).toEqual(["plate-1", "plate-2"]);
+      expect(listed.data.plates).toMatchObject([
+        { id: "plate-1", pending_import: true },
+        { id: "plate-2", pending_import: true },
+      ]);
+      const viewPending = await callTool(token, "studio_view_design", { design_id: design.id, plate_id: "plate-2" });
+      expect(viewPending.isError).toBe(true);
+      expect(viewPending.text).toContain("studio_load_source_plate");
+      const deletePending = await command(alice, design.id, "delete_plate", { plate_id: "plate-2" });
+      expect(deletePending.status).toBe(400);
+      expect(deletePending.body.code).toBe("studio_plate_pending");
+      const exported = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/auto/-/-/-/-/Lazy.3mf`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse(readBinary);
+      expect(exported.status).toBe(200);
+      const archive = await JSZip.loadAsync(exported.body);
+      const settings = await archive.file("Metadata/model_settings.config")!.async("string");
+      expect(settings.match(/<plate>/g)).toHaveLength(2);
+      const stls = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/stl-zip/-/-/-/-/Lazy.zip`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse(readBinary);
+      expect(stls.status).toBe(200);
+      const stlArchive = await JSZip.loadAsync(stls.body);
+      expect(Object.keys(stlArchive.files)).toEqual(["1 - Plate 1.stl", "2 - Plate 2.stl"]);
+      const afterExport = await request(app).get(`/api/studio/designs/${design.id}`).set(auth(alice));
+      expect(afterExport.body.document.features).toEqual([]);
+      expect(afterExport.body.version).toBe(opened.body.design.version);
+      const stored = await prisma.plate.findUniqueOrThrow({ where: { id: fileId } });
+      fs.unlinkSync(resolvePlateFilePath(stored)!);
+      const loaded = await Promise.all([
+        command(alice, design.id, "load_source_plate", { plate_id: "plate-2" }),
+        command(alice, design.id, "load_source_plate", { plate_id: "plate-2" }),
+      ]);
+      expect(loaded.map((response) => response.status)).toEqual([200, 200]);
+      expect(loaded.flatMap((response) => response.body.created)).toEqual(["mesh-1"]);
+      expect(loaded[0].body.design.document.features).toMatchObject([{ plate_id: "plate-2", triangles: 1 }]);
+      expect(loaded[0].body.design.document.plates[0].source.index).toBe(1);
+      expect(loaded[0].body.design.document.plates[1].source).toBeUndefined();
+      expect((await command(alice, design.id, "rename_plate", { plate_id: "plate-2", name: "Tray" })).status).toBe(200);
+      expect((await command(alice, design.id, "undo")).status).toBe(200);
+      const undoneLoad = await command(alice, design.id, "undo");
+      expect(undoneLoad.body.design).toMatchObject({ can_redo: true, undone_source_plate_ids: ["plate-2"] });
+      const reopened = await request(app).get(`/api/studio/designs/${design.id}`).set(auth(alice));
+      expect(reopened.body).toMatchObject({ can_redo: true, undone_source_plate_ids: ["plate-2"] });
+      const redone = await command(alice, design.id, "redo");
+      expect(redone.body.design.undone_source_plate_ids).toBeUndefined();
+      const redoneEdit = await command(alice, design.id, "redo");
+      expect(redoneEdit.body.design.document.plates[1].name).toBe("Tray");
+      const mcpLoad = await callTool(token, "studio_load_source_plate", { design_id: design.id, plate_id: "plate-1" });
+      expect(mcpLoad.data.created).toEqual(["mesh-2"]);
+      expect(mcpLoad.data.pending_plate_ids).toEqual([]);
+      const viewedDefault = await callTool(token, "studio_view_design", { design_id: design.id, size: 128 });
+      expect(viewedDefault.data.bodies).toBe(1);
+      const viewed = await callTool(token, "studio_view_design", {
+        design_id: design.id,
+        plate_id: "plate-2",
+        size: 128,
+      });
+      expect(viewed.data.bodies).toBe(1);
+      expect(viewed.content.some((entry) => entry.type === "image")).toBe(true);
+    }, 60_000);
+
+    it.each([
+      { stage: "moving a mesh", failRename: true, status: 422, detail: "Couldn't move the third mesh", count: 2 },
+      {
+        stage: "applying the command",
+        failRename: false,
+        status: 400,
+        detail: "There's no plate plate-999 in this design.",
+        count: 3,
+      },
+    ])(
+      "keeps the import error from $stage when an asset cannot be removed",
+      async ({ failRename, status, detail, count }) => {
+        const zip = new JSZip();
+        zip.file(
+          "3D/3dmodel.model",
+          `<model unit="millimeter"><resources><object id="1" type="model">
+        <mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices>
+        <triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources>
+        <build><item objectid="1"/><item objectid="1"/><item objectid="1"/></build></model>`,
+        );
+        const file = await upload(alice, "staged.3mf", await zip.generateAsync({ type: "nodebuffer" }));
+        const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+        const owner = (await prisma.studioDesign.findUniqueOrThrow({ where: { id: design.id } })).userId;
+        const dir = studioAssetDir(owner, design.id);
+        const remove = fsPromises.rm;
+        const move = fsPromises.rename;
+        const attempted: string[] = [];
+        const cleanupError = new Error("Asset could not be removed");
+        let moved = 0;
+        const rename = vi.spyOn(fsPromises, "rename").mockImplementation(async (source, dest) => {
+          if (failRename && path.dirname(String(dest)) === dir && ++moved === 3) throw new HttpError(422, detail);
+          await move(source, dest);
+        });
+        const rm = vi.spyOn(fsPromises, "rm").mockImplementation(async (assetPath, options) => {
+          const name = String(assetPath);
+          if (path.dirname(name) === dir && name.endsWith(".tpsm")) {
+            attempted.push(name);
+            if (attempted.length === 1) throw cleanupError;
+          }
+          await remove(assetPath, options);
+        });
+        const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+        try {
+          const res = await command(alice, design.id, "import_model", {
+            model_id: file.modelId,
+            plate_id: "plate-999",
+          });
+          expect(res.status).toBe(status);
+          expect(res.body.detail).toBe(detail);
+          expect(attempted).toHaveLength(count);
+          expect(fs.readdirSync(dir)).toEqual([path.basename(attempted[0])]);
+          expect(log).toHaveBeenCalledWith(expect.stringContaining(attempted[0]), cleanupError);
+        } finally {
+          rename.mockRestore();
+          rm.mockRestore();
+          log.mockRestore();
+          fs.rmSync(dir, { recursive: true, force: true });
+        }
+      },
+    );
+
+    it.each([
+      { bed: "the default bed", points: null },
+      {
+        bed: "a polygon smaller than the declared bed",
+        points: [
+          [-50, -50],
+          [50, -50],
+          [0, 50],
+        ],
+      },
+      {
+        bed: "an off-center polygon",
+        points: [
+          [-70, -60],
+          [80, -60],
+          [80, 40],
+          [-70, 55],
+        ],
+      },
+    ])("reopens a Studio project on $bed with its plates, objects, colors, and placements", async ({ points }) => {
+      const original = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Round trip" }))
+        .body;
+      const setup = points
+        ? {
+            printer: "polygon-bed",
+            nozzle: "0.4",
+            bed: [200, 200, 200],
+            minWall: 0.8,
+            outline: { shape: "polygon", points },
+          }
+        : null;
+      expect((await command(alice, original.id, "set_print_setup", { setup })).status).toBe(200);
+      const lids = (await command(alice, original.id, "create_plate", { name: "Lids" })).body.created[0];
+      const box = { width: 10, depth: 20, height: 6 };
+      await command(alice, original.id, "add_box", {
+        ...box,
+        name: "Red base",
+        color: "#ff0000",
+        position: [30, -15, 0],
+      });
+      await command(alice, original.id, "add_box", {
+        ...box,
+        name: "Blue lid",
+        color: "#0000ff",
+        plate_id: lids,
+        position: [-15, 5, 2],
+      });
+      const saved = await request(app)
+        .post(`/api/studio/designs/${original.id}/save-to-library`)
+        .set(auth(alice))
+        .send({});
+      expect(saved.status).toBe(201);
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const opened = await command(alice, design.id, "import_model", { model_id: saved.body.model.id });
+      expect(opened.status).toBe(200);
+      expect(opened.body.created).toEqual(["mesh-1", "mesh-2"]);
+      const { features, plates } = opened.body.design.document;
+      expect(plates).toEqual([
+        { name: "Plate 1", id: "plate-1" },
+        { name: "Lids", id: "plate-2" },
+      ]);
+      expect(features).toMatchObject([
+        { name: "Red base", type: "mesh", color: "#ff0000", plate_id: "plate-1", solid: true, size: [10, 20, 6] },
+        { name: "Blue lid", type: "mesh", color: "#0000ff", plate_id: "plate-2", solid: true, size: [10, 20, 6] },
+      ]);
+      expect(features[0].transform.position).toEqual([30, -15, 0]);
+      expect(features[1].transform.position[0]).toBeCloseTo(-15, 3);
+      expect(features[1].transform.position.slice(1)).toEqual([5, 2]);
+      const undone = await command(alice, design.id, "undo");
+      expect(undone.body.design.document.features).toEqual([]);
+      expect(undone.body.design.document.plates).toBeUndefined();
+      const redone = await command(alice, design.id, "redo");
+      expect(redone.body.design.document.features).toEqual(features);
+    });
+
+    it("opens a plain inch 3MF with repeated, mirrored build items at their relative spacing", async () => {
+      const zip = new JSZip();
+      const vertices = [
+        [0, 0, 0],
+        [1, 0, 0],
+        [1, 1, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+        [0, 1, 1],
+      ]
+        .map(([x, y, z]) => `<vertex x="${x}" y="${y}" z="${z}"/>`)
+        .join("");
+      const triangles = [
+        0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7,
+      ];
+      const faces = [];
+      for (let i = 0; i < triangles.length; i += 3) {
+        faces.push(`<triangle v1="${triangles[i]}" v2="${triangles[i + 1]}" v3="${triangles[i + 2]}"/>`);
+      }
+      zip.file(
+        "3D/3dmodel.model",
+        `<model unit="inch" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+        <resources><object id="1" name="Inch &amp; cube" type="model"><mesh>
+        <vertices>${vertices}</vertices><triangles>${faces.join("")}</triangles>
+        </mesh></object></resources><build><item objectid="1"/>
+        <item objectid="1" transform="-1 0 0 0 1 0 0 0 1 3 0 0"/>
+        <item objectid="1" printable="0" transform="1 0 0 0 1 0 0 0 1 20 0 0"/>
+        <item objectid="1" printable="false" transform="1 0 0 0 1 0 0 0 1 30 0 0"/>
+        </build></model>`,
+      );
+      const file = await upload(alice, "inches.3mf", await zip.generateAsync({ type: "nodebuffer" }));
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const res = await command(alice, design.id, "import_model", { model_id: file.modelId });
+      expect(res.status).toBe(200);
+      const { features } = res.body.design.document;
+      expect(features).toHaveLength(2);
+      for (const body of features)
+        expect(body).toMatchObject({ name: "Inch & cube", size: [25.4, 25.4, 25.4], solid: true });
+      expect(features[1].transform.position[0] - features[0].transform.position[0]).toBeCloseTo(50.8, 3);
+    });
 
     it("brings a closed STL in as a solid, centred on the bed, that booleans can cut", async () => {
       const box = await upload(alice, "studio-box.stl", boxStl(10, 20, 30));

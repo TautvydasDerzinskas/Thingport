@@ -6,7 +6,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
+import { type Print, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -17,6 +17,7 @@ import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
+import { usePrintSort } from "../../hooks/usePrintSort";
 import SortTabs from "../ModelsPage/SortTabs";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
@@ -24,9 +25,10 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useToast } from "../../components/ToastProvider";
+import LoadMoreFailed from "../../components/LoadMoreFailed";
 
 const PAGE_SIZE = 24;
-const SORT_MODES: PrintSortMode[] = ["relevance", "newest", "popular", "downloads"];
 
 type Props = {
   theme: ResolvedTheme;
@@ -39,7 +41,12 @@ type Props = {
  *  leaves `?q=` alone on this page. */
 export default function SearchResultsPage({ theme, previewMode, onUnauthorized, viewer }: Props) {
   const { t } = useTranslation(["models", "app"]);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const showToast = useToast();
+  // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
+  const [moreFailed, setMoreFailed] = useState(false);
+  // A quiet reload keeps the list on screen: no next page is added to it until the reload has replaced it.
+  const [reloading, setReloading] = useState(false);
+  const [searchParams] = useSearchParams();
   const query = (searchParams.get("q") ?? "").trim();
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
     loadingAtFirst: true,
@@ -51,24 +58,11 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
   // A page on its way when the list reloads belongs to the old list, and is dropped.
   const listRun = useRef(0);
   const selection = useModelSelection(items);
-  const sortModeParam = searchParams.get("orderBy");
-  const sortMode: PrintSortMode =
-    sortModeParam === "newest" || sortModeParam === "popular" || sortModeParam === "downloads"
-      ? sortModeParam
-      : "relevance";
+  const { sortMode, direction, setSortMode, setDirection } = usePrintSort({ search: true });
 
   const filters = useModelFilters();
   const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
-
-  const setSortMode = (mode: PrintSortMode) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (mode === "relevance") next.delete("orderBy");
-      else next.set("orderBy", mode);
-      return next;
-    });
-  };
 
   usePageHeader({
     title: query ? t("app:search.resultsTitle", { query }) : undefined,
@@ -81,17 +75,20 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 
   useEffect(() => {
     const background = isBackgroundReload();
     listRun.current += 1;
+    setMoreFailed(false);
+    setLoadingMore(false);
     if (!query) {
       setItems([]);
       setHasMore(false);
       setLoading(false);
+      setReloading(false);
       return;
     }
     let cancelled = false;
@@ -99,7 +96,14 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
     const kept = returning();
     if (kept !== null) setOffset(kept);
     const quiet = background || kept !== null;
-    if (!quiet) setLoading(true);
+    setReloading(quiet);
+    if (!quiet) {
+      // Only a successful replacement can make this list pageable again.
+      setItems([]);
+      setHasMore(false);
+      setOffset(0);
+      setLoading(true);
+    }
     (async () => {
       try {
         const result = await printsApi.list({
@@ -109,6 +113,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
           license_allows: licenseAllows,
           licensed: licensed || undefined,
           order_by: sortMode,
+          order_direction: direction,
           limit: quiet ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
           offset: 0,
         });
@@ -120,17 +125,20 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         if (cancelled) return;
         handleError(err, quiet ? undefined : t("models:errors.loadFailed"));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setReloading(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
+  }, [query, sortMode, direction, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore || !query) return;
+    if (loading || loadingMore || !hasMore || !query) return;
     const run = listRun.current;
     setLoadingMore(true);
     try {
@@ -141,6 +149,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         license_allows: licenseAllows,
         licensed: licensed || undefined,
         order_by: sortMode,
+        order_direction: direction,
         limit: PAGE_SIZE,
         offset,
       });
@@ -149,23 +158,16 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
-      handleError(err, t("models:errors.loadFailed"));
+      if (run === listRun.current) {
+        handleError(err);
+        setMoreFailed(true);
+      }
     } finally {
-      setLoadingMore(false);
+      if (run === listRun.current) setLoadingMore(false);
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
-
-  if (loading) {
-    return (
-      <Box sx={{ maxWidth: "1920px", mx: "auto", pt: 7 }}>
-        <Box sx={cardGridSx(6)}>
-          <CardSkeletons count={12} />
-        </Box>
-      </Box>
-    );
-  }
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore || reloading);
 
   return (
     <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
@@ -179,12 +181,22 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
           onUnauthorized={onUnauthorized}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-          <SortTabs value={sortMode} modes={SORT_MODES} onChange={setSortMode} />
+          <SortTabs
+            value={sortMode}
+            onChange={setSortMode}
+            direction={direction}
+            onDirectionChange={setDirection}
+            search
+          />
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <ModelFiltersButton filters={filters} sources={sources} />
         </Box>
       </Box>
-      {items.length ? (
+      {loading ? (
+        <Box sx={cardGridSx(6)}>
+          <CardSkeletons count={12} />
+        </Box>
+      ) : items.length ? (
         <Stack spacing={2}>
           <Box sx={cardGridSx(6)}>
             {items.map((item) => (
@@ -205,7 +217,12 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
             ))}
             {loadingMore && <CardSkeletons count={6} />}
           </Box>
-          {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
+          {hasMore &&
+            (moreFailed ? (
+              <LoadMoreFailed message={t("models:errors.loadFailed")} onRetry={() => setMoreFailed(false)} />
+            ) : (
+              <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />
+            ))}
         </Stack>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>

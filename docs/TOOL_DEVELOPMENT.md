@@ -46,12 +46,15 @@ in [`tools/index.json`](../tools/index.json).
 | `version`     | Up to 20 characters, `1.0.0` by default. Shown to admins, and what **Update** offers them      |
 | `author`      | Up to 60 characters, with an optional `authorUrl`. The validator insists on an author          |
 | `iconUrl`     | An image address, `builtin:<group>/<name>`, `/api/icons/<file>`, or an SVG as a `data:` URL    |
+| `symbol`      | A one-colour SVG as a `data:` URL for its commands in a grid's toolbar, below                  |
 | `window`      | `{ width, height }` in pixels: 320–1920 by 240–1200, `960 × 640` by default                    |
 | `hosts`       | Up to 20 host names its `thingport.fetch` may reach. Empty means it reaches nothing            |
 | `category`    | `generators`, `planners`, `calculators`, `files`, `library` or `other`: the shelf it starts on |
 | `locales`     | The language codes it has labels for, up to 40                                                 |
 | `screenshots` | Up to 8 `{ "file", "caption" }`, captions up to 200 characters                                 |
 | `collection`  | The models it brings, below                                                                    |
+| `commands`    | Up to 10 actions for a model page or a grid selection, below                                   |
+| `modelPage`   | `{ info, tab: { title }, image }`: parts of every model's page the tool draws, below           |
 
 An SVG `iconUrl` keeps the icon inside the metadata, which is why the tools here use one.
 
@@ -90,6 +93,99 @@ the geometry behind them. The 3MF writer comes with it — `writeThreeMf(parts, 
 `meshBounds(mesh)` — so a tool that works out a dozen parts saves one 3MF with each of them named inside, rather
 than handing over a dozen downloads. A 3MF carries one copy of a shape however many are wanted, so a part's name is
 where its count belongs: `"8x8 Core Tile x4"`.
+
+### Commands on model pages and grids
+
+A tool can add commands to the **Tools** menu beside a model's Open button or to the selection toolbar in a model
+grid. Thingport reads the commands from the tool's metadata before loading its script. The grid's toolbar shows
+them in its edit mode, enabled once at least one model is selected. Several selection commands from the same tool
+share one button with a menu of their translated titles.
+
+The toolbar's icons are Thingport's own, in one colour, so a tool gives its commands a `symbol` there: an SVG as a
+`data:` URL, which Thingport tints the same way, so only its shape counts. The tool's `symbol` is its button's; a
+command's own `symbol` is its menu item's, and its button's when it's the tool's only selection command. Without
+either, the toolbar draws the tool's `iconUrl` in one colour, where it can.
+
+```json
+"commands": [
+  { "id": "estimate", "title": "Estimate print cost", "on": "file", "fileTypes": ["stl", "3mf", "gcode"] },
+  { "id": "batch", "title": "Process selected models", "on": "selection", "window": false }
+]
+```
+
+| Field       | What it does                                                                                           |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| `id`        | 1–40 lowercase letters, digits and dashes, different for each command                                  |
+| `title`     | Up to 60 characters. A label `commands.<id>` in `locales/` translates it                               |
+| `on`        | `"model"` (default) for a model, `"file"` for its selected file, or `"selection"` for a grid selection |
+| `fileTypes` | For `"file"`: the endings it takes, without the dot (`"stl"`, `"gcode.3mf"`); any file when absent     |
+| `window`    | `true` (default) opens the tool's window; `false` calls its `run` export with no window                |
+| `symbol`    | A one-colour SVG as a `data:` URL for its menu item in a grid's toolbar, as above                      |
+
+A command that opens the window finds what it was picked on in `thingport.context`: `{ command, modelId, fileId }`,
+`fileId` being one of the model's `files` for a command on a file (the prepared print isn't one, so a file command
+isn't offered for it). A selection command gets `{ command, modelIds }`, with the IDs selected at the time the action
+was picked, in grid order. A command with `"window": false` gets the same context in its `run` export and can use
+`ui.toast` and `ui.confirm`.
+
+```js
+export async function run(command, thingport) {
+  if (command !== "batch") return;
+  for (const id of thingport.context.modelIds ?? []) {
+    const model = await thingport.models.get(id);
+    await thingport.storage.set(`picked:${id}`, model.name);
+  }
+}
+```
+
+The Print cost estimator provides a file command and the Print queue provides both model and selection commands.
+
+### Shared with the tool's other users
+
+`thingport.storage` is each user's own. `thingport.shared` is what a tool's users share with each other, such as a print
+queue the household keeps together:
+
+- **Each entry is its writer's.** `set(key, value)` and `remove(key)` change only the user's own entries, and two
+  users' entries under the same key are two entries. `list({ prefix })` reads everyone's, newest first, with who wrote
+  each one and whether it's `mine`: 5,000 a read, and `before` set to the last one's `cursor` reads the next ones.
+- **Who reads them is the writer's choice.** Everyone who can use tools, unless they keep theirs to the people they
+  pick: `share()` opens Thingport's own dialog for that, and `audience()` says what they chose.
+- **An entry can be about a model.** `set(key, value, { model })` ties it to a model the user can open, and
+  `list({ model })` finds everyone's entries about that model or any copy of it: the same original, or imported from
+  the same page. That's how a tool warns that someone else has the model queued.
+
+A value is at most 256 KB as JSON, and a user shares at most 5 MB and 5,000 entries a tool. Nothing in a shared value
+should be private to its writer: a model's thumbnail address, for one, carries their session, so read it as the viewer
+instead. `onChange(listener)` hears the tool's own changes on the page, so a part of it showing them can draw again.
+
+### Parts of a model's page
+
+A tool can put parts of its own on every model's page. Thingport gives each an empty element and the same `thingport`
+its window gets; the tool draws everything in it, its own `<style>` included (the theme is on the element as the
+`--tp-*` variables). `modelPage` in the metadata says which, and each is drawn by the script's export of that name:
+
+| `modelPage`          | Export       | Where                                                                       |
+| -------------------- | ------------ | --------------------------------------------------------------------------- |
+| `"info": true`       | `modelInfo`  | The info box beside the picture, under the model's category                 |
+| `"tab": { "title" }` | `modelTab`   | A tab of the description box, titled `title` (or its label `modelPage.tab`) |
+| `"image": true`      | `modelImage` | The top right corner of the model's picture: keep it small                  |
+
+```js
+export function modelInfo(thingport) {
+  const { root, context, shared } = thingport; // context: { modelId, fileId, place: "info" }
+  const draw = async () => (root.textContent = `${(await shared.list({ model: context.modelId })).length} notes`);
+  const stop = shared.onChange(draw);
+  void draw();
+  return stop; // called when the part goes
+}
+```
+
+`context.fileId` is the file picked on the page, and a part is drawn afresh when another is picked, the theme or the
+language changes. A part that draws nothing takes no room. Inside one, `thingport.ui` has more:
+`popover(anchor, draw)` opens Thingport's popover beside one of the part's elements for the tool to draw into,
+`showTab()` switches the description box to the tool's tab, `selectFile(fileId)` picks another of the model's files,
+and `openWindow()` opens the tool's window on the model. A tab's script loads only once the tab is opened.
+**Print queue** draws its chips in the info box; **Filament shelf** draws a tab and a mark on the picture.
 
 ### The words it shows
 

@@ -254,5 +254,12 @@
   "view.placeRing": "Tempkite žiedą ten, kur norite",
   "view.side": "Šonas",
   "view.top": "Viršus",
-  "view.which": "Iš kurios pusės žiūrėti"
+  "view.which": "Iš kurios pusės žiūrėti",
+  "warning.pieces": "Rėmelis sudarytas iš {count} atskirų dalių. Paplatinkite jungtį arba užpildykite vidų.",
+  "warning.borderHigh": "Rėmelis aukštesnis už raides. Apžiūrėkite iš šono.",
+  "warning.thinJoin": "Jungtis tarp raidžių siauresnė nei 1,6 mm ir gali būti trapi.",
+  "warning.thinRing": "Žiedo sienelė plonesnė nei 0,8 mm. Sumažinkite skylę arba padidinkite žiedą.",
+  "error.noSafeRing": "Nėra saugios vietos šiam žiedui. Paplatinkite rėmelį arba sumažinkite žiedą.",
+  "error.noRingJoin": "Nėra vietos šiam žiedui prijungti. Paplatinkite rėmelį arba sumažinkite žiedą.",
+  "error.noMagnetSpace": "Nėra vietos šiam magnetui. Naudokite mažiau arba mažesnius magnetus arba padidinkite pakabuką."
 }

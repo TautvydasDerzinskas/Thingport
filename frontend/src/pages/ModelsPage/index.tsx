@@ -13,7 +13,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
+import { type Print, printsApi } from "../../api/prints";
 import { type Category, type CategoryKind, type CategoryMetaInput, categoriesApi } from "../../api/categories";
 import { type CategoriesView, type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
@@ -29,6 +29,7 @@ import CategoriesPanel from "./CategoriesPanel";
 import CategoriesViewToggle from "./CategoriesViewToggle";
 import CategoryBanner from "./CategoryBanner";
 import ModelCard from "./ModelCard";
+import { usePrintSort } from "../../hooks/usePrintSort";
 import SortTabs from "./SortTabs";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import ModelsManagerDialog, { type ModelsManagerSection } from "./ModelsManagerDialog";
@@ -36,6 +37,8 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useToast } from "../../components/ToastProvider";
+import LoadMoreFailed from "../../components/LoadMoreFailed";
 
 const PAGE_SIZE = 24;
 
@@ -65,6 +68,11 @@ export default function ModelsPage({
   viewer,
 }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
+  const showToast = useToast();
+  // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
+  const [moreFailed, setMoreFailed] = useState(false);
+  // A quiet reload keeps the list on screen: no next page is added to it until the reload has replaced it.
+  const [reloading, setReloading] = useState(false);
   const mobile = useMediaQuery((muiTheme: Theme) => muiTheme.breakpoints.down("md"));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -83,9 +91,10 @@ export default function ModelsPage({
   // Bumped when AI categorization changes many models at once, to refetch the grid.
   const [libraryVersion, setLibraryVersion] = useState(0);
   const refreshLibrary = useCallback(() => setLibraryVersion((version) => version + 1), []);
-  const sortModeParam = searchParams.get("orderBy");
-  const sortMode: PrintSortMode =
-    sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
+  const reloadAfterRename = useRef(false);
+  // A page that finishes after its list has been replaced must be discarded.
+  const listRun = useRef(0);
+  const { sortMode, direction, setSortMode, setDirection } = usePrintSort();
 
   const filters = useModelFilters();
   const { generative, hiddenProviders, licenseAllows, licensed } = filters;
@@ -100,8 +109,8 @@ export default function ModelsPage({
     setItems((prev) => prev.filter((item) => !ids.includes(item.id)));
   };
 
-  // Linking a model can bring a site into the sources it's filtered by, and one given another category or folder
-  // leaves the open one's list.
+  // Linking a model can bring in a new source, moving it can take it out of the open category,
+  // and renaming it can change its place in a Name-sorted list.
   const applyUpdates = (updated: Print[]) => {
     const linked = updated.some(
       (print) => print.source_provider && !items.find((item) => item.id === print.id)?.source_provider,
@@ -110,18 +119,25 @@ export default function ModelsPage({
     const left = open
       ? updated.filter((print) => !open.includes(print.category_id ?? "")).map((print) => print.id)
       : [];
-    setItems((prev) => replacePrints(prev, updated));
-    if (left.length) dropFromList(left);
+    const renamed =
+      sortMode === "name" &&
+      updated.some((print) => {
+        const current = items.find((item) => item.id === print.id);
+        return current && (current.title || current.name) !== (print.title || print.name);
+      });
+    if (renamed) {
+      // A title can move the model across a page boundary while the next page is on its way.
+      listRun.current += 1;
+      setMoreFailed(false);
+      reloadAfterRename.current = true;
+      setHasMore(false);
+      setLoading(true);
+      refreshLibrary();
+    } else {
+      setItems((prev) => replacePrints(prev, updated));
+      if (left.length) dropFromList(left);
+    }
     if (linked) refreshSources();
-  };
-
-  const setSortMode = (mode: PrintSortMode) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (mode === "newest") next.delete("orderBy");
-      else next.set("orderBy", mode);
-      return next;
-    });
   };
 
   // Mirrors the selected category into ?category=<id>. When the URL and state disagree, both sync
@@ -175,7 +191,7 @@ export default function ModelsPage({
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 
@@ -197,18 +213,25 @@ export default function ModelsPage({
   // Every site the library has is off, so the grid says so rather than looking empty for no visible reason.
   const noSources = sources.length > 0 && sources.every((source) => hiddenProviders.includes(source.provider));
 
-  // Which set of filters the list on screen belongs to. Changing one -- a category, the sort, or anything behind
-  // the filter button -- starts a new set, and an answer belonging to an older one is dropped rather than written over the newer
-  // list: the two requests are a page apart and the slower one can land last.
-  const listRun = useRef(0);
   const isBackgroundReload = useBackgroundReload(printsVersion);
 
   useEffect(() => {
     const run = ++listRun.current;
+    // A reloaded list may page again, whatever its last next page did.
+    setMoreFailed(false);
+    setLoadingMore(false);
+    const renamed = reloadAfterRename.current;
+    reloadAfterRename.current = false;
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
-    const kept = returning();
-    const background = isBackgroundReload() || kept !== null;
-    if (!background) setLoading(true);
+    const kept = renamed ? null : returning();
+    const background = (isBackgroundReload() || kept !== null) && !renamed;
+    setReloading(background);
+    if (!background) {
+      // Only a successful replacement can make this list pageable again.
+      setItems([]);
+      setHasMore(false);
+      setLoading(true);
+    }
     (async () => {
       try {
         let result: Awaited<ReturnType<typeof printsApi.list>>;
@@ -223,6 +246,7 @@ export default function ModelsPage({
             license_allows: licenseAllows,
             licensed: licensed || undefined,
             order_by: sortMode,
+            order_direction: direction,
             limit: background ? keepLoaded(PAGE_SIZE, kept ?? items.length) : PAGE_SIZE,
             offset: 0,
           });
@@ -234,14 +258,27 @@ export default function ModelsPage({
         if (run !== listRun.current) return;
         handleError(err, background ? undefined : t("models:errors.loadFailed"));
       } finally {
-        if (run === listRun.current) setLoading(false);
+        if (run === listRun.current) {
+          setLoading(false);
+          setReloading(false);
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative, hiddenProviders, licenseAllows, licensed]);
+  }, [
+    categoryIdFilter,
+    printsVersion,
+    libraryVersion,
+    sortMode,
+    direction,
+    generative,
+    hiddenProviders,
+    licenseAllows,
+    licensed,
+  ]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore) return;
+    if (loading || loadingMore || !hasMore) return;
     const run = listRun.current;
     const drops = listDrops.current;
     setLoadingMore(true);
@@ -253,6 +290,7 @@ export default function ModelsPage({
         license_allows: licenseAllows,
         licensed: licensed || undefined,
         order_by: sortMode,
+        order_direction: direction,
         limit: PAGE_SIZE,
         // What's on screen, so models that left the list here don't make the next page skip any.
         offset: items.length,
@@ -264,15 +302,14 @@ export default function ModelsPage({
       setHasMore(result.hasMore);
     } catch (err) {
       if (run !== listRun.current) return;
-      handleError(err, t("models:errors.loadFailed"));
+      handleError(err);
+      setMoreFailed(true);
     } finally {
-      // Cleared whether or not this page still belongs to the list on screen: left set, it would turn
-      // "a page is on its way" into "no page may ever be asked for again".
-      setLoadingMore(false);
+      if (run === listRun.current) setLoadingMore(false);
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore || reloading);
 
   const createCategory = async (name: string, parentId: string | null, kind: CategoryKind) => {
     try {
@@ -374,8 +411,8 @@ export default function ModelsPage({
           foldersView={categoriesView === "folders"}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5, width: { xs: "100%", md: "auto" } }}>
-          <Box sx={{ overflowX: "auto" }}>
-            <SortTabs value={sortMode} onChange={setSortMode} />
+          <Box sx={{ minWidth: 0 }}>
+            <SortTabs value={sortMode} onChange={setSortMode} direction={direction} onDirectionChange={setDirection} />
           </Box>
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <ModelFiltersButton filters={filters} sources={sources} />
@@ -483,7 +520,12 @@ export default function ModelsPage({
                 ))}
                 {loadingMore && <CardSkeletons count={5} />}
               </Box>
-              {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
+              {hasMore &&
+                (moreFailed ? (
+                  <LoadMoreFailed message={t("models:errors.loadFailed")} onRetry={() => setMoreFailed(false)} />
+                ) : (
+                  <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />
+                ))}
             </Stack>
           ) : (
             <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>

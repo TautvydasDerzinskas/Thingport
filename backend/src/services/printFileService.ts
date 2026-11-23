@@ -1,16 +1,23 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
+import { createLogger } from "../logger";
 import { prisma } from "../db";
-import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
+import { STORAGE, IMPORT_MAX_BYTES } from "../config";
 import { withStorageLock } from "../utils/storageLock";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
 import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
 import { reuseMarker, shareStoredCopy } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
+import { normalizeGeneratorScript } from "../utils/scriptLineEndings";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
+import { fileState, type StorageSite } from "../modelFiles/storageFs";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
+
+const log = createLogger("model-files");
 
 export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">): string {
   const candidate = path.resolve(STORAGE, printFile.storagePath);
@@ -21,9 +28,29 @@ export function managedPrintFilePath(printFile: Pick<PrintFile, "storagePath">):
   return candidate;
 }
 
+/** Whether the file's row, read again by id, is still the model's, in its role, at its path, and with `prepared` still
+ *  its prepared print, as another may have taken its place: what a download asks once the file is open
+ *  (utils/sendStored.ts). */
+export async function printFileStillNames(
+  file: Pick<PrintFile, "id" | "printId" | "role" | "storagePath">,
+  { prepared = false } = {},
+): Promise<boolean> {
+  const count = await prisma.printFile.count({
+    where: {
+      id: file.id,
+      printId: file.printId,
+      role: file.role,
+      storagePath: file.storagePath,
+      ...(prepared ? { preparedFor: { is: { id: file.printId } } } : {}),
+    },
+  });
+  return count > 0;
+}
+
 export async function listSupportingFiles(printId: string): Promise<PrintFile[]> {
   return prisma.printFile.findMany({
-    where: { printId, role: "SUPPORTING" },
+    // One still "pending" is a save under way, with no file yet.
+    where: { printId, role: "SUPPORTING", storagePath: { not: PENDING_STORAGE_PATH } },
     orderBy: [{ filename: "asc" }, { id: "asc" }],
   });
 }
@@ -53,111 +80,6 @@ async function linkOrCopy(tempPath: string, destination: string): Promise<void> 
   }
 }
 
-const CR = 0x0d;
-const LF = 0x0a;
-const CRLF = Buffer.from([CR, LF]);
-/** How much of a script is held at once while its line endings are read and rewritten. An upload may be as
- *  large as IMPORT_MAX_BYTES, and several arrive at once, so none of this is done a whole file at a time. */
-const SCRIPT_CHUNK_BYTES = 1 << 20;
-
-/** Whether a CRLF appears anywhere in the file, a chunk at a time. */
-async function hasCrlf(filePath: string): Promise<boolean> {
-  const handle = await fs.open(filePath, "r");
-  try {
-    const chunk = Buffer.allocUnsafe(SCRIPT_CHUNK_BYTES);
-    let endedInCr = false;
-    for (;;) {
-      const { bytesRead } = await handle.read(chunk, 0, chunk.length);
-      if (!bytesRead) return false;
-      // A CRLF the reads fell between: the LF opens this chunk.
-      if (endedInCr && chunk[0] === LF) return true;
-      if (chunk.subarray(0, bytesRead).includes(CRLF)) return true;
-      endedInCr = chunk[bytesRead - 1] === CR;
-    }
-  } finally {
-    await handle.close();
-  }
-}
-
-/** Node may take less than it is handed; the rest goes on the next call, and a script half-written is a
- *  script corrupted. */
-async function writeAll(target: fs.FileHandle, buffer: Buffer, length: number): Promise<void> {
-  for (let written = 0; written < length;) {
-    const { bytesWritten } = await target.write(buffer, written, length - written);
-    if (!bytesWritten) throw new Error("The rewritten script stopped being written");
-    written += bytesWritten;
-  }
-}
-
-/**
- * The file again at `destination`, without the CR of each CRLF.
- *
- * Byte by byte rather than through a string: a script in some other encoding -- a Latin-1 "é" in a comment --
- * survives whole, where decoding it as UTF-8 would replace every byte that isn't valid UTF-8 with U+FFFD and
- * write that back. CR and LF are the only bytes this looks at, and every other one is copied across untouched.
- */
-async function writeWithoutCrlf(filePath: string, destination: string): Promise<void> {
-  const source = await fs.open(filePath, "r");
-  try {
-    const target = await fs.open(destination, "w");
-    try {
-      const chunk = Buffer.allocUnsafe(SCRIPT_CHUNK_BYTES);
-      // One longer than a chunk: a CR held over from the last read can precede a whole chunk of its own.
-      const out = Buffer.allocUnsafe(SCRIPT_CHUNK_BYTES + 1);
-      let heldCr = false;
-      for (;;) {
-        const { bytesRead } = await source.read(chunk, 0, chunk.length);
-        if (!bytesRead) break;
-        let length = 0;
-        // The CR the last read ended on: part of a CRLF if this chunk opens with the LF, a lone CR otherwise.
-        if (heldCr && chunk[0] !== LF) out[length++] = CR;
-        heldCr = false;
-        for (let at = 0; at < bytesRead; at++) {
-          if (chunk[at] !== CR) out[length++] = chunk[at];
-          // The last byte read: only the next chunk says whether an LF follows it.
-          else if (at === bytesRead - 1) heldCr = true;
-          else if (chunk[at + 1] !== LF) out[length++] = CR;
-        }
-        await writeAll(target, out, length);
-      }
-      // The file ended on a CR, so nothing followed it.
-      if (heldCr) await writeAll(target, Buffer.from([CR]), 1);
-    } finally {
-      await target.close();
-    }
-  } finally {
-    await source.close();
-  }
-}
-
-/**
- * A generator script is stored with Unix line endings, whichever way it arrived.
- *
- * OpenSCAD reads a parameter's widget out of the comment after it and misses every one whose line ends in CRLF:
- * a script written on Windows opens with none of its dropdowns or sliders, in Thingport's customizer and in
- * OpenSCAD itself, with nothing said about why. Here rather than in the importer because a script reaches a
- * model four ways -- imported, uploaded with it, attached afterwards, or brought by a folder -- and all four
- * come through this.
- *
- * Looked at before anything is written, so the usual script -- Unix endings already -- is only read, never
- * copied. Where there is something to rewrite it goes beside the original and is renamed over it once it is
- * whole: writing in place truncates first, so a write that failed halfway would leave a damaged script behind
- * and this would carry on and store it.
- */
-async function normalizeGeneratorScript(tempPath: string, filename: string): Promise<void> {
-  if (!PARAMETRIC_SOURCE_EXTS.has(path.extname(filename).toLowerCase())) return;
-  const rewritten = `${tempPath}.lf`;
-  try {
-    if (!(await hasCrlf(tempPath))) return;
-    await writeWithoutCrlf(tempPath, rewritten);
-    await fs.rename(rewritten, tempPath);
-  } catch (err) {
-    // Best-effort, and now truthful: the original is untouched, so the script is stored exactly as it came.
-    await fs.rm(rewritten, { force: true }).catch(() => undefined);
-    console.warn(`Couldn't normalize the line endings of ${filename}:`, err);
-  }
-}
-
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
  * from the filename (a .3mf containing gcode becomes PREPARED) unless `role` is given, as for a copy of a file whose
@@ -174,7 +96,7 @@ export async function saveFileFromTemp(
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
 
-  const safeName = sanitizeFilename(originalFilename || "supporting-file");
+  const safeName = normalizeFileName(originalFilename || "supporting-file");
   let role: "SUPPORTING" | "PREPARED" = givenRole ?? (isPreparedPrintFilename(safeName) ? "PREPARED" : "SUPPORTING");
   const mime = mimeFromContentType(contentType, safeName);
   const folder = normalizeFolder(givenFolder);
@@ -186,7 +108,7 @@ export async function saveFileFromTemp(
       folder,
       mime,
       role,
-      storagePath: "pending",
+      storagePath: PENDING_STORAGE_PATH,
     },
   });
   let destination: string | null = null;
@@ -285,16 +207,57 @@ export async function deleteSupportingFile(userId: string, printId: string, file
   return prisma.print.findUniqueOrThrow({ where: { id: printId } });
 }
 
-export async function deleteAllPrintFiles(printId: string): Promise<void> {
-  const rows = await prisma.printFile.findMany({ where: { printId } });
-  const paths = rows.map((r) => managedPrintFilePath(r));
-  // Print.preparedFileId FK will already be gone via cascade delete of the Print row itself,
-  // but this helper runs against a still-live print (e.g. before a full print delete elsewhere).
-  await prisma.printFile.deleteMany({ where: { printId } });
-  for (const p of paths) {
-    await fs.rm(p, { force: true }).catch(() => undefined);
-    await pruneEmptyStorageDirs(path.dirname(p));
+/** Where the row's file is, or null for a path that leads out of storage: nothing to keep, and nothing to look for. */
+export function printFilePathOrNull(row: Pick<PrintFile, "storagePath">): string | null {
+  try {
+    return managedPrintFilePath(row);
+  } catch {
+    return null;
   }
+}
+
+/** Whether the row's file is there. Only a regular file is: a folder at its path, or a path out of storage, is gone.
+ *  A disk that can't answer throws (Fs 1), since that says nothing about the file. */
+async function printFileThere(row: Pick<PrintFile, "storagePath">, site: StorageSite): Promise<boolean> {
+  const where = printFilePathOrNull(row);
+  if (where === null) return false;
+  return (await fileState(where, site)).state === "file";
+}
+
+/** A repair's first look at the model's other files, before it removes anything: throws when the disk can't answer
+ *  for one of them. Which of them are gone is removeMissingPrintFiles' to decide, once the plates are swapped. */
+export async function lookAtPrintFiles(printId: string): Promise<void> {
+  const rows = await prisma.printFile.findMany({ where: { printId }, orderBy: { id: "asc" } });
+  // A file still being saved has no place yet to look at.
+  for (const row of rows) if (row.storagePath !== PENDING_STORAGE_PATH) await printFileThere(row, "repair.look");
+}
+
+/** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are gone, and keeps the rest.
+ *  A folder at a row's path counts as gone, and stays where it is. Deleting a prepared print's row empties the model's
+ *  prepared slot (Print.preparedFile is SetNull). A file the disk can't answer for keeps its row, and the others'
+ *  answers still count: an error on one file says nothing about another, and a script whose file went must go, or its
+ *  download is taken for one still there. */
+export function removeMissingPrintFiles(printId: string): Promise<void> {
+  // Rows read, looked at and dropped in one storage-lock turn: a move renames a file and then saves its new path under
+  // the lock, so a path read outside it could be one the file has just left.
+  return withStorageLock(async () => {
+    const rows = await prisma.printFile.findMany({ where: { printId }, orderBy: { id: "asc" } });
+    const gone: PrintFile[] = [];
+    for (const row of rows) {
+      if (row.storagePath === PENDING_STORAGE_PATH) continue;
+      try {
+        if (!(await printFileThere(row, "repair.sweep"))) gone.push(row);
+      } catch (error) {
+        log.warn("couldn't look at a repaired model's file, so its row stays", { print: printId, file: row.id, error });
+      }
+    }
+    if (!gone.length) return;
+    await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });
+    for (const row of gone) {
+      const where = printFilePathOrNull(row);
+      if (where) await pruneEmptyStorageDirs(path.dirname(where));
+    }
+  });
 }
 
 export async function deletePreparedFile(userId: string, printId: string): Promise<Print> {

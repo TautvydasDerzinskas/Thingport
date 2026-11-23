@@ -577,6 +577,9 @@ describe("upgrading to the import queue", () => {
     for (const account of [alice, bob, admin]) await setUserMakerworldCookie(account.id, "token=saved");
     const zip = new JSZip();
     zip.file("hull.stl", "solid hull endsolid");
+    // What macOS puts in a zip it makes, which older Grab ticks with the rest in Choose files.
+    zip.file("__MACOSX/._hull.stl", "fork");
+    zip.file(".DS_Store", "settings");
     zipFile = await zip.generateAsync({ type: "nodebuffer" });
     // Another file's leftovers would run under this file's fetch, and count in what an admin's bulk action covers.
     await prisma.importJob.deleteMany({});
@@ -735,6 +738,20 @@ describe("upgrading to the import queue", () => {
       expectKnownStatuses(answers);
       for (const { status } of answers) expect(["RUNNING", "DONE"]).toContain(status);
       expect(await statusOf(line.waiting)).toBe("QUEUED");
+    });
+
+    it("makes one model of a zip's picked files, not broken ones of the junk it ticks with them", async () => {
+      const entries = ["hull.stl", "__MACOSX/._hull.stl", ".DS_Store"];
+      const print = await importSingle(api(), { url: `${ZIP_URL}?junk`, entries });
+      // One model made is what gives the panel a model to open and file.
+      expect(print?.id).toEqual(expect.any(String));
+      const plates = await prisma.plate.findMany({ where: { printId: print!.id }, select: { filename: true } });
+      expect(plates.map((plate) => plate.filename)).toEqual(["hull.stl"]);
+
+      const onlyJunk = await post(alice, "/import/zip", { url: ZIP_URL, entries: entries.slice(1) });
+      expect(onlyJunk.status).toBe(400);
+      expect(onlyJunk.body.detail).toBe("No files to import");
+      expectKnownStatuses(answers);
     });
 
     it("throws a zip's failure at the panel, with the job's own words", async () => {

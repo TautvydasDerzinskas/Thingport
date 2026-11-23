@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { plateThumbUrl, previewImageUrl, renderUrl } from "../dto";
+import { coverThumbUrl, galleryCover, plateThumbUrl, previewImageUrl, renderUrl } from "../dto";
 import { modelColorImagePath } from "./modelPreviewCache";
 
 const TOP_MODELS_PREVIEW = 3;
@@ -61,15 +61,17 @@ type PrintForModelSummary = {
   previewImages: { id: string; generated: boolean }[];
 };
 
-/** By the same rule the model cards follow (frontend components/media/modelPicture.ts): the plate's thumbnail
- *  unless that thumbnail is one we drew, and then the cover, which is the model in its own colours wherever the
- *  render found any. */
+/** By the same rule the model cards follow (frontend components/media/modelPicture.ts): the model's thumbnail unless
+ *  that thumbnail is one we drew, and then the cover, which is the model in its own colours wherever the render found
+ *  any. */
 function ownPictureUrl(print: PrintForModelSummary): string | null {
+  const cover = galleryCover(print.previewImages, print.assetsPath);
+  const coverThumb = coverThumbUrl(cover, print.assetsPath);
+  if (coverThumb) return coverThumb;
   const plate = print.plates[0];
   if (!plate) return null;
   const thumb = plateThumbUrl(plate.id, print.assetsPath);
   if (thumb && !plate.thumbGenerated) return thumb;
-  const cover = print.previewImages[0];
   if (!cover?.generated || !modelColorImagePath(plate.id, print.assetsPath)) return null;
   return previewImageUrl(cover.id, print.assetsPath);
 }
@@ -80,7 +82,9 @@ export function toModelSummary(print: PrintForModelSummary): DashboardModel {
   return {
     id: print.id,
     name: print.name,
-    thumbUrl: plateId ? plateThumbUrl(plateId, print.assetsPath) : null,
+    thumbUrl:
+      coverThumbUrl(galleryCover(print.previewImages, print.assetsPath), print.assetsPath) ??
+      (plateId ? plateThumbUrl(plateId, print.assetsPath) : null),
     photoUrl: ownPictureUrl(print),
     renderUrl: first ? renderUrl(first, print.assetsPath) : null,
     viewCount: print.viewCount,
@@ -101,7 +105,8 @@ export const MODEL_SUMMARY_SELECT = {
     orderBy: { position: "asc" as const },
     select: { id: true, filename: true, thumbGenerated: true },
   },
-  previewImages: { take: 1, orderBy: { position: "asc" as const }, select: { id: true, generated: true } },
+  // All of them, as the card goes by the first that's there (galleryCover).
+  previewImages: { orderBy: { position: "asc" as const }, select: { id: true, generated: true } },
 };
 
 async function fetchTopViewed(userId: string, limit: number): Promise<DashboardModel[]> {

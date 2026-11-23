@@ -1,7 +1,7 @@
 name: Regression pack
 
-# End-to-end scenarios against the whole stack built from main, in a browser. The database is
-# thrown away after every run. Cron is UTC: 00:00 on Saturday.
+# End-to-end scenarios against the whole stack, in a browser: scheduled runs build the default branch (develop), and a
+# dispatch can name any branch. The database is thrown away after every run. Cron is UTC: 00:00 on Saturday.
 on:
   schedule:
     - cron: "0 0 * * 6"

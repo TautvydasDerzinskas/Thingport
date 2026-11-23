@@ -1,12 +1,9 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
-import { Worker } from "node:worker_threads";
-import { MODEL_PREVIEWS, MODEL_PREVIEW_MAX_MEMORY_MB, MODEL_PREVIEW_TIMEOUT_SECONDS, STORAGE } from "../config";
+import { MODEL_PREVIEWS, STORAGE } from "../config";
 import { prisma } from "../db";
 import type { ModelImageOptions } from "./modelImageRender";
-import type { ModelPreviewWorkerInput, ModelPreviewWorkerResult } from "./modelPreviewWorker";
-import type { QualityReport } from "./meshQuality";
 import { getSimplifyPreviews } from "./settingsService";
 import {
   ASSET_SUBFOLDERS,
@@ -26,8 +23,20 @@ import {
 } from "./modelAssets";
 import { isCompressedGltf } from "./glbCompression";
 import { ensureAssetHome } from "./printService";
-import { workerBootstrap } from "../utils/workerBootstrap";
 import { withStorageLock } from "../utils/storageLock";
+import {
+  isSmaller,
+  packInWorker,
+  PERMANENT_FAILURE_PREFIX,
+  recentlyFailed,
+  renderInWorker,
+  scheduleRender,
+  SIMPLIFY_TARGET_TRIANGLES,
+  UNSUPPORTED_MARKER,
+  type RenderOutcome,
+} from "./modelPreviewJobs";
+
+export { READER_VERSION, SIMPLIFY_TARGET_TRIANGLES } from "./modelPreviewJobs";
 
 // Renders run in a worker thread under memory and time limits, so a pathological .3mf can't take
 // down the server.
@@ -59,138 +68,14 @@ export function modelPreviewGlbExists(plateId: string, home: AssetHome = null): 
   return assetExists(home, plateGlbFile(plateId));
 }
 
-const ERROR_RETRY_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-// Failures that would just repeat (too complex, killed for limits) are never retried
-// automatically. Delete the .error file to force a retry.
-const PERMANENT_FAILURE_PREFIX = "permanent: ";
-const UNSUPPORTED_MARKER = `${PERMANENT_FAILURE_PREFIX}unsupported`;
-
-function recentlyFailed(plateId: string, errorPath = modelPreviewErrorPath(plateId)): boolean {
-  try {
-    const stat = fsSync.statSync(errorPath);
-    if (Date.now() - stat.mtimeMs < ERROR_RETRY_COOLDOWN_MS) return true;
-    return fsSync.readFileSync(errorPath, "utf-8").startsWith(PERMANENT_FAILURE_PREFIX);
-  } catch {
-    return false;
-  }
-}
-
-const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "modelPreviewWorker");
-
-const MEMORY_POLL_MS = 250;
-
-// The CAD kernel a STEP file needs (services/stepLoader.ts) claims around 300 MB of wasm heap however small the
-// file is, so a STEP render needs headroom the mesh formats don't: on a small host the watchdog below would
-// otherwise kill every one of them for the kernel's fixed cost alone, and no STEP model would get a picture.
-const STEP_MEMORY_FLOOR_MB = 640;
-const STEP_EXTS = new Set([".step", ".stp"]);
-
-function memoryLimitMb(input: ModelPreviewWorkerInput): number {
-  // A GLB render reads 3MF only, so it never reaches the kernel and carries no extension to check.
-  const step = "ext" in input && STEP_EXTS.has(input.ext);
-  return step ? Math.max(MODEL_PREVIEW_MAX_MEMORY_MB, STEP_MEMORY_FLOOR_MB) : MODEL_PREVIEW_MAX_MEMORY_MB;
-}
-
-// Models rarely look different above 1M triangles on screen. Defined here so the server thread
-// never loads the renderer.
-export const SIMPLIFY_TARGET_TRIANGLES = 1_000_000;
-
-type RenderOutcome =
-  | { status: "ok"; colored?: boolean }
-  | { status: "checked"; report: QualityReport }
-  | { status: "too-complex" }
-  | { status: "unsupported" }
-  | { status: "limit"; reason: string }
-  | { status: "error"; error: string };
-
-/** Resolves once the thread is gone, so its memory is freed before the next render. Never
- * rejects. Mesh data lives outside the V8 heap cap, so a watchdog also polls process RSS. */
-function renderInWorker(
-  input: ModelPreviewWorkerInput,
-  timeoutSeconds = MODEL_PREVIEW_TIMEOUT_SECONDS,
-): Promise<RenderOutcome> {
-  return new Promise((resolve) => {
-    const limitMb = memoryLimitMb(input);
-    const maxGrowthBytes = limitMb * 1024 * 1024;
-    const baselineRss = process.memoryUsage.rss();
-    const worker = new Worker(WORKER_BOOTSTRAP, {
-      eval: true,
-      workerData: input,
-      resourceLimits: { maxOldGenerationSizeMb: limitMb },
-    });
-
-    let settled = false;
-    const finish = (outcome: RenderOutcome) => {
-      if (settled) return;
-      settled = true;
-      clearInterval(watchdog);
-      clearTimeout(timeout);
-      worker.terminate().then(
-        () => resolve(outcome),
-        () => resolve(outcome),
-      );
-    };
-
-    const watchdog = setInterval(() => {
-      const grown = process.memoryUsage.rss() - baselineRss;
-      if (grown > maxGrowthBytes) {
-        finish({
-          status: "limit",
-          reason: `memory grew by ${Math.round(grown / 1024 / 1024)} MB (limit ${limitMb} MB)`,
-        });
-      }
-    }, MEMORY_POLL_MS);
-    const timeout = setTimeout(
-      () => finish({ status: "limit", reason: `took longer than ${timeoutSeconds}s` }),
-      timeoutSeconds * 1000,
-    );
-
-    worker.once("message", (result: ModelPreviewWorkerResult) => finish(result));
-    worker.once("error", (err: NodeJS.ErrnoException) => {
-      finish(
-        err.code === "ERR_WORKER_OUT_OF_MEMORY"
-          ? { status: "limit", reason: `worker heap exceeded ${limitMb} MB` }
-          : { status: "error", error: err.stack ?? String(err) },
-      );
-    });
-    worker.once("exit", (code) => finish({ status: "error", error: `worker exited (code ${code}) without a result` }));
-  });
-}
-
 const inFlight = new Set<string>();
 const crashWarned = new Set<string>();
-
-// One render at a time: parallel renders would multiply peak memory past the limit. A GLB someone is
-// waiting on in the 3D viewer goes ahead of any dashboard picture, however many of those are queued.
-type RenderJob = () => Promise<void>;
-const glbJobs: RenderJob[] = [];
-const imageJobs: RenderJob[] = [];
-let rendering = false;
-
-function scheduleRender(kind: "glb" | "image", job: RenderJob): Promise<void> {
-  return new Promise((resolve) => {
-    (kind === "glb" ? glbJobs : imageJobs).push(() => job().finally(resolve));
-    void drainRenders();
-  });
-}
-
-async function drainRenders(): Promise<void> {
-  if (rendering) return;
-  rendering = true;
-  try {
-    for (let job = glbJobs.shift() ?? imageJobs.shift(); job; job = glbJobs.shift() ?? imageJobs.shift()) {
-      // A job settles its own promise; one failing mustn't stop the rest.
-      await job().catch(() => undefined);
-    }
-  } finally {
-    rendering = false;
-  }
-}
 
 /** Never throws. Concurrent calls for the same plate no-op. `home` is looked up when not given. */
 export async function generateModelPreviewGlb(plateId: string, srcPath: string, home?: AssetHome): Promise<void> {
   const where = home === undefined ? await plateAssetHome(plateId).catch(() => null) : home;
-  if (modelPreviewGlbExists(plateId, where) || inFlight.has(plateId) || recentlyFailed(plateId)) return;
+  if (modelPreviewGlbExists(plateId, where) || inFlight.has(plateId) || recentlyFailed(modelPreviewErrorPath(plateId)))
+    return;
   if (fsSync.existsSync(modelPreviewPendingPath(plateId))) {
     if (!crashWarned.has(plateId)) {
       crashWarned.add(plateId);
@@ -211,7 +96,7 @@ export type ModelPreviewState = "ready" | "generating" | "failed" | "unsupported
 export function modelPreviewState(plateId: string, home: AssetHome = null): ModelPreviewState {
   if (modelPreviewGlbExists(plateId, home)) return "ready";
   if (inFlight.has(plateId)) return "generating";
-  if (recentlyFailed(plateId)) {
+  if (recentlyFailed(modelPreviewErrorPath(plateId))) {
     try {
       return fsSync.readFileSync(modelPreviewErrorPath(plateId), "utf-8") === UNSUPPORTED_MARKER
         ? "unsupported"
@@ -246,19 +131,6 @@ async function removeOlderPreviews(plateId: string, home: string | null): Promis
   for (let version = 1; version < PREVIEW_FORMAT_VERSION; version++) {
     await fs.rm(path.join(MODEL_PREVIEWS, `${plateId}.v${version}.error`), { force: true });
   }
-}
-
-/** Whether a packed preview came out smaller than the one it was packed from: a tiny one can grow. */
-async function isSmaller(packed: string, drawn: string): Promise<boolean> {
-  const [after, before] = await Promise.all([fs.stat(packed), fs.stat(drawn)]);
-  return after.size < before.size;
-}
-
-/** Packs a GLB smaller into `dest` in a worker of its own, after the render's has gone; false when it couldn't. */
-async function packInWorker(src: string, dest: string): Promise<boolean> {
-  const outcome = await renderInWorker({ kind: "compress", srcPath: src, destPath: dest });
-  if (outcome.status !== "ok") console.warn(`Couldn't pack the 3D preview ${path.basename(src)} smaller`, outcome);
-  return outcome.status === "ok";
 }
 
 async function runGeneration(plateId: string, srcPath: string): Promise<void> {
@@ -331,31 +203,29 @@ export type CompressOutcome =
  * say): that one still shows, only larger. Never throws.
  */
 export function compressPreviewGlb(file: string): Promise<CompressOutcome> {
-  return new Promise((resolve) => {
-    void scheduleRender("image", async () => {
-      const tmp = `${file}.${process.pid}.${Date.now()}.packed.tmp`;
-      try {
-        const before = await fs.stat(file).catch(() => null);
-        if (!before || (await readGlbSummary(file))?.compressed !== false) return resolve({ status: "skipped" });
-        if (!(await packInWorker(file, tmp))) return resolve({ status: "failed" });
-        const after = (await fs.stat(tmp)).size;
-        if (after >= before.size) return resolve({ status: "skipped" });
-        // Under the lock a move of files takes, so the model can't move between the check and the rename.
-        const replaced = await withStorageLock(async () => {
-          // Drawn again, moved or deleted while it was packed: what's there now isn't what was packed.
-          const now = await fs.stat(file).catch(() => null);
-          if (!now || now.mtimeMs !== before.mtimeMs || now.size !== before.size) return false;
-          await fs.rename(tmp, file);
-          return true;
-        });
-        resolve(replaced ? { status: "compressed", before: before.size, after } : { status: "skipped" });
-      } catch (err) {
-        console.warn(`Couldn't pack the 3D preview ${path.basename(file)} smaller`, err);
-        resolve({ status: "failed" });
-      } finally {
-        await fs.rm(tmp, { force: true }).catch(() => undefined);
-      }
-    });
+  return scheduleRender("image", async () => {
+    const tmp = `${file}.${process.pid}.${Date.now()}.packed.tmp`;
+    try {
+      const before = await fs.stat(file).catch(() => null);
+      if (!before || (await readGlbSummary(file))?.compressed !== false) return { status: "skipped" };
+      if (!(await packInWorker(file, tmp))) return { status: "failed" };
+      const after = (await fs.stat(tmp)).size;
+      if (after >= before.size) return { status: "skipped" };
+      // Under the lock a move of files takes, so the model can't move between the check and the rename.
+      const replaced = await withStorageLock(async () => {
+        // Drawn again, moved or deleted while it was packed: what's there now isn't what was packed.
+        const now = await fs.stat(file).catch(() => null);
+        if (!now || now.mtimeMs !== before.mtimeMs || now.size !== before.size) return false;
+        await fs.rename(tmp, file);
+        return true;
+      });
+      return replaced ? { status: "compressed", before: before.size, after } : { status: "skipped" };
+    } catch (err) {
+      console.warn(`Couldn't pack the 3D preview ${path.basename(file)} smaller`, err);
+      return { status: "failed" };
+    } finally {
+      await fs.rm(tmp, { force: true }).catch(() => undefined);
+    }
   });
 }
 
@@ -364,14 +234,9 @@ export type QualityCheckOutcome = RenderOutcome;
 /** The printability check (meshQuality.ts) in the render worker, under the same limits. It waits in the GLB queue
  * rather than behind pictures: someone has the model open and is watching it run. */
 export function checkPlateQuality(plateId: string, srcPath: string, ext: string): Promise<QualityCheckOutcome> {
-  return new Promise((resolve) => {
-    void scheduleRender("glb", async () => {
-      const outcome = await renderPlateFile(plateId, srcPath, (from) =>
-        renderInWorker({ kind: "quality", srcPath: from, ext }),
-      ).catch((err: unknown): RenderOutcome => ({ status: "error", error: String(err) }));
-      resolve(outcome);
-    });
-  });
+  return scheduleRender("glb", () =>
+    renderPlateFile(plateId, srcPath, (from) => renderInWorker({ kind: "quality", srcPath: from, ext })),
+  ).catch((err: unknown): RenderOutcome => ({ status: "error", error: String(err) }));
 }
 
 /** The plate's file where it is when its render starts: renders wait in a queue, and the file may have been renamed
@@ -462,7 +327,7 @@ export async function generateModelImage(
   const colorFile = plateRenderFile(plateId, COLOR_RENDER_FILE_TAG);
   const home = await plateAssetHome(plateId).catch(() => null);
   const cachedPath = assetPath(home, file);
-  if (fsSync.existsSync(cachedPath) || recentlyFailed(plateId, errorPath)) {
+  if (fsSync.existsSync(cachedPath) || recentlyFailed(errorPath)) {
     if (!fsSync.existsSync(cachedPath)) {
       imagesInFlight.delete(key);
       return;
@@ -523,7 +388,14 @@ export async function generateModelImage(
           outcome.status === "error" ? outcome.error : outcome.status === "limit" ? outcome.reason : outcome.status;
         if (outcome.status === "error") console.error(`Model picture failed for plate ${plateId}:`, reason);
         // Only an unexpected error is worth another try later; the rest would just repeat.
-        await fs.writeFile(errorPath, outcome.status === "error" ? reason : `${PERMANENT_FAILURE_PREFIX}${reason}`);
+        await fs.writeFile(
+          errorPath,
+          outcome.status === "error"
+            ? reason
+            : outcome.status === "unsupported"
+              ? UNSUPPORTED_MARKER
+              : `${PERMANENT_FAILURE_PREFIX}${reason}`,
+        );
       }
     } catch (err) {
       console.error(`Model picture failed for plate ${plateId}:`, err);
@@ -545,7 +417,7 @@ export function modelImageState(
   if (assetExists(home, plateRenderFile(plateId, MODEL_IMAGE_KINDS[kind].file))) return "ready";
   if (imagesInFlight.has(`${kind}:${plateId}`)) return "generating";
   const errorPath = modelImageErrorPath(plateId, kind);
-  if (!recentlyFailed(plateId, errorPath)) return "generating";
+  if (!recentlyFailed(errorPath)) return "generating";
   try {
     return fsSync.readFileSync(errorPath, "utf-8") === UNSUPPORTED_MARKER ? "unsupported" : "failed";
   } catch {

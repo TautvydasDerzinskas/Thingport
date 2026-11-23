@@ -63,6 +63,7 @@ export type LogAction =
   | "photos_per_model_changed"
   | "custom_widgets_changed"
   | "tool_installed"
+  | "tool_availability_changed"
   | "tool_uninstalled"
   | "tools_access_changed"
   | "user_invited"
@@ -134,6 +135,9 @@ export type LogEntry = {
 
 export type StorageUsage = {
   model_bytes: number; // every plate + supporting/prepared file, across all users
+  /** Parts of model_bytes: the files kept beside the plates, and prepared prints. Absent from an older backend. */
+  supporting_bytes?: number;
+  prepared_bytes?: number;
   model_count: number;
   /** All of storage on disk; measured every few minutes at most. */
   total_bytes: number;
@@ -195,6 +199,8 @@ export type StorageFolder = {
   bytes: number;
   /** A model's pictures folder, beside its files. */
   pictures: boolean;
+  /** The error's code (e.g. "EIO") when the disk couldn't list it, so what's in it may not all be shown. */
+  error_code: string | null;
 };
 
 /** "plate" is a model file, "file" a supporting or prepared one; the rest are the model's pictures. */
@@ -210,8 +216,11 @@ export type StorageFile = {
   print_name: string;
   owner_id: string;
   size: number;
-  /** "source": kept where it was picked up from; "missing": in neither place. */
-  location: "managed" | "source" | "missing";
+  /** "source": read where it was picked up from (a tool's file); "missing": not there; "unreadable": the disk couldn't
+   *  say, so it may still be there. */
+  location: "managed" | "source" | "missing" | "unreadable";
+  /** With "unreadable", the error's code, e.g. "EIO". */
+  error_code: string | null;
 };
 
 export type StorageListing = {
@@ -219,6 +228,8 @@ export type StorageListing = {
   crumbs: { name: string; path: string; label: string | null }[];
   folders: StorageFolder[];
   files: StorageFile[];
+  /** The folder's own: the disk couldn't list all of it. */
+  error_code?: string | null;
 };
 
 /** Any user's batch import, as the admin import queue lists it. */

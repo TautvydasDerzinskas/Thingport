@@ -17,6 +17,7 @@ import {
   type AdaptPlan,
   type ThreeMfFormat,
 } from "../src/adapter";
+import { findStartPart, partNames } from "../src/adapter/format";
 import { decodePaintState, encodePaintState, stateToMaterialIndex } from "../src/adapter/paint";
 import { parseModelSettings, parsePlates } from "../src/adapter/readers/bambuProject";
 import {
@@ -403,6 +404,53 @@ describe("paint state", () => {
   });
 });
 
+describe("a 3MF's start part", () => {
+  const rels = (target: string, type = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel") =>
+    `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r" Target='${target}' Type="${type}"/></Relationships>`;
+
+  it("is the model _rels/.rels names, matched in any case, as the zip spells it", () => {
+    expect(findStartPart(["_rels/.rels", "3D/3DModel.model"], rels("/3D/3DModel.model"))).toBe("3D/3DModel.model");
+    expect(findStartPart(["3D/main.model", "3D/3dmodel.model"], rels("/3D/Main.model"))).toBe("3D/main.model");
+  });
+
+  it("is 3D/3dmodel.model in any case without a relationship that leads anywhere", () => {
+    expect(findStartPart(["3D/3DModel.model"], null)).toBe("3D/3DModel.model");
+    expect(findStartPart(["3D/3dmodel.model"], rels("/3D/gone.model"))).toBe("3D/3dmodel.model");
+    expect(findStartPart(["3D/3dmodel.model", "3D/thumb.model"], rels("/3D/thumb.model", "urn:other"))).toBe(
+      "3D/3dmodel.model",
+    );
+  });
+
+  it("reads a relationship under a namespace prefix", () => {
+    const prefixed = `<r:Relationships xmlns:r="http://schemas.openxmlformats.org/package/2006/relationships"><r:Relationship Id="r" Target="/3D/main.model" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></r:Relationships>`;
+    expect(findStartPart(["3D/main.model"], prefixed)).toBe("3D/main.model");
+  });
+
+  it("passes over a relationship that's commented out", () => {
+    const commented = rels("/3D/main.model").replace(
+      "<Relationship ",
+      `<!-- <Relationship Id="old" Target="/3D/old.model" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/> --><Relationship `,
+    );
+    expect(findStartPart(["3D/old.model", "3D/main.model"], commented)).toBe("3D/main.model");
+  });
+
+  it("reads a target written with character references", () => {
+    expect(findStartPart(["3D/main.model"], rels("/3D/ma&#105;n.model"))).toBe("3D/main.model");
+    expect(findStartPart(["3D/a&b.model"], rels("/3D/a&amp;b.model"))).toBe("3D/a&b.model");
+  });
+
+  it("is nothing for a zip with neither", () => {
+    expect(findStartPart(["3D/model.model"], null)).toBeNull();
+  });
+
+  it("finds a part with or without its leading slash", () => {
+    const named = partNames(["3D/Objects/Part_1.model"]);
+    expect(named("/3D/Objects/part_1.model")).toBe("3D/Objects/Part_1.model");
+    expect(named("3d/objects/PART_1.model")).toBe("3D/Objects/Part_1.model");
+    expect(named("3D/Objects/part_2.model")).toBeNull();
+  });
+});
+
 describe("classify3mf", () => {
   it("names the app and version a file says wrote it", () => {
     expect(parseGenerator("BambuStudio-02.08.02.61")).toEqual({ app: "BambuStudio", version: "02.08.02.61" });
@@ -424,7 +472,57 @@ describe("classify3mf", () => {
       modelSettings: MODEL_SETTINGS,
       prusaConfig: null,
     });
-    expect(result).toEqual(format({ plates: 1 }));
+    expect(result).toEqual(format({ plates: 1, filamentList: expect.any(Array) }));
+    expect(result.filamentList).toHaveLength(2);
+  });
+
+  it("lists each filament a project sets up, with its material and maker", () => {
+    const base = { modelHead: null, modelSettings: null, prusaConfig: null };
+    const bambu = classify3mf({
+      ...base,
+      entries: ["3D/3dmodel.model", "Metadata/project_settings.config"],
+      projectSettings: JSON.stringify({
+        filament_colour: ["#ffffffff", "#000", "#C62828"],
+        filament_type: ["PLA", "PETG", "PLA"],
+        filament_vendor: ["Bambu Lab", "Generic", ""],
+        filament_settings_id: ["Bambu PLA Basic @BBL X1C", "Generic PETG", "Bambu PLA Matte @BBL A1"],
+      }),
+    });
+    expect(bambu.filamentList).toEqual([
+      { type: "PLA", color: "#FFFFFF", brand: "Bambu Lab" },
+      { type: "PETG", color: "#000000", brand: null },
+      { type: "PLA", color: "#C62828", brand: "Bambu Lab" },
+    ]);
+    const prusa = classify3mf({
+      ...base,
+      projectSettings: null,
+      entries: ["3D/3dmodel.model", "Metadata/Slic3r_PE.config"],
+      modelHead: '<model><metadata name="Application">PrusaSlicer-2.9.2</metadata>',
+      prusaConfig:
+        "; filament_colour = #FF8000;#3C3C3C\n; filament_type = PETG;PLA\n; filament_vendor = Prusa Polymers;Generic",
+    });
+    expect(prusa.filamentList).toEqual([
+      { type: "PETG", color: "#FF8000", brand: "Prusa Polymers" },
+      { type: "PLA", color: "#3C3C3C", brand: null },
+    ]);
+    // Names with spaces in them come quoted, and a quoted one may hold a ";" of its own.
+    const quoted = classify3mf({
+      ...base,
+      projectSettings: null,
+      entries: ["3D/3dmodel.model", "Metadata/Slic3r_PE.config"],
+      modelHead: '<model><metadata name="Application">PrusaSlicer-2.9.2</metadata>',
+      prusaConfig: [
+        "; filament_colour = #FF8000;#3C3C3C;#FFFFFF",
+        "; filament_type = PETG;PLA;PLA",
+        '; filament_vendor = "Prusa Polymers";Generic;""',
+        '; filament_settings_id = "Prusament PETG";"Generic; PLA";"Bambu PLA Basic @BBL X1C"',
+      ].join("\n"),
+    });
+    expect(quoted.filamentList).toEqual([
+      { type: "PETG", color: "#FF8000", brand: "Prusa Polymers" },
+      { type: "PLA", color: "#3C3C3C", brand: null },
+      { type: "PLA", color: "#FFFFFF", brand: "Bambu Lab" },
+    ]);
   });
 
   it("tells PrusaSlicer projects, sliced files, Cura projects and plain 3MFs apart", () => {
@@ -437,6 +535,10 @@ describe("classify3mf", () => {
         "; printer_settings_id = Original Prusa MK4S\n; nozzle_diameter = 0.4\n; filament_colour = #FF0000;#00FF00",
     });
     expect(prusa).toMatchObject({ kind: "prusa", app: "PrusaSlicer", printer: "Original Prusa MK4S", filaments: 2 });
+    expect(prusa.filamentList).toEqual([
+      { type: null, color: "#FF0000", brand: null },
+      { type: null, color: "#00FF00", brand: null },
+    ]);
     expect(classify3mf({ ...base, entries: ["Metadata/plate_1.gcode", "Metadata/project_settings.config"] }).kind).toBe(
       "sliced",
     );

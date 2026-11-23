@@ -51,6 +51,12 @@ const toolIcon = z.union([
   iconAddress,
   z.string().trim().max(20_000, "An inline SVG icon is at most 20,000 characters").regex(SVG_DATA, "Not an icon"),
 ]);
+// A one-colour SVG that Thingport tints like its own icons: only its shape counts, so its colours don't matter.
+const toolSymbol = z
+  .string()
+  .trim()
+  .max(20_000, "An inline SVG symbol is at most 20,000 characters")
+  .regex(SVG_DATA, "An SVG as a data: URL");
 
 const modelFile = z
   .string()
@@ -99,6 +105,37 @@ const collectionSchema = z
     message: "Two models share a key",
   });
 
+// A command's id, which `thingport.context.command` hands the tool back.
+const COMMAND_ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
+// A file type as the end of a file's name, without the dot: "stl", "gcode.3mf".
+const FILE_TYPE = /^[a-z0-9]+(\.[a-z0-9]+)*$/;
+
+/**
+ * An action contributed by a tool to a model page or a grid's selection toolbar. Its title translates through
+ * the tool's labels, as `commands.<id>`.
+ */
+const toolCommandSchema = z
+  .object({
+    id: z.string().trim().regex(COMMAND_ID, "1-40 lowercase letters, digits and dashes"),
+    title: z.string().trim().min(1).max(60),
+    /** The model, the file picked on its page, or the models selected in a grid. */
+    on: z.enum(["model", "file", "selection"]).default("model"),
+    /** The file types a "file" command takes; any when left out. */
+    fileTypes: z
+      .array(z.string().trim().toLowerCase().regex(FILE_TYPE, 'A file type without the dot, e.g. "stl"'))
+      .min(1)
+      .max(20)
+      .optional(),
+    /** False for one the tool's `run` export does without opening its window. */
+    window: z.boolean().default(true),
+    /** Its menu item's symbol, and its button's when it's the tool's only selection command. */
+    symbol: toolSymbol.optional(),
+  })
+  .refine((command) => !command.fileTypes || command.on === "file", {
+    message: 'fileTypes is for a command with on: "file"',
+  });
+export type ToolCommand = z.infer<typeof toolCommandSchema>;
+
 /**
  * The shelves the Tools page sorts tools onto. A small fixed set, so that one Thingport's shelves read like
  * another's and a tool from the repository lands somewhere sensible without anyone filing it.
@@ -111,6 +148,8 @@ export const toolManifestSchema = z.object({
   description: z.string().trim().max(300).default(""),
   /** As a widget's: an image address, `builtin:<group>/<name>` or `/api/icons/<file>`; or an SVG as a data URL. */
   iconUrl: toolIcon.optional(),
+  /** Its commands' symbol in a grid's selection toolbar, where they sit among Thingport's own icons. */
+  symbol: toolSymbol.optional(),
   version: z.string().trim().max(20).default("1.0.0"),
   author: z.string().trim().max(60).optional(),
   authorUrl: webAddress.optional(),
@@ -132,6 +171,27 @@ export const toolManifestSchema = z.object({
   /** The models it needs, kept in a collection of their own in every user's library that can use tools: only a
    *  repository tool brings them, as its files are what the review reads. */
   collection: collectionSchema.optional(),
+  /** Actions for the model page and the grid selection toolbar. */
+  commands: z
+    .array(toolCommandSchema)
+    .max(10)
+    .default([])
+    .refine((commands) => new Set(commands.map((command) => command.id)).size === commands.length, {
+      message: "Two commands share an id",
+    }),
+  /**
+   * Parts of every model's page the tool draws itself, each into an element of its own with the `thingport` its window
+   * gets: `info`, in the info box beside the picture; `tab`, a tab of the description box titled `tab.title`;
+   * `image`, the top right corner of the model's picture. Each is drawn by the script's export of that name:
+   * `modelInfo`, `modelTab`, `modelImage`.
+   */
+  modelPage: z
+    .object({
+      info: z.boolean().default(false),
+      tab: z.object({ title: z.string().trim().min(1).max(40) }).optional(),
+      image: z.boolean().default(false),
+    })
+    .optional(),
 });
 export type ToolManifest = z.infer<typeof toolManifestSchema>;
 

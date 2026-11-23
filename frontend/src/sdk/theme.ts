@@ -24,6 +24,7 @@ export function sdkTheme(theme: Theme): SdkTheme {
     error: theme.palette.error.main,
     warning: theme.palette.warning.main,
     success: theme.palette.success.main,
+    info: theme.palette.info.main,
     fontFamily: String(theme.typography.fontFamily),
   };
 }
@@ -42,6 +43,7 @@ export const THEME_VARIABLES: Record<keyof SdkTheme, string | null> = {
   error: "--tp-error",
   warning: "--tp-warning",
   success: "--tp-success",
+  info: "--tp-info",
   fontFamily: "--tp-font",
 };
 

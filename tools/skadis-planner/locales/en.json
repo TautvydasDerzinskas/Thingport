@@ -41,9 +41,9 @@
   "list.and": " and ",
   "list.biggestFirst": "biggest first",
   "list.board": "Board {cols} × {rows}",
+  "list.boardLabel": "{cols} × {rows} holes, {size}",
   "list.boardWord.one": "board",
   "list.boardWord.other": "boards",
-  "list.boardLabel": "{cols} × {rows} holes, {size}",
   "list.boards": "Boards",
   "list.boardsFrom": "Boards ",
   "list.buy": "Buy",
@@ -104,6 +104,7 @@
   "plans.kept": "Kept in the tool, for you",
   "plans.nameThis": "Name this wall",
   "plans.open": "Open it",
+  "plans.opened": "Opened “{name}”",
   "plans.save": "Save it",
   "plans.saveThe": "Save the plan",
   "plans.savedInTool": "The plan is saved in the tool",
@@ -130,5 +131,6 @@
   "view.mountsAria": "Show the mounting points",
   "view.plan": "The plan",
   "view.zoomIn": "Zoom in",
-  "view.zoomOut": "Zoom out"
+  "view.zoomOut": "Zoom out",
+  "plans.deleteBody": "“{name}” goes from the tool. Anything you saved to your library stays."
 }

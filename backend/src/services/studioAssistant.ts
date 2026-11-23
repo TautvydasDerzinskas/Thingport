@@ -18,7 +18,8 @@ import {
   type ToolResult,
   type ToolSpec,
 } from "./aiToolChat";
-import { LIMITS } from "../studio/document.generated";
+import { LIMITS, STUDIO_FILAMENT_MATERIALS } from "../studio/document.generated";
+import { PRINT_PRESET_IDS } from "../studio/printProfile.generated";
 import { getPublicUrl, getStudioAssistantPrefs } from "./settingsService";
 import { STUDIO_GUIDE } from "./studioGuide";
 import { getStudioDesign, studioPicturePath, type StudioPicture } from "./studioService";
@@ -30,8 +31,6 @@ import { getStudioDesign, studioPicturePath, type StudioPicture } from "./studio
 
 const log = createLogger("studio-assistant");
 
-/** Tool calls one run may make before it's stopped. */
-export const MAX_STEPS = 30;
 /** How long one run may take in all. */
 const RUN_MS = 10 * 60_000;
 /** How much of the conversation a new prompt is sent with; less for the compact set's small models. */
@@ -52,6 +51,7 @@ you to make or change the design open on their screen, and watches each step lan
 - After a change, read the tool's reply for problems, and fix them before you finish. Before finishing a part meant
   for printing, run studio_check_print and fix what it says.
 - Don't ask before an ordinary change. Ask only when the request is unclear in a way that matters.
+- The request includes the user's active plate. Use it for new bodies unless the user asks for another plate.
 - When you're done, answer in one to three short sentences, in the person's language, saying what you made or changed.
   No tables, code or ids they didn't use.
 
@@ -72,30 +72,59 @@ const CORE = new Set([
 ]);
 const SEARCH_NOTE = `Only a few of your tools are loaded at first. Search for the rest by what they do: other shapes
 (cone, sphere, torus), screw threads, text, tracing a picture, sketches and SVG paths, extrude, revolve, loft and
-sweep, press/pull, fillet, chamfer, hole, shell, split, separating parts, patterns and mirrors, hulls, aligning bodies
+sweep, create and move bodies between build plates, set body colors, press/pull, fillet, chamfer, hole, shell, split, separating parts, patterns and mirrors, hulls, aligning bodies
 and laying them flat, scaling, moving, editing, renaming and deleting features, undo, looking at the design, checking
-it for printing, measuring between bodies, parameters and formulas, finding a library model to import, and saving
-the design to the library.`;
+it for printing, measuring between bodies, parameters and formulas, setting the print profile, finding a library
+model to import, and saving the design to the library.`;
 
 // For small local models: the few tools most requests need, each said in a line, and the arguments that matter. Every
 // one is the same command as in full, so a person and the AI still change a design the same way.
-const COMPACT: Record<string, { description: string; args: string[] }> = {
+// A tool whose arguments are too many for a small model gets `shape` instead: fewer, still the command's own, which the
+// server checks against the whole.
+const COMPACT: Record<string, { description: string; args: string[]; shape?: z.ZodRawShape }> = {
+  studio_set_print_profile: {
+    description:
+      "Sets the print profile: a preset (standard, fine, draft, strong, outdoor, water, toy, flexible, heat, vase, " +
+      "smooth), the material, a reason for the person, and a few settings.",
+    args: ["profile"],
+    shape: {
+      profile: z.object({
+        preset: z.enum(PRINT_PRESET_IDS).optional(),
+        material: z.enum(STUDIO_FILAMENT_MATERIALS).optional(),
+        reason: z.string().optional(),
+        settings: z
+          .object({
+            layer_height: z.number().optional(),
+            wall_loops: z.number().int().optional(),
+            sparse_infill_density: z.number().optional(),
+            enable_support: z.boolean().optional(),
+          })
+          .optional(),
+      }),
+    },
+  },
+  studio_create_plate: { description: "Creates a named build plate and returns its id.", args: ["name"] },
+  studio_move_to_plate: { description: "Moves bodies to a plate.", args: ["plate_id", "feature_ids"] },
+  studio_set_body_color: {
+    description: "Sets a body's #RRGGBB color (null clears it).",
+    args: ["feature_ids", "color"],
+  },
   studio_get_design: {
     description: "Reads the design: every feature with its id and sizes, and each body's size.",
     args: [],
   },
   studio_add_box: {
     description: "Adds a box: width (X), depth (Y), height (Z) in mm, its base centred on position.",
-    args: ["width", "depth", "height", "position", "rotation"],
+    args: ["width", "depth", "height", "position", "rotation", "plate_id"],
   },
   studio_add_cylinder: {
     description: "Adds a cylinder: radius and height in mm, its base centred on position.",
-    args: ["radius", "height", "position", "rotation"],
+    args: ["radius", "height", "position", "rotation", "plate_id"],
   },
   studio_add_cone: {
     description:
       "Adds a cone: radius_bottom, radius_top (0 for a point) and height in mm, its base centred on position.",
-    args: ["radius_bottom", "radius_top", "height", "position", "rotation"],
+    args: ["radius_bottom", "radius_top", "height", "position", "rotation", "plate_id"],
   },
   studio_add_sphere: {
     description: "Adds a sphere of a radius in mm, its lowest point at position.",
@@ -140,6 +169,7 @@ const COMPACT: Record<string, { description: string; args: string[] }> = {
 const COMPACT_SYSTEM = `You build and change 3D-printable parts in Thingport Studio with the tools. Millimetres; Z is up and
 the bed is z = 0. A box, cylinder or cone stands on its position, the middle of its base; a sphere on its lowest point.
 Rotation is degrees about X, then Y, then Z. Features have ids like box-1. Take one step at a time and read each reply.
+Put new bodies on the active plate named in the request unless the person asks for another.
 The person thinks in the design's display_units: convert their sizes to mm (1 in = 25.4 mm, 1 cm = 10 mm), and give
 sizes back in their units. When done, say in one or two sentences, in the person's language, what you made.`;
 
@@ -160,7 +190,8 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 
 /** A schema as it's sent: without what costs tokens and tells the AI nothing it needs (the server checks every call
  *  anyway): `additionalProperties: false`, the ±10 m limit on every coordinate, a tuple's same item said three times;
- *  and, for the compact set, the fields' own descriptions. */
+ *  and, for the compact set, the fields' own descriptions. A tuple whose places differ goes as `prefixItems`: the
+ *  converter writes draft-07's `items: [...]`, which Claude, checking against JSON Schema 2020-12, refuses. */
 function tighten(node: unknown, keepDescriptions: boolean): unknown {
   if (Array.isArray(node)) return node.map((item) => tighten(item, keepDescriptions));
   if (!node || typeof node !== "object") return node;
@@ -169,13 +200,10 @@ function tighten(node: unknown, keepDescriptions: boolean): unknown {
     if (key === "additionalProperties" && value === false) continue;
     if ((key === "minimum" || key === "maximum") && Math.abs(value as number) === LIMITS.size) continue;
     if (key === "description" && !keepDescriptions && typeof value === "string") continue;
-    if (
-      key === "items" &&
-      Array.isArray(value) &&
-      value.length > 1 &&
-      value.every((item) => sameJson(item, value[0]))
-    ) {
-      out.items = tighten(value[0], keepDescriptions);
+    if (key === "items" && Array.isArray(value)) {
+      const places = value.map((item) => tighten(item, keepDescriptions));
+      if (places.length > 1 && places.every((item) => sameJson(item, places[0]))) out.items = places[0];
+      else out.prefixItems = places;
       continue;
     }
     out[key] =
@@ -211,7 +239,7 @@ function assistantTools(): AssistantTool[] {
       schema: tighten(json(shape), true) as Record<string, unknown>,
       compact: small
         ? (tighten(
-            json(Object.fromEntries(Object.entries(shape).filter(([key]) => small.args.includes(key)))),
+            json(small.shape ?? Object.fromEntries(Object.entries(shape).filter(([key]) => small.args.includes(key)))),
             false,
           ) as Record<string, unknown>)
         : null,
@@ -252,6 +280,7 @@ function compactState(state: string): string {
     return JSON.stringify(
       {
         display_units: read.display_units,
+        plates: read.plates,
         top_level: read.top_level,
         features: read.features,
         bodies: read.bodies,
@@ -264,7 +293,7 @@ function compactState(state: string): string {
 }
 
 export type AssistantStep = { tool: string; title: string; summary: string | null; ok: boolean };
-export type AssistantOutcome = "done" | "stopped" | "limit" | "failed";
+export type AssistantOutcome = "done" | "stopped" | "failed";
 
 type Run = {
   designId: string;
@@ -350,7 +379,7 @@ function historyMessage(message: StudioMessage): ChatMessage | null {
     message.outcome === "stopped"
       ? "The person stopped this run."
       : message.outcome === "limit"
-        ? `This run stopped at the ${MAX_STEPS}-step limit.`
+        ? `This run stopped at the step limit after ${steps.length} steps.`
         : message.outcome === "failed"
           ? `This run failed: ${message.error ?? "unknown error"}.`
           : "";
@@ -415,7 +444,13 @@ async function picturesFor(userId: string, designId: string, pictures: StudioPic
 export async function startAssistantRun(
   userId: string,
   designId: string,
-  input: { prompt: string; aiConnectionId?: string | null; selected?: string[]; pictures?: string[] },
+  input: {
+    prompt: string;
+    aiConnectionId?: string | null;
+    selected?: string[];
+    activePlate?: string;
+    pictures?: string[];
+  },
 ) {
   const prefs = await getStudioAssistantPrefs();
   if (!prefs.enabled)
@@ -486,7 +521,7 @@ async function work(
   run: Run,
   connectionId: string,
   mode: ToolMode,
-  input: { prompt: string; selected?: string[]; pictures: StudioPicture[] },
+  input: { prompt: string; selected?: string[]; activePlate?: string; pictures: StudioPicture[] },
   history: StudioMessage[],
 ): Promise<void> {
   const settings = await resolveAiProvider(connectionId);
@@ -517,6 +552,7 @@ async function work(
     const request = [
       input.prompt,
       pictureNote(input.pictures),
+      input.activePlate ? `Active build plate: ${input.activePlate}` : "",
       input.selected?.length ? `Selected in the view: ${input.selected.join(", ")}` : "",
       `The design now (studio_get_design):\n${mode === "compact" ? compactState(state.result.text) : state.result.text}`,
     ]
@@ -562,7 +598,6 @@ async function work(
       const results: ToolResult[] = [];
       for (const call of turn.calls) {
         stillGoing();
-        if (run.steps.length >= MAX_STEPS) break;
         const entry = byName.get(call.name);
         const step: AssistantStep = {
           tool: call.name,
@@ -575,10 +610,6 @@ async function work(
         step.ok = !result.isError;
         step.summary = summary ?? (result.isError ? result.text.slice(0, 300) : null);
         results.push(result);
-      }
-      if (run.steps.length >= MAX_STEPS) {
-        outcome = "limit";
-        break;
       }
       messages.push({ role: "tool", results });
     }

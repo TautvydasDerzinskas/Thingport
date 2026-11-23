@@ -2,17 +2,25 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
+import { slicerProfile } from "../adapter";
+import { printerTarget } from "../printers/targets";
+import { printPreset, type StudioPrintProfile } from "../studio/printProfile.generated";
 import { HttpError } from "../utils/fileUtils";
 import { notifyUpload } from "./modelNotifications";
 import { printOutById } from "./printLoader";
-import { inspectStudioDesign, studioStl } from "./studioInspect";
+import { STUDIO_PROFILE_PREFIX, type StoredProfile } from "./printProfileService";
+import { inspectStudioDesign } from "./studioInspect";
+import { exportStudioDesign, type StudioExportOptions } from "./studioExport";
 import { getStudioDesign, studioAssetDir, studioPicturePath } from "./studioService";
-import { addUploadedPreviewImages, createUploadedModel } from "./uploadService";
+import { addUploadedFiles, addUploadedPreviewImages, createUploadedModel, type UploadedFile } from "./uploadService";
 
-// A Studio design saved to the user's library as a model of its own: its visible bodies as one STL, a picture of it,
-// and what the user asked Studio's assistant about it as its description. Each save is a new model, a copy as the
-// design was then; changing the design later doesn't change it.
+// A Studio design saved to the user's library: its visible bodies as one 3MF, as a model of its own (with a picture of
+// it, and what the user asked Studio's assistant about it as its description) or as one more print profile of a model
+// the user already has. The design's print profile goes into the 3MF, made for its slicer and printer where the slicer
+// is one of Bambu Studio's family, and the 3MF's plate is a print profile on the model's page, as an imported one is.
+// Each save is a copy as the design was then; changing the design later doesn't change it.
 
 // What a picture of the design is drawn in when the server makes one, as for studio_view_design.
 const RENDER_COLOR = "#4f8fd8";
@@ -31,51 +39,114 @@ async function promptsOf(designId: string): Promise<string | null> {
   return prompts.map((prompt) => `- ${prompt.replace(/\n+/g, " ")}`).join("\n");
 }
 
+/** Exported for the profile's slicer and printer when the slicer reads Bambu Studio's projects; any other slicer gets
+ *  the plain 3MF, which Open adapted turns into its own when it's opened. A printer the slicer has no preset for is
+ *  left out rather than refused. */
+function exportOptionsFor(profile: StudioPrintProfile | undefined): StudioExportOptions {
+  const slicer = profile?.slicer ? slicerProfile(profile.slicer) : null;
+  if (!slicer || slicer.reads !== "bambu") return { format: "3mf" };
+  const printer =
+    profile?.printer && slicer.targetsPrinter && printerTarget(slicer.id, profile.printer.id, profile.printer.nozzle);
+  return {
+    format: "3mf",
+    slicer: slicer.id,
+    ...(printer && printer.choice.nozzle === profile!.printer!.nozzle ? { printer: profile!.printer! } : {}),
+  };
+}
+
+/** The profile's name on the model's page: the one given, else the preset's with the material. */
+function profileTitle(profile: StudioPrintProfile, given?: string | null): string {
+  const name = given?.trim() || profile.name?.trim();
+  if (name) return name;
+  const preset = printPreset(profile.preset)?.title ?? "Studio profile";
+  return profile.material ? `${preset} ${profile.material}` : preset;
+}
+
+async function creatorName(userId: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { displayName: true } });
+  return user?.displayName?.trim() || null;
+}
+
+export type StudioLibraryInput = {
+  /** The new model's name; the design's when left out. */
+  name?: string;
+  /** One of the design's pictures to show a new model by. */
+  pictureId?: string | null;
+  /** A model of the user's to add the design to as one more print profile, instead of making a new model. */
+  modelId?: string | null;
+  /** The profile's name on the model's page. */
+  profileName?: string | null;
+};
+
 /**
- * Saves the design to the library. `pictureId` is one of the design's pictures to show it by (the page's view, as the
- * person saw it); without one the server pictures it. `name` defaults to the design's.
+ * Saves the design to the library: as a new model, or with `modelId` as a print profile added to that model, which
+ * needs the design to have a print profile. `pictureId` is one of the design's pictures to show a new model by (the
+ * page's view, as the person saw it); without one the server pictures it. `name` defaults to the design's.
  */
-export async function saveStudioDesignToLibrary(
-  userId: string,
-  designId: string,
-  input: { name?: string; pictureId?: string | null },
-) {
+export async function saveStudioDesignToLibrary(userId: string, designId: string, input: StudioLibraryInput) {
   const design = await getStudioDesign(userId, designId);
-  const assetDir = studioAssetDir(userId, design.id);
-  const made = await studioStl(design.document, assetDir);
-  if (made.status === "too-complex")
+  const profile = design.document.print_profile;
+  if (input.modelId && !profile)
     throw new HttpError(
-      422,
-      `The design is too heavy to save here (about ${made.triangles} triangles)`,
-      "studio_too_complex",
+      400,
+      "Set a print profile for the design before adding it to a model",
+      "studio_profile_required",
     );
-  if (made.status === "refused") throw new HttpError(400, made.reason, "studio_save_refused");
-  if (made.status !== "stl") {
-    console.error("[studio] making a design's STL failed", made);
-    throw new HttpError(500, "Couldn't make the design's STL", "studio_save_failed");
-  }
-  if (!made.stl)
-    throw new HttpError(400, "There's nothing to save: the design has no visible body", "studio_save_empty");
+  if (input.modelId && !(await prisma.print.findFirst({ where: { id: input.modelId, userId }, select: { id: true } })))
+    throw new HttpError(404, "That model isn't in your library", "studio_model_not_found");
 
-  let picture: Buffer | null = null;
-  if (input.pictureId) {
-    const file = await studioPicturePath(userId, design.id, input.pictureId);
-    if (!file) throw new HttpError(400, "That picture isn't this design's", "studio_picture_not_found");
-    picture = await fs.readFile(file);
-  } else {
-    const pictured = await inspectStudioDesign(`${design.id}:${design.version}`, design.document, assetDir, {
-      views: ["iso"],
-      size: PICTURE_PX,
-      color: RENDER_COLOR,
-    });
-    // Without a picture the library draws its own render of the STL, so a failed one isn't the end of it.
-    if (pictured.status === "ok" && pictured.images[0]) picture = Buffer.from(pictured.images[0].png, "base64");
-  }
+  const made = await exportStudioDesign(userId, design, exportOptionsFor(profile));
+  const title = profile ? profileTitle(profile, input.profileName) : null;
+  const stored: StoredProfile | null =
+    profile && title
+      ? {
+          studio: {
+            title,
+            description: profile.reason ?? null,
+            creator: await creatorName(userId),
+            designId: design.id,
+          },
+        }
+      : null;
+  const file = (base: string, exportPath: string): UploadedFile => ({
+    path: exportPath,
+    originalname: `${base}.${made.format}`,
+    mimetype: made.mime,
+    ...(stored
+      ? {
+          profile: {
+            id: `${STUDIO_PROFILE_PREFIX}${crypto.randomBytes(8).toString("hex")}`,
+            stored: stored as unknown as Prisma.JsonObject,
+          },
+        }
+      : {}),
+  });
 
-  const name = (input.name ?? design.name).trim() || design.name;
-  const stlPath = path.join(os.tmpdir(), `thingport-studio-${crypto.randomBytes(8).toString("hex")}.stl`);
-  await fs.writeFile(stlPath, made.stl);
+  const exportPath = path.join(os.tmpdir(), `thingport-studio-${crypto.randomBytes(8).toString("hex")}.${made.format}`);
+  await fs.writeFile(exportPath, made.bytes);
   try {
+    if (input.modelId) {
+      await addUploadedFiles(userId, input.modelId, [{ ...file(title!, exportPath), kind: "plate" }]);
+      return printOutById(userId, input.modelId);
+    }
+
+    let picture: Buffer | null = null;
+    const assetDir = studioAssetDir(userId, design.id);
+    if (input.pictureId) {
+      const pictureFile = await studioPicturePath(userId, design.id, input.pictureId);
+      if (!pictureFile) throw new HttpError(400, "That picture isn't this design's", "studio_picture_not_found");
+      picture = await fs.readFile(pictureFile);
+    } else {
+      const pictured = await inspectStudioDesign(`${design.id}:${design.version}`, design.document, assetDir, {
+        views: ["iso"],
+        size: PICTURE_PX,
+        color: RENDER_COLOR,
+      });
+      // Without a picture the library draws its own render of the 3MF, so a failed one isn't the end of it.
+      if (pictured.status === "ok" && pictured.images[0]) picture = Buffer.from(pictured.images[0].png, "base64");
+    }
+
+    const name = (input.name ?? design.name).trim() || design.name;
     const meta = {
       title: name,
       notes: await promptsOf(design.id),
@@ -83,15 +154,13 @@ export async function saveStudioDesignToLibrary(
       // What made it, for the model and for achievements: this design, which may change or go after.
       createdWith: { kind: "studio" as const, ref: design.id },
     };
-    const print = await createUploadedModel(userId, meta, [
-      { path: stlPath, originalname: `${name}.stl`, mimetype: "model/stl" },
-    ]);
+    const print = await createUploadedModel(userId, meta, [file(name, exportPath)]);
     if (picture) await addUploadedPreviewImages(print.id, [picture]);
     await notifyUpload(userId, [{ id: print.id, name }], { names: [] }, "created").catch((error: unknown) =>
       console.error("[studio] the saved model's notification failed", error),
     );
     return printOutById(userId, print.id);
   } finally {
-    await fs.rm(stlPath, { force: true });
+    await fs.rm(exportPath, { force: true });
   }
 }

@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
+import { PACKED_SCENE_EXTENSION } from "../files/kinds";
 
 // A .gltf is a JSON scene whose geometry sits in .bin files and whose textures sit in image files beside it, found by
 // relative path. Thingport stores a model's files apart and serves them by id, so those paths would lead nowhere: a
@@ -25,7 +26,7 @@ type GltfJson = {
   [key: string]: unknown;
 };
 
-export const isGltfName = (name: string) => path.extname(name).toLowerCase() === ".gltf";
+export const isGltfName = (name: string) => path.extname(name).toLowerCase() === PACKED_SCENE_EXTENSION;
 
 const isDataUri = (uri: string) => uri.startsWith("data:");
 const isRemoteUri = (uri: string) => /^[a-z][a-z0-9+.-]*:/i.test(uri) && !isDataUri(uri);
@@ -167,11 +168,19 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
   } catch {
     // A stray % in a file name: match it as written.
   }
-  const folder = path.posix.dirname(gltfName.replace(/\\/g, "/"));
-  const wanted = path.posix.normalize(path.posix.join(folder, decoded));
-  const pathOf = (file: T) => path.posix.normalize(file.name.replace(/\\/g, "/"));
-  const byPath = files.find((file) => pathOf(file) === wanted);
-  if (byPath) return byPath;
+  const rawFolder = path.posix.dirname(gltfName.replace(/\\/g, "/"));
+  const rawPathOf = (file: T) => path.posix.normalize(file.name.replace(/\\/g, "/"));
+  // The file named exactly as the scene writes it, first: two names can differ only in how they're composed.
+  const exact = files.find((file) => rawPathOf(file) === path.posix.normalize(path.posix.join(rawFolder, decoded)));
+  if (exact) return exact;
+  // Then composed on both sides, as names are kept, but only when that finds one file: a scene written on one
+  // system names a file another composed.
+  const folder = rawFolder.normalize("NFC");
+  const wanted = path.posix.normalize(path.posix.join(folder, decoded.normalize("NFC")));
+  const pathOf = (file: T) => rawPathOf(file).normalize("NFC");
+  const byPath = files.filter((file) => pathOf(file) === wanted);
+  if (byPath.length === 1) return byPath[0];
+  if (byPath.length > 1) return undefined;
   const base = path.posix.basename(wanted).toLowerCase();
   const byName = files.filter(
     (file) =>

@@ -18,7 +18,8 @@ import { saveFileFromTemp } from "../services/printFileService";
 import { PROFILE_PROVIDER_VERSION } from "../services/printProfileService";
 import { plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
 import { getPreviewMode } from "../services/settingsService";
-import { HttpError, mimeFromContentType, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import { activeRemoteModel, fetchRemoteFile, filesOf, type RemoteFile, type RemoteModelRow } from "./remoteFiles";
 import type { RemoteModelDetails } from "./remoteIndex";
 import { signedGet } from "./signedFetch";
@@ -185,7 +186,7 @@ async function run(
     // What the partner says of their sizes isn't taken on trust: what came so far counts against the rest.
     let total = 0;
     for (const [position, { index, file }] of files.entries()) {
-      const dest = path.join(dir, `${position}-${sanitizeFilename(file.name) || "file"}`);
+      const dest = path.join(dir, `${position}-${normalizeFileName(file.name)}`);
       await fetchRemoteFile(model, index, dest, {
         maxBytes: IMPORT_MAX_BYTES - total,
         onProgress: (received) => {
@@ -230,7 +231,7 @@ async function makeCopy(
   const { plates, supporting } = splitFiles(fetched);
   const profiles = new Set<string>();
   const plateInputs: NewPlateInput[] = plates.map(({ file, path: tempFilePath }) => {
-    const filename = sanitizeFilename(file.name) || "file";
+    const filename = normalizeFileName(file.name);
     // One plate to a profile, as the partner's own model has it.
     const profileId = file.profileId && !profiles.has(file.profileId) ? file.profileId : null;
     if (profileId) profiles.add(profileId);
@@ -309,7 +310,7 @@ async function makeCopy(
   try {
     let prepared = false;
     for (const { file, path: tempPath } of supporting) {
-      const said = file.role ?? (isPreparedPrintFilename(sanitizeFilename(file.name)) ? "PREPARED" : "SUPPORTING");
+      const said = file.role ?? (isPreparedPrintFilename(normalizeFileName(file.name)) ? "PREPARED" : "SUPPORTING");
       const role: typeof said = said === "PREPARED" && prepared ? "SUPPORTING" : said;
       prepared ||= role === "PREPARED";
       await saveFileFromTemp(userId, printId, tempPath, file.name, file.mediaType, { role, folder: file.folder });
@@ -323,7 +324,7 @@ async function makeCopy(
   const didNot = (step: string) => (err: unknown) =>
     console.warn(`[federation] Couldn't ${step} of ${model.apId}:`, (err as Error).message);
   // Plates in the order made, the scripts among them kept as files instead.
-  const madePlates = plates.filter(({ file }) => !isGeneratorScript(sanitizeFilename(file.name) || "file"));
+  const madePlates = plates.filter(({ file }) => !isGeneratorScript(normalizeFileName(file.name)));
   await copyPlateThumbs(model, madePlates, created.plates).catch(didNot("copy its plates' pictures"));
   await copyPictures(model, details, printId, created.plates[0]?.id).catch(didNot("copy its pictures"));
   await copyDescriptionImages(model, details, printId).catch(didNot("copy its description's images"));
@@ -365,7 +366,7 @@ async function copyPlateThumbs(model: RemoteModelRow, plates: Fetched[], made: {
     const plate = made[index];
     if (!plate || !file.thumb) continue;
     const wanted = file.thumbGenerated
-      ? !(rendering && canRenderModelImage(sanitizeFilename(file.name))) &&
+      ? !(rendering && canRenderModelImage(normalizeFileName(file.name))) &&
         !plateThumbExists(plate.id, await plateAssetHome(plate.id))
       : await plateThumbReplaceable(plate.id);
     if (!wanted) continue;

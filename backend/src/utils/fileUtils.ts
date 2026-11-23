@@ -1,19 +1,9 @@
+import crypto from "node:crypto";
 import path from "node:path";
-import { decodeExtended, parse as parseDisposition } from "content-disposition";
+import { create as createDisposition, decodeExtended, parse as parseDisposition } from "content-disposition";
 import mimeTypes from "mime-types";
 import { IMPORT_ALLOWED_EXTS } from "../config";
-
-// The whole C0 and C1 range: C1 is what a mis-decoded header leaves behind, and downstream systems
-// (e.g. OneDrive backups) reject some of those characters.
-// oxlint-disable-next-line no-control-regex -- stripping control chars is the point here.
-const CONTROL_CHARS_RE = /[\u0000-\u001f\u007f-\u009f]/g;
-
-export function sanitizeFilename(name: string | null | undefined): string {
-  let cleaned = (name || "").replace(CONTROL_CHARS_RE, "").trim();
-  cleaned = cleaned.replace(/\//g, "_").replace(/\\/g, "_");
-  cleaned = path.basename(cleaned);
-  return cleaned || "imported-file";
-}
+import { NAME_MAX_BYTES, normalizeFileName, splitName } from "../files/names";
 
 /**
  * Header values are ISO-8859-1, so a server putting raw UTF-8 in `filename=` (MakerWorld's CDN
@@ -41,6 +31,40 @@ export function parseContentDisposition(cd: string | null | undefined): string |
   if (extended) return extended;
   if (parameters.filename) return decodeLatin1AsUtf8(parameters.filename);
   return matchLooseFilename(cd);
+}
+
+/** A name in ASCII, for a client that reads only `filename`: each character beyond printable ASCII, each quote and
+ *  backslash, and each "%" that would read as an escape, percent-encoded. Two names never come out as one. */
+function asciiName(name: string): string {
+  return name.replace(/[^\x20-\x7e]|["\\]|%(?=[0-9A-Fa-f]{2})/gu, (char) => encodeURIComponent(char));
+}
+
+/** The Content-Disposition a download named `name` goes out with. Browsers read the whole name from `filename*`. A
+ *  client that reads only `filename`, as `curl -OJ` does, gets `asciiName`, where the package's own stand-in has a "?"
+ *  for each such character. One too long for a disk once encoded keeps as much of the name as fits, whole characters,
+ *  then a tag from the whole name, so two long names stay two, and its extension. */
+export function attachmentDisposition(name: string): string {
+  return contentDisposition(name, "attachment");
+}
+
+/** As attachmentDisposition, for a file shown in place. */
+export function inlineDisposition(name: string): string {
+  return contentDisposition(name, "inline");
+}
+
+function contentDisposition(name: string, type: "attachment" | "inline"): string {
+  // Half a surrogate pair, which a name from a JSON body can hold, can't be encoded: it goes out as U+FFFD.
+  const whole = name.replace(/\p{Cs}/gu, "\ufffd");
+  let ascii = asciiName(whole);
+  if (ascii.length > NAME_MAX_BYTES) {
+    const { stem, ext } = splitName(whole);
+    const tail = `~${crypto.createHash("sha256").update(whole).digest("hex").slice(0, 8)}${asciiName(ext)}`;
+    const chars = [...stem];
+    let kept = chars.length;
+    while (kept > 0 && asciiName(chars.slice(0, kept).join("")).length + tail.length > NAME_MAX_BYTES) kept--;
+    ascii = asciiName(chars.slice(0, kept).join("")) + tail;
+  }
+  return createDisposition(whole, ascii === whole ? { type } : { type, fallback: ascii });
 }
 
 /** For headers the parser finds no filename in, such as `filename=x.stl` with no disposition type. */
@@ -74,7 +98,7 @@ export class HttpError extends Error {
 export function buildImportFilename(url: string, headers: Headers, override?: string | null): string {
   let name: string;
   if (override) {
-    name = sanitizeFilename(override);
+    name = normalizeFileName(override);
   } else {
     const disposition = headers.get("content-disposition");
     name = parseContentDisposition(disposition) || "";
@@ -85,7 +109,7 @@ export function buildImportFilename(url: string, headers: Headers, override?: st
         name = "";
       }
     }
-    name = sanitizeFilename(name);
+    name = normalizeFileName(name);
   }
 
   const contentType = headers.get("content-type") || "";
@@ -111,7 +135,8 @@ export function buildImportFilename(url: string, headers: Headers, override?: st
   if (!IMPORT_ALLOWED_EXTS.has(ext)) {
     throw new HttpError(415, `Unsupported file type: ${ext}`);
   }
-  return name;
+  // Again, as an extension added from the link or its type can take the name past the limit.
+  return normalizeFileName(name);
 }
 
 export function mimeFromContentType(contentType: string | null | undefined, filename: string): string {

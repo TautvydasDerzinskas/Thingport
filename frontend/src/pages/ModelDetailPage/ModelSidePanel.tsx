@@ -45,14 +45,18 @@ import ModelFileSelect from "./ModelFileSelect";
 import PrintProfilesSection from "./PrintProfiles";
 import type { ProfileEntry } from "./PrintProfiles/entries";
 import type { PrintProfilesView } from "../../api/settings";
-import OpenInSlicerButton from "./OpenInSlicerButton";
+import OpenInSlicerButton, { ToolCommandsButton } from "./OpenInSlicerButton";
 import { useAdaptedOpen } from "./useAdaptedOpen";
 import AddToCollectionModal from "./AddToCollectionModal";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 import UserAvatar from "../../components/UserAvatar";
+import { useToolCommands } from "../../components/tools/useToolCommands";
+import { ToolPart, useToolsWithPart } from "../../components/tools/ToolParts";
 import { useCopyToLibrary } from "./useCopyToLibrary";
+import { useSendTo } from "./useSendTo";
+import SendToButtons from "./SendToButtons";
 
 const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
 
@@ -112,7 +116,7 @@ export type CollectionCount = number | "loading" | "failed";
 type Props = {
   print: Print;
   collectionCount: CollectionCount;
-  onCollectionCountChange: (count: number) => void;
+  onCollectionCountChange: (count: number, printId: string) => void;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
   onUpdated?: (print: Print) => void;
@@ -122,9 +126,13 @@ type Props = {
   profileEntries?: ProfileEntry[] | null;
   /** How to show them: null while the setting loads, "off" as plain files. */
   profilesView?: PrintProfilesView | null;
+  /** Changes once the print profiles have filled in, for the tools' parts to be drawn again. */
+  partsRevision?: string;
   /** The file every action applies to, when the page keeps it (so the 3D preview opens on it too). */
   selectedKey?: string | null;
   onSelectKey?: (key: string) => void;
+  /** Told the plate picked here, the first profile's or file's until one is, for the page's tool parts. */
+  onPickedPlate?: (plateId: string | null) => void;
   /** Opens the 3D preview on one of a profile's build plates. */
   onPreviewPlate?: (key: string, plateIndex: number) => void;
 };
@@ -140,8 +148,10 @@ export default function ModelSidePanel({
   viewer,
   profileEntries,
   profilesView,
+  partsRevision,
   selectedKey: pageSelectedKey,
   onSelectKey,
+  onPickedPlate,
   onPreviewPlate,
 }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
@@ -176,7 +186,7 @@ export default function ModelSidePanel({
   // The provider whose own category this maps from, when it isn't AI's answer.
   const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
   const viewerAvatarUrl = viewer?.avatar_url;
-  const { downloading, downloadFile, downloadAllZip, recordUse, recordDownload } = useDownloadPrint(
+  const { downloading, downloadFile, downloadAllZip, zipFileCount, recordUse, recordDownload } = useDownloadPrint(
     print,
     onUnauthorized,
     onUpdated,
@@ -196,13 +206,30 @@ export default function ModelSidePanel({
   const selectedFile = files.find((file) => file.key === selectedKey) ?? firstProfileFile ?? files[0] ?? null;
   const otherFiles = profilesShown ? files.filter((file) => !entries.some((entry) => entry.key === file.key)) : [];
   const adaptedTarget = adaptedTargetFor(selectedFile);
+  // Where the user sends the picked file: printers, webhooks and their own addresses (Configuration → Send to).
+  const sendTo = useSendTo(print.id, selectedFile, onUnauthorized);
+  // What the installed tools offer to do with it, on the picked file where a command takes one.
+  const toolCommands = useToolCommands(
+    {
+      modelId: print.id,
+      file: selectedFile ? { filename: selectedFile.filename, plateId: selectedFile.plate?.id ?? null } : null,
+    },
+    onUnauthorized,
+  );
+
+  const infoTools = useToolsWithPart("info");
+  // The page's other tool parts draw for the file picked here.
+  const pickedPlateId = selectedFile?.plate?.id ?? null;
+  useEffect(() => {
+    onPickedPlate?.(pickedPlateId);
+  }, [onPickedPlate, pickedPlateId]);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
-  const studio = useOpenInStudio(print, onUnauthorized);
+  const studio = useOpenInStudio(print);
   const studioPlate = studio.files.find((plate) => plate.id === selectedFile?.plate?.id) ?? null;
   const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized, recordDownload);
   // Opened from the button below rather than a menu, so there is no menu to close.
-  const customize = useCustomize(print, () => {}, onUnauthorized);
+  const customize = useCustomize(print, onUnauthorized);
   // Another user's model, from one of their public collections.
   const owner = print.owner ?? null;
   const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
@@ -431,6 +458,20 @@ export default function ModelSidePanel({
             </Box>
           )}
 
+          {/* What the installed tools draw here about the model, such as who has it in their print queue; nothing
+            without such a tool. */}
+          {infoTools.map((tool) => (
+            <ToolPart
+              key={tool.id}
+              tool={tool}
+              place="info"
+              modelId={print.id}
+              fileId={selectedFile?.plate?.id ?? null}
+              revision={partsRevision}
+              onUnauthorized={onUnauthorized}
+            />
+          ))}
+
           {/* Why there is nothing to customise here, which otherwise looks like a model that never had a script.
             A model that does have one needs no chip: it leads with Customize. */}
           {print.generator_script_withheld && !hasGeneratorScript(print) && (
@@ -575,7 +616,7 @@ export default function ModelSidePanel({
           {selectedFile && (
             <OpenInSlicerButton
               file={selectedFile}
-              canOpen={canOpen}
+              canOpen={canOpen && selectedFile.caps.openInSlicer}
               slicerOption={slicerOption}
               slicerOptions={slicerOptions}
               onOpened={(slicerId) => {
@@ -584,14 +625,27 @@ export default function ModelSidePanel({
               }}
               downloading={downloading}
               onDownload={() => void downloadFile(selectedFile)}
-              // The zip holds the plates and supporting files, not the prepared print.
-              zipCount={files.filter((file) => file.plate).length}
+              zipCount={zipFileCount}
               onDownloadZip={() => void downloadAllZip()}
               onCustomize={customize.available ? customize.start : undefined}
-              onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}
-              openingInStudio={studio.opening}
+              onOpenInStudio={studioPlate ? () => studio.open(studioPlate) : undefined}
+              toolCommands={toolCommands.commands}
+              onToolCommand={toolCommands.run}
+              sendTargets={sendTo.menu}
+              onSend={(target) => void sendTo.send(target)}
+              sending={sendTo.sending}
             />
           )}
+          <SendToButtons
+            targets={sendTo.buttons}
+            sending={sendTo.sending}
+            onSend={(target) => void sendTo.send(target)}
+          />
+          {/* With no file there's no main button, so the commands on the whole model get one of their own. */}
+          {!selectedFile && toolCommands.commands.length > 0 && (
+            <ToolCommandsButton commands={toolCommands.commands} onRun={toolCommands.run} />
+          )}
+          {toolCommands.element}
           {slicerOption && adaptedTarget && (
             <AdaptedOpenButton
               target={adaptedTarget}

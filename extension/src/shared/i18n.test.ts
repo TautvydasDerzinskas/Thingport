@@ -170,14 +170,15 @@ const providerKeys = [
 const backgroundKeys = [
   "thingportRedirectsTo",
   "thingportCredentialRedirect",
-  "couldNotSignInToThingport",
   "reloginApprovalRejected",
   "reloginCredentialsRejected",
   "grabNotConfigured",
   "grabDisabled",
-  "requestFailed",
+  "proxyRefused",
+  "proxyTooLarge",
+  "proxyNoAnswer",
+  "proxyTimedOut",
   "couldNotOpenThingportTab",
-  "thingportAnswered",
   "makeronlineNotOnSite",
   "makeronlineCouldNotReachThingport",
   "makeronlineCouldNotAskFiles",
@@ -217,6 +218,29 @@ describe("runtime localization", () => {
   it("keeps every catalog structurally aligned with English", () => {
     const english = Object.keys(catalogs.en).toSorted();
     for (const locale of LOCALES) expect(Object.keys(catalogs[locale]).toSorted()).toEqual(english);
+  });
+
+  it("rejects blank strings and accidental copies of English", () => {
+    // Shared formatting patterns, units and labels that are also valid in the target language.
+    const shared = new Map<string, readonly string[]>([
+      ["recentlyViewedTitle", TRANSLATED_LOCALES],
+      ["adaptPage.fileWithSize", TRANSLATED_LOCALES],
+      ["mini", ["de", "es", "fr", "lt"]],
+      ["adaptPage.sizeKb", ["de", "es", "lt", "zh"]],
+      ["adaptPage.sizeMb", ["de", "es", "lt", "zh"]],
+      ["sections", ["fr"]],
+      ["gapDescription", ["fr"]],
+      ["adaptPopup.sites", ["fr"]],
+      ["tabOfflineFeatures", ["de"]],
+      ["adaptPopup.slicer", ["de"]],
+    ]);
+    for (const locale of TRANSLATED_LOCALES) {
+      for (const [key, english] of Object.entries(catalogs.en)) {
+        const message = catalogs[locale][key]?.trim();
+        expect(message, `${locale} ${key}`).toBeTruthy();
+        if (!shared.get(key)?.includes(locale)) expect(message, `${locale} ${key}`).not.toBe(english.trim());
+      }
+    }
   });
 
   it("keeps every message's placeholders in every catalog", () => {

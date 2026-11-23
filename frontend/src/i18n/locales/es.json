@@ -360,7 +360,7 @@
             }
           },
           "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
-          "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez. Nada de lo que haga elimina modelos.",
+          "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez.",
           "writeConfirm": "Activar",
           "reads": "Lee tu biblioteca",
           "studio": {
@@ -1534,11 +1534,13 @@
         "failed": "No se pudo medir el almacenamiento.",
         "kinds": {
           "models": "Archivos de modelos",
+          "supporting": "Archivos adjuntos",
           "previews": "Vistas previas 3D",
           "old": "Vistas previas 3D antiguas",
           "photos": "Fotos",
           "thumbnails": "Miniaturas y renders",
           "description": "Imágenes de la descripción",
+          "prepared": "Impresiones preparadas",
           "slicer": "Copias para el laminador",
           "other": "Otros"
         }
@@ -2325,6 +2327,7 @@
           "custom_widgets_changed": "Cambió qué widgets personalizados se permiten",
           "tool_installed": "Herramienta instalada",
           "tool_uninstalled": "Herramienta desinstalada",
+          "tool_availability_changed": "Disponibilidad de la herramienta modificada",
           "tools_access_changed": "Cambió el acceso a las herramientas",
           "model_copied": "Modelo copiado",
           "social_settings_changed": "Funciones sociales cambiadas",
@@ -2473,6 +2476,11 @@
         "folderSummary_one": "{{count}} archivo · {{size}}",
         "folderSummary_other": "{{count}} archivos · {{size}}",
         "ofModel": "modelo «{{name}}»",
+        "cantRead": "No se puede leer",
+        "cantReadFolder": "No se puede leer esta carpeta",
+        "unreadable_one": "El disco no pudo leer {{count}} elemento aquí. Puede que siga ahí.",
+        "unreadable_many": "El disco no pudo leer {{count}} elementos aquí. Puede que sigan ahí.",
+        "unreadable_other": "El disco no pudo leer {{count}} elementos aquí. Puede que sigan ahí.",
         "kind": {
           "plate": "Archivo del modelo",
           "file": "Archivo adjunto",
@@ -2684,6 +2692,15 @@
           "update": "Actualizar",
           "installed": "{{name}} instalada",
           "updated": "{{name}} actualizada",
+          "updateAll": "Actualizar todas",
+          "updates_one": "{{count}} actualización: {{names}}",
+          "updates_many": "{{count}} actualizaciones: {{names}}",
+          "updates_other": "{{count}} actualizaciones: {{names}}",
+          "updatingAll": "Actualizando {{name}}: {{done}} de {{total}}",
+          "updatedAll_one": "{{count}} herramienta actualizada",
+          "updatedAll_many": "{{count}} herramientas actualizadas",
+          "updatedAll_other": "{{count}} herramientas actualizadas",
+          "updateAllFailed": "No se pudo actualizar {{names}}: {{error}}",
           "installFailed": "No se pudo instalar la herramienta",
           "installedVersion": "Instalada {{version}}",
           "updateTo": "Actualizar a {{version}}",
@@ -2716,6 +2733,11 @@
           "openHint": "Abrir {{name}}: doble clic",
           "notInstalled": "No instalada",
           "isInstalled": "instalada",
+          "enable": "Activar",
+          "disable": "Desactivar",
+          "disabled": "Desactivada",
+          "disabledBanner": "Desactivada: oculta en la página Herramientas de todos. Sus datos y modelos se conservan.",
+          "availabilityError": "No se pudo cambiar la disponibilidad de la herramienta.",
           "version": "v{{version}}",
           "tileLabel": "{{name}}, {{state}}: pulsa Intro para ver qué es, la tecla de menú contextual para más",
           "shelfHint": "Haz doble clic en una herramienta para ver qué es y qué puedes hacer con ella; clic derecho en una instalada para su menú.",
@@ -2782,7 +2804,7 @@
           "infoTitle": "Qué hace conectar instancias",
           "infoPair": "Las instancias de Thingport con las que te conectas pasan a ser asociadas: sus usuarios, colecciones públicas y modelos aparecen aquí como si estuvieran en esta instancia, y los tuyos allí.",
           "infoApprove": "Apruebas cada instancia antes de que se conecte. Tus usuarios pueden pedirte que te conectes con una.",
-          "infoShare": "Solo pasa lo público: las bibliotecas, las colecciones privadas y los ajustes se quedan aquí.",
+          "infoShare": "El contenido público, las colecciones compartidas con personas de instancias conectadas y los chats con ellas pueden pasar de una instancia a otra. Las bibliotecas, las colecciones privadas y los ajustes se quedan aquí.",
           "infoOff": "Desactivarlo oculta las asociadas y deja de hablar con ellas. No se borra nada, y todo vuelve al activarlo de nuevo.",
           "settingsLoadFailed": "No se pudieron cargar los ajustes de las instancias conectadas.",
           "keyAria": "Clave: {{key}}",
@@ -3647,7 +3669,120 @@
         "appearance": "Apariencia",
         "providers": "Proveedores",
         "slicer": "Slicer",
-        "printers": "Impresora"
+        "printers": "Impresora",
+        "sendTo": "Enviar a"
+      },
+      "sendTo": {
+        "title": "Enviar a",
+        "subtitle": "Envía modelos a tus impresoras, webhooks y otras apps.",
+        "add": "Añadir",
+        "more": "Más",
+        "moreFor": "Más para {{name}}",
+        "import": "Importar…",
+        "export": "Exportar",
+        "exportHint": "Como archivo para compartir, sin claves",
+        "emptyTitle": "Aún no hay adónde enviar",
+        "emptyHint": "Añade OctoPrint, Klipper o PrusaLink, un webhook o una dirección propia.",
+        "needsKey": "Falta su clave API",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "deleteTitle": "¿Eliminar {{name}}?",
+        "deleteMessage": "Ya no se ofrecerá en las páginas de los modelos.",
+        "saved": "{{name}} guardado",
+        "imported_one": "{{count}} destino añadido",
+        "imported_many": "{{count}} destinos añadidos",
+        "imported_other": "{{count}} destinos añadidos",
+        "importFailed": "No es un archivo de Enviar a",
+        "test": "Probar",
+        "testOk": "Responde ({{status}})",
+        "placementLabel": "Dónde se muestra {{name}}",
+        "groups": {
+          "printers": "Impresoras",
+          "webhooks": "Webhooks",
+          "own": "Propios"
+        },
+        "kinds": {
+          "octoprint": "OctoPrint",
+          "moonraker": "Klipper",
+          "prusalink": "PrusaLink",
+          "homeassistant": "Home Assistant",
+          "n8n": "n8n",
+          "nodered": "Node-RED",
+          "link": "Enlace propio",
+          "request": "Petición propia"
+        },
+        "hints": {
+          "octoprint": "Sube a OctoPrint",
+          "moonraker": "Moonraker, para Mainsail y Fluidd",
+          "prusalink": "La de Prusa, en MK4, XL, MINI y CORE One",
+          "homeassistant": "Una automatización con webhook",
+          "n8n": "Un flujo con webhook",
+          "nodered": "Un nodo http in",
+          "link": "Una dirección que abre el navegador",
+          "request": "El servidor de Thingport envía el archivo"
+        },
+        "placement": {
+          "button": "Botón",
+          "menu": "Menú"
+        },
+        "fields": {
+          "name": "Nombre",
+          "address": "Dirección",
+          "webhook": "Dirección del webhook",
+          "apiKey": "Clave API",
+          "stored": "Guardada",
+          "apiKeyStored": "Guardada. Escribe otra para reemplazarla.",
+          "apiKeyOptional": "Solo si Moonraker la pide",
+          "apiKeyRemove": "Quitar la clave",
+          "after": "Tras subirlo",
+          "justUpload": "Solo subir",
+          "startPrinting": "Empezar a imprimir",
+          "url": "Dirección",
+          "opens": "Se abre en",
+          "opensHelp": "Una pestaña con nombre se reutiliza: volver a enviar va a la misma pestaña. La página que se abre en ella también puede llevar la pestaña de Thingport a otra dirección, así que úsala solo con direcciones de confianza.",
+          "newTab": "Pestaña nueva",
+          "namedTab": "Pestaña con nombre",
+          "sameTab": "Esta pestaña",
+          "tabName": "Nombre de la pestaña",
+          "method": "Método",
+          "send": "Enviar",
+          "sendHelp": "El archivo en un formulario, como lo aceptan casi todas las subidas; el propio archivo como cuerpo de la petición; o JSON con un enlace al archivo, válido una hora.",
+          "multipart": "El archivo en un formulario",
+          "raw": "El propio archivo",
+          "json": "JSON con un enlace",
+          "formFields": "Formulario",
+          "fileField": "Campo del archivo",
+          "fileFieldHint": "El archivo va en este campo",
+          "fieldName": "Campo",
+          "fieldValue": "Valor",
+          "remove": "Quitar",
+          "addField": "Campo",
+          "headers": "Cabeceras",
+          "headersHelp": "El valor de una cabecera secreta se guarda en el servidor y no se vuelve a mostrar.",
+          "headerName": "Cabecera",
+          "headerValue": "Valor",
+          "secret": "Secreta",
+          "secretHelp": "Guardar el valor en el servidor y no volver a mostrarlo",
+          "addHeader": "Cabecera",
+          "thenOpen": "Después abrir",
+          "thenOpenHelp": "Se ofrece tras enviarlo, como la página de la impresora.",
+          "fileTypes": "Solo para archivos",
+          "fileTypesHelp": "Extensiones, como gcode. Vacío: se ofrece para cualquier archivo.",
+          "anyFile": "Cualquier archivo",
+          "showAs": "Mostrar como"
+        },
+        "reasons": {
+          "auth": "Rechazó la clave ({{status}})",
+          "not_found": "No hay nada en esa dirección ({{status}})",
+          "conflict": "Ya tiene ese archivo",
+          "too_large": "El archivo es demasiado grande para él",
+          "unsupported": "No acepta ese tipo de archivo",
+          "redirect": "Mandó a Thingport a otro sitio ({{status}}), y eso no se sigue",
+          "http": "Respondió {{status}}",
+          "timeout": "No respondió a tiempo",
+          "unreachable": "No se pudo alcanzar",
+          "blocked": "Esa dirección no está permitida"
+        }
       }
     },
     "providers": {
@@ -3975,7 +4110,23 @@
       },
       "runner": {
         "failed": "{{name}} se detuvo con un error",
-        "noExport": "El script no tiene una exportación por defecto a la que llamar"
+        "noExport": "El script no tiene una exportación por defecto a la que llamar",
+        "noRun": "El script no tiene una exportación run para un comando sin ventana",
+        "commandFailed": "{{name}} no pudo hacerlo: {{error}}",
+        "noPartExport": "El script no tiene un export {{name}} que dibuje esta parte",
+        "partFailed": "{{name}} no pudo mostrar esto",
+        "noPopover": "Un comando sin ventana no puede abrir una ventana emergente"
+      },
+      "share": {
+        "title": "¿Quién ve tu {{name}}?",
+        "everyone": "Todos",
+        "people": "Solo quien yo elija",
+        "everyoneHint": "Todos los que pueden usar herramientas aquí ven lo que compartes en ella.",
+        "picked_one": "Compartido con {{count}} persona",
+        "picked_many": "Compartido con {{count}} personas",
+        "picked_other": "Compartido con {{count}} personas",
+        "onlyYou": "Aún no has elegido a nadie, así que solo lo ves tú.",
+        "loadFailed": "No se pudo leer a quién llega, así que aún no se puede cambiar."
       },
       "picker": {
         "title": "Elige una colección",
@@ -3987,6 +4138,9 @@
         "count_other": "{{count}} modelos",
         "cancel": "Cancelar",
         "choose": "Elegir"
+      },
+      "modelPicker": {
+        "title": "Elige modelos"
       },
       "ai": {
         "or": "o",
@@ -4253,7 +4407,6 @@
         "sweep": "Barrido"
       },
       "tree": {
-        "heading": "Elementos",
         "empty": "Aún no hay nada",
         "expand": "Expandir",
         "collapse": "Contraer"
@@ -4328,6 +4481,8 @@
         "front": "Frontal",
         "right": "Derecha",
         "fit": "Ajustar a la vista",
+        "hand": "Modo mano",
+        "handNavigation": "Arrastra con el botón izquierdo o con un dedo para desplazar la vista. Arrastra con el botón derecho o con dos dedos para girarla. Usa la rueda o pellizca para hacer zoom.",
         "navigation": "Arrastrar con el botón derecho gira la vista, con el central (o Mayús + derecho) la desplaza, la rueda acerca. Arrastrar con el izquierdo dibuja un cuadro de selección: de izquierda a derecha toma lo que queda dentro por completo, de derecha a izquierda también lo que toca. Mayús añade a la selección."
       },
       "properties": {
@@ -4392,13 +4547,73 @@
         },
         "cornerRadius": "Radio de las esquinas"
       },
+      "print": {
+        "customBed": "Cama personalizada",
+        "arrange": "Distribuir placa",
+        "spacing": "Separación",
+        "overflow": "Usar placas nuevas si falta espacio",
+        "tooLarge": "Studio no encontró una posición con esta separación para {{parts}}.",
+        "needsOverflow": "Permite añadir placas o reduce la separación.",
+        "arrangeEmpty": "No hay cuerpos visibles que distribuir en esta placa.",
+        "plateLimit": "Esta distribución superaría el límite de placas de Studio.",
+        "previewPlate": "Placa nueva {{number}}",
+        "lockPosition": "Fijar posición para la distribución",
+        "unlockPosition": "Desbloquear posición para la distribución",
+        "connectors": "Pines y alojamientos",
+        "separatePlates": "Poner la segunda pieza en una placa nueva",
+        "pinDiameter": "Diámetro del pin",
+        "pinDepth": "Profundidad del pin",
+        "clearance": "Holgura radial",
+        "pinCount": "Número de pines",
+        "offsetU": "Desplazamiento U",
+        "offsetV": "Desplazamiento V",
+        "fitPlate": "Prueba de ajuste",
+        "fitHelp": "Imprime una muestra de pin y un alojamiento para cada holgura. Cada alojamiento lleva su medida en milímetros.",
+        "variant": "Holgura {{number}}",
+        "makeFitPlate": "Crear placa de prueba",
+        "useFit": "Usar la holgura medida",
+        "clearanceParameter": "Parámetro de holgura",
+        "filaments": "Asignaciones de filamento",
+        "slot": "Ranura cargada",
+        "automatic": "Automático",
+        "material": "Material",
+        "unmapped": "Los colores sin ranura asignada ({{number}}) se asignan automáticamente.",
+        "tooManySlots": "Este laminador admite hasta {{limit}} ranuras de filamento. Reduce el número de colores antes de exportar.",
+        "saveSlots": "Guardar asignaciones"
+      },
+      "plates": {
+        "label": "Placa de impresión",
+        "actions": "Acciones de placa",
+        "add": "Añadir placa",
+        "rename": "Cambiar nombre de la placa",
+        "delete": "Eliminar placa vacía",
+        "defaultName": "Placa {{count}}",
+        "move": "Mover a placa",
+        "color": "Color del cuerpo",
+        "clearColor": "Quitar",
+        "applyColor": "Aplicar",
+        "exportStl": "Exportar como STL",
+        "openSlicer": "Abrir con laminador",
+        "slicer": "Laminador",
+        "printer": "Impresora y boquilla",
+        "noPreset": "Usar la impresora actual del laminador",
+        "oneAtATime": "Este laminador abre una placa cada vez.",
+        "matchFilaments": "Asigna los colores del proyecto a los filamentos cargados en el laminador.",
+        "download3mf": "Descargar 3MF",
+        "open": "Abrir"
+      },
       "design": {
-        "none": "Sin diseño",
         "new": "Nuevo diseño",
         "open": "Abrir…",
         "openTitle": "Abrir un diseño",
         "rename": "Cambiar nombre del diseño",
-        "export": "Descargar STL",
+        "save": "Guardar diseño",
+        "export": {
+          "title": "Exportar",
+          "format": "Formato de archivo",
+          "threeMf": "Descarga un archivo 3MF con todas las placas ocupadas y sus colores.",
+          "stlZip": "Descarga un ZIP con un archivo STL por cada placa ocupada."
+        },
         "delete": "Eliminar diseño",
         "deleteTitle": "¿Eliminar «{{name}}»?",
         "deleteMessage": "El diseño y su historial se eliminan para siempre.",
@@ -4406,11 +4621,20 @@
         "emptyTitle": "Aún no hay diseños",
         "emptyHint": "Empieza uno y constrúyelo con formas y bocetos.",
         "untitled": "Diseño sin título",
+        "menu": {
+          "quickActions": "Acciones rápidas",
+          "new": "Nuevo",
+          "open": "Abrir",
+          "slicer": "Laminador",
+          "recent": "Recientes",
+          "edited": "Editado {{time}}"
+        },
         "nothingToExport": "No hay nada visible que descargar",
         "features_one": "{{count}} elemento",
         "features_many": "{{count}} elementos",
         "features_other": "{{count}} elementos",
         "saveToLibrary": "Guardar en Thingport",
+        "libraryModelName": "Nombre del modelo",
         "saving": "Guardando en Thingport…",
         "saved": "«{{name}}» guardado en tu biblioteca",
         "openSaved": "Abrir"
@@ -4449,10 +4673,12 @@
       },
       "panels": {
         "label": "Paneles",
-        "features": "Elementos",
+        "features": "Objetos / Placas",
         "properties": "Propiedades",
         "hide": "Ocultar {{panel}}",
-        "show": "Mostrar {{panel}}"
+        "show": "Mostrar {{panel}}",
+        "print": "Impresión",
+        "rightPanel": "Propiedades / Impresión"
       },
       "viewCube": {
         "label": "Cubo de vista: haz clic en una cara, arista o esquina para mirar desde ahí, arrástralo para girar la vista",
@@ -4667,6 +4893,45 @@
           "closed": "Cerrado"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Nivelando la placa de impresión…",
+          "Afilando los lápices…",
+          "Cuadrando la cuadrícula…",
+          "Poniendo el origen a cero…",
+          "Tensando las correas…",
+          "Calibrando los ejes…",
+          "Alineando los planos…",
+          "Contando los triángulos…",
+          "Puliendo los redondeos…",
+          "Calentando la boquilla…",
+          "Abriendo la caja de herramientas…",
+          "Midiendo dos veces, cortando una…"
+        ]
+      },
+      "importModel": {
+        "loadingStudio": "Cargando Thingport Studio…",
+        "preparing": "Preparando «{{filename}}» para Thingport Studio…",
+        "failed": "No se pudo abrir «{{filename}}» en Thingport Studio",
+        "platePreparing": "Preparando «{{name}}»…",
+        "plateFailed": "No se pudo preparar «{{name}}»",
+        "loadPlate": "Cargar placa de impresión",
+        "checkUnloaded": "Abre «{{name}}» antes de comprobar si se puede imprimir el diseño completo.",
+        "archiveLimit": "Este archivo 3MF es demasiado grande para que Studio pueda leerlo.",
+        "noPlates": "Studio no pudo leer ninguna placa de impresión de este 3MF.",
+        "plateLimit": "Una placa de impresión admite hasta {{objects}} objetos y {{plateTriangles}} triángulos.",
+        "bodyLimit": "Cada cuerpo importado admite hasta {{bodyTriangles}} triángulos.",
+        "missingParts": "Este 3MF hace referencia a partes del modelo que faltan en el archivo.",
+        "noBodies": "Studio no pudo leer ningún cuerpo imprimible.",
+        "readFailed": "Studio no pudo leer el archivo del modelo.",
+        "tooManyPlates": "Un diseño de Studio admite hasta {{plates}} placas de impresión.",
+        "tooManyObjects": "Un diseño de Studio admite hasta {{objects}} cuerpos y operaciones.",
+        "loadPlateFirst": "Carga primero esta placa de impresión.",
+        "platePending": "Los cuerpos se cargan al abrir esta placa.",
+        "filamentsPending": "Abre las demás placas de impresión para ver todos los colores de filamento.",
+        "geometryFailed": "Studio no pudo procesar esta geometría."
+      },
       "imported": {
         "parts_one": "El modelo se importó como un solo cuerpo de {{count}} pieza",
         "parts_many": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
@@ -4856,16 +5121,8 @@
       "settings": {
         "title": "Ajustes de Studio",
         "sections": {
-          "assistant": "Preguntar a la IA",
           "units": "Unidades",
           "grid": "Cuadrícula"
-        },
-        "assistantIntro": "Dónde muestra su conversación Preguntar a la IA.",
-        "layout": "Disposición",
-        "layoutHelp": "Barra: bajo la vista, una línea mientras la IA trabaja y el resto al abrirla. Panel lateral: junto a la vista, para que nada tape el modelo.",
-        "layouts": {
-          "bar": "Barra",
-          "panel": "Panel lateral"
         },
         "failed": "No se pudo guardar el ajuste.",
         "unitsIntro": "En qué se muestran y escriben las medidas. Las medidas no cambian; solo cómo se leen.",
@@ -4898,11 +5155,192 @@
           "snap": "Ajustar a la cuadrícula",
           "snapHelp": "Los puntos del boceto y los cuerpos que mueves se ajustan a las líneas más finas que se ven. Desactivado, van donde apuntas."
         }
+      },
+      "printProfile": {
+        "title": "Perfil de impresión",
+        "presets": "Preajustes",
+        "empty": "Aún no hay perfil de impresión",
+        "emptyHint": "Elige un preajuste para este diseño o deja que la IA elija según su uso.",
+        "choosePreset": "Elegir un preajuste",
+        "change": "Cambiar",
+        "changed": "modificado",
+        "custom": "Personalizado",
+        "suggestAi": "Sugerir con IA",
+        "aiWorking": "La IA está eligiendo…",
+        "suggested": "Sugerido",
+        "suggestedPreset": "Sugerencia: {{preset}}",
+        "byAi": "Elegido por la IA",
+        "slicer": "Laminador",
+        "printer": "Impresora",
+        "anyPrinter": "Cualquier impresora",
+        "material": "Material",
+        "anyMaterial": "Cualquier material",
+        "settings": "Ajustes",
+        "slicerDefault": "Predeterminado del laminador",
+        "setIt": "Definir",
+        "noneCarried": "{{slicer}} no lee ninguno de estos ajustes de un 3MF.",
+        "setCount_one": "{{count}} definido",
+        "setCount_many": "{{count}} definidos",
+        "setCount_other": "{{count}} definidos",
+        "reset": "Usar el valor del laminador",
+        "nativeName": "En {{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} no lee esto de un 3MF: ajústalo allí.",
+        "remove": "Quitar el perfil de impresión",
+        "on": "Sí",
+        "off": "No",
+        "aiPrompt": "Elige un perfil de impresión para este diseño según su uso: lo que te pedí y las descripciones de los modelos de los que se hizo. Aplícalo con la herramienta de perfil de impresión y dime por qué en una frase.",
+        "aiPromptSlicer": "Lamino con {{name}} (id de laminador {{id}}).",
+        "aiPromptPrinter": "Mi impresora es la {{name}} (id de impresora {{id}}) con una boquilla de {{nozzle}} mm.",
+        "category": {
+          "quality": "Calidad",
+          "strength": "Resistencia",
+          "speed": "Velocidad",
+          "support": "Soportes",
+          "others": "Otros"
+        },
+        "setting": {
+          "layer_height": "Altura de capa",
+          "wall_loops": "Paredes",
+          "top_shell_layers": "Capas superiores",
+          "bottom_shell_layers": "Capas inferiores",
+          "top_shell_thickness": "Grosor superior",
+          "wall_generator": "Generador de paredes",
+          "sparse_infill_density": "Densidad de relleno",
+          "sparse_infill_pattern": "Patrón de relleno",
+          "initial_layer_speed": "Velocidad de la primera capa",
+          "outer_wall_speed": "Velocidad de pared exterior",
+          "inner_wall_speed": "Velocidad de paredes interiores",
+          "sparse_infill_speed": "Velocidad de relleno",
+          "enable_support": "Soportes",
+          "support_type": "Tipo de soporte",
+          "support_threshold_angle": "Ángulo de soporte",
+          "support_on_build_plate_only": "Soportes solo desde la cama",
+          "brim_type": "Borde",
+          "brim_width": "Ancho del borde",
+          "raft_layers": "Capas de balsa",
+          "seam_position": "Posición de la costura",
+          "seam_slope_type": "Costura biselada",
+          "wall_sequence": "Orden de paredes",
+          "top_surface_pattern": "Patrón superior",
+          "ironing_type": "Alisado",
+          "fuzzy_skin": "Piel difusa",
+          "spiral_mode": "Jarrón en espiral"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Clásico",
+          "grid": "Rejilla",
+          "gyroid": "Giroide",
+          "cubic": "Cúbico",
+          "adaptivecubic": "Cúbico adaptativo",
+          "triangles": "Triángulos",
+          "honeycomb": "Panal",
+          "lightning": "Relámpago",
+          "zig_zag": "Rectilíneo",
+          "concentric": "Concéntrico",
+          "normal_auto_": "Normal",
+          "tree_auto_": "Árbol",
+          "no_brim": "Ninguno",
+          "outer_only": "Exterior",
+          "auto_brim": "Auto",
+          "aligned": "Alineada",
+          "nearest": "Más cercana",
+          "back": "Detrás",
+          "random": "Aleatoria",
+          "none": "Ninguno",
+          "external": "Pared exterior",
+          "all": "Todas las paredes",
+          "inner_wall_outer_wall": "Interior primero",
+          "outer_wall_inner_wall": "Exterior primero",
+          "inner_outer_inner_wall": "Interior, exterior, interior",
+          "monotonic": "Monotónico",
+          "monotonicline": "Líneas monotónicas",
+          "no_ironing": "Ninguno",
+          "topmost": "Superficie superior",
+          "top": "Todas las superficies superiores",
+          "solid": "Todas las capas sólidas"
+        },
+        "preset": {
+          "standard": {
+            "title": "Estándar",
+            "purpose": "Piezas cotidianas"
+          },
+          "fine": {
+            "title": "Detalle fino",
+            "purpose": "Figuras, texto pequeño"
+          },
+          "draft": {
+            "title": "Borrador rápido",
+            "purpose": "Prototipos, pruebas de ajuste"
+          },
+          "strong": {
+            "title": "Resistente",
+            "purpose": "Soportes, ganchos, engranajes"
+          },
+          "outdoor": {
+            "title": "Exterior",
+            "purpose": "Sol y lluvia"
+          },
+          "water": {
+            "title": "Contacto con agua",
+            "purpose": "Macetas, bandejas"
+          },
+          "toy": {
+            "title": "Juguete",
+            "purpose": "Robusto, para niños"
+          },
+          "flexible": {
+            "title": "Flexible",
+            "purpose": "Agarres y topes de TPU"
+          },
+          "heat": {
+            "title": "Resistente al calor",
+            "purpose": "Coches, motores, lámparas"
+          },
+          "vase": {
+            "title": "Jarrón",
+            "purpose": "Una sola pared continua"
+          },
+          "smooth": {
+            "title": "Superficie lisa",
+            "purpose": "Carteles, tapas"
+          }
+        },
+        "check": {
+          "material": "Para «{{preset}}», {{suits}} va mejor que {{material}}.",
+          "not_carried": "{{slicer}} no lee {{keys}} de un 3MF: ajústalos allí.",
+          "food_contact": "Un perfil de impresión no hace que una pieza sea apta para alimentos: también importan el material, las piezas de la impresora y la limpieza.",
+          "toy": "Redondea los bordes afilados y evita piezas pequeñas sueltas para niños pequeños.",
+          "vase_bodies": "El jarrón en espiral imprime un solo cuerpo con una sola pared: deja un cuerpo por placa."
+        }
+      },
+      "save": {
+        "destination": "Dónde guardar",
+        "newModel": "Modelo nuevo",
+        "addToModel": "Añadir a un modelo",
+        "pickModel": "Tus modelos",
+        "profiles_one": "{{count}} perfil",
+        "profiles_many": "{{count}} perfiles",
+        "profiles_other": "{{count}} perfiles",
+        "noProfiles": "Aún no hay perfiles",
+        "chooseMyself": "Elegir yo",
+        "chooseMyselfHint": "Preajustes y ajustes",
+        "suggestAiHint": "Según su uso",
+        "without": "Guardar sin perfil",
+        "withoutHint": "Solo la geometría",
+        "editProfile": "Editar",
+        "profileName": "Nombre del perfil",
+        "askAi": "Que elija la IA",
+        "willHave_one": "«{{name}}» tendrá {{count}} perfil",
+        "willHave_many": "«{{name}}» tendrá {{count}} perfiles",
+        "willHave_other": "«{{name}}» tendrá {{count}} perfiles",
+        "addProfile": "Añadir perfil",
+        "addedProfile": "«{{profile}}» añadido a «{{name}}»"
       }
     },
     "chats": {
       "open": "Abrir",
-      "off": "Los chats están desactivados en esta instancia. Un administrador puede activarlos en Administración > Usuarios.",
+      "off": "Los chats están desactivados en esta instancia. Un administrador puede activarlos en Administración > Social.",
       "welcome": "Elige un chat o empieza uno nuevo.",
       "deletedUser": "Usuario eliminado",
       "today": "Hoy",
@@ -4988,7 +5426,7 @@
       "chatActions": "Acciones del chat",
       "notFound": "Este chat ya no existe, o no es tuyo.",
       "backToChats": "Volver a los chats",
-      "notAMember": "Esta sala privada es solo para sus miembros. Puedes añadirte en Editar sala.",
+      "notAMember": "Esta sala privada es solo para sus miembros. Si está alojada aquí, puedes añadirte en «Editar sala». Si está alojada en una instancia conectada, un administrador de esa instancia puede añadirte.",
       "readingRoom": "Estás leyendo esta sala. Únete para escribir y recibir avisos.",
       "recipientGone": "La cuenta de esta persona se eliminó, así que no se pueden enviar mensajes.",
       "emptyRoom": "Aquí aún no se ha dicho nada.",
@@ -5191,6 +5629,11 @@
           "rule": "Sincroniza colecciones desde {{count}} sitios distintos",
           "stat": "Sincronizado desde {{count}} sitios"
         },
+        "fdmFundamentals": {
+          "name": "Fundamentos de FDM",
+          "rule": "Obtén al menos un 80 % en el cuestionario de la wiki de impresión 3D.",
+          "stat": "Cuestionario de FDM superado"
+        },
         "weatherGuest": {
           "name": "Conoció al invitado",
           "rule": "Un secreto. Lo encontraste.",
@@ -5234,6 +5677,8 @@
     }
   },
   "common": {
+    "newTab": "(se abre en una pestaña nueva)",
+    "backTo": "Volver: {{name}}",
     "save": "Guardar",
     "cancel": "Cancelar",
     "close": "Cerrar",
@@ -5270,7 +5715,13 @@
     "language": "Idioma",
     "more": "Más",
     "moreActions": "Más acciones",
-    "open": "Abrir"
+    "open": "Abrir",
+    "proxyErrors": {
+      "refused": "Un proxy delante de esta instancia Thingport respondió con HTTP {{status}} y no llegó ningún mensaje de Thingport. Los registros del proxy dicen por qué, y {{url}} indica los ajustes que Thingport necesita.",
+      "tooLarge": "Esta solicitud era demasiado grande para un proxy o servidor web delante de esta instancia Thingport (HTTP 413). Aumenta su límite de tamaño: consulta {{url}}",
+      "noAnswer": "Esta instancia Thingport no responde (HTTP {{status}}). Puede que esté arrancando o detenida, o que un proxy delante de ella no llegue a ella.",
+      "timedOut": "Esta instancia Thingport tardó demasiado en responder y un proxy delante de ella dejó de esperar (HTTP 504). Puede que su límite de tiempo sea demasiado corto: consulta {{url}}"
+    }
   },
   "library": {
     "grid": {
@@ -5821,7 +6272,13 @@
       "newest": "Más recientes",
       "popular": "Populares",
       "downloads": "Descargas",
-      "relevance": "Relevancia"
+      "relevance": "Relevancia",
+      "oldest": "Más antiguos",
+      "leastPopular": "Menos populares",
+      "fewestDownloads": "Menos descargas",
+      "leastRelevant": "Menos relevantes",
+      "fewestModels": "Menos modelos",
+      "reverseAlphabetical": "{{label}} (Z–A)"
     },
     "card": {
       "unknownAuthor": "Desconocido",
@@ -5917,6 +6374,16 @@
       "rejected": "Sugerencia rechazada.",
       "revertMessage": "Este modelo recupera la descripción que tenía antes de que la IA la cambiara.",
       "suggestionPending": "Acepta o rechaza primero la sugerencia"
+    },
+    "actionsMenu": {
+      "openIn": "Abrir en",
+      "ai": "IA",
+      "quickActions": "Acciones rápidas",
+      "categorize": "Categorizar",
+      "recategorize": "Recategorizar",
+      "improve": "Mejorar descripción",
+      "adapted": "{{slicer}}, adaptado",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "Modelo",
@@ -6145,6 +6612,15 @@
       "moreOpenOptions": "Otros slicers y descargas",
       "openActions": "Abrir o descargar",
       "openInHeading": "Abrir en",
+      "toolsHeading": "Herramientas",
+      "sendTo": {
+        "heading": "Enviar a",
+        "button": "Enviar a {{name}}",
+        "openIn": "Abrir en {{name}}",
+        "sent": "Enviado a {{name}}",
+        "failed": "{{name}}: {{reason}}",
+        "openAfter": "Abrir"
+      },
       "toolOwned": "Pertenece a una herramienta",
       "toolOwnedHint": "No se puede editar ni eliminar",
       "customize": "Personalizar…",
@@ -6161,6 +6637,20 @@
         "changeLater": "se cambia en Configuración",
         "open": "Abrir"
       }
+    },
+    "supporting": {
+      "title": "Archivos adjuntos",
+      "actionsFor": "Acciones de {{name}}",
+      "open": "Abrir",
+      "openInTab": "Abrir en una pestaña nueva",
+      "newTab": "Pestaña nueva",
+      "copyLink": "Copiar enlace",
+      "linkCopied": "Enlace copiado",
+      "noPreview": "No hay vista previa para archivos {{type}}",
+      "tooLargeToPreview": "Demasiado grande para la vista previa",
+      "previewFailed": "No se pudo mostrar este archivo",
+      "firstRows": "Se muestran las primeras {{count}} filas",
+      "firstColumns": "Se muestran las primeras {{count}} columnas"
     },
     "customizer": {
       "title": "Personalizando {{model}}",
@@ -6248,6 +6738,11 @@
       "authorWillBeYou": "Tú (tras actualizar)",
       "previewImages": "Imágenes de vista previa",
       "thumbnailBadge": "Miniatura",
+      "useAsThumbnail": "Usar como miniatura",
+      "previewImagesHelp": "Las tarjetas de modelos muestran la primera imagen, salvo que Tarjetas de modelos esté en Renders 3D en Apariencia. Pon otra primero para cambiarla.",
+      "removeImage": "Quitar imagen",
+      "moveImageLeft": "Mover a la izquierda",
+      "moveImageRight": "Mover a la derecha",
       "newBadge": "Nuevo",
       "modelFiles": "Archivos del modelo",
       "addFiles": "Añadir archivos",
@@ -6721,6 +7216,7 @@
       "empty": "No se han encontrado archivos de modelos descargables.",
       "downloading": "Descargando…",
       "failed": "No se pudo descargar el archivo ZIP. Inténtalo de nuevo.",
+      "tooLarge": "Es demasiado para un solo ZIP: como máximo 65.534 archivos y unos 4 GB. Descarga menos modelos a la vez o los archivos uno a uno.",
       "summary_many": "{{count}} modelos (~{{size}})",
       "summaryNoSize_many": "{{count}} modelos"
     },

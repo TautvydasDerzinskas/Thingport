@@ -1,0 +1,146 @@
+[
+  {
+    "kind": "mesh",
+    "label": "Model files",
+    "about": "3D models Thingport shows and slicers open. A .gltf is packed into a .glb with the files it names.",
+    "extensions": [".stl", ".3mf", ".step", ".stp", ".obj", ".glb", ".gltf"]
+  },
+  {
+    "kind": "laser",
+    "label": "Laser files",
+    "about": "LightBurn projects.",
+    "extensions": [".lbrn", ".lbrn2"]
+  },
+  {
+    "kind": "sliced",
+    "label": "Sliced files",
+    "about": "Prints a slicer has prepared. A sliced 3MF is told apart from a model's 3MF by its name.",
+    "extensions": [".gcode.3mf", ".gcode", ".gco", ".bgcode"]
+  },
+  {
+    "kind": "cad",
+    "label": "CAD sources",
+    "about": "The design files a CAD program edits. STEP is read as a model file, since it shows.",
+    "extensions": [
+      ".f3d",
+      ".f3z",
+      ".fcstd",
+      ".iges",
+      ".igs",
+      ".sldprt",
+      ".sldasm",
+      ".ipt",
+      ".iam",
+      ".x_t",
+      ".x_b",
+      ".3dm",
+      ".skp"
+    ]
+  },
+  {
+    "kind": "script",
+    "label": "Scripts",
+    "about": "OpenSCAD scripts a model is generated from.",
+    "extensions": [".scad"]
+  },
+  {
+    "kind": "picture",
+    "label": "Pictures",
+    "about": "Photos and drawings.",
+    "extensions": [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".svg"]
+  },
+  {
+    "kind": "document",
+    "label": "Documents",
+    "about": "Instructions, notes and data.",
+    "extensions": [
+      ".pdf",
+      ".txt",
+      ".md",
+      ".rtf",
+      ".doc",
+      ".docx",
+      ".odt",
+      ".csv",
+      ".tsv",
+      ".xls",
+      ".xlsx",
+      ".ods",
+      ".dxf"
+    ]
+  },
+  {
+    "kind": "licence",
+    "label": "Licences",
+    "about": "A creator's licence file, by its name.",
+    "names": ["LICENSE", "LICENSE.txt", "LICENSE.md"]
+  },
+  {
+    "kind": "archive",
+    "label": "Archives",
+    "about": "Files packed together.",
+    "extensions": [".zip", ".tar", ".tar.gz", ".tgz", ".7z", ".rar", ".gz"]
+  },
+  {
+    "kind": "scene-part",
+    "label": "Scene parts",
+    "about": "A glTF scene's geometry, which goes into the scene.",
+    "extensions": [".bin"]
+  },
+  {
+    "kind": "cg-scene",
+    "label": "Animation and CG scenes",
+    "about": "Scenes from animation and rendering programs.",
+    "extensions": [
+      ".fbx",
+      ".max",
+      ".c4d",
+      ".ma",
+      ".mb",
+      ".3ds",
+      ".dae",
+      ".lwo",
+      ".lxo",
+      ".abc",
+      ".usd",
+      ".usda",
+      ".usdc",
+      ".usdz"
+    ]
+  },
+  {
+    "kind": "program",
+    "label": "Programs",
+    "about": "Software to install or run.",
+    "extensions": [
+      ".exe",
+      ".msi",
+      ".dll",
+      ".bat",
+      ".cmd",
+      ".com",
+      ".scr",
+      ".ps1",
+      ".vbs",
+      ".jar",
+      ".apk",
+      ".app",
+      ".dmg",
+      ".pkg",
+      ".deb",
+      ".rpm",
+      ".sh"
+    ]
+  },
+  {
+    "kind": "junk",
+    "label": "System files",
+    "about": "What a computer leaves among files: __MACOSX, hidden files, Thumbs.db and desktop.ini."
+  },
+  {
+    "kind": "other",
+    "label": "Other files",
+    "about": "Anything else, a file without an extension too. AMF and PLY are among them.",
+    "extensions": [".amf", ".ply"]
+  }
+]

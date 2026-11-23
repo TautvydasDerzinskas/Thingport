@@ -358,7 +358,7 @@
             }
           },
           "writeConfirmTitle": "Leisti asistentui naudoti „{{tool}}“?",
-          "writeConfirmMessage": "Šis įrankis keičia jūsų biblioteką. Su šiuo raktu prijungtas asistentas galės jį naudoti kiekvieną kartą jūsų neklausdamas. Jis niekada netrina modelių.",
+          "writeConfirmMessage": "Šis įrankis keičia jūsų biblioteką. Su šiuo raktu prijungtas asistentas galės jį naudoti kiekvieną kartą jūsų neklausdamas.",
           "writeConfirm": "Įjungti",
           "adminOff": "Administratorius šiame Thingport serveryje išjungė MCP.",
           "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
@@ -1549,11 +1549,13 @@
         "failed": "Nepavyko išmatuoti saugyklos.",
         "kinds": {
           "models": "Modelių failai",
+          "supporting": "Papildomi failai",
           "previews": "3D peržiūros",
           "old": "Senos 3D peržiūros",
           "photos": "Nuotraukos",
           "thumbnails": "Miniatiūros ir atvaizdai",
           "description": "Aprašymo paveikslėliai",
+          "prepared": "Paruošti spaudiniai",
           "slicer": "Pjaustyklės kopijos",
           "other": "Kita"
         }
@@ -2350,6 +2352,7 @@
           "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami",
           "tool_installed": "Įrankis įdiegtas",
           "tool_uninstalled": "Įrankis pašalintas",
+          "tool_availability_changed": "Pakeistas įrankio pasiekiamumas",
           "tools_access_changed": "Pakeista prieiga prie įrankių",
           "model_copied": "Modelis nukopijuotas",
           "social_settings_changed": "Pakeistos socialinės funkcijos",
@@ -2504,6 +2507,12 @@
         "folderSummary_many": "{{count}} failo · {{size}}",
         "folderSummary_other": "{{count}} failų · {{size}}",
         "ofModel": "modelis „{{name}}“",
+        "cantRead": "Nepavyksta perskaityti",
+        "cantReadFolder": "Nepavyksta perskaityti šio aplanko",
+        "unreadable_one": "Diskas negalėjo čia perskaityti {{count}} elemento. Jis vis dar gali ten būti.",
+        "unreadable_few": "Diskas negalėjo čia perskaityti {{count}} elementų. Jie vis dar gali ten būti.",
+        "unreadable_many": "Diskas negalėjo čia perskaityti {{count}} elemento. Jie vis dar gali ten būti.",
+        "unreadable_other": "Diskas negalėjo čia perskaityti {{count}} elementų. Jie vis dar gali ten būti.",
         "kind": {
           "plate": "Modelio failas",
           "file": "Papildomas failas",
@@ -2720,6 +2729,15 @@
           "update": "Atnaujinti",
           "installed": "Įdiegta: {{name}}",
           "updated": "Atnaujinta: {{name}}",
+          "updateAll": "Atnaujinti visus",
+          "updates_one": "{{count}} atnaujinimas: {{names}}",
+          "updates_few": "{{count}} atnaujinimai: {{names}}",
+          "updates_other": "{{count}} atnaujinimų: {{names}}",
+          "updatingAll": "Atnaujinama: {{name}} ({{done}} iš {{total}})",
+          "updatedAll_one": "Atnaujintas {{count}} įrankis",
+          "updatedAll_few": "Atnaujinti {{count}} įrankiai",
+          "updatedAll_other": "Atnaujinta {{count}} įrankių",
+          "updateAllFailed": "Nepavyko atnaujinti: {{names}} ({{error}})",
           "installFailed": "Nepavyko įdiegti įrankio",
           "installedVersion": "Įdiegta {{version}}",
           "updateTo": "Atnaujinti į {{version}}",
@@ -2752,6 +2770,11 @@
           "openHint": "Atverti „{{name}}“ — dukart spustelėk",
           "notInstalled": "Neįdiegta",
           "isInstalled": "įdiegta",
+          "enable": "Įjungti",
+          "disable": "Išjungti",
+          "disabled": "Išjungtas",
+          "disabledBanner": "Išjungtas: paslėptas visų puslapyje „Įrankiai“. Jo duomenys ir modeliai išsaugomi.",
+          "availabilityError": "Nepavyko pakeisti įrankio pasiekiamumo.",
           "version": "v{{version}}",
           "tileLabel": "{{name}}, {{state}}: spausk Enter, kad pamatytum, kas tai, kontekstinio meniu klavišą – daugiau",
           "shelfHint": "Dukart spustelėk įrankį, kad pamatytum, kas tai ir ką galima padaryti; įdiegtą spustelėk dešiniuoju, kad atvertum meniu.",
@@ -2820,7 +2843,7 @@
           "infoTitle": "Ką daro serverių sujungimas",
           "infoPair": "Kiti Thingport serveriai, su kuriais susijungiate, tampa partneriais: jų žmonės, viešos kolekcijos ir modeliai matomi čia lyg būtų šiame serveryje, o jūsų – ten.",
           "infoApprove": "Kiekvieną serverį patvirtinate prieš jam prisijungiant. Jūsų naudotojai gali paprašyti prisijungti prie kurio nors.",
-          "infoShare": "Keliauja tik tai, kas vieša: bibliotekos, privačios kolekcijos ir nustatymai lieka čia.",
+          "infoShare": "Tarp serverių gali būti perduodamas viešas turinys, su prijungtų serverių naudotojais bendrinamos kolekcijos ir pokalbiai su jais. Bibliotekos, privačios kolekcijos ir nustatymai lieka čia.",
           "infoOff": "Išjungus partneriai paslepiami ir su jais nebebendraujama. Niekas neištrinama, viskas grįžta vėl įjungus.",
           "settingsLoadFailed": "Nepavyko įkelti sujungtų serverių nustatymų.",
           "keyAria": "Raktas: {{key}}",
@@ -3754,7 +3777,121 @@
         "appearance": "Išvaizda",
         "providers": "Šaltiniai",
         "slicer": "Pjaustyklė",
-        "printers": "Spausdintuvas"
+        "printers": "Spausdintuvas",
+        "sendTo": "Siųsti į"
+      },
+      "sendTo": {
+        "title": "Siųsti į",
+        "subtitle": "Siųskite modelius į savo spausdintuvus, webhook ir kitas programas.",
+        "add": "Pridėti",
+        "more": "Daugiau",
+        "moreFor": "Daugiau: {{name}}",
+        "import": "Importuoti…",
+        "export": "Eksportuoti",
+        "exportHint": "Kaip failas dalintis, be raktų",
+        "emptyTitle": "Dar nėra kur siųsti",
+        "emptyHint": "Pridėkite OctoPrint, Klipper ar PrusaLink, webhook arba savo adresą.",
+        "needsKey": "Reikia API rakto",
+        "edit": "Redaguoti",
+        "delete": "Ištrinti",
+        "deleteTitle": "Ištrinti „{{name}}“?",
+        "deleteMessage": "Jis nebebus siūlomas modelių puslapiuose.",
+        "saved": "„{{name}}“ įrašytas",
+        "imported_one": "Pridėta {{count}} vieta",
+        "imported_few": "Pridėtos {{count}} vietos",
+        "imported_many": "Pridėta {{count}} vietų",
+        "imported_other": "Pridėta {{count}} vietų",
+        "importFailed": "Tai ne „Siųsti į“ failas",
+        "test": "Tikrinti",
+        "testOk": "Atsako ({{status}})",
+        "placementLabel": "Kur rodomas „{{name}}“",
+        "groups": {
+          "printers": "Spausdintuvai",
+          "webhooks": "Webhook",
+          "own": "Jūsų pačių"
+        },
+        "kinds": {
+          "octoprint": "OctoPrint",
+          "moonraker": "Klipper",
+          "prusalink": "PrusaLink",
+          "homeassistant": "Home Assistant",
+          "n8n": "n8n",
+          "nodered": "Node-RED",
+          "link": "Pasirinktinė nuoroda",
+          "request": "Pasirinktinė užklausa"
+        },
+        "hints": {
+          "octoprint": "Įkelia į OctoPrint",
+          "moonraker": "Moonraker, skirtas Mainsail ir Fluidd",
+          "prusalink": "Pačios Prusa: MK4, XL, MINI ir CORE One",
+          "homeassistant": "Webhook automatizacija",
+          "n8n": "Webhook darbo eiga",
+          "nodered": "„http in“ mazgas",
+          "link": "Adresas, kurį atveria naršyklė",
+          "request": "Failą siunčia Thingport serveris"
+        },
+        "placement": {
+          "button": "Mygtukas",
+          "menu": "Meniu"
+        },
+        "fields": {
+          "name": "Pavadinimas",
+          "address": "Adresas",
+          "webhook": "Webhook adresas",
+          "apiKey": "API raktas",
+          "stored": "Įrašytas",
+          "apiKeyStored": "Įrašytas. Įveskite naują, kad pakeistumėte.",
+          "apiKeyOptional": "Tik jei Moonraker jo prašo",
+          "apiKeyRemove": "Pašalinti raktą",
+          "after": "Po įkėlimo",
+          "justUpload": "Tik įkelti",
+          "startPrinting": "Pradėti spausdinti",
+          "url": "Adresas",
+          "opens": "Atveriama",
+          "opensHelp": "Pavadinta kortelė naudojama vėl, tad kitas siuntimas pateks į tą pačią kortelę. Joje atidarytas puslapis gali ir Thingport kortelę nukreipti kitur, tad naudokite ją tik adresui, kuriuo pasitikite.",
+          "newTab": "Naujoje kortelėje",
+          "namedTab": "Pavadintoje kortelėje",
+          "sameTab": "Šioje kortelėje",
+          "tabName": "Kortelės pavadinimas",
+          "method": "Metodas",
+          "send": "Siųsti",
+          "sendHelp": "Failą formoje, kaip priima dauguma įkėlimų; patį failą kaip užklausos turinį; arba JSON su nuoroda į failą, galiojančia valandą.",
+          "multipart": "Failas formoje",
+          "raw": "Pats failas",
+          "json": "JSON su nuoroda",
+          "formFields": "Forma",
+          "fileField": "Failo laukas",
+          "fileFieldHint": "Failas siunčiamas šiame lauke",
+          "fieldName": "Laukas",
+          "fieldValue": "Reikšmė",
+          "remove": "Pašalinti",
+          "addField": "Laukas",
+          "headers": "Antraštės",
+          "headersHelp": "Slaptos antraštės reikšmė laikoma serveryje ir daugiau nerodoma.",
+          "headerName": "Antraštė",
+          "headerValue": "Reikšmė",
+          "secret": "Slapta",
+          "secretHelp": "Laikyti reikšmę serveryje, daugiau nerodyti",
+          "addHeader": "Antraštė",
+          "thenOpen": "Tada atverti",
+          "thenOpenHelp": "Siūloma išsiuntus, pvz., spausdintuvo puslapis.",
+          "fileTypes": "Tik failams",
+          "fileTypesHelp": "Failų galūnės, pvz., gcode. Tuščia: siūloma bet kuriam failui.",
+          "anyFile": "Bet koks failas",
+          "showAs": "Rodyti kaip"
+        },
+        "reasons": {
+          "auth": "Atmetė raktą ({{status}})",
+          "not_found": "Šiuo adresu nieko nėra ({{status}})",
+          "conflict": "Toks failas jau yra",
+          "too_large": "Failas jam per didelis",
+          "unsupported": "Nepriima tokio failo",
+          "redirect": "Nukreipė Thingport kitur ({{status}}), o to nesekama",
+          "http": "Atsakė {{status}}",
+          "timeout": "Laiku neatsakė",
+          "unreachable": "Nepavyko pasiekti",
+          "blocked": "Šis adresas neleidžiamas"
+        }
       }
     },
     "providers": {
@@ -4082,7 +4219,24 @@
       },
       "runner": {
         "failed": "{{name}} sustojo dėl klaidos",
-        "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti"
+        "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti",
+        "noRun": "Scenarijus neturi run eksporto komandai be lango",
+        "commandFailed": "{{name}} nepavyko to atlikti: {{error}}",
+        "noPartExport": "Scenarijus neturi {{name}} eksporto, kuris nupieštų šią dalį",
+        "partFailed": "{{name}} nepavyko to parodyti",
+        "noPopover": "Komanda be lango negali atidaryti iškylančiojo lango"
+      },
+      "share": {
+        "title": "Kas mato jūsų „{{name}}“?",
+        "everyone": "Visi",
+        "people": "Tik mano pasirinkti",
+        "everyoneHint": "Visi, kurie čia gali naudoti įrankius, mato, kuo juo dalijatės.",
+        "picked_one": "Bendrinama su {{count}} žmogumi",
+        "picked_few": "Bendrinama su {{count}} žmonėmis",
+        "picked_many": "Bendrinama su {{count}} žmonių",
+        "picked_other": "Bendrinama su {{count}} žmonių",
+        "onlyYou": "Dar nieko nepasirinkote, todėl matote tik jūs.",
+        "loadFailed": "Nepavyko perskaityti, kas tai mato, todėl kol kas negalima to pakeisti."
       },
       "picker": {
         "title": "Pasirinkite kolekciją",
@@ -4094,6 +4248,9 @@
         "count_other": "{{count}} modelių",
         "cancel": "Atšaukti",
         "choose": "Pasirinkti"
+      },
+      "modelPicker": {
+        "title": "Pasirinkite modelius"
       },
       "ai": {
         "or": "arba",
@@ -4361,7 +4518,6 @@
         "sweep": "Tempimas"
       },
       "tree": {
-        "heading": "Elementai",
         "empty": "Kol kas nieko nėra",
         "expand": "Išskleisti",
         "collapse": "Suskleisti"
@@ -4436,6 +4592,8 @@
         "front": "Iš priekio",
         "right": "Iš dešinės",
         "fit": "Talpinti į vaizdą",
+        "hand": "Rankos režimas",
+        "handNavigation": "Vilkite kairiuoju pelės mygtuku arba vienu pirštu, kad pastumtumėte vaizdą. Vilkite dešiniuoju pelės mygtuku arba dviem pirštais, kad jį pasuktumėte. Mastelį keiskite ratuku arba suglausdami ar praskėsdami pirštus.",
         "navigation": "Vilkdami dešiniuoju mygtuku sukate vaizdą, viduriniu (arba Shift + dešiniuoju) – stumiate, ratuku – artinate. Vilkdami kairiuoju brėžiate žymėjimo rėmelį: iš kairės į dešinę jis pažymi tai, kas visiškai viduje, iš dešinės į kairę – ir tai, ką paliečia. Shift prideda prie pažymėtų."
       },
       "properties": {
@@ -4500,13 +4658,73 @@
         },
         "cornerRadius": "Kampų spindulys"
       },
+      "print": {
+        "customBed": "Pasirinktinė platforma",
+        "arrange": "Išdėstyti platformoje",
+        "spacing": "Tarpas",
+        "overflow": "Netelpančioms detalėms naudoti naujas platformas",
+        "tooLarge": "Naudojant tokį atstumą „Studio“ nerado vietos šioms detalėms. {{parts}}",
+        "needsOverflow": "Leiskite pridėti platformų arba sumažinkite tarpą.",
+        "arrangeEmpty": "Šioje platformoje nėra matomų kūnų, kuriuos būtų galima išdėstyti.",
+        "plateLimit": "Šis išdėstymas viršytų „Studio“ platformų limitą.",
+        "previewPlate": "Nauja platforma {{number}}",
+        "lockPosition": "Užrakinti padėtį išdėstant",
+        "unlockPosition": "Atrakinti padėtį išdėstant",
+        "connectors": "Kaiščiai ir lizdai",
+        "separatePlates": "Antrą detalę dėti į naują platformą",
+        "pinDiameter": "Kaiščio skersmuo",
+        "pinDepth": "Kaiščio gylis",
+        "clearance": "Radialinis tarpas",
+        "pinCount": "Kaiščių skaičius",
+        "offsetU": "Poslinkis U",
+        "offsetV": "Poslinkis V",
+        "fitPlate": "Sujungimo bandymas",
+        "fitHelp": "Atspausdinkite vieną kaiščio ir po vieną lizdo bandinį kiekvienam tarpui. Ant lizdų tarpai pažymėti milimetrais.",
+        "variant": "Tarpas {{number}}",
+        "makeFitPlate": "Sukurti bandymo platformą",
+        "useFit": "Naudoti išmatuotą tarpą",
+        "clearanceParameter": "Tarpo parametras",
+        "filaments": "Filamentų priskyrimas",
+        "slot": "Įdėto filamento lizdas",
+        "automatic": "Automatiškai",
+        "material": "Medžiaga",
+        "unmapped": "Spalvos be priskirto lizdo ({{number}}) priskiriamos automatiškai.",
+        "tooManySlots": "Ši pjaustyklė palaiko iki {{limit}} filamento lizdų. Prieš eksportuodami sumažinkite spalvų skaičių.",
+        "saveSlots": "Išsaugoti priskyrimą"
+      },
+      "plates": {
+        "label": "Spausdinimo plokštė",
+        "actions": "Plokštės veiksmai",
+        "add": "Pridėti plokštę",
+        "rename": "Pervadinti plokštę",
+        "delete": "Pašalinti tuščią plokštę",
+        "defaultName": "Plokštė {{count}}",
+        "move": "Perkelti į plokštę",
+        "color": "Kūno spalva",
+        "clearColor": "Išvalyti",
+        "applyColor": "Taikyti",
+        "exportStl": "Eksportuoti kaip STL",
+        "openSlicer": "Atidaryti pjaustyklėje",
+        "slicer": "Pjaustyklė",
+        "printer": "Spausdintuvas ir antgalis",
+        "noPreset": "Naudoti dabartinį pjaustyklės spausdintuvą",
+        "oneAtATime": "Ši pjaustyklė vienu metu atidaro vieną plokštę.",
+        "matchFilaments": "Pjaustyklėje susiekite projekto spalvas su įdėtais filamentais.",
+        "download3mf": "Atsisiųsti 3MF",
+        "open": "Atidaryti"
+      },
       "design": {
-        "none": "Nėra projekto",
         "new": "Naujas projektas",
         "open": "Atidaryti…",
         "openTitle": "Atidaryti projektą",
         "rename": "Pervadinti projektą",
-        "export": "Atsisiųsti STL",
+        "save": "Išsaugoti dizainą",
+        "export": {
+          "title": "Eksportuoti",
+          "format": "Failo formatas",
+          "threeMf": "Atsisiųskite vieną 3MF failą su visomis užpildytomis plokštėmis ir jų spalvomis.",
+          "stlZip": "Atsisiųskite ZIP archyvą su vienu STL failu kiekvienai užpildytai plokštei."
+        },
         "delete": "Ištrinti projektą",
         "deleteTitle": "Ištrinti „{{name}}“?",
         "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
@@ -4514,11 +4732,20 @@
         "emptyTitle": "Kol kas nėra projektų",
         "emptyHint": "Pradėkite naują ir kurkite jį iš formų bei eskizų.",
         "untitled": "Projektas be pavadinimo",
+        "menu": {
+          "quickActions": "Greiti veiksmai",
+          "new": "Naujas",
+          "open": "Atidaryti",
+          "slicer": "Pjaustyklė",
+          "recent": "Naujausi",
+          "edited": "Redaguota {{time}}"
+        },
         "nothingToExport": "Nėra matomų elementų atsisiųsti",
         "features_one": "{{count}} elementas",
         "features_few": "{{count}} elementai",
         "features_other": "{{count}} elementų",
         "saveToLibrary": "Išsaugoti į Thingport",
+        "libraryModelName": "Modelio pavadinimas",
         "saving": "Išsaugoma į Thingport…",
         "saved": "„{{name}}“ išsaugotas jūsų bibliotekoje",
         "openSaved": "Atidaryti"
@@ -4557,10 +4784,12 @@
       },
       "panels": {
         "label": "Skydeliai",
-        "features": "Elementai",
+        "features": "Objektai / Plokštės",
         "properties": "Savybės",
         "hide": "Slėpti: {{panel}}",
-        "show": "Rodyti: {{panel}}"
+        "show": "Rodyti: {{panel}}",
+        "print": "Spausdinimas",
+        "rightPanel": "Savybės / Spausdinimas"
       },
       "viewCube": {
         "label": "Vaizdo kubas: spustelėkite sieną, briauną ar kampą, kad žiūrėtumėte iš ten, vilkite jį, kad pasuktumėte vaizdą",
@@ -4775,6 +5004,45 @@
           "closed": "Uždaras"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "Lyginama spausdinimo plokštė…",
+          "Drožiami pieštukai…",
+          "Lygiuojamas tinklelis…",
+          "Nustatoma koordinačių pradžia…",
+          "Įtempiami diržai…",
+          "Kalibruojamos ašys…",
+          "Rikiuojamos plokštumos…",
+          "Skaičiuojami trikampiai…",
+          "Šlifuojami užapvalinimai…",
+          "Šildomas purkštukas…",
+          "Išpakuojama įrankių dėžė…",
+          "Septynis kartus matuojama, vieną kartą kerpama…"
+        ]
+      },
+      "importModel": {
+        "loadingStudio": "Kraunama „Thingport Studio“…",
+        "preparing": "Failas „{{filename}}“ ruošiamas atidaryti programoje „Thingport Studio“…",
+        "failed": "Nepavyko atidaryti failo „{{filename}}“ programoje „Thingport Studio“",
+        "platePreparing": "Ruošiama plokštė „{{name}}“…",
+        "plateFailed": "Nepavyko paruošti plokštės „{{name}}“",
+        "loadPlate": "Įkelti spausdinimo plokštę",
+        "checkUnloaded": "Prieš tikrindami, ar visas projektas tinkamas spausdinti, atidarykite plokštę „{{name}}“.",
+        "archiveLimit": "Šis 3MF archyvas per didelis, kad „Thingport Studio“ galėtų jį nuskaityti.",
+        "noPlates": "„Thingport Studio“ nepavyko nuskaityti nė vienos šio 3MF failo spausdinimo plokštės.",
+        "plateLimit": "Spausdinimo plokštėje gali būti iki {{objects}} objektų ir {{plateTriangles}} trikampių.",
+        "bodyLimit": "Kiekvienas importuotas kūnas gali turėti iki {{bodyTriangles}} trikampių.",
+        "missingParts": "Šiame 3MF faile yra nuorodų į trūkstamas modelio dalis.",
+        "noBodies": "„Thingport Studio“ nepavyko nuskaityti nė vieno spausdinamo kūno.",
+        "readFailed": "„Thingport Studio“ nepavyko nuskaityti modelio failo.",
+        "tooManyPlates": "„Thingport Studio“ projekte gali būti iki {{plates}} spausdinimo plokščių.",
+        "tooManyObjects": "„Thingport Studio“ projekte gali būti iki {{objects}} kūnų ir elementų.",
+        "loadPlateFirst": "Pirmiausia įkelkite šią spausdinimo plokštę.",
+        "platePending": "Kūnai įkeliami atidarius šią plokštę.",
+        "filamentsPending": "Atidarykite likusias spausdinimo plokštes, kad matytumėte visas filamentų spalvas.",
+        "geometryFailed": "„Thingport Studio“ nepavyko apdoroti šios geometrijos."
+      },
       "imported": {
         "parts_one": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskiros dalies",
         "parts_few": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
@@ -4964,16 +5232,8 @@
       "settings": {
         "title": "Studijos nustatymai",
         "sections": {
-          "assistant": "Klausti DI",
           "units": "Vienetai",
           "grid": "Tinklelis"
-        },
-        "assistantIntro": "Kur „Klausti DI“ rodo pokalbį.",
-        "layout": "Išdėstymas",
-        "layoutHelp": "Juosta: po vaizdu, viena eilutė, kol DI dirba, likusi dalis atsidaro paspaudus. Šoninis skydelis: šalia vaizdo, kad niekas neuždengtų modelio.",
-        "layouts": {
-          "bar": "Juosta",
-          "panel": "Šoninis skydelis"
         },
         "failed": "Nepavyko išsaugoti nustatymo.",
         "unitsIntro": "Kokiais vienetais rodomi ir įvedami dydžiai. Patys dydžiai nesikeičia, keičiasi tik tai, kaip jie užrašomi.",
@@ -5006,11 +5266,195 @@
           "snap": "Pritraukti prie tinklelio",
           "snapHelp": "Eskizo taškai ir perkeliami kūnai pritraukiami prie smulkiausių matomų tinklelio linijų. Išjungus jie atsiduria ten, kur rodote."
         }
+      },
+      "printProfile": {
+        "title": "Spausdinimo profilis",
+        "presets": "Šablonai",
+        "empty": "Spausdinimo profilio dar nėra",
+        "emptyHint": "Pasirinkite šio projekto šabloną arba leiskite DI parinkti pagal paskirtį.",
+        "choosePreset": "Pasirinkti šabloną",
+        "change": "Keisti",
+        "changed": "pakeistas",
+        "custom": "Savas",
+        "suggestAi": "Pasiūlyti su DI",
+        "aiWorking": "DI renkasi…",
+        "suggested": "Siūloma",
+        "suggestedPreset": "Siūloma: {{preset}}",
+        "byAi": "Parinko DI",
+        "slicer": "Pjaustyklė",
+        "printer": "Spausdintuvas",
+        "anyPrinter": "Bet kuris spausdintuvas",
+        "material": "Medžiaga",
+        "anyMaterial": "Bet kuri medžiaga",
+        "settings": "Nustatymai",
+        "slicerDefault": "Pjaustyklės numatytoji",
+        "setIt": "Nustatyti",
+        "noneCarried": "{{slicer}} šių nustatymų iš 3MF neskaito.",
+        "setCount_one": "{{count}} nustatytas",
+        "setCount_few": "{{count}} nustatyti",
+        "setCount_many": "{{count}} nustatyto",
+        "setCount_other": "{{count}} nustatyta",
+        "reset": "Naudoti pjaustyklės reikšmę",
+        "nativeName": "{{slicer}}: {{name}}",
+        "notCarried": "{{slicer}} šio nustatymo iš 3MF neperskaito: nustatykite jį ten.",
+        "remove": "Pašalinti spausdinimo profilį",
+        "on": "Įjungta",
+        "off": "Išjungta",
+        "aiPrompt": "Parink šiam projektui spausdinimo profilį pagal jo paskirtį: ko prašiau ir modelių, iš kurių jis sukurtas, aprašymus. Nustatyk jį spausdinimo profilio įrankiu ir vienu sakiniu paaiškink kodėl.",
+        "aiPromptSlicer": "Pjaustau su {{name}} (pjaustyklės id {{id}}).",
+        "aiPromptPrinter": "Mano spausdintuvas – {{name}} (spausdintuvo id {{id}}) su {{nozzle}} mm antgaliu.",
+        "category": {
+          "quality": "Kokybė",
+          "strength": "Tvirtumas",
+          "speed": "Greitis",
+          "support": "Atramos",
+          "others": "Kita"
+        },
+        "setting": {
+          "layer_height": "Sluoksnio aukštis",
+          "wall_loops": "Sienelės",
+          "top_shell_layers": "Viršutiniai sluoksniai",
+          "bottom_shell_layers": "Apatiniai sluoksniai",
+          "top_shell_thickness": "Viršaus storis",
+          "wall_generator": "Sienelių generatorius",
+          "sparse_infill_density": "Užpildo tankis",
+          "sparse_infill_pattern": "Užpildo raštas",
+          "initial_layer_speed": "Pirmojo sluoksnio greitis",
+          "outer_wall_speed": "Išorinės sienelės greitis",
+          "inner_wall_speed": "Vidinių sienelių greitis",
+          "sparse_infill_speed": "Užpildo greitis",
+          "enable_support": "Atramos",
+          "support_type": "Atramų tipas",
+          "support_threshold_angle": "Atramų kampas",
+          "support_on_build_plate_only": "Atramos tik nuo platformos",
+          "brim_type": "Kraštas",
+          "brim_width": "Krašto plotis",
+          "raft_layers": "Plausto sluoksniai",
+          "seam_position": "Siūlės vieta",
+          "seam_slope_type": "Nuožulni siūlė",
+          "wall_sequence": "Sienelių tvarka",
+          "top_surface_pattern": "Viršaus raštas",
+          "ironing_type": "Lyginimas",
+          "fuzzy_skin": "Šiurkštus paviršius",
+          "spiral_mode": "Spiralinė vaza"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "Klasikinis",
+          "grid": "Tinklelis",
+          "gyroid": "Giroidas",
+          "cubic": "Kubinis",
+          "adaptivecubic": "Prisitaikantis kubinis",
+          "triangles": "Trikampiai",
+          "honeycomb": "Korys",
+          "lightning": "Žaibas",
+          "zig_zag": "Tiesinis",
+          "concentric": "Koncentrinis",
+          "normal_auto_": "Įprastos",
+          "tree_auto_": "Medžio",
+          "no_brim": "Nėra",
+          "outer_only": "Išorinis",
+          "auto_brim": "Automatinis",
+          "aligned": "Sulygiuota",
+          "nearest": "Artimiausia",
+          "back": "Gale",
+          "random": "Atsitiktinė",
+          "none": "Nėra",
+          "external": "Išorinė sienelė",
+          "all": "Visos sienelės",
+          "inner_wall_outer_wall": "Pirma vidinės",
+          "outer_wall_inner_wall": "Pirma išorinės",
+          "inner_outer_inner_wall": "Vidinė, išorinė, vidinė",
+          "monotonic": "Monotoninis",
+          "monotonicline": "Monotoninės linijos",
+          "no_ironing": "Nėra",
+          "topmost": "Aukščiausias paviršius",
+          "top": "Visi viršutiniai paviršiai",
+          "solid": "Visi vientisi sluoksniai"
+        },
+        "preset": {
+          "standard": {
+            "title": "Standartinis",
+            "purpose": "Kasdienės detalės"
+          },
+          "fine": {
+            "title": "Smulkios detalės",
+            "purpose": "Figūrėlės, smulkus tekstas"
+          },
+          "draft": {
+            "title": "Greitas juodraštis",
+            "purpose": "Prototipai, tinkamumo bandymai"
+          },
+          "strong": {
+            "title": "Tvirtas",
+            "purpose": "Laikikliai, kabliai, krumpliaračiai"
+          },
+          "outdoor": {
+            "title": "Lauke",
+            "purpose": "Saulė ir lietus"
+          },
+          "water": {
+            "title": "Sąlytis su vandeniu",
+            "purpose": "Vazonai, padėklai"
+          },
+          "toy": {
+            "title": "Žaislas",
+            "purpose": "Tvirtas, vaikams"
+          },
+          "flexible": {
+            "title": "Lankstus",
+            "purpose": "TPU rankenos, buferiai"
+          },
+          "heat": {
+            "title": "Atsparus karščiui",
+            "purpose": "Automobiliai, varikliai, lempos"
+          },
+          "vase": {
+            "title": "Vaza",
+            "purpose": "Viena ištisinė sienelė"
+          },
+          "smooth": {
+            "title": "Lygus viršus",
+            "purpose": "Ženklai, dangteliai"
+          }
+        },
+        "check": {
+          "material": "Šablonui „{{preset}}“ labiau tinka {{suits}} nei {{material}}.",
+          "not_carried": "{{slicer}} iš 3MF neperskaito: {{keys}}. Nustatykite juos ten.",
+          "food_contact": "Spausdinimo profilis nepadaro detalės saugios maistui: svarbu ir medžiaga, spausdintuvo dalys bei valymas.",
+          "toy": "Suapvalinkite aštrius kraštus ir mažiems vaikams venkite smulkių atskirų dalių.",
+          "vase_bodies": "Spiralinė vaza spausdina vieną kūną viena sienele: palikite po vieną kūną plokštėje."
+        }
+      },
+      "save": {
+        "destination": "Kur išsaugoti",
+        "newModel": "Naujas modelis",
+        "addToModel": "Pridėti prie modelio",
+        "pickModel": "Jūsų modeliai",
+        "profiles_one": "{{count}} profilis",
+        "profiles_few": "{{count}} profiliai",
+        "profiles_many": "{{count}} profilio",
+        "profiles_other": "{{count}} profilių",
+        "noProfiles": "Profilių dar nėra",
+        "chooseMyself": "Pasirinkti pačiam",
+        "chooseMyselfHint": "Šablonai ir nustatymai",
+        "suggestAiHint": "Pagal paskirtį",
+        "without": "Išsaugoti be profilio",
+        "withoutHint": "Tik geometrija",
+        "editProfile": "Redaguoti",
+        "profileName": "Profilio pavadinimas",
+        "askAi": "Leisti parinkti DI",
+        "willHave_one": "„{{name}}“ turės {{count}} profilį",
+        "willHave_few": "„{{name}}“ turės {{count}} profilius",
+        "willHave_many": "„{{name}}“ turės {{count}} profilio",
+        "willHave_other": "„{{name}}“ turės {{count}} profilių",
+        "addProfile": "Pridėti profilį",
+        "addedProfile": "„{{profile}}“ pridėtas prie „{{name}}“"
       }
     },
     "chats": {
       "open": "Atidaryti",
-      "off": "Pokalbiai šiame egzemplioriuje išjungti. Administratorius gali juos įjungti skiltyje Administravimas > Naudotojai.",
+      "off": "Pokalbiai šiame egzemplioriuje išjungti. Administratorius gali juos įjungti skiltyje Administravimas > Bendruomenė.",
       "welcome": "Pasirinkite pokalbį arba pradėkite naują.",
       "deletedUser": "Ištrintas naudotojas",
       "today": "Šiandien",
@@ -5100,7 +5544,7 @@
       "chatActions": "Pokalbio veiksmai",
       "notFound": "Šio pokalbio nebėra arba jis ne jums.",
       "backToChats": "Atgal į pokalbius",
-      "notAMember": "Šis privatus kambarys skirtas tik jo nariams. Save galite pridėti per „Redaguoti kambarį“.",
+      "notAMember": "Šis privatus kambarys skirtas tik jo nariams. Jei jis yra šiame serveryje, galite įtraukti save per „Redaguoti kambarį“. Jei jis yra prijungtame serveryje, jus gali įtraukti to serverio administratorius.",
       "readingRoom": "Skaitote šį kambarį. Prisijunkite, kad galėtumėte rašyti ir gautumėte pranešimus.",
       "recipientGone": "Šio žmogaus paskyra ištrinta, todėl žinučių siųsti negalima.",
       "emptyRoom": "Čia dar niekas nieko neparašė.",
@@ -5316,6 +5760,11 @@
           "rule": "Sinchronizuokite kolekcijas iš {{count}} skirtingų svetainių",
           "stat": "Sinchronizuojama iš {{count}} svetainių"
         },
+        "fdmFundamentals": {
+          "name": "FDM pagrindai",
+          "rule": "3D spausdinimo vikio viktorinoje surinkite bent 80 % taškų.",
+          "stat": "Išlaikyta FDM viktorina"
+        },
         "weatherGuest": {
           "name": "Sutiko svečią",
           "rule": "Paslaptis. Jūs ją radote.",
@@ -5359,6 +5808,8 @@
     }
   },
   "common": {
+    "newTab": "(atsidaro naujame skirtuke)",
+    "backTo": "Atgal: {{name}}",
     "save": "Išsaugoti",
     "cancel": "Atšaukti",
     "close": "Uždaryti",
@@ -5395,7 +5846,13 @@
     "language": "Kalba",
     "more": "Daugiau",
     "moreActions": "Daugiau veiksmų",
-    "open": "Atidaryti"
+    "open": "Atidaryti",
+    "proxyErrors": {
+      "refused": "Atsakė tarpinis serveris prieš šį Thingport serverį (HTTP {{status}}), o Thingport pranešimo negauta. Priežastis rasite tarpinio serverio žurnaluose; Thingport reikalingi nustatymai aprašyti {{url}}",
+      "tooLarge": "Ši užklausa per didelė tarpiniam ar žiniatinklio serveriui prieš šį Thingport serverį (HTTP 413). Padidinkite jo užklausos dydžio ribą: žr. {{url}}",
+      "noAnswer": "Šis Thingport serveris neatsako (HTTP {{status}}). Galbūt jis dar paleidžiamas ar sustabdytas, arba tarpinis serveris prieš jį jo nepasiekia.",
+      "timedOut": "Šis Thingport serveris per ilgai neatsakė, ir tarpinis serveris prieš jį nustojo laukti (HTTP 504). Jo laiko riba gali būti per trumpa: žr. {{url}}"
+    }
   },
   "library": {
     "grid": {
@@ -5945,7 +6402,13 @@
       "newest": "Naujausi",
       "popular": "Populiariausi",
       "downloads": "Atsisiuntimai",
-      "relevance": "Tinkamiausi"
+      "relevance": "Tinkamiausi",
+      "oldest": "Seniausi",
+      "leastPopular": "Mažiausiai populiarūs",
+      "fewestDownloads": "Mažiausiai atsisiuntimų",
+      "leastRelevant": "Mažiausias atitikimas",
+      "fewestModels": "Mažiausiai modelių",
+      "reverseAlphabetical": "{{label}} (Ž–A)"
     },
     "card": {
       "unknownAuthor": "Nežinomas",
@@ -6041,6 +6504,16 @@
       "rejected": "Pasiūlymas atmestas.",
       "revertMessage": "Šis modelis atgaus aprašymą, kurį turėjo prieš DI pakeitimą.",
       "suggestionPending": "Pirmiausia priimkite arba atmeskite pasiūlymą"
+    },
+    "actionsMenu": {
+      "openIn": "Atverti",
+      "ai": "DI",
+      "quickActions": "Greiti veiksmai",
+      "categorize": "Kategorizuoti",
+      "recategorize": "Kategorizuoti iš naujo",
+      "improve": "Patobulinti aprašymą",
+      "adapted": "{{slicer}}, pritaikytas",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "Modelis",
@@ -6270,6 +6743,15 @@
       "moreOpenOptions": "Kitos pjaustyklės ir atsisiuntimai",
       "openActions": "Atverti arba atsisiųsti",
       "openInHeading": "Atverti su",
+      "toolsHeading": "Įrankiai",
+      "sendTo": {
+        "heading": "Siųsti į",
+        "button": "Siųsti į {{name}}",
+        "openIn": "Atverti su {{name}}",
+        "sent": "Išsiųsta į {{name}}",
+        "failed": "{{name}}: {{reason}}",
+        "openAfter": "Atverti"
+      },
       "toolOwned": "Priklauso įrankiui",
       "toolOwnedHint": "Jo negalima redaguoti ar ištrinti",
       "customize": "Keisti…",
@@ -6285,6 +6767,20 @@
         "changeLater": "pakeisti galima konfigūracijoje",
         "open": "Atverti"
       }
+    },
+    "supporting": {
+      "title": "Papildomi failai",
+      "actionsFor": "{{name}} veiksmai",
+      "open": "Atverti",
+      "openInTab": "Atverti naujame skirtuke",
+      "newTab": "Naujas skirtukas",
+      "copyLink": "Kopijuoti nuorodą",
+      "linkCopied": "Nuoroda nukopijuota",
+      "noPreview": "{{type}} failų peržiūra negalima",
+      "tooLargeToPreview": "Per didelis peržiūrai",
+      "previewFailed": "Nepavyko parodyti šio failo",
+      "firstRows": "Rodoma pirmųjų {{count}} eilučių",
+      "firstColumns": "Rodoma pirmųjų {{count}} stulpelių"
     },
     "customizer": {
       "title": "Keičiamas {{model}}",
@@ -6372,6 +6868,11 @@
       "authorWillBeYou": "Jūs (po atnaujinimo)",
       "previewImages": "Peržiūros nuotraukos",
       "thumbnailBadge": "Miniatiūra",
+      "useAsThumbnail": "Naudoti kaip miniatiūrą",
+      "previewImagesHelp": "Modelių kortelėse rodoma pirmoji nuotrauka, nebent Išvaizdoje Modelių kortelės nustatytos į 3D vaizdus. Norėdami ją pakeisti, perkelkite kitą nuotrauką į pradžią.",
+      "removeImage": "Pašalinti nuotrauką",
+      "moveImageLeft": "Perkelti kairėn",
+      "moveImageRight": "Perkelti dešinėn",
       "newBadge": "Nauja",
       "modelFiles": "Modelio failai",
       "addFiles": "Pridėti failų",
@@ -6872,7 +7373,8 @@
       "summaryFailed": "Nepavyko apskaičiuoti atsisiuntimo dydžio. Bandykite dar kartą.",
       "empty": "Nerasta modelių failų atsisiuntimui.",
       "downloading": "Atsisiunčiama…",
-      "failed": "Nepavyko atsisiųsti zip failo. Bandykite dar kartą."
+      "failed": "Nepavyko atsisiųsti zip failo. Bandykite dar kartą.",
+      "tooLarge": "Vienam zip failui tai per daug: daugiausia 65 534 failai ir apie 4 GB. Atsisiųskite mažiau modelių vienu metu arba failus po vieną."
     },
     "errors": {
       "loadFailed": "Nepavyko įkelti modelių.",

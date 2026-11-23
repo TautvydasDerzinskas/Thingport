@@ -3,7 +3,7 @@ import { withStorageLock } from "../utils/storageLock";
 import fsSync from "node:fs";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
-import { folderLevels } from "../utils/fileFolder";
+import { normalizeFileName, numberedName } from "../files/names";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
@@ -11,12 +11,12 @@ import { writePhotoJpeg } from "./imageProcessing";
 import {
   adoptLegacyAsset,
   ASSET_SUBFOLDERS,
-  ASSETS_FOLDER,
   assetExists,
   assetPath,
   assetTarget,
   descriptionImageFile,
   galleryImageFile,
+  galleryThumbFile,
   ownedAssetFiles,
   plateAssetHome,
   plateGlbFile,
@@ -28,236 +28,30 @@ import {
   type AssetFile,
   type AssetHome,
 } from "./modelAssets";
-import type { Category, Plate, Prisma, Print } from "@prisma/client";
+import type { Plate, Prisma, Print } from "@prisma/client";
+import {
+  DEFAULT_STORAGE_TEMPLATE,
+  renderAssetsPath,
+  renderFilePath,
+  sanitizePathSegment,
+  STORAGE_TEMPLATE_TOKENS,
+  templateUses,
+  validateStorageTemplate,
+  type PrintLike,
+  type PrintTemplateValues,
+  PATH_SEGMENT_MAX,
+} from "../modelFiles/template";
+import { printTemplateValues } from "../modelFiles/templateValues";
+import { fileState } from "../modelFiles/storageFs";
 
-export const STORAGE_TEMPLATE_TOKENS = [
-  "category-or-folder",
-  "collection",
-  "tags",
-  "creator",
-  "model",
-  "filename",
-  "id",
-  "plate",
-] as const;
-
-// Older names still accepted in a saved template, and rewritten to the current one whenever the
-// template is validated -- so the admin page shows (and the next save stores) the new name.
-// {name} was always the same value as {model}; {category} became {category-or-folder} when folders
-// were split out of categories.
-const LEGACY_TOKEN_ALIASES: Record<string, (typeof STORAGE_TEMPLATE_TOKENS)[number]> = {
-  name: "model",
-  category: "category-or-folder",
-};
-
-/** The {collection} folder for a model in no collection, and for one in more than one. */
-export const NO_COLLECTION_FOLDER = "Uncollected";
-export const MULTIPLE_COLLECTIONS_FOLDER = "Multiple collections";
-
-export const DEFAULT_STORAGE_TEMPLATE = "{category-or-folder}/{model}/{filename}";
-
-const TOKEN_RE = /\{([a-z_-]+)\}/g;
-// oxlint-disable-next-line no-control-regex -- stripping control chars is the point here.
-const INVALID_SEGMENT_RE = /[<>:"|?*\x00-\x1f]/g;
-
-export function sanitizePathSegment(value: string | null | undefined, fallback: string): string {
-  let cleaned = (value || "").trim().replace(INVALID_SEGMENT_RE, "_");
-  cleaned = cleaned
-    .replace(/\//g, "_")
-    .replace(/\\/g, "_")
-    .replace(/^[ .]+|[ .]+$/g, "");
-  if (cleaned === "" || cleaned === "." || cleaned === "..") cleaned = fallback;
-  return cleaned.slice(0, 120);
-}
-
-/** Trimmed, with "/" separators and current token names; not yet checked. */
-export function normalizeStorageTemplate(template: string | null | undefined): string {
-  return (template || "")
-    .trim()
-    .replace(/\\/g, "/")
-    .replace(/^\/+|\/+$/g, "")
-    .replace(TOKEN_RE, (match, token: string) =>
-      token in LEGACY_TOKEN_ALIASES ? `{${LEGACY_TOKEN_ALIASES[token]}}` : match,
-    );
-}
-
-export function validateStorageTemplate(template: string | null | undefined): string {
-  const normalized = normalizeStorageTemplate(template);
-  if (!normalized) throw new HttpError(400, "Storage template cannot be empty");
-  const tokens = [...normalized.matchAll(TOKEN_RE)].map((m) => m[1]);
-  const unknown = tokens.filter((t) => !(STORAGE_TEMPLATE_TOKENS as readonly string[]).includes(t));
-  if (unknown.length) throw new HttpError(400, `Unknown storage token: {${unknown[0]}}`);
-  const filenameCount = (normalized.match(/\{filename\}/g) || []).length;
-  if (filenameCount !== 1) throw new HttpError(400, "Storage template must contain {filename} exactly once");
-  const finalSegment = normalized.split("/").pop() || "";
-  if (!finalSegment.includes("{filename}")) {
-    throw new HttpError(400, "{filename} must be in the final path segment");
-  }
-  const stripped = normalized.replace(TOKEN_RE, "");
-  if (stripped.includes("{") || stripped.includes("}")) {
-    throw new HttpError(400, "Storage template contains an invalid token");
-  }
-  if (normalized.split("/").some((part) => part === "" || part === "." || part === "..")) {
-    throw new HttpError(400, "Storage template contains an unsafe path segment");
-  }
-  return normalized;
-}
-
-function renderTemplate(template: string, values: Record<string, string>): string {
-  return template.replace(TOKEN_RE, (_match, token: string) => {
-    if (!(token in values)) throw new HttpError(400, `Unknown storage token: {${token}}`);
-    return values[token];
-  });
-}
-
-export async function categorySegments(userId: string, categoryId: string | null | undefined): Promise<string[]> {
-  if (!categoryId) return ["Unassigned"];
-  const segments: string[] = [];
-  const visited = new Set<string>();
-  let current: Category | null = await prisma.category.findFirst({ where: { id: categoryId, userId } });
-  while (current && !visited.has(current.id)) {
-    visited.add(current.id);
-    segments.unshift(sanitizePathSegment(current.name, "Category"));
-    current = current.parentId ? await prisma.category.findFirst({ where: { id: current.parentId, userId } }) : null;
-  }
-  return segments.length ? segments : ["Unassigned"];
-}
-
-function assertWithinStorage(relative: string): string {
-  const candidate = path.resolve(STORAGE, relative);
-  const root = path.resolve(STORAGE);
-  if (candidate === root || !candidate.startsWith(root + path.sep)) {
-    throw new HttpError(400, "Storage template resolved outside the storage directory");
-  }
-  return relative;
-}
-
-type PrintLike = Pick<
-  Print,
-  "id" | "name" | "creator" | "tags" | "categoryId" | "userId" | "authorId" | "sourceProvider"
->;
-
-function templateUses(template: string, token: (typeof STORAGE_TEMPLATE_TOKENS)[number]): boolean {
-  return template.includes(`{${token}}`);
-}
-
-/** {creator}: the author the model page shows (ModelSidePanel): the imported Author's name or handle, else
- *  the plain-text creator an import stored, else -- for the owner's own upload, which has no
- *  source -- the owner. */
-async function creatorLabel(print: PrintLike): Promise<string | null> {
-  if (print.authorId) {
-    const author = await prisma.author.findUnique({
-      where: { id: print.authorId },
-      select: { name: true, handle: true },
-    });
-    if (author?.name || author?.handle) return author.name || author.handle;
-  }
-  if (print.creator) return print.creator;
-  if (print.sourceProvider) return null;
-  const owner = await prisma.user.findUnique({ where: { id: print.userId }, select: { displayName: true } });
-  return owner?.displayName ?? null;
-}
-
-/** A model can be in any number of collections; a folder can only hold it once. */
-async function collectionLabel(printId: string): Promise<string> {
-  const items = await prisma.collectionItem.findMany({
-    where: { printId },
-    select: { collection: { select: { name: true } } },
-    take: 2,
-  });
-  if (items.length === 0) return NO_COLLECTION_FOLDER;
-  if (items.length > 1) return MULTIPLE_COLLECTIONS_FOLDER;
-  return items[0].collection.name;
-}
-
-type PrintTemplateValues = Record<string, string>;
-
-/** Every token's value for one print, other than the per-plate {filename}/{plate}. Tokens that
- *  need their own query are only looked up when the template uses them. */
-async function printTemplateValues(print: PrintLike, template: string): Promise<PrintTemplateValues> {
-  const tagLabel =
-    (print.tags || [])
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .join(" + ") || "Untagged";
-  return {
-    "category-or-folder": templateUses(template, "category-or-folder")
-      ? (await categorySegments(print.userId, print.categoryId)).join("/")
-      : "",
-    collection: templateUses(template, "collection")
-      ? sanitizePathSegment(await collectionLabel(print.id), NO_COLLECTION_FOLDER)
-      : "",
-    tags: sanitizePathSegment(tagLabel, "Untagged"),
-    creator: templateUses(template, "creator") ? sanitizePathSegment(await creatorLabel(print), "Unknown creator") : "",
-    model: sanitizePathSegment(print.name, "Model"),
-    id: print.id,
-  };
-}
-
-/** {plate} with the separator next to it taken out, for the files that aren't plates: "{model}-{plate}-{filename}"
- *  gives "{model}-{filename}". A folder per plate ("Plate {plate}/") goes whole, so they sit beside the plates'
- *  folders. */
-function withoutPlateToken(template: string): string {
-  const segments = template.split("/");
-  return segments
-    .map((segment, index) =>
-      index < segments.length - 1 && segment.includes("{plate}")
-        ? ""
-        : segment.replace(/([ _.-]*)\{plate\}([ _.-]*)/g, (match, before: string, after: string, offset: number) =>
-            offset === 0 || offset + match.length === segment.length ? "" : before || after,
-          ),
-    )
-    .join("/");
-}
-
-/** `plate` is the plate's number, or null for any other file of the model. */
-function renderModelPath(
-  print: PrintLike,
-  template: string,
-  printValues: PrintTemplateValues,
-  filename: string,
-  plate: number | null,
-): string {
-  const values = {
-    ...printValues,
-    filename: sanitizePathSegment(filename, "file"),
-    plate: plate === null ? "" : String(plate + 1),
-  };
-  const rendered = renderTemplate(plate === null ? withoutPlateToken(template) : template, values).replace(/\\/g, "/");
-  const parts = rendered
-    .split("/")
-    .filter(Boolean)
-    .map((part) => sanitizePathSegment(part, "item"));
-  if (!parts.length) throw new HttpError(400, "Storage template produced an empty path");
-  const userSegment = sanitizePathSegment(`u-${print.userId}`, "user");
-  return assertWithinStorage(path.join(userSegment, ...parts));
-}
-
-/** A file of the model in one of its folders: in a folder where the template would put a file named like the folder's
- *  first level, as the pictures' Images folder is placed, so a template that gives each model a folder of its own nests
- *  it there ("Props/Gadget/Plugs/Plug.stl") and one that keeps models side by side gives it a folder beside the model's
- *  files ("Props/Gadget - Plugs/Gadget - Plug.stl"). A source's folder named like the pictures' goes beside them. */
-function renderFilePath(
-  print: PrintLike,
-  template: string,
-  printValues: PrintTemplateValues,
-  filename: string,
-  plate: number | null,
-  folder: string | null | undefined,
-): string {
-  const flat = renderModelPath(print, template, printValues, filename, plate);
-  const levels = folderLevels(folder).map((level) => sanitizePathSegment(level, "Folder"));
-  if (!levels.length) return flat;
-  if (levels[0].toLowerCase() === ASSETS_FOLDER.toLowerCase()) levels[0] = `${levels[0]} (files)`;
-  const home = renderModelPath(print, template, printValues, levels[0], null);
-  return assertWithinStorage(path.join(home, ...levels.slice(1), path.basename(flat)));
-}
-
-/** The model's pictures folder: where the template would put a file named "Images", so it sits beside the model's
- *  files -- "Props/Gadget/Images", or "Props/Gadget - Images" under a template that keeps models side by side. */
-function renderAssetsPath(print: PrintLike, template: string, printValues: PrintTemplateValues): string {
-  return renderModelPath(print, template, printValues, ASSETS_FOLDER, null);
-}
+export {
+  DEFAULT_STORAGE_TEMPLATE,
+  normalizeStorageTemplate,
+  samplePlateStoragePaths,
+  sanitizePathSegment,
+  STORAGE_TEMPLATE_TOKENS,
+  validateStorageTemplate,
+} from "../modelFiles/template";
 
 /** Renders the on-disk relative path for one plate of a print using the storage template.
  * Every user's files live under their own u-<userId> segment beneath the (instance-wide)
@@ -287,7 +81,8 @@ async function pathTaken(relative: string, owner: PathOwner = {}): Promise<boole
   if (file) return file.id !== owner.printFileId;
   const assets = await prisma.print.findUnique({ where: { assetsPath: relative }, select: { id: true } });
   if (assets) return assets.id !== owner.assetsOf;
-  return fsSync.existsSync(path.join(STORAGE, relative));
+  // Anything there is in the way, a folder too. A look that fails throws: nothing is saved over a file it couldn't see.
+  return (await fileState(path.join(STORAGE, relative), "path.taken")).state !== "missing";
 }
 
 /** Whether the file `printFileId` could move to `relative`: no other file, row or folder has it. */
@@ -308,12 +103,11 @@ async function freePlatePath(relative: string, printId: string, owner: PathOwner
 /** A supporting or prepared file's place: beside the plates, numbered like "Notes (2).pdf" when one of the model's
  *  files already has its name. */
 async function freePrintFilePath(relative: string, printFileId?: string): Promise<string> {
-  const ext = path.extname(relative);
-  const stem = relative.slice(0, relative.length - ext.length);
+  const name = normalizeFileName(path.basename(relative));
   let candidate = relative;
   for (let suffix = 2; await pathTaken(candidate, { printFileId }); suffix++) {
     if (suffix > 1000) throw new HttpError(409, `Storage path already exists: ${relative}`);
-    candidate = `${stem} (${suffix})${ext}`;
+    candidate = path.join(path.dirname(relative), numberedName(name, suffix, PATH_SEGMENT_MAX));
   }
   return candidate;
 }
@@ -354,22 +148,6 @@ async function ensurePlateAssetHome(plateId: string): Promise<string> {
   if (!plate) throw new HttpError(404, "Plate not found");
   return ensureAssetHome(plate.printId);
 }
-
-export function samplePlateStoragePaths(template: string): [string, string] {
-  const safeTemplate = validateStorageTemplate(template);
-  const base = {
-    "category-or-folder": "Props/Workshop",
-    collection: "Tabletop",
-    tags: "Print in place + Useful",
-    creator: "Example creator",
-    model: "Multi-part gadget",
-    id: "a1b2c3d4",
-  };
-  const first = renderTemplate(safeTemplate, { ...base, filename: "Base.3mf", plate: "1" });
-  const second = renderTemplate(safeTemplate, { ...base, filename: "Lid.3mf", plate: "2" });
-  return [first, second];
-}
-
 export function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
@@ -446,18 +224,24 @@ export async function availablePlateFilename(
 /** `desiredFilename`, or "name (2).ext" and on where it's in `taken`, which holds lowercased names. */
 export function freePlateFilename(desiredFilename: string, taken: ReadonlySet<string>): string {
   if (!taken.has(desiredFilename.toLowerCase())) return desiredFilename;
-  const ext = path.extname(desiredFilename);
-  const stem = path.basename(desiredFilename, ext);
-  let suffix = 2;
-  for (;;) {
-    const candidate = `${stem} (${suffix})${ext}`;
+  const name = normalizeFileName(desiredFilename);
+  for (let suffix = 2; ; suffix++) {
+    const candidate = numberedName(name, suffix);
     if (!taken.has(candidate.toLowerCase())) return candidate;
-    suffix += 1;
   }
 }
 
 export function managedPlatePath(plate: Pick<Plate, "storagePath">): string {
   return path.join(STORAGE, plate.storagePath);
+}
+
+/** Whether the plate's row, read again by id, still names the file it did: what a download asks once the file is
+ *  open (utils/sendStored.ts). */
+export async function plateStillNames(plate: Pick<Plate, "id" | "storagePath" | "sourcePath">): Promise<boolean> {
+  const count = await prisma.plate.count({
+    where: { id: plate.id, storagePath: plate.storagePath, sourcePath: plate.sourcePath },
+  });
+  return count > 0;
 }
 
 export async function pruneEmptyStorageDirs(start: string): Promise<void> {
@@ -483,8 +267,9 @@ async function moveStored(
   const listMove = async (): Promise<[string, string][]> => {
     const oldPath = await stored();
     // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
-    // that file. Asked again, this one sees the place is taken and goes elsewhere.
-    if (oldPath !== newPath && fsSync.existsSync(newPath)) {
+    // that file. Asked again, this one sees the place is taken and goes elsewhere. Free is nothing there; a look that
+    // fails throws before anything is renamed.
+    if (oldPath !== newPath && (await fileState(newPath, "move.target")).state !== "missing") {
       throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, newPath)}`);
     }
     return [[oldPath, newPath]];
@@ -501,7 +286,12 @@ async function moveAllStored(
 ): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
-    const present = (await listMoves()).filter(([oldPath]) => fsSync.existsSync(oldPath));
+    // Every one looked at before any is renamed: a look that fails stops them all, rather than leave that file behind
+    // while its record is saved where it never went. Only a file moves, never a folder in its place.
+    const present: [string, string][] = [];
+    for (const move of await listMoves()) {
+      if ((await fileState(move[0], "move.source")).state === "file") present.push(move);
+    }
     const done: [string, string][] = [];
     try {
       for (const [oldPath, newPath] of present) {
@@ -552,15 +342,16 @@ async function relocatePrintFiles(
   return moved;
 }
 
-/** Every picture the model has: its gallery and description images, and each plate's thumbnail, render and 3D
- *  preview. Slicer copies aren't brought over from the old shared folder: they're made again when next needed. */
+/** Every picture the model has: its gallery images and their card-sized copies, its description images, and each
+ *  plate's thumbnail, render and 3D preview. Slicer copies aren't brought over from the old shared folder: they're
+ *  made again when next needed. */
 async function modelAssetFiles(printId: string, plateIds: string[]): Promise<AssetFile[]> {
   const [images, descriptions] = await Promise.all([
     prisma.previewImage.findMany({ where: { printId }, select: { id: true } }),
     prisma.descriptionImage.findMany({ where: { printId }, select: { id: true, mime: true } }),
   ]);
   return [
-    ...images.map((image) => galleryImageFile(image.id)),
+    ...images.flatMap((image) => [galleryImageFile(image.id), galleryThumbFile(image.id)]),
     ...descriptions.map(descriptionImageFile),
     ...plateIds.flatMap((plateId) => [
       plateThumbFile(plateId),
@@ -632,6 +423,8 @@ export async function relocatePrint(
   const printValues = await printTemplateValues(print, safeTemplate);
   let moved = 0;
   for (const plate of plates) {
+    // A tool's plate reads the tool's file, which isn't the model's to move.
+    if (plate.sourcePath) continue;
     const oldPath = managedPlatePath(plate);
     const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
     // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
@@ -751,8 +544,10 @@ export async function storageOutOfPlace(template: string): Promise<{ files: numb
   let models = 0;
   for (const print of prints) {
     const values = await printTemplateValues(print, safeTemplate);
+    // A tool's plate reads the tool's file, which a move leaves where it is.
     let misplaced = print.plates.filter(
       (plate) =>
+        !plate.sourcePath &&
         !inPlace(
           plate.storagePath,
           renderFilePath(print, safeTemplate, values, plate.filename, plate.position, plate.folder),

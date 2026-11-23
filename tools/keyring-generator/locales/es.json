@@ -253,5 +253,12 @@
   "view.placeRing": "Arrastra una anilla donde la quieras",
   "view.side": "Lado",
   "view.top": "Arriba",
-  "view.which": "Desde dónde mirarlo"
+  "view.which": "Desde dónde mirarlo",
+  "warning.pieces": "El borde tiene {count} piezas separadas. Ensancha la unión o rellena el interior.",
+  "warning.borderHigh": "El borde sobresale por encima de las letras. Míralo de lado.",
+  "warning.thinJoin": "La unión entre letras mide menos de 1,6 mm y puede ser frágil.",
+  "warning.thinRing": "La pared de un anillo mide menos de 0,8 mm. Reduce el agujero o aumenta el anillo.",
+  "error.noSafeRing": "No hay un lugar seguro para ese anillo. Ensancha el borde o reduce el anillo.",
+  "error.noRingJoin": "No hay espacio para unir ese anillo. Ensancha el borde o reduce el anillo.",
+  "error.noMagnetSpace": "No hay espacio para ese imán. Usa menos imanes, imanes más pequeños o amplía el llavero."
 }

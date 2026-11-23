@@ -353,7 +353,7 @@
             }
           },
           "writeConfirmTitle": "允许助手使用“{{tool}}”？",
-          "writeConfirmMessage": "此工具会更改你的模型库。通过此令牌连接的助手将可以使用它，而无需每次询问你。它的任何操作都不会删除模型。",
+          "writeConfirmMessage": "此工具会更改你的模型库。通过此令牌连接的助手将可以使用它，而无需每次询问你。",
           "writeConfirm": "开启",
           "adminOff": "管理员已在此 Thingport 实例上关闭了 MCP。",
           "adminReadOnly": "管理员只允许使用只读工具。",
@@ -1414,11 +1414,13 @@
         "failed": "无法测量存储占用。",
         "kinds": {
           "models": "模型文件",
+          "supporting": "附加文件",
           "previews": "3D 预览",
           "old": "旧 3D 预览",
           "photos": "图片",
           "thumbnails": "缩略图和渲染图",
           "description": "描述图片",
+          "prepared": "切片文件",
           "slicer": "切片软件副本",
           "other": "其他"
         }
@@ -2167,6 +2169,7 @@
           "custom_widgets_changed": "更改允许的自定义小组件",
           "tool_installed": "安装工具",
           "tool_uninstalled": "卸载工具",
+          "tool_availability_changed": "工具启用状态已更改",
           "tools_access_changed": "更改工具访问权限",
           "model_copied": "复制模型",
           "social_settings_changed": "更改社交功能",
@@ -2302,6 +2305,9 @@
         "empty": "这里没有存储任何内容。",
         "folderSummary_other": "{{count}} 个文件 · {{size}}",
         "ofModel": "模型“{{name}}”",
+        "cantRead": "无法读取",
+        "cantReadFolder": "无法读取此文件夹",
+        "unreadable_other": "磁盘无法读取这里的 {{count}} 项内容，它们可能仍在原处。",
         "kind": {
           "plate": "模型文件",
           "file": "附属文件",
@@ -2500,6 +2506,11 @@
           "update": "更新",
           "installed": "已安装 {{name}}",
           "updated": "已更新 {{name}}",
+          "updateAll": "全部更新",
+          "updates_other": "{{count}} 个更新：{{names}}",
+          "updatingAll": "正在更新 {{name}}：第 {{done}} 个，共 {{total}} 个",
+          "updatedAll_other": "已更新 {{count}} 个工具",
+          "updateAllFailed": "无法更新 {{names}}：{{error}}",
           "installFailed": "无法安装该工具",
           "installedVersion": "已安装 {{version}}",
           "updateTo": "更新到 {{version}}",
@@ -2528,6 +2539,11 @@
           "openHint": "双击打开 {{name}}",
           "notInstalled": "未安装",
           "isInstalled": "已安装",
+          "enable": "启用",
+          "disable": "停用",
+          "disabled": "已停用",
+          "disabledBanner": "已停用：所有人的“工具”页面都不再显示它。其数据和模型会保留。",
+          "availabilityError": "无法更改工具的启用状态。",
           "version": "v{{version}}",
           "tileLabel": "{{name}}，{{state}}：按 Enter 查看简介，按菜单键查看更多操作",
           "shelfHint": "双击工具可查看它是什么以及能用它做什么；右键单击已安装的工具可打开其菜单。",
@@ -2590,7 +2606,7 @@
           "infoTitle": "互联实例的作用",
           "infoPair": "与你连接的其他 Thingport 实例会成为伙伴实例：对方的用户、公开合集和模型会像在本实例上一样显示在这里，你这边的也会显示在对方那里。",
           "infoApprove": "每个实例在连接前都需要你批准。你的用户可以请你与某个实例连接。",
-          "infoShare": "只有公开的内容会传过去：模型库、私有合集和设置都留在这里。",
+          "infoShare": "公开内容、与已连接实例用户共享的合集以及与这些用户的聊天都可以在实例之间传输。模型库、私有合集和设置都留在本实例。",
           "infoOff": "关闭后会隐藏伙伴实例，并停止与它们通信。不会删除任何内容，重新开启后一切都会恢复。",
           "settingsLoadFailed": "无法加载互联实例的设置。",
           "keyAria": "密钥：{{key}}",
@@ -3319,7 +3335,118 @@
         "appearance": "外观",
         "providers": "模型网站",
         "slicer": "切片软件",
-        "printers": "打印机"
+        "printers": "打印机",
+        "sendTo": "发送到"
+      },
+      "sendTo": {
+        "title": "发送到",
+        "subtitle": "把模型发送到你的打印机、Webhook 和其他应用。",
+        "add": "添加",
+        "more": "更多",
+        "moreFor": "{{name}} 的更多操作",
+        "import": "导入…",
+        "export": "导出",
+        "exportHint": "导出为可分享的文件，不含密钥",
+        "emptyTitle": "还没有可发送的目标",
+        "emptyHint": "添加 OctoPrint、Klipper 或 PrusaLink、Webhook，或你自己的地址。",
+        "needsKey": "需要 API 密钥",
+        "edit": "编辑",
+        "delete": "删除",
+        "deleteTitle": "删除 {{name}}？",
+        "deleteMessage": "模型页面上将不再提供它。",
+        "saved": "已保存 {{name}}",
+        "imported_other": "已添加 {{count}} 个目标",
+        "importFailed": "这不是“发送到”文件",
+        "test": "测试",
+        "testOk": "有响应（{{status}}）",
+        "placementLabel": "{{name}} 的显示位置",
+        "groups": {
+          "printers": "打印机",
+          "webhooks": "Webhook",
+          "own": "自定义"
+        },
+        "kinds": {
+          "octoprint": "OctoPrint",
+          "moonraker": "Klipper",
+          "prusalink": "PrusaLink",
+          "homeassistant": "Home Assistant",
+          "n8n": "n8n",
+          "nodered": "Node-RED",
+          "link": "自定义链接",
+          "request": "自定义请求"
+        },
+        "hints": {
+          "octoprint": "上传到 OctoPrint",
+          "moonraker": "Moonraker，用于 Mainsail 和 Fluidd",
+          "prusalink": "Prusa 自家的，适用于 MK4、XL、MINI、CORE One",
+          "homeassistant": "Webhook 自动化",
+          "n8n": "Webhook 工作流",
+          "nodered": "http in 节点",
+          "link": "由浏览器打开的地址",
+          "request": "由 Thingport 服务器发送文件"
+        },
+        "placement": {
+          "button": "按钮",
+          "menu": "菜单"
+        },
+        "fields": {
+          "name": "名称",
+          "address": "地址",
+          "webhook": "Webhook 地址",
+          "apiKey": "API 密钥",
+          "stored": "已保存",
+          "apiKeyStored": "已保存。输入新的即可替换。",
+          "apiKeyOptional": "仅当 Moonraker 要求时填写",
+          "apiKeyRemove": "移除密钥",
+          "after": "上传后",
+          "justUpload": "仅上传",
+          "startPrinting": "开始打印",
+          "url": "地址",
+          "opens": "打开方式",
+          "opensHelp": "命名标签页会被复用：再次发送会进入同一个标签页。其中打开的页面也能把 Thingport 所在的标签页转到别处，因此只对你信任的地址使用。",
+          "newTab": "新标签页",
+          "namedTab": "命名标签页",
+          "sameTab": "当前标签页",
+          "tabName": "标签页名称",
+          "method": "方法",
+          "send": "发送",
+          "sendHelp": "表单中的文件（多数上传接口采用）；文件本身作为请求正文；或附带文件链接的 JSON，链接一小时内有效。",
+          "multipart": "表单中的文件",
+          "raw": "文件本身",
+          "json": "带链接的 JSON",
+          "formFields": "表单",
+          "fileField": "文件字段",
+          "fileFieldHint": "文件放在这个字段中",
+          "fieldName": "字段",
+          "fieldValue": "值",
+          "remove": "移除",
+          "addField": "字段",
+          "headers": "请求头",
+          "headersHelp": "保密请求头的值保存在服务器上，不再显示。",
+          "headerName": "请求头",
+          "headerValue": "值",
+          "secret": "保密",
+          "secretHelp": "把值保存在服务器上，不再显示",
+          "addHeader": "请求头",
+          "thenOpen": "随后打开",
+          "thenOpenHelp": "发送后提供，例如打印机自己的页面。",
+          "fileTypes": "仅限文件类型",
+          "fileTypesHelp": "文件扩展名，例如 gcode。留空：任何文件都提供。",
+          "anyFile": "任何文件",
+          "showAs": "显示为"
+        },
+        "reasons": {
+          "auth": "拒绝了密钥（{{status}}）",
+          "not_found": "该地址没有内容（{{status}}）",
+          "conflict": "已有同名文件",
+          "too_large": "文件太大",
+          "unsupported": "不接受这种文件",
+          "redirect": "把 Thingport 重定向到别处（{{status}}），不会跟随",
+          "http": "返回了 {{status}}",
+          "timeout": "未及时响应",
+          "unreachable": "无法连接",
+          "blocked": "不允许访问该地址"
+        }
       }
     },
     "providers": {
@@ -3648,7 +3775,21 @@
       },
       "runner": {
         "failed": "{{name}} 因出错而停止",
-        "noExport": "脚本没有可调用的默认导出"
+        "noExport": "脚本没有可调用的默认导出",
+        "noRun": "脚本没有供无窗口命令调用的 run 导出",
+        "commandFailed": "{{name}} 未能完成：{{error}}",
+        "noPartExport": "脚本没有用于绘制此部分的 {{name}} 导出",
+        "partFailed": "{{name}} 无法显示此内容",
+        "noPopover": "没有窗口的命令无法打开弹出框"
+      },
+      "share": {
+        "title": "谁能看到你的{{name}}？",
+        "everyone": "所有人",
+        "people": "仅我选择的人",
+        "everyoneHint": "这里所有能使用工具的人都能看到你在其中分享的内容。",
+        "picked_other": "已与 {{count}} 人分享",
+        "onlyYou": "尚未选择任何人，所以只有你能看到。",
+        "loadFailed": "无法读取谁能看到，所以暂时无法更改。"
       },
       "picker": {
         "title": "选择合集",
@@ -3658,6 +3799,9 @@
         "count_other": "{{count}} 个模型",
         "cancel": "取消",
         "choose": "选择"
+      },
+      "modelPicker": {
+        "title": "选择模型"
       },
       "ai": {
         "or": "或",
@@ -3898,7 +4042,6 @@
         "sweep": "扫掠"
       },
       "tree": {
-        "heading": "特征",
         "empty": "这里还什么都没有",
         "expand": "展开",
         "collapse": "折叠"
@@ -3973,6 +4116,8 @@
         "front": "前视",
         "right": "右视",
         "fit": "适合视图",
+        "hand": "手形模式",
+        "handNavigation": "用左键或单指拖动可平移视图。用右键或双指拖动可旋转视图。滚动滚轮或用双指捏合可缩放。",
         "navigation": "右键拖动旋转视图，中键拖动（或 Shift + 右键拖动）平移视图，滚轮缩放。左键拖动可框选：从左向右只选中完全在框内的对象，从右向左还会选中与框接触的对象。按住 Shift 可加选。"
       },
       "properties": {
@@ -4029,13 +4174,73 @@
         },
         "cornerRadius": "圆角半径"
       },
+      "print": {
+        "customBed": "自定义打印平台",
+        "arrange": "排列打印板",
+        "spacing": "间距",
+        "overflow": "空间不足时使用新打印板",
+        "tooLarge": "Studio 未能以此间距放置以下零件。{{parts}}",
+        "needsOverflow": "允许添加打印板或减小间距。",
+        "arrangeEmpty": "此打印板上没有可排列的可见实体。",
+        "plateLimit": "此布局将超出 Studio 的打印板数量上限。",
+        "previewPlate": "新打印板 {{number}}",
+        "lockPosition": "排列时锁定位置",
+        "unlockPosition": "解除位置锁定",
+        "connectors": "定位销和插孔",
+        "separatePlates": "将第二个零件放到新打印板上",
+        "pinDiameter": "定位销直径",
+        "pinDepth": "定位销深度",
+        "clearance": "径向间隙",
+        "pinCount": "定位销数量",
+        "offsetU": "U 偏移",
+        "offsetV": "V 偏移",
+        "fitPlate": "配合测试",
+        "fitHelp": "打印一个定位销样件和各个间隙对应的插孔样件。每个插孔都刻有以毫米为单位的间隙值。",
+        "variant": "间隙 {{number}}",
+        "makeFitPlate": "创建配合测试打印板",
+        "useFit": "使用实测间隙",
+        "clearanceParameter": "间隙参数",
+        "filaments": "耗材分配",
+        "slot": "已装载料槽",
+        "automatic": "自动",
+        "material": "材料",
+        "unmapped": "未指定料槽的颜色（{{number}} 种）将自动分配。",
+        "tooManySlots": "此切片软件最多支持 {{limit}} 个料槽。请减少颜色数量后再导出。",
+        "saveSlots": "保存分配"
+      },
+      "plates": {
+        "label": "打印板",
+        "actions": "打印板操作",
+        "add": "添加打印板",
+        "rename": "重命名打印板",
+        "delete": "删除空打印板",
+        "defaultName": "打印板 {{count}}",
+        "move": "移至打印板",
+        "color": "实体颜色",
+        "clearColor": "清除",
+        "applyColor": "应用",
+        "exportStl": "导出为 STL",
+        "openSlicer": "用切片软件打开",
+        "slicer": "切片软件",
+        "printer": "打印机和喷嘴",
+        "noPreset": "使用切片软件当前的打印机",
+        "oneAtATime": "此切片软件一次打开一块打印板。",
+        "matchFilaments": "在切片软件中将项目的颜色槽位与已装载的耗材匹配。",
+        "download3mf": "下载 3MF",
+        "open": "打开"
+      },
       "design": {
-        "none": "无设计",
         "new": "新建设计",
         "open": "打开…",
         "openTitle": "打开设计",
         "rename": "重命名设计",
-        "export": "下载 STL",
+        "save": "保存设计",
+        "export": {
+          "title": "导出",
+          "format": "文件格式",
+          "threeMf": "下载一个 3MF 文件，其中包含所有有模型的打印板及其颜色。",
+          "stlZip": "下载一个 ZIP 压缩包，每个有模型的打印板对应一个 STL 文件。"
+        },
         "delete": "删除设计",
         "deleteTitle": "删除“{{name}}”？",
         "deleteMessage": "设计及其历史记录将被永久删除。",
@@ -4043,9 +4248,18 @@
         "emptyTitle": "还没有设计",
         "emptyHint": "新建一个设计，然后用形状和草图来构建它。",
         "untitled": "未命名设计",
+        "menu": {
+          "quickActions": "快捷操作",
+          "new": "新建",
+          "open": "打开",
+          "slicer": "切片",
+          "recent": "最近",
+          "edited": "{{time}}编辑"
+        },
         "nothingToExport": "没有可下载的可见内容",
         "features_other": "{{count}} 个特征",
         "saveToLibrary": "保存到 Thingport",
+        "libraryModelName": "模型名称",
         "saving": "正在保存到 Thingport…",
         "saved": "已将“{{name}}”保存到你的模型库",
         "openSaved": "打开"
@@ -4082,10 +4296,12 @@
       },
       "panels": {
         "label": "面板",
-        "features": "特征",
+        "features": "对象 / 打印板",
         "properties": "属性",
         "hide": "隐藏 {{panel}}",
-        "show": "显示 {{panel}}"
+        "show": "显示 {{panel}}",
+        "print": "打印",
+        "rightPanel": "属性 / 打印"
       },
       "viewCube": {
         "label": "视图立方体：点击面、边或角即可从该方向查看，拖动可旋转视图",
@@ -4292,6 +4508,45 @@
           "closed": "闭合"
         }
       },
+      "loading": {
+        "title": "Thingport Studio",
+        "phrases": [
+          "正在调平打印板…",
+          "正在削铅笔…",
+          "正在对齐网格…",
+          "正在归零原点…",
+          "正在张紧皮带…",
+          "正在校准坐标轴…",
+          "正在排列基准面…",
+          "正在清点三角面…",
+          "正在打磨圆角…",
+          "正在预热喷嘴…",
+          "正在打开工具箱…",
+          "量两次，切一次…"
+        ]
+      },
+      "importModel": {
+        "loadingStudio": "正在加载 Thingport Studio…",
+        "preparing": "正在为 Thingport Studio 准备“{{filename}}”…",
+        "failed": "无法在 Thingport Studio 中打开“{{filename}}”",
+        "platePreparing": "正在准备打印板“{{name}}”…",
+        "plateFailed": "无法准备打印板“{{name}}”",
+        "loadPlate": "加载打印板",
+        "checkUnloaded": "检查整个设计是否适合打印前，请先打开打印板“{{name}}”。",
+        "archiveLimit": "此 3MF 存档过大，Studio 无法读取。",
+        "noPlates": "Studio 未能从此 3MF 文件中读取任何打印板。",
+        "plateLimit": "每块打印板最多可包含 {{objects}} 个对象和 {{plateTriangles}} 个三角面。",
+        "bodyLimit": "每个导入的实体最多可包含 {{bodyTriangles}} 个三角面。",
+        "missingParts": "此 3MF 文件引用了文件中缺失的模型部件。",
+        "noBodies": "Studio 未能读取任何可打印的实体。",
+        "readFailed": "Studio 无法读取模型文件。",
+        "tooManyPlates": "一个 Studio 设计最多可包含 {{plates}} 块打印板。",
+        "tooManyObjects": "一个 Studio 设计最多可包含 {{objects}} 个实体和特征。",
+        "loadPlateFirst": "请先加载此打印板。",
+        "platePending": "打开此打印板时会加载其中的实体。",
+        "filamentsPending": "打开其余打印板即可查看所有耗材颜色。",
+        "geometryFailed": "Studio 无法处理此几何体。"
+      },
       "imported": {
         "parts_other": "该模型作为一个实体导入，包含 {{count}} 个独立零件",
         "separate": "分离"
@@ -4471,16 +4726,8 @@
       "settings": {
         "title": "Studio 设置",
         "sections": {
-          "assistant": "AI 助手",
           "units": "单位",
           "grid": "网格"
-        },
-        "assistantIntro": "AI 助手在哪里显示对话。",
-        "layout": "布局",
-        "layoutHelp": "底栏：位于视图下方，AI 工作时只显示一行，展开后显示其余内容。侧边面板：位于视图旁边，不会遮挡模型。",
-        "layouts": {
-          "bar": "底栏",
-          "panel": "侧边面板"
         },
         "failed": "无法保存该设置。",
         "unitsIntro": "尺寸以什么单位显示和输入。尺寸本身完全不变，变化的只是显示方式。",
@@ -4513,11 +4760,186 @@
           "snap": "吸附到网格",
           "snapHelp": "草图点和移动的实体会吸附到当前显示的最细网格线上。关闭后，它们会停在你指向的位置。"
         }
+      },
+      "printProfile": {
+        "title": "打印配置",
+        "presets": "预设",
+        "empty": "还没有打印配置",
+        "emptyHint": "为这个设计选择一个预设，或让 AI 按用途来选。",
+        "choosePreset": "选择预设",
+        "change": "更改",
+        "changed": "已修改",
+        "custom": "自定义",
+        "suggestAi": "让 AI 推荐",
+        "aiWorking": "AI 正在选择…",
+        "suggested": "推荐",
+        "suggestedPreset": "推荐：{{preset}}",
+        "byAi": "由 AI 选择",
+        "slicer": "切片软件",
+        "printer": "打印机",
+        "anyPrinter": "任意打印机",
+        "material": "材料",
+        "anyMaterial": "任意材料",
+        "settings": "设置",
+        "slicerDefault": "切片软件默认",
+        "setIt": "设置",
+        "noneCarried": "{{slicer}} 不会从 3MF 读取这些设置。",
+        "setCount_other": "已设置 {{count}} 项",
+        "reset": "使用切片软件自己的值",
+        "nativeName": "在 {{slicer}} 中：{{name}}",
+        "notCarried": "{{slicer}} 不会从 3MF 读取此项：请在其中设置。",
+        "remove": "移除打印配置",
+        "on": "开",
+        "off": "关",
+        "aiPrompt": "根据这个设计的用途为它选择打印配置：参考我的要求，以及它所来源的模型的描述。用打印配置工具设置好，并用一句话告诉我原因。",
+        "aiPromptSlicer": "我用 {{name}} 切片（切片软件 id {{id}}）。",
+        "aiPromptPrinter": "我的打印机是 {{name}}（打印机 id {{id}}），喷嘴 {{nozzle}} mm。",
+        "category": {
+          "quality": "质量",
+          "strength": "强度",
+          "speed": "速度",
+          "support": "支撑",
+          "others": "其他"
+        },
+        "setting": {
+          "layer_height": "层高",
+          "wall_loops": "墙层数",
+          "top_shell_layers": "顶部层数",
+          "bottom_shell_layers": "底部层数",
+          "top_shell_thickness": "顶部厚度",
+          "wall_generator": "墙生成器",
+          "sparse_infill_density": "填充密度",
+          "sparse_infill_pattern": "填充图案",
+          "initial_layer_speed": "首层速度",
+          "outer_wall_speed": "外墙速度",
+          "inner_wall_speed": "内墙速度",
+          "sparse_infill_speed": "填充速度",
+          "enable_support": "支撑",
+          "support_type": "支撑类型",
+          "support_threshold_angle": "支撑角度",
+          "support_on_build_plate_only": "仅从热床生成支撑",
+          "brim_type": "Brim",
+          "brim_width": "Brim 宽度",
+          "raft_layers": "筏层数",
+          "seam_position": "接缝位置",
+          "seam_slope_type": "斜接缝",
+          "wall_sequence": "墙顺序",
+          "top_surface_pattern": "顶面图案",
+          "ironing_type": "熨烫",
+          "fuzzy_skin": "绒毛表面",
+          "spiral_mode": "螺旋花瓶"
+        },
+        "choice": {
+          "arachne": "Arachne",
+          "classic": "经典",
+          "grid": "网格",
+          "gyroid": "螺旋体",
+          "cubic": "立方体",
+          "adaptivecubic": "自适应立方体",
+          "triangles": "三角形",
+          "honeycomb": "蜂窝",
+          "lightning": "闪电",
+          "zig_zag": "直线",
+          "concentric": "同心",
+          "normal_auto_": "普通",
+          "tree_auto_": "树状",
+          "no_brim": "无",
+          "outer_only": "外侧",
+          "auto_brim": "自动",
+          "aligned": "对齐",
+          "nearest": "最近",
+          "back": "背面",
+          "random": "随机",
+          "none": "无",
+          "external": "外墙",
+          "all": "所有墙",
+          "inner_wall_outer_wall": "先内后外",
+          "outer_wall_inner_wall": "先外后内",
+          "inner_outer_inner_wall": "内、外、内",
+          "monotonic": "单调",
+          "monotonicline": "单调线",
+          "no_ironing": "无",
+          "topmost": "最顶面",
+          "top": "所有顶面",
+          "solid": "所有实心层"
+        },
+        "preset": {
+          "standard": {
+            "title": "标准",
+            "purpose": "日常零件"
+          },
+          "fine": {
+            "title": "精细",
+            "purpose": "手办、小字"
+          },
+          "draft": {
+            "title": "快速草稿",
+            "purpose": "原型、试装"
+          },
+          "strong": {
+            "title": "高强度",
+            "purpose": "支架、挂钩、齿轮"
+          },
+          "outdoor": {
+            "title": "户外",
+            "purpose": "日晒雨淋"
+          },
+          "water": {
+            "title": "接触水",
+            "purpose": "花盆、托盘"
+          },
+          "toy": {
+            "title": "玩具",
+            "purpose": "结实，适合儿童"
+          },
+          "flexible": {
+            "title": "柔性",
+            "purpose": "TPU 握把、缓冲件"
+          },
+          "heat": {
+            "title": "耐热",
+            "purpose": "汽车、电机、灯具"
+          },
+          "vase": {
+            "title": "花瓶",
+            "purpose": "单层连续外墙"
+          },
+          "smooth": {
+            "title": "光滑顶面",
+            "purpose": "标牌、盖子"
+          }
+        },
+        "check": {
+          "material": "“{{preset}}”更适合用 {{suits}}，而不是 {{material}}。",
+          "not_carried": "{{slicer}} 不会从 3MF 读取：{{keys}}。请在其中设置。",
+          "food_contact": "打印配置不会让零件变得食品安全：材料、打印机部件和清洁同样重要。",
+          "toy": "给幼儿用时，请把锐边倒圆，并避免细小的可脱落零件。",
+          "vase_bodies": "螺旋花瓶只用一道墙打印一个实体：每块打印板只放一个实体。"
+        }
+      },
+      "save": {
+        "destination": "保存位置",
+        "newModel": "新模型",
+        "addToModel": "添加到模型",
+        "pickModel": "你的模型",
+        "profiles_other": "{{count}} 个配置",
+        "noProfiles": "还没有配置",
+        "chooseMyself": "自己选择",
+        "chooseMyselfHint": "预设和设置",
+        "suggestAiHint": "按用途推荐",
+        "without": "不带配置保存",
+        "withoutHint": "仅几何形状",
+        "editProfile": "编辑",
+        "profileName": "配置名称",
+        "askAi": "让 AI 选择",
+        "willHave_other": "“{{name}}”将有 {{count}} 个配置",
+        "addProfile": "添加配置",
+        "addedProfile": "已将“{{profile}}”添加到“{{name}}”"
       }
     },
     "chats": {
       "open": "打开",
-      "off": "此实例已关闭聊天功能。管理员可以在“管理 > 用户”中开启。",
+      "off": "此实例已关闭聊天功能。管理员可以在“管理 > 社交”中开启。",
       "welcome": "选择一个聊天，或开始新的聊天。",
       "deletedUser": "已删除的用户",
       "today": "今天",
@@ -4601,7 +5023,7 @@
       "chatActions": "聊天操作",
       "notFound": "此聊天已不存在，或者你无权查看。",
       "backToChats": "返回聊天",
-      "notAMember": "此私有聊天室仅限成员。你可以在“编辑聊天室”中把自己加进去。",
+      "notAMember": "此私有聊天室仅限成员。如果聊天室由本实例托管，你可以在“编辑聊天室”中将自己添加为成员。如果聊天室由已连接的实例托管，该实例的管理员可以将你添加为成员。",
       "readingRoom": "你正在浏览此聊天室。加入后即可发言并接收通知。",
       "recipientGone": "此人的账号已被删除，因此无法发送消息。",
       "emptyRoom": "这里还没有人发言。",
@@ -4762,6 +5184,11 @@
           "rule": "从 {{count}} 个不同网站同步合集",
           "stat": "已从 {{count}} 个网站同步"
         },
+        "fdmFundamentals": {
+          "name": "FDM 基础",
+          "rule": "在 3D 打印维基测验中获得至少 80% 的分数。",
+          "stat": "已通过 FDM 测验"
+        },
         "weatherGuest": {
           "name": "偶遇来客",
           "rule": "这是个秘密。你发现了它。",
@@ -4805,6 +5232,8 @@
     }
   },
   "common": {
+    "newTab": "（在新标签页中打开）",
+    "backTo": "返回：{{name}}",
     "save": "保存",
     "cancel": "取消",
     "close": "关闭",
@@ -4841,7 +5270,13 @@
     "language": "语言",
     "more": "更多",
     "moreActions": "更多操作",
-    "open": "打开"
+    "open": "打开",
+    "proxyErrors": {
+      "refused": "这个 Thingport 实例前面的代理作出了回应（HTTP {{status}}），没有收到 Thingport 本身的消息。原因可查看代理的日志，Thingport 需要的设置见 {{url}}",
+      "tooLarge": "这个请求对这个 Thingport 实例前面的代理或 Web 服务器来说太大了（HTTP 413）。请调高它的请求大小上限：见 {{url}}",
+      "noAnswer": "这个 Thingport 实例没有响应（HTTP {{status}}）。它可能正在启动或已停止，或者它前面的代理连接不到它。",
+      "timedOut": "这个 Thingport 实例响应太慢，它前面的代理已放弃等待（HTTP 504）。它的超时时间可能太短：见 {{url}}"
+    }
   },
   "library": {
     "grid": {
@@ -5389,7 +5824,13 @@
       "newest": "最新",
       "popular": "最受欢迎",
       "downloads": "下载量",
-      "relevance": "相关度"
+      "relevance": "相关度",
+      "oldest": "最早",
+      "leastPopular": "热度最低",
+      "fewestDownloads": "下载最少",
+      "leastRelevant": "相关性最低",
+      "fewestModels": "模型最少",
+      "reverseAlphabetical": "{{label}}（倒序）"
     },
     "card": {
       "unknownAuthor": "未知",
@@ -5481,6 +5922,16 @@
       "rejected": "已拒绝建议。",
       "revertMessage": "此模型将恢复 AI 修改之前的描述。",
       "suggestionPending": "请先接受或拒绝该建议"
+    },
+    "actionsMenu": {
+      "openIn": "打开方式",
+      "ai": "AI",
+      "quickActions": "快捷操作",
+      "categorize": "分类",
+      "recategorize": "重新分类",
+      "improve": "改进描述",
+      "adapted": "{{slicer}}（适配版）",
+      "studio": "Thingport Studio"
     },
     "detail": {
       "subtitle": "模型",
@@ -5686,6 +6137,15 @@
       "moreOpenOptions": "其他切片软件和下载",
       "openActions": "打开或下载",
       "openInHeading": "打开方式",
+      "toolsHeading": "工具",
+      "sendTo": {
+        "heading": "发送到",
+        "button": "发送到 {{name}}",
+        "openIn": "在 {{name}} 中打开",
+        "sent": "已发送到 {{name}}",
+        "failed": "{{name}}：{{reason}}",
+        "openAfter": "打开"
+      },
       "toolOwned": "属于某个工具",
       "toolOwnedHint": "无法编辑或删除",
       "customize": "自定义…",
@@ -5701,6 +6161,20 @@
         "changeLater": "可在“配置”中更改",
         "open": "打开"
       }
+    },
+    "supporting": {
+      "title": "附加文件",
+      "actionsFor": "{{name}} 的操作",
+      "open": "打开",
+      "openInTab": "在新标签页中打开",
+      "newTab": "新标签页",
+      "copyLink": "复制链接",
+      "linkCopied": "链接已复制",
+      "noPreview": "无法预览 {{type}} 文件",
+      "tooLargeToPreview": "文件过大，无法预览",
+      "previewFailed": "无法显示此文件",
+      "firstRows": "显示前 {{count}} 行",
+      "firstColumns": "显示前 {{count}} 列"
     },
     "customizer": {
       "title": "自定义 {{model}}",
@@ -5788,6 +6262,11 @@
       "authorWillBeYou": "你（更新后）",
       "previewImages": "预览图",
       "thumbnailBadge": "缩略图",
+      "useAsThumbnail": "设为缩略图",
+      "previewImagesHelp": "模型卡片显示第一张图片，除非在“外观”中将“模型卡片”设为“3D 渲染图”。把另一张移到最前即可更换。",
+      "removeImage": "移除图片",
+      "moveImageLeft": "左移",
+      "moveImageRight": "右移",
       "newBadge": "新增",
       "modelFiles": "模型文件",
       "addFiles": "添加文件",
@@ -6188,7 +6667,8 @@
       "summaryFailed": "无法计算下载大小，请重试。",
       "empty": "没有可下载的模型文件。",
       "downloading": "正在下载…",
-      "failed": "下载 ZIP 文件失败，请重试。"
+      "failed": "下载 ZIP 文件失败，请重试。",
+      "tooLarge": "一个 ZIP 文件放不下这么多：最多 65,534 个文件，总大小约 4 GB。请一次少下载几个模型，或逐个下载文件。"
     },
     "errors": {
       "loadFailed": "无法加载模型。",

@@ -1,38 +1,33 @@
 import { useTranslation } from "react-i18next";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import { type PrintSortMode } from "../../api/prints";
-
-const SORT_MODES: PrintSortMode[] = ["newest", "popular", "downloads"];
+import type { PrintSortMode } from "../../api/prints";
+import SortTabs from "../../components/controls/SortTabs";
+import { PRINT_SORT_MODES, SEARCH_SORT_MODES } from "../../hooks/usePrintSort";
+import type { SortDirection } from "../../utils/sortDirection";
 
 type Props = {
   value: PrintSortMode;
-  /** Defaults to newest, popular, downloads. */
-  modes?: PrintSortMode[];
   onChange: (mode: PrintSortMode) => void;
+  direction: SortDirection;
+  onDirectionChange: (direction: SortDirection) => void;
+  search?: boolean;
 };
 
+const REVERSE_LABELS = {
+  newest: "oldest",
+  popular: "leastPopular",
+  downloads: "fewestDownloads",
+  relevance: "leastRelevant",
+} as const;
+
 /** "Popular" sorts by views, "Downloads" by print count. */
-export default function SortTabs({ value, modes = SORT_MODES, onChange }: Props) {
+export default function PrintSortTabs({ search = false, ...sort }: Props) {
   const { t } = useTranslation("models");
-  return (
-    <Stack direction="row" spacing={3}>
-      {modes.map((mode) => (
-        <Typography
-          key={mode}
-          variant="body2"
-          onClick={() => onChange(mode)}
-          sx={{
-            cursor: "pointer",
-            fontSize: 14,
-            fontWeight: value === mode ? 700 : 500,
-            color: value === mode ? "primary.main" : "text.secondary",
-            "&:hover": { color: "primary.main" },
-          }}
-        >
-          {t(`sort.${mode}`)}
-        </Typography>
-      ))}
-    </Stack>
-  );
+  const modes = search ? SEARCH_SORT_MODES : PRINT_SORT_MODES;
+  const options = modes.map((value) => {
+    const label = value === "name" ? t("tags.sortByName") : t(`sort.${value}`);
+    const reverseLabel =
+      value === "name" ? t("sort.reverseAlphabetical", { label }) : t(`sort.${REVERSE_LABELS[value]}`);
+    return { value, label, reverseLabel };
+  });
+  return <SortTabs {...sort} options={options} />;
 }

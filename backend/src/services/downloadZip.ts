@@ -5,13 +5,16 @@ import crypto from "node:crypto";
 import type { Response } from "express";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { folderPath, isInFolder } from "../utils/fileFolder";
-import { writeZip, type ZipEntryDescriptor } from "../utils/zipWriter";
+import { folderLevels, isInFolder } from "../utils/fileFolder";
+import { ZipPaths } from "../files/zipPaths";
+import { fileState } from "../modelFiles/storageFs";
+import { writeZip, zipFits, type ZipEntryDescriptor } from "../utils/zipWriter";
 import { resolvePlateFilePath } from "./printCreation";
-import { managedPrintFilePath } from "./printFileService";
+import { managedPrintFilePath, printFileStillNames } from "./printFileService";
+import { plateStillNames } from "./printService";
 import { LICENSE_FILENAME, licenseFileText } from "./licenseFile";
 import { readableCollection, readablePrintWhere } from "./socialService";
-import type { Category, Plate, Print, Prisma } from "@prisma/client";
+import type { Category, Plate, Print, PrintFile, Prisma } from "@prisma/client";
 
 type PrintWithPlatesAndCategory = Print & { plates: Plate[]; category: Category | null };
 
@@ -58,11 +61,11 @@ export async function estimateDownloadSize(prints: PrintWithPlatesAndCategory[])
   const plateBytes = prints.reduce((sum, p) => sum + p.plates.reduce((s, plate) => s + plate.size, 0), 0);
   const printIds = prints.map((p) => p.id);
   if (!printIds.length) return plateBytes;
-  const supporting = await prisma.printFile.aggregate({
-    where: { printId: { in: printIds }, role: "SUPPORTING" },
+  const files = await prisma.printFile.aggregate({
+    where: { printId: { in: printIds }, role: { in: ["SUPPORTING", "PREPARED"] } },
     _sum: { size: true },
   });
-  return plateBytes + (supporting._sum.size ?? 0);
+  return plateBytes + (files._sum.size ?? 0);
 }
 
 type ZipOptions = {
@@ -74,23 +77,33 @@ type ZipOptions = {
 
 /**
  * `{category-or-folder}/{print.name}/{plate.folder}/{plate.filename}`, with supporting files under `.../supporting/`
- * (in their folders too) and the model's LICENSE.txt beside its plates.
+ * (in their folders too), the prepared print under `.../prepared/` and the model's LICENSE.txt beside its plates. Every
+ * path is placed by ZipPaths, so two models named alike get two folders and no two files share a path, ignoring case.
  */
 export async function buildZipEntries(
   prints: PrintWithPlatesAndCategory[],
   opts: ZipOptions = {},
 ): Promise<ZipEntryDescriptor[]> {
   const printIds = prints.map((p) => p.id);
-  const supportingByPrint = new Map<string, { filename: string; folder: string | null; storagePath: string }[]>();
+  const supportingByPrint = new Map<string, PrintFile[]>();
+  const preparedByPrint = new Map<string, PrintFile>();
   if (printIds.length) {
-    const supporting = await prisma.printFile.findMany({
-      where: { printId: { in: printIds }, role: "SUPPORTING" },
+    const files = await prisma.printFile.findMany({
+      where: { printId: { in: printIds }, role: { in: ["SUPPORTING", "PREPARED"] } },
+      orderBy: [{ folder: "asc" }, { filename: "asc" }],
     });
-    for (const file of supporting) {
-      if (!isInFolder(file.folder, opts.folder)) continue;
-      const list = supportingByPrint.get(file.printId) ?? [];
-      list.push({ filename: file.filename, folder: file.folder, storagePath: file.storagePath });
-      supportingByPrint.set(file.printId, list);
+    const preparedIds = new Set(prints.flatMap((print) => (print.preparedFileId ? [print.preparedFileId] : [])));
+    for (const file of files) {
+      const isPrepared = preparedIds.has(file.id);
+      if (!isInFolder(file.folder, opts.folder) || (!isPrepared && file.role !== "SUPPORTING")) continue;
+      // Fs 1: only a file that's gone, or a folder in its place, is left out; one that can't be looked at fails the zip.
+      if ((await fileState(managedPrintFilePath(file), "zip.entry")).state !== "file") continue;
+      if (isPrepared) preparedByPrint.set(file.printId, file);
+      else {
+        const list = supportingByPrint.get(file.printId) ?? [];
+        list.push(file);
+        supportingByPrint.set(file.printId, list);
+      }
     }
   }
 
@@ -107,30 +120,61 @@ export async function buildZipEntries(
       : [],
   );
 
+  const zip = new ZipPaths();
   const entries: ZipEntryDescriptor[] = [];
   for (const print of prints) {
-    const prefix = opts.flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
+    const owner = `model:${print.id}`;
+    const top = opts.flatten ? "" : zip.folder("", print.category?.name || "unassigned", "categories");
+    const home = zip.folder(top, print.name, owner);
+    const supporting = supportingByPrint.get(print.id) ?? [];
+    const prepared = preparedByPrint.get(print.id);
+    // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
+    const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
+    // Thingport's own places are claimed first, so a plate named like one of them is numbered rather than taking it;
+    // the entries still go in the order a person reads them, plates first.
+    const licensePath = license ? zip.file(home, LICENSE_FILENAME) : null;
+    const supportingHome = supporting.length ? zip.folder(home, "supporting", `supporting:${print.id}`) : null;
+    const preparedHome = prepared ? zip.folder(home, "prepared", `prepared:${print.id}`) : null;
     const sortedPlates = print.plates
       .filter((plate) => isInFolder(plate.folder, opts.folder))
       .toSorted((a, b) => a.position - b.position);
+    // Each file from storage is written from the handle it's opened with, while its row still names it (Fs 2).
     for (const plate of sortedPlates) {
       const filePath = resolvePlateFilePath(plate);
-      if (filePath) entries.push({ arcname: `${prefix}/${folderPath(plate.folder, plate.filename)}`, filePath });
+      if (filePath) {
+        entries.push({
+          arcname: zip.file(zip.nested(home, folderLevels(plate.folder), owner), plate.filename),
+          filePath,
+          site: "zip.entry",
+          stillNames: () => plateStillNames(plate),
+        });
+      }
     }
-    // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
-    const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
-    if (license) {
+    if (license && licensePath) {
       entries.push({
-        arcname: `${prefix}/${LICENSE_FILENAME}`,
+        arcname: licensePath,
         content: Buffer.from(license, "utf8"),
         mtime: print.licenseReadAt ?? undefined,
       });
     }
-    for (const file of supportingByPrint.get(print.id) ?? []) {
-      const filePath = managedPrintFilePath(file);
-      if (fs.existsSync(filePath)) {
-        entries.push({ arcname: `${prefix}/supporting/${folderPath(file.folder, file.filename)}`, filePath });
+    if (supportingHome) {
+      for (const file of supporting) {
+        const folder = zip.nested(supportingHome, folderLevels(file.folder), `supporting:${print.id}`);
+        entries.push({
+          arcname: zip.file(folder, file.filename),
+          filePath: managedPrintFilePath(file),
+          site: "zip.entry",
+          stillNames: () => printFileStillNames(file),
+        });
       }
+    }
+    if (prepared && preparedHome) {
+      entries.push({
+        arcname: zip.file(preparedHome, prepared.filename),
+        filePath: managedPrintFilePath(prepared),
+        site: "zip.entry",
+        stillNames: () => printFileStillNames(prepared, { prepared: true }),
+      });
     }
   }
   return entries;
@@ -144,9 +188,23 @@ export async function sendPrintsZip(
 ): Promise<void> {
   const entries = await buildZipEntries(prints, opts);
   if (!entries.some((entry) => "filePath" in entry)) throw new HttpError(404, "No files available for download");
+  // Refused before any of it is written: past this, the zip would come out broken.
+  if (!zipFits(entries)) {
+    throw new HttpError(
+      413,
+      "That's too much for one zip: at most 65,534 files and about 4 GB. Download fewer models, or files one by one.",
+      "zip_too_large",
+    );
+  }
 
   const tmpPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
-  await writeZip(tmpPath, entries);
+  try {
+    await writeZip(tmpPath, entries);
+  } catch (err) {
+    // Failed half-written, it isn't left behind.
+    await fs.promises.rm(tmpPath, { force: true });
+    throw err;
+  }
   res.download(tmpPath, downloadName, (err) => {
     fs.rm(tmpPath, { force: true }, () => undefined);
     if (err && !res.headersSent) {

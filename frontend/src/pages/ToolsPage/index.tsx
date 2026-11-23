@@ -47,12 +47,14 @@ import {
 } from "../../components/Layout/ConfigurationDialog/AppTiles";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import Segmented from "../../components/controls/Segmented";
+import SortTabs from "../../components/controls/SortTabs";
 import ToolAboutDialog from "../../components/tools/ToolAboutDialog";
 import ToolEditorDialog from "../../components/tools/ToolEditorDialog";
 import ToolIcon from "../../components/tools/ToolIcon";
 import ToolWindow from "../../components/tools/ToolWindow";
 import { useTools } from "../../hooks/useTools";
 import { useToolsView } from "../../hooks/useToolsView";
+import { defaultSortDirection } from "../../utils/sortDirection";
 
 const ICON = 60;
 const COLUMN = 104;
@@ -77,7 +79,7 @@ type Props = {
 
 /** The user's tools as icons: double-click one to open it in a window, right-click for what else it offers. */
 export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
-  const { t } = useTranslation("app");
+  const { t } = useTranslation(["app", "models"]);
   const navigate = useNavigate();
   const confirm = useConfirm();
   const toast = useToast();
@@ -109,17 +111,23 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
 
   const canCreate = state?.access.canCreate ?? false;
   const sort = view?.sort ?? "newest";
+  const direction = view?.sortDirection ?? defaultSortDirection(sort);
   const layout = view?.layout ?? "categories";
 
   /** The tools in the order the user chose. Name is the one that doesn't move about under them. */
   const ordered = useMemo(() => {
     const tools = state?.tools ?? [];
-    const byName = (a: Tool, b: Tool) => a.manifest.name.localeCompare(b.manifest.name);
-    if (sort === "newest") return tools.toSorted((a, b) => b.updatedAt.localeCompare(a.updatedAt) || byName(a, b));
+    const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+    const byName = (a: Tool, b: Tool) => collator.compare(a.manifest.name, b.manifest.name);
+    const sign = direction === "asc" ? 1 : -1;
+    if (sort === "newest")
+      return tools.toSorted((a, b) => sign * a.updatedAt.localeCompare(b.updatedAt) || byName(a, b));
     if (sort === "author")
-      return tools.toSorted((a, b) => (a.manifest.author ?? "").localeCompare(b.manifest.author ?? "") || byName(a, b));
-    return tools.toSorted(byName);
-  }, [state, sort]);
+      return tools.toSorted(
+        (a, b) => sign * collator.compare(a.manifest.author ?? "", b.manifest.author ?? "") || byName(a, b),
+      );
+    return tools.toSorted((a, b) => sign * byName(a, b));
+  }, [state, sort, direction]);
 
   const installed = useMemo(() => ordered.filter((tool) => tool.source === "repo"), [ordered]);
   const mine = useMemo(() => ordered.filter((tool) => tool.source === "own"), [ordered]);
@@ -271,7 +279,20 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
               </Button>
             )}
             <Box sx={{ ml: "auto" }}>
-              <SortTools value={sort} onChange={(next) => setView({ sort: next })} />
+              <SortTabs
+                value={sort}
+                direction={direction}
+                options={SORTS.map((value) => {
+                  const label = t(`tools.page.sort.${value}`);
+                  const reverseLabel =
+                    value === "newest" ? t("models:sort.oldest") : t("models:sort.reverseAlphabetical", { label });
+                  return { value, label, reverseLabel };
+                })}
+                onChange={(next) => {
+                  if (next !== sort) setView({ sort: next, sortDirection: defaultSortDirection(next) });
+                }}
+                onDirectionChange={(sortDirection) => setView({ sort, sortDirection })}
+              />
             </Box>
           </Stack>
 
@@ -481,37 +502,6 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
         }}
         onUnauthorized={onUnauthorized}
       />
-    </Stack>
-  );
-}
-
-/** The order the tools are in, as the models page's grid offers its own: plain words, the chosen one in the accent. */
-function SortTools({ value, onChange }: { value: ToolSort; onChange: (sort: ToolSort) => void }) {
-  const { t } = useTranslation("app");
-  return (
-    <Stack direction="row" spacing={3} component="fieldset" sx={{ border: 0, m: 0, p: 0 }}>
-      {SORTS.map((mode) => (
-        <Typography
-          key={mode}
-          component="button"
-          type="button"
-          variant="body2"
-          aria-pressed={value === mode}
-          onClick={() => onChange(mode)}
-          sx={{
-            border: 0,
-            p: 0,
-            bgcolor: "transparent",
-            cursor: "pointer",
-            fontSize: 14,
-            fontWeight: value === mode ? 700 : 500,
-            color: value === mode ? "primary.main" : "text.secondary",
-            "&:hover": { color: "primary.main" },
-          }}
-        >
-          {t(`tools.page.sort.${mode}`)}
-        </Typography>
-      ))}
     </Stack>
   );
 }

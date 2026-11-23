@@ -18,7 +18,11 @@ import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
+import { keyframes } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
+import ImageIcon from "@mui/icons-material/Image";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -38,6 +42,7 @@ import { UnauthorizedError } from "../../api/client";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import TagInput from "../../components/TagInput";
+import HelpTip from "../../components/HelpTip";
 import DescriptionEditor from "./DescriptionEditor";
 import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
@@ -68,6 +73,19 @@ function moveItem<T>(list: T[], index: number, dir: -1 | 1): T[] {
 }
 
 const LICENSE_GROUPS: LicenseFamily[] = ["cc", "open", "reserved"];
+
+// The buttons over a picture: dark whatever the theme, so they read on any photo.
+const overImageButtonSx = {
+  bgcolor: "rgba(0,0,0,0.55)",
+  color: "#fff",
+  "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
+} as const;
+
+// The thumbnail band rises onto whichever picture is put first.
+const thumbnailBandIn = keyframes`
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+`;
 
 type Props = {
   print: Print;
@@ -171,6 +189,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     setImages((prev) => prev.filter((img) => imageKey(img) !== key));
     markDirty();
   };
+  // First is the thumbnail: the picture model cards show.
+  const makeThumbnail = (key: string) => {
+    setImages((prev) => {
+      const target = prev.find((img) => imageKey(img) === key);
+      return target ? [target, ...prev.filter((img) => img !== target)] : prev;
+    });
+    markDirty();
+  };
   const moveImageBy = (key: string, dir: -1 | 1) => {
     setImages((prev) =>
       moveItem(
@@ -260,7 +286,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       if (images.length) {
         let nextNew = 0;
-        const known = images.map((img) => (img.kind === "existing" ? img.id : newImageIdsInOrder[nextNew++]));
+        // Our own render gives way to the first picture uploaded, so it may be gone by now.
+        const present = new Set(latest.preview_images.map((img) => img.id));
+        const known = images
+          .map((img) => (img.kind === "existing" ? img.id : newImageIdsInOrder[nextNew++]))
+          .filter((id) => present.has(id));
         // Reorder needs an exhaustive id list; images this modal never saw go after, in their order.
         const knownIds = new Set(known);
         const unknown = latest.preview_images
@@ -268,8 +298,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           .toSorted((a, b) => a.position - b.position)
           .map((img) => img.id);
         const finalOrder = [...known, ...unknown];
-        const reorderRes = await printsApi.reorderPreviewImages(print.id, finalOrder);
-        latest = reorderRes.print ?? latest;
+        if (finalOrder.length) {
+          const reorderRes = await printsApi.reorderPreviewImages(print.id, finalOrder);
+          latest = reorderRes.print ?? latest;
+        }
       }
 
       // Upload before delete so a model's only file can be swapped in one save.
@@ -462,13 +494,15 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           <Divider />
 
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, display: "flex", alignItems: "center", gap: 0.5 }}>
               {t("models:edit.previewImages")}
+              <HelpTip text={t("models:edit.previewImagesHelp")} />
             </Typography>
             <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 0.5 }}>
               {images.map((img, idx) => {
                 const key = imageKey(img);
                 const src = img.kind === "existing" ? printsApi.fileUrl(img.url) : img.previewUrl;
+                const isThumbnail = idx === 0;
                 return (
                   <Box
                     key={key}
@@ -479,51 +513,94 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                       height: 96,
                       borderRadius: 1,
                       overflow: "hidden",
-                      border: "1px solid",
-                      borderColor: "divider",
+                      border: isThumbnail ? "2px solid" : "1px solid",
+                      borderColor: isThumbnail ? "primary.main" : "divider",
+                      "&:hover .use-as-thumbnail, &:focus-within .use-as-thumbnail": { opacity: 1 },
                     }}
                   >
                     <Box
                       component="img"
                       src={src}
+                      alt=""
                       sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     />
-                    {idx === 0 && (
-                      <Chip
-                        label={t("models:edit.thumbnailBadge")}
-                        size="small"
-                        sx={{ position: "absolute", bottom: 3, left: 3, height: 18, fontSize: 10 }}
-                      />
+                    {isThumbnail ? (
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 20,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 0.5,
+                          bgcolor: "primary.main",
+                          color: "primary.contrastText",
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          animation: `${thumbnailBandIn} 200ms ease-out`,
+                          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                        }}
+                      >
+                        <ImageIcon sx={{ fontSize: 12 }} />
+                        {t("models:edit.thumbnailBadge")}
+                      </Box>
+                    ) : (
+                      <Box
+                        className="use-as-thumbnail"
+                        sx={{
+                          position: "absolute",
+                          top: 2,
+                          left: 2,
+                          opacity: 0,
+                          transition: "opacity 150ms",
+                          "@media (hover: none)": { opacity: 1 },
+                        }}
+                      >
+                        <Tooltip title={t("models:edit.useAsThumbnail")}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={saving}
+                              aria-label={t("models:edit.useAsThumbnail")}
+                              onClick={() => makeThumbnail(key)}
+                              sx={overImageButtonSx}
+                            >
+                              <ImageOutlinedIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Box>
                     )}
                     <IconButton
                       size="small"
                       disabled={saving}
+                      aria-label={t("models:edit.removeImage")}
                       onClick={() => removeImage(key)}
-                      sx={{
-                        position: "absolute",
-                        top: 2,
-                        right: 2,
-                        bgcolor: "rgba(0,0,0,0.55)",
-                        color: "#fff",
-                        "&:hover": { bgcolor: "rgba(0,0,0,0.75)" },
-                      }}
+                      sx={{ ...overImageButtonSx, position: "absolute", top: 2, right: 2 }}
                     >
                       <CloseIcon sx={{ fontSize: 14 }} />
                     </IconButton>
-                    <Stack direction="row" sx={{ position: "absolute", bottom: 2, right: 2 }}>
-                      <IconButton
-                        size="small"
-                        disabled={saving || idx === 0}
-                        onClick={() => moveImageBy(key, -1)}
-                        sx={{ color: "#fff", bgcolor: "rgba(0,0,0,0.55)", "&:hover": { bgcolor: "rgba(0,0,0,0.75)" } }}
-                      >
-                        <ChevronLeftIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
+                    <Stack direction="row" sx={{ position: "absolute", bottom: isThumbnail ? 22 : 2, right: 2 }}>
+                      {!isThumbnail && (
+                        <IconButton
+                          size="small"
+                          disabled={saving}
+                          aria-label={t("models:edit.moveImageLeft")}
+                          onClick={() => moveImageBy(key, -1)}
+                          sx={overImageButtonSx}
+                        >
+                          <ChevronLeftIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      )}
                       <IconButton
                         size="small"
                         disabled={saving || idx === images.length - 1}
+                        aria-label={t("models:edit.moveImageRight")}
                         onClick={() => moveImageBy(key, 1)}
-                        sx={{ color: "#fff", bgcolor: "rgba(0,0,0,0.55)", "&:hover": { bgcolor: "rgba(0,0,0,0.75)" } }}
+                        sx={overImageButtonSx}
                       >
                         <ChevronRightIcon sx={{ fontSize: 14 }} />
                       </IconButton>

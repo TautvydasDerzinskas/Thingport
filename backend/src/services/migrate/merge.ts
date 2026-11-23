@@ -102,6 +102,7 @@ export const MERGED_TABLES = new Set<Prisma.ModelName>([
   "Activity",
   "SystemReceipt",
   "UserPrinter",
+  "SendTarget",
   "UserIcon",
   "UserIdentity",
   "UserAchievement",
@@ -116,6 +117,8 @@ export const MERGED_TABLES = new Set<Prisma.ModelName>([
   "CustomWidget",
   "Tool",
   "ToolData",
+  "ToolSharedData",
+  "ToolAudience",
   "StudioDesign",
   "StudioRevision",
   "StudioMessage",
@@ -190,6 +193,10 @@ export class Merge {
   private created = new Set<string>();
   private categories = new Map<string, string>();
   private prints = new Map<string, string>();
+  /** Models brought, or found brought by an earlier try, that were copies there: by id, their first original's id. */
+  private originals: [string, string][] = [];
+  /** A model here, by how its copies know it: its own first original, else itself. */
+  private rootsHere = new Map<string, string>();
   private collections = new Map<string, string>();
   private tools = new Map<string, string>();
   private oidc = new Map<string, string>();
@@ -235,9 +242,10 @@ export class Merge {
     }
     const sourceIds = [...this.users.keys()];
     this.phase("models", await this.source.print.count({ where: { userId: { in: sourceIds } } }));
-    for (const sourceId of sourceIds) {
-      await this.mergeCategories(sourceId, this.users.get(sourceId)!);
-      await this.mergePrints(sourceId, this.users.get(sourceId)!);
+    for (const sourceId of sourceIds) await this.mergeCategories(sourceId, this.users.get(sourceId)!);
+    // Everyone's first originals before any copy, so a copy of one that's another model here is known by that one.
+    for (const copies of [false, true]) {
+      for (const sourceId of sourceIds) await this.mergePrints(sourceId, this.users.get(sourceId)!, copies);
     }
     await this.linkCopies();
 
@@ -411,11 +419,11 @@ export class Merge {
 
   // --- Models ---
 
-  private async mergePrints(sourceUserId: string, userId: string) {
+  private async mergePrints(sourceUserId: string, userId: string, copies: boolean) {
     let cursor: string | undefined;
     for (;;) {
       const batch: SourcePrint[] = await this.source.print.findMany({
-        where: { userId: sourceUserId },
+        where: { userId: sourceUserId, originalId: copies ? { not: null } : null },
         include: { plates: true, previewImages: true, descriptionImages: true, files: true },
         orderBy: { id: "asc" },
         take: 25,
@@ -449,6 +457,7 @@ export class Merge {
       this.prints.set(print.id, print.id);
       // Brought by a try that stopped before linking it to its original.
       if (print.copiedFromId && !earlier.copiedFromId) this.copies.push([print.id, print.copiedFromId]);
+      if (print.originalId) this.originals.push([print.id, print.originalId]);
       this.report.models.earlier += 1;
       return;
     }
@@ -544,6 +553,7 @@ export class Merge {
     }
     this.prints.set(print.id, print.id);
     if (print.copiedFromId) this.copies.push([print.id, print.copiedFromId]);
+    if (print.originalId) this.originals.push([print.id, print.originalId]);
     this.report.models.brought += 1;
     if (name !== print.name) this.report.models.renamed += 1;
   }
@@ -558,8 +568,9 @@ export class Merge {
       if (found) return found.id;
     }
     if (print.originalId) {
+      // Its first original there, or the one that is here: a copy they have here already knows it by that one's.
       const found = await prisma.print.findFirst({
-        where: { userId, originalId: print.originalId },
+        where: { userId, originalId: { in: [...new Set([print.originalId, await this.rootHere(print.originalId)])] } },
         select: { id: true },
       });
       if (found) return found.id;
@@ -653,6 +664,26 @@ export class Merge {
       if (here && here !== id)
         await prisma.print.update({ where: { id }, data: { copiedFromId: here } }).catch(() => undefined);
     }
+    // A first original that's another model here is known by that one's, as what's shared about it is. Left as it
+    // was where they have a copy of that one already.
+    for (const [id, original] of this.originals) {
+      const root = await this.rootHere(original);
+      if (root !== original && root !== id)
+        await prisma.print.update({ where: { id }, data: { originalId: root } }).catch(() => undefined);
+    }
+  }
+
+  /** How copies here know a first original there: by the model it is here, and that one's own first original. */
+  private async rootHere(original: string): Promise<string> {
+    const here = this.prints.get(original);
+    if (!here || here === original) return original;
+    let root = this.rootsHere.get(here);
+    if (!root) {
+      const row = await prisma.print.findUnique({ where: { id: here }, select: { originalId: true } });
+      root = row?.originalId ?? here;
+      this.rootsHere.set(here, root);
+    }
+    return root;
   }
 
   // --- Collections ---
@@ -754,12 +785,21 @@ export class Merge {
     }
   }
 
-  /** Their printers, and the announcements they were already sent. */
+  /** Their printers, where they send models, and the announcements they were already sent. */
   private async mergeSmallRows(sourceIds: string[]) {
     const printers = await this.source.userPrinter.findMany({ where: { userId: { in: sourceIds } } });
     if (printers.length) {
       await prisma.userPrinter.createMany({
         data: printers.map((printer) => ({ ...printer, userId: this.users.get(printer.userId)! })),
+        skipDuplicates: true,
+      });
+    }
+    const targets = await this.source.sendTarget.findMany({ where: { userId: { in: sourceIds } } });
+    if (targets.length) {
+      await prisma.sendTarget.createMany({
+        data: targets.map((target) =>
+          rowFor<Prisma.SendTargetCreateManyInput>("SendTarget", { ...target, userId: this.users.get(target.userId)! }),
+        ),
         skipDuplicates: true,
       });
     }
@@ -970,6 +1010,60 @@ export class Merge {
         : [];
     });
     if (kept.length) await prisma.toolData.createMany({ data: kept, skipDuplicates: true });
+
+    // Whom they shared with, among the people who came along: in place before what they shared, so an entry kept to
+    // a few is never everyone's for a moment, nor for good when this fails. An account here that keeps that tool's
+    // entries to a few already has one audience for its entries and theirs: those both kept them for, so neither's
+    // reach anyone the other kept them from. In one statement, so a change made here meanwhile is the one narrowed.
+    const audiences = await this.source.toolAudience.findMany({ where: { userId: { in: sourceIds } } });
+    for (const row of audiences) {
+      const toolId = this.tools.get(row.toolId);
+      if (!toolId) continue;
+      const userIds = row.userIds.flatMap((id) => this.users.get(id) ?? []);
+      await prisma.$executeRaw`
+        INSERT INTO "ToolAudience" ("toolId", "userId", "userIds", "updatedAt")
+        VALUES (${toolId}, ${this.users.get(row.userId)!}, ${userIds}::text[], ${row.updatedAt})
+        ON CONFLICT ("toolId", "userId") DO UPDATE SET
+          "userIds" = ARRAY(
+            SELECT id FROM unnest(COALESCE("ToolAudience"."userIds", '{}')) AS id WHERE id = ANY(EXCLUDED."userIds")
+          ),
+          "updatedAt" = now()`;
+    }
+    // What they share through tools, still about the same models: an original that's another model here is known
+    // by that one's first original, as its copies are. A page at a time, as each writer may keep 5 MB.
+    const model = (id: string | null) => (id ? (this.prints.get(id) ?? id) : null);
+    const originalOf = (key: string | null) => (key?.startsWith("orig:") ? key.slice(5) : null);
+    const roots = new Map<string, string>();
+    let cursor: string | undefined;
+    for (;;) {
+      const shared = await this.source.toolSharedData.findMany({
+        where: { userId: { in: sourceIds } },
+        orderBy: { id: "asc" },
+        take: 500,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+      if (!shared.length) return;
+      cursor = shared.at(-1)!.id;
+      for (const entry of shared) {
+        const original = originalOf(entry.originKey);
+        if (original && !roots.has(original)) roots.set(original, await this.rootHere(original));
+      }
+      const sharedKept = shared.flatMap((entry) => {
+        const toolId = this.tools.get(entry.toolId);
+        if (!toolId) return [];
+        const original = originalOf(entry.originKey);
+        return [
+          rowFor<Prisma.ToolSharedDataCreateManyInput>("ToolSharedData", {
+            ...entry,
+            toolId,
+            userId: this.users.get(entry.userId)!,
+            printId: model(entry.printId),
+            originKey: original ? `orig:${roots.get(original)}` : entry.originKey,
+          }),
+        ];
+      });
+      if (sharedKept.length) await prisma.toolSharedData.createMany({ data: sharedKept, skipDuplicates: true });
+    }
   }
 
   private async mergeStudio(sourceIds: string[]) {

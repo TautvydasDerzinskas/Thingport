@@ -23,7 +23,7 @@ import type {
 import type { AssetHome } from "./services/modelAssets";
 import type { PrintProfileOut } from "./services/printProfileService";
 import { plateThumbPath } from "./services/printService";
-import { previewImagePath } from "./services/previewImageService";
+import { previewImageExists, previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
 import {
   canRenderModelImage,
@@ -32,7 +32,7 @@ import {
   modelPreviewGlbExists,
   modelPreviewGlbPath,
 } from "./services/modelPreviewCache";
-import { buildImportSourceUrl } from "./services/importService";
+import { buildImportSourceUrl } from "./sources/sourceUrls";
 import { openSourceGaps, type SourceGap } from "./services/sourceGaps";
 import { licenseOut, type LicenseOut } from "./services/licenseService";
 import { profileOut, type PublicProfileOut } from "./services/publicProfileService";
@@ -41,6 +41,8 @@ import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobR
 import { jobPayload } from "./services/importJobService";
 import type { LineOut, OwnQueue, QueueJobRow, QueueJobView } from "./services/importQueueService";
 import type { ImportOutcome } from "./services/modelNotifications";
+import { capsOf, kindOfStored, type Caps, type FileRole, type Kind } from "./files/kinds";
+import { withPlace } from "./modelFiles/pending";
 
 export type UserOut = {
   id: string;
@@ -105,6 +107,9 @@ export type PreparedPrintOut = {
   estimated_seconds?: number | null;
   format?: string | null;
   removable: boolean;
+  /** As a plate's, when the prepared print is a file of its own; null when the plates themselves are the sliced files. */
+  content_kind?: Kind | null;
+  caps?: Caps | null;
 };
 
 export type PlateOut = {
@@ -137,6 +142,11 @@ export type PlateOut = {
   /** What kind of 3MF it is (src/adapter/format.ts), from which the page tells which slicers get an adapted copy;
    *  null for other files, and for an older 3MF until its model is opened. */
   format: ThreeMfFormat | null;
+  /** What the file is, by the kind table (files/kinds.ts). Named apart from MCP's `kind` and Send to's `file_kind`,
+   *  which say what a file is to its model. */
+  content_kind: Kind;
+  /** What the web app can do with it (capsOf in files/kinds.ts). */
+  caps: Caps;
 };
 
 export type PrintFileOut = {
@@ -147,6 +157,9 @@ export type PrintFileOut = {
   mime: string;
   size: number;
   url: string;
+  /** As PlateOut's. */
+  content_kind: Kind;
+  caps: Caps;
 };
 
 export type PreviewImageOut = {
@@ -195,12 +208,17 @@ export type PrintOut = {
   storage_path: string | null;
   plates: PlateOut[];
   preview_images: PreviewImageOut[];
+  /** What its card shows: its first gallery image, at card size, else its first plate's thumbnail (coverThumbUrl). */
   thumb_url: string | null;
+  /** It's the plate's thumbnail, and that is our own render rather than a picture. */
   thumb_generated: boolean;
   render_url: string | null;
   /** Any plate carries colours of its own; see PlateOut.own_colors. */
   own_colors: boolean;
   supporting_file_count: number;
+  /** The files kept beside its plates, as GET /print/:id/files lists them, on the detail fetch only: a list of models
+   *  carries supporting_file_count instead. */
+  supporting_files?: PrintFileOut[];
   /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
    *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
    *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */
@@ -314,6 +332,7 @@ export function renderUrl(plate: { id: string; filename: string }, home: AssetHo
 }
 
 export function toPlateOut(printId: string, plate: Plate, home: AssetHome): PlateOut {
+  const kind = kindOfStored(plate.filename);
   return {
     id: plate.id,
     print_id: printId,
@@ -330,6 +349,8 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     own_colors: modelColorImagePath(plate.id, home) !== null,
     profile_id: plate.sourceInstanceId ?? null,
     format: storedFormat(plate.format),
+    content_kind: kind,
+    caps: capsOf(kind, plate.filename, "plate"),
   };
 }
 
@@ -351,6 +372,26 @@ export function previewImageUrl(id: string, home: AssetHome): string | null {
   return versionedUrl(previewImagePath(id, home), `/preview-image/${id}/file.jpg`);
 }
 
+/** The image at card size, which asking for makes. Versioned by the image it's made from: an id's image never changes. */
+export function galleryThumbUrl(id: string, home: AssetHome): string | null {
+  return versionedUrl(previewImagePath(id, home), `/preview-image/${id}/thumb.jpg`);
+}
+
+/**
+ * The model's thumbnail where it's a picture of the gallery: its first image, the one Edit model marks as the thumbnail,
+ * so putting another first changes what its card shows. Null where the gallery is empty or holds only our own render;
+ * the first plate's thumbnail is the model's then. `cover` is the gallery's first image.
+ */
+export function coverThumbUrl(cover: { id: string; generated: boolean } | undefined, home: AssetHome): string | null {
+  return cover && !cover.generated ? galleryThumbUrl(cover.id, home) : null;
+}
+
+/** The gallery's first image that's there, of `images` in their order: the one a card goes by, as toPrintOut leaves
+ *  out an image whose file is gone. */
+export function galleryCover<T extends { id: string }>(images: T[], home: AssetHome): T | undefined {
+  return images.find((image) => previewImageExists(image.id, home));
+}
+
 export function toPreviewImageOut(image: PreviewImage, home: AssetHome): PreviewImageOut | null {
   const url = previewImageUrl(image.id, home);
   if (!url) return null;
@@ -358,6 +399,8 @@ export function toPreviewImageOut(image: PreviewImage, home: AssetHome): Preview
 }
 
 export function toPrintFileOut(printFile: PrintFile): PrintFileOut {
+  const kind = kindOfStored(printFile.filename);
+  const role: FileRole = printFile.role === "PREPARED" ? "prepared" : "supporting";
   return {
     id: printFile.id,
     filename: printFile.filename,
@@ -365,7 +408,19 @@ export function toPrintFileOut(printFile: PrintFile): PrintFileOut {
     mime: printFile.mime,
     size: printFile.size,
     url: `/print/${printFile.printId}/files/${printFile.id}`,
+    content_kind: kind,
+    caps: capsOf(kind, printFile.filename, role),
   };
+}
+
+/** The files kept beside a model's plates, as GET /print/:id/files lists them: by name, none still being saved. */
+export function supportingFilesOut(files: PrintFile[]): PrintFileOut[] {
+  const byName = (a: PrintFile, b: PrintFile) =>
+    a.filename < b.filename ? -1 : a.filename > b.filename ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  return withPlace(files)
+    .filter((file) => file.role === "SUPPORTING")
+    .toSorted(byName)
+    .map(toPrintFileOut);
 }
 
 function storageParentDir(plates: Plate[]): string | null {
@@ -391,18 +446,25 @@ export function toPrintOut(
 ): PrintOut {
   const sortedPlates = plates.toSorted((a, b) => a.position - b.position);
   const plateOuts = sortedPlates.map((p) => toPlateOut(print.id, p, print.assetsPath));
-  const supporting = files.filter((f) => f.role === "SUPPORTING");
+  // One still "pending" is a save under way, with no file yet.
+  const placed = withPlace(files);
+  const supporting = placed.filter((f) => f.role === "SUPPORTING");
   const supportingCount = supporting.length;
+  // By the kind table, as the Generative filter counts them: a script named with a leading dot is junk, as macOS's "._"
+  // copies are, so it isn't the model's script.
   const generatorScripts = supporting
-    .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
+    .filter((f) => kindOfStored(f.filename) === "script")
     .map((f) => ({ id: f.id, filename: f.filename, folder: f.folder ?? null }));
   // The model's own files: LICENSE.txt is Thingport's, written from its licence.
   const totalSize =
-    plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);
+    plates.reduce((sum, p) => sum + p.size, 0) +
+    placed.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);
   const previewImageOuts = (previewImages ?? [])
     .toSorted((a, b) => a.position - b.position)
     .map((image) => toPreviewImageOut(image, print.assetsPath))
     .filter((img): img is PreviewImageOut => img !== null);
+
+  const coverThumb = coverThumbUrl(previewImageOuts[0], print.assetsPath);
 
   let prepared: PreparedPrintOut | null = null;
   let slicerUrl: string | null = null;
@@ -418,6 +480,8 @@ export function toPrintOut(
       estimated_seconds: (meta.estimated_seconds as number | null) ?? null,
       format: (meta.format as string | null) ?? null,
       removable: true,
+      content_kind: kindOfStored(preparedFile.filename),
+      caps: capsOf(kindOfStored(preparedFile.filename), preparedFile.filename, "prepared"),
     };
     slicerUrl = `/print/${print.id}/prepared-print`;
     slicerFilename = preparedFile.filename;
@@ -431,6 +495,8 @@ export function toPrintOut(
       estimated_seconds: (meta.estimated_seconds as number | null) ?? null,
       format: (meta.format as string | null) ?? null,
       removable: false,
+      content_kind: null,
+      caps: null,
     };
     slicerUrl = plateOuts[0]?.url ?? null;
     slicerFilename = preparedFilename(print.name, { format: meta.format as string });
@@ -462,8 +528,8 @@ export function toPrintOut(
     storage_path: storageParentDir(sortedPlates),
     plates: plateOuts,
     preview_images: previewImageOuts,
-    thumb_url: plateOuts[0]?.thumb_url ?? null,
-    thumb_generated: plateOuts[0]?.thumb_generated ?? false,
+    thumb_url: coverThumb ?? plateOuts[0]?.thumb_url ?? null,
+    thumb_generated: coverThumb ? false : (plateOuts[0]?.thumb_generated ?? false),
     // The first file the server can draw: a STEP first plate mustn't leave the card without one.
     render_url: plateOuts.find((plate) => plate.render_url)?.render_url ?? null,
     own_colors: plateOuts.some((plate) => plate.own_colors),

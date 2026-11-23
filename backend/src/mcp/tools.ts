@@ -10,7 +10,10 @@ import { MANIFESTS } from "../providers/index.generated";
 import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError } from "../utils/fileUtils";
+import { openRowFile } from "../utils/sendStored";
+import type { OpenedFile } from "../modelFiles/storageFs";
+import { normalizeFileName } from "../files/names";
 import { IMPORT_MAX_BYTES } from "../config";
 import type { McpAccess } from "../services/settingsService";
 import {
@@ -23,8 +26,11 @@ import {
 } from "../services/collectionService";
 import { getDashboardSummary } from "../services/dashboardService";
 import { printOutById } from "../services/printLoader";
+import { kindOfStored, type Kind } from "../files/kinds";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 import type { PrintProfileOut } from "../services/printProfileService";
 import { listPrints, PRINT_SORT_MODES, SELF_AUTHOR_ID, type PrintListPage } from "../services/printQuery";
+import { parseSortDirection, SORT_DIRECTIONS } from "../utils/sortDirection";
 import { search } from "../services/searchService";
 import { getImportTask, startImportTask, type ImportTaskState } from "../services/importTaskService";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
@@ -43,7 +49,12 @@ import { parseToolManifest, toolLocalesSchema, validateToolManifest } from "../s
 import { TOOL_GUIDE } from "../services/toolGuide";
 import { ICON_MAX_BYTES, listIcons as listUserIcons, saveIcon } from "../services/iconService";
 import { removePlate, renamePlate, resolvePlateFilePath } from "../services/printCreation";
-import { deletePreparedFile, deleteSupportingFile, managedPrintFilePath } from "../services/printFileService";
+import {
+  deletePreparedFile,
+  deleteSupportingFile,
+  managedPrintFilePath,
+  printFileStillNames,
+} from "../services/printFileService";
 import { notifyUpload } from "../services/modelNotifications";
 import {
   addUploadedFiles,
@@ -55,7 +66,7 @@ import {
 import { previewImagePath, removePreviewImage, reorderPreviewImages } from "../services/previewImageService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { setPrintCategory } from "../services/printCategoryService";
-import { uniqueModelName } from "../services/printService";
+import { plateStillNames, uniqueModelName } from "../services/printService";
 import { CATEGORY_KINDS, createCategory, type CategoryKind } from "../services/categoryService";
 import { createLog } from "../services/auditLog";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -94,6 +105,7 @@ function modelSummary(ctx: McpToolContext, print: PrintOut) {
     category: print.category_name,
     source: print.source_provider ? { provider: print.source_provider, url: print.source_url } : null,
     file_count: print.plates.length,
+    supporting_file_count: print.supporting_file_count,
     view_count: print.view_count,
     print_count: print.print_count,
     favorite: print.is_favorite,
@@ -115,7 +127,8 @@ const searchModels: McpToolDefinition = {
   title: "Search models",
   description:
     "Search the library by words in a model's title, tags, creator or description. Also returns matching " +
-    "collections and tags. Start here to find a model by what it is.",
+    "collections and tags. Start here to find a model by what it is. " +
+    "A model's file_count counts its plates (the 3D files), supporting_file_count the files kept beside them.",
   readOnly: true,
   inputSchema: {
     query: z.string().min(1).describe("Words to look for, e.g. 'benchy' or 'cable clip'."),
@@ -138,7 +151,8 @@ const listModels: McpToolDefinition = {
   title: "List models",
   description:
     "List models, optionally filtered by tags, category, collection, author or what their licence allows, newest " +
-    "first unless sorted otherwise. Filters combine: a model must match every one given.",
+    "first unless sorted otherwise. Filters combine: a model must match every one given. " +
+    "A model's file_count counts its plates (the 3D files), supporting_file_count the files kept beside them.",
   readOnly: true,
   inputSchema: {
     query: z.string().optional().describe("Only models matching these words, as in search_models."),
@@ -162,7 +176,14 @@ const listModels: McpToolDefinition = {
     sort: z
       .enum(PRINT_SORT_MODES)
       .optional()
-      .describe("newest (default), popular (most viewed), downloads (most printed), or relevance (needs query)."),
+      .describe(
+        "newest (default), popular (most viewed), downloads (most printed), relevance (needs query), " +
+          "or name (A–Z).",
+      ),
+    sort_direction: z
+      .enum(SORT_DIRECTIONS)
+      .optional()
+      .describe("Defaults to ascending for name, descending otherwise."),
     ...pageArgs,
   },
   async run(ctx, args) {
@@ -179,6 +200,7 @@ const listModels: McpToolDefinition = {
       },
       {
         sort: args.sort as (typeof PRINT_SORT_MODES)[number] | undefined,
+        direction: parseSortDirection(args.sort_direction),
         limit: (args.limit as number | undefined) ?? DEFAULT_PAGE,
         offset: args.offset as number | undefined,
       },
@@ -218,7 +240,10 @@ const getModel: McpToolDefinition = {
   title: "Get a model",
   description:
     "Everything about one model: its description, files, tags, category, author, collections, where it was " +
-    "imported from, and how often it was viewed and printed. A file that is one of the print profiles the model was " +
+    "imported from, and how often it was viewed and printed. files are its plates (the 3D files); supporting_files " +
+    "are the files kept beside them (instructions, scripts, pictures and the like). Each has content_kind, what the " +
+    "file is (mesh, laser, sliced, cad, script, picture, document, archive and so on); list_model_files gives their " +
+    "ids and links. A file that is one of the print profiles the model was " +
     "imported with carries `print_profile`: its name, whether the designer or the community made it, the printer, " +
     "settings, print time in minutes, filament in grams, and its build plates. `license` is its licence as its source " +
     "lists it or its owner picked: its id (SPDX where there is one), name, link, what it allows of share (pass the " +
@@ -251,9 +276,15 @@ const getModel: McpToolDefinition = {
         name: plate.filename,
         ...(plate.folder ? { folder: plate.folder } : {}),
         size_bytes: plate.size,
+        content_kind: plate.content_kind,
         ...(plate.profile ? { print_profile: profileForAi(plate.profile) } : {}),
       })),
-      supporting_file_count: print.supporting_file_count,
+      supporting_files: (print.supporting_files ?? []).map((file) => ({
+        name: file.filename,
+        ...(file.folder ? { folder: file.folder } : {}),
+        size_bytes: file.size,
+        content_kind: file.content_kind,
+      })),
       license: print.license
         ? {
             id: print.license.id,
@@ -600,7 +631,7 @@ function decodeUploads<F extends { name: string; base64: string }>(
 ): { files: (Omit<F, "base64"> & DecodedFile)[]; images: Buffer[] } {
   const decoded = files.map(({ base64, ...file }) => ({
     ...file,
-    name: sanitizeFilename(file.name) || "model",
+    name: normalizeFileName(file.name),
     buffer: decodeBase64(base64, file.name),
   }));
   const pictures = images.map((image, i) => decodeBase64(image, `Image ${i + 1}`));
@@ -824,11 +855,14 @@ type ModelFile = {
   name: string;
   folder: string | null;
   kind: "plate" | "supporting" | "prepared";
+  /** What the file is, by the kind table: mesh, sliced, document and so on. */
+  content_kind: Kind;
   mime: string;
   size_bytes: number;
   /** Under /api; read with the token when it may read Model files. */
   apiPath: string;
-  diskPath: () => string | null;
+  /** The file opened, once its row still names it (utils/sendStored.ts), or null when it isn't there. */
+  open: () => Promise<OpenedFile | null>;
 };
 
 /** Every file of one of the user's models: its plates, supporting files and sliced print. */
@@ -837,8 +871,11 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     where: { id: modelId, userId },
     include: {
       plates: { orderBy: { position: "asc" } },
-      // The LICENSE.txt Thingport writes says what get_model's `license` does.
-      files: { where: { role: { not: "LICENSE" } }, orderBy: { createdAt: "asc" } },
+      // The LICENSE.txt Thingport writes says what get_model's `license` does; one still "pending" is a save under way.
+      files: {
+        where: { role: { not: "LICENSE" }, storagePath: { not: PENDING_STORAGE_PATH } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!print) throw new HttpError(404, "Print not found");
@@ -847,20 +884,30 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     name: plate.filename,
     folder: plate.folder,
     kind: "plate",
+    content_kind: kindOfStored(plate.filename),
     mime: plate.mime || "application/octet-stream",
     size_bytes: plate.size,
     apiPath: `/print/${print.id}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
-    diskPath: () => resolvePlateFilePath(plate),
+    open: async () => {
+      const filePath = resolvePlateFilePath(plate);
+      return filePath ? openRowFile({ filePath, site: "mcp.file", stillNames: () => plateStillNames(plate) }) : null;
+    },
   }));
   const others = print.files.map((file): ModelFile => ({
     id: file.id,
     name: file.filename,
     folder: file.folder,
     kind: file.role === "PREPARED" ? "prepared" : "supporting",
+    content_kind: kindOfStored(file.filename),
     mime: file.mime || "application/octet-stream",
     size_bytes: file.size,
     apiPath: file.role === "PREPARED" ? `/print/${print.id}/prepared-print` : `/print/${print.id}/files/${file.id}`,
-    diskPath: () => managedPrintFilePath(file),
+    open: async () =>
+      openRowFile({
+        filePath: managedPrintFilePath(file),
+        site: "mcp.file",
+        stillNames: () => printFileStillNames(file),
+      }),
   }));
   return [...plates, ...others];
 }
@@ -871,6 +918,7 @@ function fileOut(ctx: McpToolContext, file: ModelFile) {
     name: file.name,
     folder: file.folder,
     kind: file.kind,
+    content_kind: file.content_kind,
     mime: file.mime,
     size_bytes: file.size_bytes,
     api_path: `/api${file.apiPath}`,
@@ -883,7 +931,8 @@ const listModelFiles: McpToolDefinition = {
   title: "List a model's files",
   description:
     "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file " +
-    "takes. folder is the folder its source kept it in, levels joined by '/' (e.g. 'USB C version/Handles'; often the " +
+    "takes. kind is what the file is to the model (plate, supporting or prepared); content_kind is what the file is " +
+    "(mesh, laser, sliced, cad, script, picture, document, archive and so on). folder is the folder its source kept it in, levels joined by '/' (e.g. 'USB C version/Handles'; often the " +
     "model's variants), or null; a name is unique within its folder, not the whole model. api_path (on the server's " +
     "own address) or download_url, when the server knows its address, opens with the same token as " +
     "'Authorization: Bearer' if it may read Model files.",
@@ -911,18 +960,22 @@ const getModelFile: McpToolDefinition = {
     const files = await modelFiles(ctx.userId, args.model_id as string);
     const file = files.find((f) => f.id === args.file_id);
     if (!file) throw new HttpError(404, "File not found");
-    const diskPath = file.diskPath();
-    const stat = diskPath ? await fs.stat(diskPath).catch(() => null) : null;
-    if (!diskPath || !stat?.isFile()) throw new HttpError(404, "The file is missing from storage");
-    const out = { ...fileOut(ctx, file), size_bytes: stat.size };
-    if (stat.size > MCP_FILE_MAX_BYTES) {
-      return {
-        ...out,
-        base64: null,
-        note: `Over ${MCP_FILE_MAX_BYTES / MB} MB: fetch it by its download_url or api_path.`,
-      };
+    // Only a file that isn't there is missing: an error opening it is the server's.
+    const opened = await file.open();
+    if (!opened) throw new HttpError(404, "The file is missing from storage");
+    try {
+      const out = { ...fileOut(ctx, file), size_bytes: opened.size };
+      if (opened.size > MCP_FILE_MAX_BYTES) {
+        return {
+          ...out,
+          base64: null,
+          note: `Over ${MCP_FILE_MAX_BYTES / MB} MB: fetch it by its download_url or api_path.`,
+        };
+      }
+      return { ...out, base64: (await opened.handle.readFile()).toString("base64") };
+    } finally {
+      await opened.handle.close();
     }
-    return { ...out, base64: (await fs.readFile(diskPath)).toString("base64") };
   },
 };
 

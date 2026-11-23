@@ -1,3 +1,8 @@
+import i18next from "i18next";
+import { THINGPORT_WEBSITE_URL } from "../constants/website";
+
+const REVERSE_PROXY_GUIDE = `${THINGPORT_WEBSITE_URL}docs/guides/reverse-proxy/`;
+
 // Always same-origin /api/*: nginx proxies it in production, Vite in dev.
 export function apiBase(): string {
   return "/api";
@@ -41,6 +46,14 @@ export function assertOk(res: Response, message: string) {
   }
 }
 
+/** What an error answered by something in front of the backend means, by its status. */
+function proxyErrorMessage(status: number): string {
+  if (status === 413) return i18next.t("proxyErrors.tooLarge", { ns: "common", url: REVERSE_PROXY_GUIDE });
+  if (status === 502 || status === 503) return i18next.t("proxyErrors.noAnswer", { ns: "common", status });
+  if (status === 504) return i18next.t("proxyErrors.timedOut", { ns: "common", url: REVERSE_PROXY_GUIDE });
+  return i18next.t("proxyErrors.refused", { ns: "common", status, url: REVERSE_PROXY_GUIDE });
+}
+
 export async function readErrorMessage(res: Response, fallback: string) {
   let body = "";
   try {
@@ -48,21 +61,32 @@ export async function readErrorMessage(res: Response, fallback: string) {
   } catch {
     return fallback;
   }
-  const trimmed = body.trim();
-  if (!trimmed) return fallback;
   try {
-    const data = JSON.parse(trimmed);
+    const data = JSON.parse(body);
     if (typeof data?.detail === "string" && data.detail.trim()) {
       return data.detail.trim();
     }
   } catch {}
-  // An HTML page comes from a proxy in front of the backend, not from Thingport.
-  if (/^<(!doctype|html)/i.test(trimmed)) {
-    if (res.status === 504)
-      return "The server took too long to answer, and a proxy in front of Thingport gave up (HTTP 504).";
-    return `${fallback} (HTTP ${res.status})`;
-  }
-  return trimmed;
+  // The backend gives every error a `detail`: without one, a reverse proxy, or the web server that ships with
+  // Thingport, answered instead, and its page says nothing a person can act on.
+  return res.ok ? fallback : proxyErrorMessage(res.status);
+}
+
+/** An error from a route that may send a stable `code`. Those come as `{ error, code }`, any other error the route
+ *  throws as `{ detail }`, so the message is read from either. */
+export async function readCodedError(
+  res: Response,
+  fallback: string,
+): Promise<{ message: string; code: string | null }> {
+  let record: Record<string, unknown> = {};
+  try {
+    const body: unknown = await res.clone().json();
+    if (typeof body === "object" && body !== null) record = body as Record<string, unknown>;
+  } catch {}
+  return {
+    message: typeof record.error === "string" ? record.error : await readErrorMessage(res, fallback),
+    code: typeof record.code === "string" ? record.code : null,
+  };
 }
 
 /** Like `assertOk`, but a failure carries the server's own message. */

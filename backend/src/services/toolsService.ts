@@ -16,7 +16,9 @@ import type { Prisma, Role, Tool } from "@prisma/client";
 import { z } from "zod";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
-import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { createKeyedLock } from "../utils/concurrency";
+import { HttpError } from "../utils/fileUtils";
+import { normalizeFileName, numberedName, type NormalName } from "../files/names";
 import { importQuietly } from "../utils/quietImport";
 import { readCapped } from "../utils/readCapped";
 import { TtlCache } from "../utils/ttlCache";
@@ -75,7 +77,7 @@ export async function assertCanUseTools(user: ToolUser): Promise<ToolAccessOut> 
 }
 
 /** Everyone who can use tools now. */
-async function toolUsers(): Promise<string[]> {
+export async function toolUsers(): Promise<string[]> {
   const access = await getToolsAccess();
   const where: Prisma.UserWhereInput =
     access.audience === "everyone"
@@ -130,7 +132,7 @@ function localesOf(tool: Pick<Tool, "locales">): ToolLocales {
   return parsed.success ? parsed.data : {};
 }
 
-function manifestOf(tool: Pick<Tool, "manifest">): ToolManifest | null {
+export function manifestOf(tool: Pick<Tool, "manifest">): ToolManifest | null {
   const parsed = toolManifestSchema.safeParse(tool.manifest);
   return parsed.success ? parsed.data : null;
 }
@@ -152,13 +154,29 @@ function out(tool: Tool, collectionId: string | null = null): ToolOut | null {
   };
 }
 
+/** A small availability check for clients that already have tool scripts cached. */
+export async function toolStatus(user: ToolUser): Promise<{ access: ToolAccessOut; ids: string[] }> {
+  const access = await toolAccessOf(user);
+  if (!access.canUse) return { access, ids: [] };
+  const tools = await prisma.tool.findMany({
+    where: {
+      OR: [{ source: "repo", enabled: true }, ...(access.canCreate ? [{ source: "own", userId: user.id }] : [])],
+    },
+    select: { id: true, manifest: true },
+    orderBy: { id: "asc" },
+  });
+  return { access, ids: tools.filter((tool) => manifestOf(tool)).map((tool) => tool.id) };
+}
+
 /** The tools the user may open: the installed ones, then their own when making them is allowed. */
 export async function listTools(user: ToolUser): Promise<{ access: ToolAccessOut; tools: ToolOut[] }> {
   const access = await toolAccessOf(user);
   if (!access.canUse) return { access, tools: [] };
   const [tools, collections] = await Promise.all([
     prisma.tool.findMany({
-      where: { OR: [{ source: "repo" }, ...(access.canCreate ? [{ source: "own", userId: user.id }] : [])] },
+      where: {
+        OR: [{ source: "repo", enabled: true }, ...(access.canCreate ? [{ source: "own", userId: user.id }] : [])],
+      },
       orderBy: [{ source: "desc" }, { createdAt: "asc" }],
     }),
     prisma.collection.findMany({
@@ -170,13 +188,15 @@ export async function listTools(user: ToolUser): Promise<{ access: ToolAccessOut
   return { access, tools: tools.flatMap((tool) => out(tool, collectionOf.get(tool.id) ?? null) ?? []) };
 }
 
-/** A tool the user may run, for its calls back to Thingport: an installed one, or one of their own while that's on. */
+/** A tool the user may run: an enabled repository tool, or one of their own while that is allowed. */
 export async function usableTool(user: ToolUser, toolId: string): Promise<Tool & { parsed: ToolManifest }> {
   const access = await assertCanUseTools(user);
   const tool = await prisma.tool.findUnique({ where: { id: toolId } });
   const mine = tool?.source === "own" && tool.userId === user.id;
   const parsed = tool && manifestOf(tool);
   if (!tool || !parsed || (tool.source === "own" && !mine)) throw new HttpError(404, "No such tool");
+  if (tool.source === "repo" && !tool.enabled)
+    throw new HttpError(403, "This tool is disabled on this Thingport instance", "TOOL_DISABLED");
   if (mine && !access.canCreate)
     throw new HttpError(403, "Users' own tools are turned off on this Thingport instance", "USER_TOOLS_OFF");
   return { ...tool, parsed };
@@ -432,6 +452,7 @@ export type AdminTool = {
   installed: {
     id: string;
     version: string;
+    enabled: boolean;
     installedAt: string;
     updatedAt: string;
     updateAvailable: boolean;
@@ -486,6 +507,7 @@ export async function adminToolCatalog(): Promise<{
     return {
       id: tool.id,
       version: manifest.version,
+      enabled: tool.enabled,
       installedAt: tool.createdAt.toISOString(),
       updatedAt: tool.updatedAt.toISOString(),
       updateAvailable: Boolean(repo && repo.sha !== tool.sha),
@@ -525,17 +547,27 @@ export async function adminToolCatalog(): Promise<{
  * `withModels` is what the admin was asked on the way in: a tool's models are most of what it weighs, and a
  * planner's parts run to gigabytes, so an instance short of room can have the tool without them. It works either
  * way -- what it can't do without them is work offline -- and they can be asked for later (`importToolModels`),
- * which is the same as installing again with them.
+ * which is the same as installing again with them. An update never takes away models the instance has: a page that
+ * read the tool before another admin imported them still asks without.
  */
 export async function installRepoTool(
   slug: string,
   adminId: string,
-  { withModels = true }: { withModels?: boolean } = {},
+  { withModels: asked = true }: { withModels?: boolean } = {},
 ): Promise<AdminTool["installed"]> {
   if (!SLUG.test(slug)) throw new HttpError(400, "Not a tool name");
+  return oneChangeAtATime(slug, () => installNow(slug, adminId, asked));
+}
+
+// Installs, updates and uninstalls of one tool go one at a time. Each reads the tool and then writes it, so one that
+// read it before another wrote would undo that: an update asked without models, say, written over an import of them.
+const oneChangeAtATime = createKeyedLock();
+
+async function installNow(slug: string, adminId: string, asked: boolean): Promise<AdminTool["installed"]> {
   const repo = await fetchRepoTool(slug, true);
   const files = toolModelFiles(repo.manifest);
   const existing = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
+  const withModels = asked || Boolean(existing?.modelsSha);
   // Without them the tool is installed as one that brings nothing, which is what having no spec recorded means.
   const modelsSha = withModels ? modelsShaOf(repo.manifest) : null;
   const modelsChanged = existing?.modelsSha !== modelsSha;
@@ -575,6 +607,7 @@ export async function installRepoTool(
   return {
     id: tool.id,
     version: manifest.version,
+    enabled: tool.enabled,
     installedAt: tool.createdAt.toISOString(),
     updatedAt: tool.updatedAt.toISOString(),
     updateAvailable: false,
@@ -653,7 +686,7 @@ async function downloadRepoFiles(slug: string, modelsSha: string, manifest: Tool
         total += content.length;
         if (total > TOOL_FILES_MAX_BYTES)
           throw new HttpError(502, `The tool's files are larger than ${TOOL_FILES_MAX_BYTES / 1048576} MB`);
-        const name = uniqueName(names, sanitizeFilename(path.basename(file)));
+        const name = uniqueName(names, normalizeFileName(path.basename(file)));
         await fs.mkdir(path.join(staging, model.key, "files"), { recursive: true });
         await fs.writeFile(path.join(staging, model.key, "files", name), content);
         names.push(name);
@@ -670,12 +703,11 @@ async function downloadRepoFiles(slug: string, modelsSha: string, manifest: Tool
   }
 }
 
-function uniqueName(taken: string[], name: string): string {
+function uniqueName(taken: string[], name: NormalName): NormalName {
   if (!taken.includes(name)) return name;
-  const { name: base, ext } = path.parse(name);
   let n = 2;
-  while (taken.includes(`${base}-${n}${ext}`)) n++;
-  return `${base}-${n}${ext}`;
+  while (taken.includes(numberedName(name, n))) n++;
+  return numberedName(name, n);
 }
 
 /** Fetches the models that aren't in yet (imports of their pages, as the admin), then gives everyone their copies.
@@ -753,7 +785,7 @@ async function importToolModel(adminId: string, model: ToolModelSpec, target: st
     for (const plate of result.plates.toSorted((a, b) => a.position - b.position)) {
       const from = resolvePlateFilePath(plate);
       if (!from) continue;
-      const name = uniqueName(files, sanitizeFilename(plate.filename));
+      const name = uniqueName(files, normalizeFileName(plate.filename));
       await fs.copyFile(from, path.join(staging, "files", name));
       files.push(name);
     }
@@ -779,16 +811,34 @@ async function importToolModel(adminId: string, model: ToolModelSpec, target: st
   }
 }
 
-export async function uninstallRepoTool(slug: string, adminId: string): Promise<void> {
-  const tool = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
-  if (!tool) throw new HttpError(404, "That tool isn't installed");
-  await whileNotCopying(tool.id, async () => {
-    await removeToolModels(tool.id);
-    // Its collections and the data it kept go with it.
-    await prisma.tool.delete({ where: { id: tool.id } });
+/** Changes only availability. The installed files, model copies and tool data stay in place. */
+export async function setRepoToolEnabled(slug: string, enabled: boolean, adminId: string): Promise<void> {
+  const tool = await prisma.tool
+    .update({ where: { scope_slug: { scope: "repo", slug } }, data: { enabled }, select: { id: true } })
+    .catch((err: unknown) => {
+      if ((err as { code?: string } | null)?.code === "P2025") throw new HttpError(404, "That tool isn't installed");
+      throw err;
+    });
+  void createLog({
+    userId: adminId,
+    action: "tool_availability_changed",
+    targetId: tool.id,
+    details: { slug, enabled },
   });
-  await fs.rm(path.join(TOOLS_STORAGE, slug), { recursive: true, force: true });
-  void createLog({ userId: adminId, action: "tool_uninstalled", targetId: tool.id, details: { slug } });
+}
+
+export function uninstallRepoTool(slug: string, adminId: string): Promise<void> {
+  return oneChangeAtATime(slug, async () => {
+    const tool = await prisma.tool.findUnique({ where: { scope_slug: { scope: "repo", slug } } });
+    if (!tool) throw new HttpError(404, "That tool isn't installed");
+    await whileNotCopying(tool.id, async () => {
+      await removeToolModels(tool.id);
+      // Its collections and the data it kept go with it.
+      await prisma.tool.delete({ where: { id: tool.id } });
+    });
+    await fs.rm(path.join(TOOLS_STORAGE, slug), { recursive: true, force: true });
+    void createLog({ userId: adminId, action: "tool_uninstalled", targetId: tool.id, details: { slug } });
+  });
 }
 
 export type OwnToolInUse = {
@@ -1058,14 +1108,15 @@ const gone = (err: unknown) =>
 
 // --- What a tool keeps ----------------------------------------------------------------------------------------------
 
-export const STORAGE_KEY = /^[A-Za-z0-9_.:-]{1,200}$/;
+// Not "." or "..", which a browser resolves in a path: a request for one would reach the tool itself.
+export const STORAGE_KEY = /^(?!\.\.?$)[A-Za-z0-9_.:-]{1,200}$/;
 const VALUE_MAX_BYTES = 1024 * 1024;
 const TOOL_DATA_MAX_BYTES = 20 * 1024 * 1024;
 const TOOL_DATA_MAX_KEYS = 2000;
 
-function assertKey(key: string): void {
+export function assertToolDataKey(key: string): void {
   if (!STORAGE_KEY.test(key))
-    throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores");
+    throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores, and not . or ..");
 }
 
 export async function listToolData(user: ToolUser, toolId: string) {
@@ -1084,7 +1135,7 @@ export async function getToolData(
   toolId: string,
   key: string,
 ): Promise<{ found: boolean; value?: unknown }> {
-  assertKey(key);
+  assertToolDataKey(key);
   const tool = await usableTool(user, toolId);
   const row = await prisma.toolData.findUnique({
     where: { toolId_userId_key: { toolId: tool.id, userId: user.id, key } },
@@ -1093,23 +1144,43 @@ export async function getToolData(
 }
 
 export async function setToolData(user: ToolUser, toolId: string, key: string, value: unknown): Promise<void> {
-  assertKey(key);
-  if (value === undefined) throw new HttpError(400, "There's no value to keep");
+  assertToolDataKey(key);
   const tool = await usableTool(user, toolId);
+  const where = { toolId: tool.id, userId: user.id };
+  await prisma.$transaction(
+    async (tx) => {
+      await lockToolStorage(tx, where);
+      await writeToolData(tx, where, key, value);
+    },
+    { isolationLevel: "ReadCommitted" },
+  );
+}
+
+export async function lockToolStorage(tx: Prisma.TransactionClient, where: { toolId: string; userId: string }) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('tool-storage'), hashtext(${`${where.toolId}:${where.userId}`}))`;
+}
+
+/** Writes under the caller's storage lock, including the destination of a transfer. */
+export async function writeToolData(
+  tx: Prisma.TransactionClient,
+  where: { toolId: string; userId: string },
+  key: string,
+  value: unknown,
+): Promise<void> {
+  if (value === undefined) throw new HttpError(400, "There's no value to keep");
   const size = Buffer.byteLength(JSON.stringify(value));
   if (size > VALUE_MAX_BYTES) throw new HttpError(413, "A value is at most 1 MB as JSON");
-  const where = { toolId: tool.id, userId: user.id };
   const [used, keys, current] = await Promise.all([
-    prisma.toolData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } }),
-    prisma.toolData.count({ where: { ...where, key: { not: key } } }),
-    prisma.toolData.findUnique({ where: { toolId_userId_key: { ...where, key } }, select: { id: true } }),
+    tx.toolData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } }),
+    tx.toolData.count({ where: { ...where, key: { not: key } } }),
+    tx.toolData.findUnique({ where: { toolId_userId_key: { ...where, key } }, select: { id: true } }),
   ]);
   if ((used._sum.size ?? 0) + size > TOOL_DATA_MAX_BYTES)
     throw new HttpError(413, "This tool keeps 20 MB at most for you; delete something first");
   if (!current && keys >= TOOL_DATA_MAX_KEYS)
     throw new HttpError(413, `This tool keeps ${TOOL_DATA_MAX_KEYS} keys at most`);
   const json = value as Prisma.InputJsonValue;
-  await prisma.toolData.upsert({
+  await tx.toolData.upsert({
     where: { toolId_userId_key: { ...where, key } },
     create: { ...where, key, value: json, size },
     update: { value: json, size },
@@ -1117,9 +1188,13 @@ export async function setToolData(user: ToolUser, toolId: string, key: string, v
 }
 
 export async function deleteToolData(user: ToolUser, toolId: string, key: string): Promise<void> {
-  assertKey(key);
+  assertToolDataKey(key);
   const tool = await usableTool(user, toolId);
-  await prisma.toolData.deleteMany({ where: { toolId: tool.id, userId: user.id, key } });
+  const where = { toolId: tool.id, userId: user.id };
+  await prisma.$transaction(async (tx) => {
+    await lockToolStorage(tx, where);
+    await tx.toolData.deleteMany({ where: { ...where, key } });
+  });
 }
 
 // --- Reaching declared hosts ----------------------------------------------------------------------------------------

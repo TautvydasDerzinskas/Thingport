@@ -70,7 +70,13 @@ export const achievementsApi = {
   claimSecret: async (secret: string): Promise<boolean> => {
     const res = await fetch(`${apiBase()}/me/achievements/secret`, json({ secret }));
     if (res.status === 401) throw new UnauthorizedError();
-    if (res.status === 404) return false;
+    if (res.status === 404) {
+      const body = await res
+        .clone()
+        .json()
+        .catch(() => null);
+      if (body?.code === "achievements_off" || body?.code === "no_such_secret") return false;
+    }
     await assertOkWithMessage(res, "Failed to unlock the achievement");
     requestAchievementCheck();
     return true;

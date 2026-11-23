@@ -7,6 +7,7 @@ import sharp from "sharp";
 import type { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { PENDING_STORAGE_PATH } from "../src/modelFiles/pending";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
 import { setMcpAccess } from "../src/services/settingsService";
 
@@ -279,7 +280,10 @@ describe("the tools", () => {
     expect(data.title).toBe("Articulated Dragon");
     expect(data.description).toBe("A flexible dragon that prints in place.");
     expect(data.tags.toSorted()).toEqual(["Dragon", "Flexi"].map((t) => t.toLowerCase()).toSorted());
-    expect(data.files).toEqual([{ name: "dragon.stl", size_bytes: expect.any(Number) }]);
+    expect(data.files).toEqual([{ name: "dragon.stl", size_bytes: expect.any(Number), content_kind: "mesh" }]);
+    expect(data.supporting_files).toEqual([]);
+    expect(data.file_count).toBe(1);
+    expect(data.supporting_file_count).toBe(0);
     expect(data.collections).toEqual([{ id: collectionId, name: "MCP Dragons" }]);
     // No file or image URLs: they need a session to open.
     expect(JSON.stringify(data)).not.toMatch(/\/api\/(plate|preview|print-file)/);
@@ -363,12 +367,39 @@ describe("the tools", () => {
   it("list_model_files lists a model's files, and get_model_file returns one", async () => {
     const { data } = await callTool(alice.token, "list_model_files", { model_id: dragonId });
     expect(data.files).toEqual([
-      expect.objectContaining({ name: "dragon.stl", kind: "plate", size_bytes: expect.any(Number) }),
+      expect.objectContaining({
+        name: "dragon.stl",
+        kind: "plate",
+        content_kind: "mesh",
+        size_bytes: expect.any(Number),
+      }),
     ]);
     // Reachable without a public address too.
     expect(data.files[0].api_path).toBe(`/api/print/${dragonId}/plate/${data.files[0].id}/file/dragon.stl`);
     const file = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: data.files[0].id });
     expect(Buffer.from(file.data.base64, "base64").toString()).toBe("solid dragon.stl\nendsolid dragon.stl\n");
+  });
+
+  it("list_model_files and get_model leave out a file still being saved", async () => {
+    // A save under way: its row is made before its place is claimed.
+    const pending = await prisma.printFile.create({
+      data: {
+        printId: dragonId,
+        role: "SUPPORTING",
+        filename: "Coming.txt",
+        mime: "text/plain",
+        size: 9,
+        storagePath: PENDING_STORAGE_PATH,
+      },
+    });
+    try {
+      const files = await callTool(alice.token, "list_model_files", { model_id: dragonId });
+      expect(files.data.files.map((file: { name: string }) => file.name)).toEqual(["dragon.stl"]);
+      const model = await callTool(alice.token, "get_model", { id: dragonId });
+      expect([model.data.supporting_files, model.data.supporting_file_count]).toEqual([[], 0]);
+    } finally {
+      await prisma.printFile.delete({ where: { id: pending.id } });
+    }
   });
 
   it("get_model_file won't read another user's model, nor a file of another model", async () => {

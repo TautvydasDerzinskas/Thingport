@@ -3,6 +3,7 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { ADAPTED_3MFS, DESCRIPTION_IMAGES, MODEL_PREVIEWS, PREVIEWS, STORAGE, THUMBS } from "../config";
 import { prisma } from "../db";
+import { isMissingError } from "../modelFiles/storageFs";
 
 // Everything Thingport makes for a model -- its gallery and description images, and each plate's thumbnail, render,
 // 3D preview and slicer copies -- lives in an "Images" folder beside its files, at Print.assetsPath, so it moves and
@@ -38,10 +39,10 @@ const LEGACY_DIRS: Record<AssetKind, string> = {
 // Part of a render's name, so changing its look (modelPreviewCache's MODEL_IMAGE_KINDS) draws older ones again.
 export const RENDER_FILE_TAG = "render.v4";
 // The same, for the picture drawn in a model's own colours rather than in one the app tints.
-export const COLOR_RENDER_FILE_TAG = "color.v2";
+export const COLOR_RENDER_FILE_TAG = "color.v3";
 // Part of a 3D preview's name, so bumping it draws older GLBs again on next view. Failure markers carry it too, so a
 // file an older renderer refused gets another attempt.
-export const PREVIEW_FORMAT_VERSION = 5;
+export const PREVIEW_FORMAT_VERSION = 6;
 
 const DESCRIPTION_EXTS: Record<string, string> = {
   "image/jpeg": ".jpg",
@@ -52,6 +53,11 @@ const DESCRIPTION_EXTS: Record<string, string> = {
 
 export function galleryImageFile(id: string): AssetFile {
   return { kind: "image", name: `${id}.jpg` };
+}
+
+/** A gallery image at card size, for when it's the model's first: made from it on first request. */
+export function galleryThumbFile(id: string): AssetFile {
+  return { kind: "thumb", name: `${id}.jpg` };
 }
 
 /** Named with its extension now, so it opens from the folder; the shared folder had none. */
@@ -74,6 +80,15 @@ export function plateRenderFile(plateId: string, tag = RENDER_FILE_TAG): AssetFi
 
 export function plateGlbFile(plateId: string, version = PREVIEW_FORMAT_VERSION): AssetFile {
   return { kind: "preview", name: `${plateId}.v${version}.glb` };
+}
+
+export function buildPlateGlbName(plateId: string, index: number, sourceVersion: string): string {
+  return `${plateId}.build-${index}.${sourceVersion}.v${PREVIEW_FORMAT_VERSION}.glb`;
+}
+
+/** Derived previews stay in the shared cache and are regenerated when their source version changes. */
+export function isBuildPlateGlb(name: string): boolean {
+  return new RegExp(`\\.build-\\d+\\.[a-f0-9]{24}\\.v${PREVIEW_FORMAT_VERSION}\\.glb$`).test(name);
 }
 
 /** `name` is the copy's file name: the plate's id, what it was adapted for, and the adapter's version. */
@@ -217,15 +232,25 @@ export async function ownedAssetFiles(home: string, ids: Iterable<string>): Prom
   return found;
 }
 
-/** Every file under a model's pictures folder, relative to it with "/" separators. */
-export async function listAssetFiles(home: string): Promise<{ path: string; size: number }[]> {
+/** Every file under a model's pictures folder, and each folder there the disk couldn't list, with the error's code;
+ *  relative to it with "/" separators, "" being the pictures folder itself. */
+export async function listAssetFiles(home: string): Promise<{
+  files: { path: string; size: number }[];
+  unreadable: { path: string; code: string }[];
+}> {
   const root = path.join(STORAGE, home);
-  const found: { path: string; size: number }[] = [];
+  const relative = (full: string) => path.relative(root, full).split(path.sep).join("/");
+  const files: { path: string; size: number }[] = [];
+  const unreadable: { path: string; code: string }[] = [];
   const walk = async (dir: string): Promise<void> => {
     let entries: fsSync.Dirent[];
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
-    } catch {
+    } catch (err) {
+      // A folder that isn't there has nothing to list. One the disk couldn't list may still hold pictures.
+      if (!isMissingError(err)) {
+        unreadable.push({ path: relative(dir), code: (err as NodeJS.ErrnoException).code ?? "UNKNOWN" });
+      }
       return;
     }
     for (const entry of entries) {
@@ -237,12 +262,12 @@ export async function listAssetFiles(home: string): Promise<{ path: string; size
           (stats) => stats.size,
           () => null,
         );
-        if (size !== null) found.push({ path: path.relative(root, full).split(path.sep).join("/"), size });
+        if (size !== null) files.push({ path: relative(full), size });
       }
     }
   };
   await walk(root);
-  return found;
+  return { files, unreadable };
 }
 
 /** Which kind a file in a model's pictures folder is, from the subfolder it's in. */

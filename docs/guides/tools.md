@@ -1,8 +1,9 @@
 # Tools
 
 A tool is a small app that opens in a window of its own from the **Tools** page: a planner, a generator, a calculator.
-It's a short JavaScript module with some HTML and CSS, like a [custom dashboard widget](custom-widgets.md), and it works
-with your library: it can browse and make collections, find models, read their files, and save the models it makes.
+Some also show on a model's page, or add actions to its menu. It's a short JavaScript module with some HTML and CSS,
+like a [custom dashboard widget](custom-widgets.md), and it works with your library: it can browse and make
+collections, find models, read their files, and save the models it makes.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/31_tools.png">
@@ -35,7 +36,7 @@ every device:
 
 ## The tools in the repository
 
-Nine come with Thingport, for an admin to install:
+Thirteen come with Thingport, for an admin to install:
 
 | Tool                      | Shelf       | What it does                                                                                                                                                       |
 | ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -47,10 +48,69 @@ Nine come with Thingport, for an admin to install:
 | Keyring generator         | Generators  | Your text as a keyring, with key rings and magnet pockets, in a 3MF that gives each piece its filament.                                                            |
 | Script customizer         | Generators  | Generates a model again from an OpenSCAD script: the one a model in your library came with, or a `.scad` file.                                                     |
 | Print cost estimator      | Calculators | A model's print time, filament and real cost, and the price to charge for the margin you want.                                                                     |
+| Print queue               | Planners    | A print queue the household shares: who has a model queued, printing or printed, on its page, and a board to move each print along.                                |
+| Filament shelf            | Planners    | Everyone's filament spools on one shelf, and on each model's page the filaments it needs and who has them, matched by material and colour.                         |
+| Notes                     | Library     | Pin notes to a model's picture, as bubbles or sticky notes, for yourself or everyone. Open Notes to see and search the notes you've written.                       |
 | MakerWorld 3MF normalizer | Files       | Makes Bambu Studio and MakerWorld 3MFs open in other slicers with their colours, plates and print settings.                                                        |
+| 3D Printing Wiki          | Other       | 46 print problems taken to a fix, the slicer settings that matter with their names in four slicers, printer makers, and a quiz that earns a badge.                 |
 
 A model that came with its script doesn't need the Script customizer: **Customize…** on its own page opens its
-parameters whether the tool is installed or not.
+parameters whether the tool is installed or not. Every tool but the 3D Printing Wiki, which is in English, speaks all
+of Thingport's languages.
+
+### On a model's page
+
+An installed tool can show up beside your models, not only in its window:
+
+- **In the menu beside a model's Open button**, under **Tools**: Print queue's **Add to print queue**, or the Print
+  cost estimator's **Estimate print cost** for the file picked in the model's **Files** box.
+- **In a model grid's toolbar**, in edit mode: select models, then use a tool's button, such as **Print queue** to add
+  or remove them all at once.
+- **On the model's page itself**: Print queue's chips in the info box, Filament shelf's **Filaments** tab and the ring
+  on the picture, and Notes' sticky note in its corner.
+
+### Print queue
+
+A print queue the household shares. Add a model with **Add to print queue**, from its page or a grid selection, or with
+**Add model** on the board. The board has a column per status: drag a card from **Queued** to **Printing**, **Printed**
+or **Failed**, or put your queued cards in order. The model's page shows who has it queued, is printing it or printed it,
+on everyone's copy of it. **Shared with everyone** picks whom your prints reach. More in its
+[README](../../tools/print-queue/README.md).
+
+### Filament shelf
+
+Everyone's spools on one shelf, with their brand, colour, owner and how much is left, to filter by person, material,
+brand or colour. On a model's page, the **Filaments** tab lists the filaments its print profile or 3MF needs, with the
+spool each person has that matches by material and colour, and a ring on the model's picture fills as the household's
+spools cover it. **Edit** there changes a model's filaments for everyone, and **Reset to profile** goes back. More in
+its [README](../../tools/filament-shelf/README.md).
+
+### 3D Printing Wiki
+
+FDM printing in one window: troubleshooting for 46 problems, each with a check, its causes, the fixes in order and a
+way to confirm it worked; a guide to the slicer settings worth changing first, with each one's name in Bambu Studio,
+OrcaSlicer, PrusaSlicer and Cura; drying times for filaments; printer makers' histories; and a glossary, all
+searchable. Its quiz draws 30 questions from 144: **Practice** explains each answer as you go, and passing the
+**Exam** earns the **FDM Fundamentals** badge when [achievements](../features/profile-and-activity.md#achievements) are
+on. More in its [README](../../tools/3d-printing-wiki/README.md).
+
+### Notes
+
+Once an admin installs Notes, a sticky note sits in the corner of a model's picture, with the number of notes on it.
+Select it for its menu:
+
+- **Add note** puts a new note in the middle of the picture, ready to type in. Drag it by its grip to where it
+  belongs, or move it with the arrow keys from the grip, and choose in the toolbar under it whether it shows as a
+  **bubble** or a **sticky note**, a sticky's colour, and who sees it: **Only me**, or **Everyone** who can use Notes
+  on this Thingport instance. You can change who sees it later with **Edit**.
+- **Open Notes** opens the Notes window.
+- **Show notes** hides every note on the pictures, or shows them again.
+
+Select a note to read it in place, with who wrote it and when. Your own notes have a **⋮** menu to edit or delete them,
+and while you edit one you can drag it somewhere else. Notes stay on the picture or saved render where you put them.
+
+The Notes window shows your own notes as sticky notes, to filter by model title or note text. Select a model on a card
+to open it; its **⋮** menu, or a right-click, also deletes the note.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/32_tool_window.png">
@@ -63,7 +123,7 @@ parameters whether the tool is installed or not.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/30_admin_tools.png">
-  <img src="../../frontend/src/assets/screenshots/light/30_admin_tools.png" alt="Administration, Tools page: who sees tools, users' own tools switched off, and the nine repository tools installed, each marked Latest" width="100%">
+  <img src="../../frontend/src/assets/screenshots/light/30_admin_tools.png" alt="Administration, Tools page: who sees tools, users' own tools switched on, and the thirteen repository tools installed, Filament shelf and Notes paused" width="100%">
 </picture>
 
 - **Who sees tools**: admins only, everyone, or admins and the users you pick; a new Thingport starts on everyone. Only
@@ -74,8 +134,13 @@ parameters whether the tool is installed or not.
   models it brings, and screenshots to look through first (click one to see them large, and the arrow keys move between
   them). **Install** there makes it available to everyone who sees tools. Under each installed tool, a blue **Update**
   chip means the repository has a newer version, which one click takes, and a green **Latest** that it hasn't; neither
-  shows while the repository can't be read. Right-click an installed tool to **Open** it, **Fetch missing models** when
-  some haven't come in, or **Uninstall** it.
+  shows while the repository can't be read. While any tool has an update, a strip above them names those tools, and
+  its **Update all** takes them one after another. Right-click an installed tool to **Open** it, **Fetch missing
+  models** when some haven't come in, or **Uninstall** it.
+
+- **Switch a tool off for a while**: **Disable** in its right-click menu or at the bottom of its details hides it from
+  everyone, and its icon gets a pause badge. It stays installed, with its saved data and models. **Enable**, in the menu
+  or on the banner in its details, brings it back.
 - **Users' own tools**: the tools users made, and whose they are.
 
 ### Tools that bring models
@@ -91,11 +156,11 @@ bury your own models under it, so they stay out of the models page and its categ
 Favourite one and it shows in Favourites, as anything you favourite does.
 
 An admin may install a tool without them -- they can run to gigabytes -- by switching off **Import its models** as
-they install it, and import them later with **Import its models** in its details. An update, from its chip or its
-details, brings them only where this Thingport instance already has them, so a tool installed without them stays that
-way. Meanwhile a tool can fetch just the few that a piece of work needs, through `fetchToolModels`: one from a model
-page is imported then through this Thingport instance's first admin account, with its connection to that site, while the
-tool's own files come only with **Import its models**.
+they install it, and import them later with **Import its models** in its details. An update, from its chip, its
+details or **Update all**, brings them only where this Thingport instance already has them, so a tool installed without
+them stays that way. Meanwhile a tool can fetch just the few that a piece of work needs, through `fetchToolModels`: one
+from a model page is imported then through this Thingport instance's first admin account, with its connection to that
+site, while the tool's own files come only with **Import its models**.
 
 The files behind them are the tool's, and are kept once for the instance however many people use the tool -- parts
 that take a gigabyte take a gigabyte, not a gigabyte per person. Each user still has their own model, in their own

@@ -10,12 +10,45 @@ ones.
 
 ## Designing
 
-Studio opens on the design and the **Ask AI** box alone. The **Edit** button (the pencil) at the top brings in the
-toolbar, with undo and redo first, the side panels and the status bar, and turns them off again. Out of edit mode you
-can still turn the view, select bodies for Ask AI, and undo or redo (<kbd>⌘</kbd><kbd>Z</kbd>). The **Features** and
-**Properties** panels each fold away to their side with the arrow in their header, leaving a tab with their name there
-that opens them again; the panels button at the right of the status bar does the same, beside the print check and
-**Studio settings**.
+Use the **⋮** menu next to the design name to create, open, rename, export, or delete a design, or open it in a slicer.
+Its **Recent** list jumps to the three designs you edited last.
+The toolbar's **Save** menu is available in both modes. The **Edit** button (the pencil) shows the editing tools,
+**Properties**, and the status bar. You can turn the view and use the undo and redo shortcuts in either mode.
+The **Objects / Plates** and **Properties** panels fold away with the arrows in their headers. Reopen them from
+their tabs or from the panels button at the right of the status bar, beside the print check and **Studio settings**.
+
+### Plates, colors, and export
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/60_studio_plates.png">
+  <img src="../../frontend/src/assets/screenshots/light/60_studio_plates.png" alt="Studio with a 3MF opened in it: a penguin's parts in their colours on one plate, its connectors on another" width="100%">
+</picture>
+
+The **Objects / Plates** panel lists each plate with its objects nested underneath. Click a plate name to show it in
+the viewport. In Edit mode, use **Add plate** in the panel header or the actions menu on a plate to rename it or
+delete it when empty. Expand an object to see the features it was built from. For multi-plate designs, the panel
+also lets you switch plates outside Edit mode.
+
+Select a body and use **Move to plate** in Properties to change its plate while keeping its position and orientation.
+You can select several bodies to move or color them together. Set **Body color** and choose **Apply** to use that
+color in the viewport and the 3MF. Each plate with visible bodies gets a thumbnail in the 3MF. Hidden bodies and
+empty plates are skipped during export.
+
+Use **Export** in the design menu to download a single **3MF** for all populated plates, or choose **STL** to
+download a ZIP with one STL per populated plate. From a plate's menu, **Export as STL** downloads that plate's STL directly.
+
+**Save design** downloads STL for one uncolored body on one plate and 3MF for designs with colors, multiple
+bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
+slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
+plate at a time, choose which plate to open. Studio prepares unopened plates as needed for export, subject to the
+design's export limits. For Bambu-compatible slicers, open all imported plates to see every color under **Filament
+assignments**. Choose the slot and material you loaded and save the assignments before opening or downloading the
+3MF. Studio marks unassigned colors and assigns those to free slots automatically. This handoff supports up to 16
+colors. When the slicer has a preset for the design's checked printer and nozzle, Studio selects that preset by default.
+
+Use **Arrange plate** from a plate's menu to preview where visible bodies will go before committing the move. It uses
+the chosen printer's bed and the spacing you set, keeping each body's orientation. Use **Lock position for arrangement**
+on a body to keep its place. Allow overflow if you want bodies that need more room to go to additional plates.
 
 A design is a list of features, built in order:
 
@@ -49,11 +82,14 @@ A design is a list of features, built in order:
   changed later in the properties panel, which traces it again.
 - **Library models**: **Open…** in the design's menu has a **Library** tab with your models' STL, 3MF, STEP, OBJ and
   GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. **Open in
-  Thingport Studio**, on a model's page and on its right-click menu in any grid of models, does the same from there,
-  asking which file when it has several. It comes in at its
-  own size, centred on the bed, and the design keeps its own copy, so changing the model later doesn't change the
-  design. A 3MF brings its first plate. A mesh with gaps can be moved, scaled and exported, but not combined. A model
-  of several loose pieces comes in as one body, and Studio says how many: **Separate** makes each its own.
+  Thingport Studio**, on a model's page and on its right-click menu in any grid of models, takes you straight to Studio
+  after you choose the file. For a new 3MF design, Studio prepares the first build plate and shows its progress. Click
+  any other plate in **Objects / Plates** to prepare its bodies. Studio keeps its own copy at the source dimensions.
+  Each printable object comes in as a body, keeping its plate placement and any uniform object color. When inserting
+  into an existing design, Studio imports all the plates, with the first populated one going into the active plate.
+  Studio uses a single color per body, so face painting and slicer modifiers stay in the original file. A mesh with
+  gaps can be moved, scaled and exported. Use **Separate** to turn loose pieces within a single body into individual
+  bodies.
 - **Combining**: select two bodies or more and pick **Union**, **Subtract** or **Intersect**. The first one you selected
   is the one the others are joined to, cut from or overlapped with. **Hull** wraps one body or more in the tightest
   convex body around them, as a rounded slot from two cylinders.
@@ -61,13 +97,14 @@ A design is a list of features, built in order:
 Designs stay editable: change a box's width, or a sketch's circle, and everything built from it follows. The bodies a
 boolean was made from are folded under it in the feature list, and deleting the boolean gives them back.
 
-**Parameters** in the design's menu names the numbers a design hangs on, each with its unit as in other CAD: a length
-(mm, cm or in, such as `wall = 2 mm`), an angle (°), or none, for a count. Type `=` and a formula in any size field
-(`=wall * 2 + 10`) and the field follows it, marked **ƒx**; change the parameter and every field that follows it
-changes too. A formula takes `+ - * / % ^`, brackets, `pi`, functions such as `min`, `max`, `round` and `sqrt`, and
-numbers with units (`2 in + 5 mm`, `45°`). A length field takes only a length and a count only a plain number, so
-`wall * wall` in a width is refused. A bare number added to a length is in the design's units, and is kept with that
-unit written in (`wall + 1` in an inch design is kept as `wall + 1 in`), so switching units never changes a size.
+**Parameters**, the sliders icon beside **Undo** and **Redo** in the **Edit** toolbar, lets you name the numbers a
+design depends on. A parameter can be a length (mm, cm or in, such as `wall = 2 mm`), an angle (°), or a count
+without a unit. Enter a formula such as `=wall * 2 + 10` in a size field in **Properties**. Studio marks the linked
+field with **ƒx** and updates it whenever the parameter changes. A formula takes `+ - * / % ^`, brackets, `pi`,
+functions such as `min`, `max`, `round` and `sqrt`, and numbers with units (`2 in + 5 mm`, `45°`). A length
+field takes only a length and a count only a plain number, so `wall * wall` in a width is refused. A bare number
+added to a length is in the design's units, and is kept with that unit written in (`wall + 1` in an inch design
+is kept as `wall + 1 in`), so switching units never changes a size.
 Typing a plain number into the field lets its formula go.
 
 ## Units
@@ -102,7 +139,12 @@ why, and OK waits until it can.
 - **Hole**: click where to drill, into the surface: a depth or right through, plain, counterbored or countersunk.
 - **Shell**: hollows the body with walls of a thickness, and clicked flat faces are left open, as a tray's top. Flat
   walls come out exactly that thick. Bodies over 20,000 triangles are refused, so shell parts before combining them.
-- **Split**: cuts a body in two by a plane, a flat face or another body; both parts stay editable.
+- **Split** cuts a body in two by a plane, a flat face or another body. A planar split can make matching pins and
+  sockets with adjustable depth, diameter, position, and radial clearance. Choose whether to put the second half
+  on a new plate. Select a half to edit the connectors on both halves in Properties.
+- **Fit test** in a split connector's properties makes a plate with a cropped pin and sockets from the joint. Each
+  socket has its clearance engraved in millimetres. After trying them, open **Fit test** on the original joint to
+  apply the clearance that fits. Give the clearance a parameter name to keep both halves linked to that value.
 - **Separate parts**: makes each loose piece of a body its own body, shown in its own colour before you press OK. A
   hollow inside a piece stays with it, and pieces that overlap without being joined come apart too: union them
   afterwards to join them properly. Each part moves, turns and scales about the middle of its base. Deleting all the
@@ -116,7 +158,12 @@ why, and OK waits until it can.
 - **Lay flat**: click a flat face and the body turns so that face is on the bed, as you'd turn a part for printing.
 - **Hole** can be **tapped**: threaded for an ISO bolt of that diameter to screw into.
 
-The mouse works as in most CAD:
+Studio opens in **Hand** mode. Drag with the left mouse button or one finger anywhere on the model or grid to
+pan the view. Drag with the right mouse button or two fingers to rotate. Pinch or scroll to zoom. In Edit mode,
+use the hand icon to pause viewport selection and editing while you navigate. Tap it again to resume. Sketch, Measure,
+and other editing tools temporarily suspend Hand so you can pick geometry.
+
+With **Hand** off in Edit mode:
 
 - **Left button** selects. Click a body, or drag a box over empty space: from left to right it takes what's wholly
   inside, from right to left also what it touches. <kbd>Shift</kbd> adds to the selection. Right-click a body for its
@@ -151,15 +198,48 @@ click starts again. Measuring changes nothing in the design.
 
 **Check for printing** (the checklist at the right of the status bar) checks each visible body where it is placed: on
 the bed and within it, in one piece, not overlapping another, no overhang that needs support and no wall too thin to
-print, for the bed size, overhang angle and thinnest wall you set. A floating body has **Onto bed** to put it down.
-Below it, **Measure** gives the gap or the overlap between two bodies, to check a fit or a clearance. Ask AI and an
-assistant over MCP run the same check on their own work. As in other CAD, a thread is judged as the plain cylinder it's
-cut on, so its ridges don't count as overhang or thin walls.
+print. Pick one of your saved printers to show its bed outline in the viewport and use its build height and nozzle
+for the check. You can also enter custom dimensions. Select a warning to jump to its object and plate. Overhangs
+and thin walls show markers at the affected areas. Use **Onto bed** to lower a floating body or **Lay flat** to pick
+a face to print on. **Measure** gives the gap or overlap between two bodies. Ask AI and MCP use the same printer setup.
+Open all imported 3MF plates before running the whole-design check.
+As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ridges don't count as overhang or thin walls.
 
-**Download STL** in the design's menu saves the visible bodies as one STL for your slicer. **Save to Thingport** makes a
-model of them in your library instead: the STL, a picture of the view as you see it, and what you asked Ask AI about
-the design as its description. Each save is a new model, a copy of the design as it was; an AI connected over MCP, or
-Ask AI, can save it too when you ask.
+**Save to Thingport** saves the design as a **New model**, named after the design unless you change it, or with **Add
+to a model** as one more print profile of a model you already have: search your library and pick it, and you see how
+many profiles it has. A new model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the
+design as its description. If the design has no print profile yet, the dialog asks for one first: **Choose myself**
+(the presets), **Suggest with AI**, or, for a new model, **Save without**. Name the profile as it should read on the
+model's page. An assistant can save it too when you ask.
+
+### Print profile
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/61_studio_print_profile.png">
+  <img src="../../frontend/src/assets/screenshots/light/61_studio_print_profile.png" alt="Studio's Print tab: the Toy preset for Bambu Studio and a Bambu Lab P1S, with its settings by section" width="100%">
+</picture>
+
+The **Print** tab beside **Properties** (while editing) sets the design's print profile. **Choose a preset** offers
+Standard, Fine detail, Quick draft, Strong, Outdoor, Water contact, Toy, Flexible, Heat-resistant, Vase and Smooth top,
+with the ones that fit the design's name and requests marked **Suggested**; **Suggest with AI** asks Studio's assistant
+to choose, and it says why. A new profile is for your main slicer and the printer you use with it; change either, and
+the material, below the preset. **Settings** are sorted as Bambu Studio sorts them, into **Quality**, **Strength**,
+**Speed**, **Support** and **Others**, each a section you open or fold; each shows how many settings the profile sets
+there. In a section, a setting the profile sets is a field (put it back to the slicer's own with ×), and one it
+doesn't shows as **Slicer default** with **Set** beside it. Only settings your slicer reads from a 3MF are offered:
+speeds reach Bambu Studio and the slicers built on it, not PrusaSlicer or Cura. One the profile already sets stays
+listed when you switch to a slicer that doesn't read it, marked as one to set in that slicer. Choices with a look, such as the infill
+and top patterns, support type, brim, seam, wall order, ironing and fuzzy skin, show a small picture of each option.
+Hover a setting to see its name in your slicer. Notes under the preset warn about a material that doesn't suit it, or settings your slicer won't take. A dot
+on the tab means the assistant changed the profile. Fold the panel with its arrow: **Properties** and **Print** then
+wait as two tabs on the right edge.
+
+A design can carry a **print profile**: the slicer settings it's meant to print with, started from a preset such as
+Standard, Strong, Outdoor, Water contact or Toy, for your slicer and printer. It goes into every 3MF the design is
+saved, downloaded or opened as, so Bambu Studio and the slicers built on it open it with those settings, and
+PrusaSlicer and Cura take the ones they can read through **Open adapted**. Saved to Thingport, it shows on the model's
+page as a print profile, like one imported from a model site. An assistant can choose one from what the design is
+for, and it says why; it can also add the design to a model you already have as one more print profile.
 
 ## Working with an AI assistant
 
@@ -180,17 +260,15 @@ that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> start
   your request while it works. **Stop** ends the run after the step it's on, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>
   takes its steps back one at a time.
 - What's selected in the view goes along with your request, so "round the top edges of this" knows what "this" is.
-- Each design keeps its own conversation, so "make it taller" follows on from "make a box". Clear it from the box's
-  header; the design stays as it is.
+- Each design keeps its own conversation, so "make it taller" follows on from "make a box". The conversation header has
+  a **Clear conversation** button.
 - **Pictures**: with an AI that sees pictures (an admin says which, in [AI](ai.md#seeing-pictures)), the box takes up
   to four: the picture button, paste, or drop them on it. A photo or a drawing with sizes on it is something to build
   from; a logo or a silhouette the AI traces into an outline exactly, as **Trace picture** does. The pictures stay
   with the design's conversation.
-- A run takes up to 30 steps and 10 minutes. Not every model can use tools: small local models often can't, and the
-  box says so when one doesn't. An admin can give a small local model the compact tool set, which covers shapes, text,
-  tracing, moving, combining and holes.
+- A run can work for up to 10 minutes. Some small local models lack tool support, and the box tells you when a model
+  can't use tools. An admin can give a small local model the compact tool set, which covers shapes, text, tracing,
+  moving, combining and holes.
 
-The box stays small so you can watch the design change: while the AI works, one line says the step it's on, and then
-its answer; the conversation opens from the box's header. The view keeps the design above the box. If you'd rather
-read the conversation as it goes, pick **Side panel** under **Ask AI** in **Studio settings** (the gear at the right
-of the status bar, while editing): it then shows beside the view, and the box keeps only the prompt.
+In View mode, the conversation appears beside the viewport and the prompt stays below the design. In Edit mode, the
+compact bar shows the current step or last answer. Open the full conversation from the bar's header.

@@ -2,7 +2,9 @@
 
 **Open in Slicer** on a model page hands a file straight to the slicer on your computer, without saving it somewhere
 first. When a model has several files, pick one in the **Files** box above the button; opening and downloading both
-use it.
+use it. Only a file your slicer opens through Thingport Bridge is offered to it: a 3D file, a LightBurn project, or a
+sliced print in G-code, binary G-code or a sliced 3MF. Pick another, such as a ZIP, a Fusion file or a picture, and
+the button downloads it instead.
 
 The button opens the slicer you used last. Its arrow lists your other slicers, downloads the chosen file, and, for a
 model with several files, downloads them all as a zip. On a model that came with the script it was generated from,
@@ -26,6 +28,12 @@ Switch on the ones you have installed under **Configuration → Slicer**, from t
 right-click it and choose **Activate** (or **Deactivate**). With none switched on, or only **Other / Manual**, the
 button downloads the file instead, for when you'd rather open files yourself.
 
+## Send to a printer or another app
+
+Under the same arrow, **Send to** sends the file to your own destinations: OctoPrint, Klipper or PrusaLink, a webhook
+for Home Assistant, n8n or Node-RED, or a link or request of your own. Set them up under **Configuration → Send to**;
+each can also have a button of its own. See [Send to](../guides/send-to.md).
+
 ## Thingport Bridge
 
 Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from a self-hosted server on their own, and
@@ -33,7 +41,9 @@ QIDI Studio asks each time whether to trust it.
 [Thingport Bridge](../../bridge/README.md) is a small helper app for Windows, macOS and Linux that takes the link from
 Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page. To
 [update it](../../bridge/README.md#update), install the new version over the old one; a notification tells you when
-there's a newer one.
+there's a newer one. When a model doesn't open, the Bridge says why in a dialog (on Linux, with `zenity` or
+`kdialog`; otherwise only in its log); on macOS that's usually its Local Network permission
+([what to do](../../bridge/README.md#when-a-model-doesnt-open)).
 
 OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca, eufyMake Studio and Flash Studio download the link
 themselves. When one

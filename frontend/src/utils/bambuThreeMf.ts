@@ -4,6 +4,7 @@
 // Adapted (with modifications) from github.com/maziggy/bambuddy, AGPL-3.0-only.
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { findStartPart, partNames } from "../adapter/format.generated";
 import { keepsOwnColor } from "./ownColor";
 
 type MeshData = {
@@ -388,9 +389,7 @@ function parseProjectSettings(text: string): {
     if (Array.isArray(json.filament_colour)) {
       // Bambu Studio usually writes these as #RRGGBBAA, and three.js reads only the six-digit spelling, so
       // the alpha comes off here rather than every filament falling back to white where it's there.
-      filamentColors = json.filament_colour
-        .map((c) => (typeof c === "string" ? displayColor(c) : null))
-        .filter((c): c is string => c !== null);
+      filamentColors = json.filament_colour.map((c) => (typeof c === "string" ? (displayColor(c) ?? "") : ""));
     }
     const area = json.printable_area;
     if (Array.isArray(area) && area.length >= 3 && typeof area[2] === "string") {
@@ -412,9 +411,10 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
   const decoder = new TextDecoder();
   const parser = new DOMParser();
 
+  const entryNamed = partNames(Object.keys(zipEntries));
   const findEntry = (path: string): Uint8Array | undefined => {
-    const normalized = path.startsWith("/") ? path.slice(1) : path;
-    return zipEntries[normalized];
+    const name = entryNamed(path);
+    return name === null ? undefined : zipEntries[name];
   };
   // A multi-part object references the same part file once per part.
   const modelFileCache = new Map<string, Document | null>();
@@ -537,9 +537,10 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
     } catch {}
   }
 
-  const mainModelPath = Object.keys(zipEntries).find(
-    (name) => name === "3D/3dmodel.model" || name.endsWith("/3dmodel.model"),
-  );
+  const relsBytes = findEntry("_rels/.rels");
+  const mainModelPath =
+    findStartPart(Object.keys(zipEntries), relsBytes ? decoder.decode(relsBytes) : null) ??
+    Object.keys(zipEntries).find((name) => name.toLowerCase().endsWith("/3dmodel.model"));
   let filamentColors: string[] = [];
   let buildVolume: { x: number; y: number } | null = null;
   const projectSettingsBytes = findEntry("Metadata/project_settings.config");
@@ -742,9 +743,9 @@ async function previewErrorCode(res: Response): Promise<string | null> {
   }
 }
 
-export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome> {
+export async function loadCachedBambuGlb(url: string, signal?: AbortSignal): Promise<CachedGlbOutcome> {
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal });
     if (!res.ok) {
       const code = res.status === 404 ? await previewErrorCode(res) : null;
       if (code === "PREVIEW_GENERATING") return { status: "generating" };
@@ -788,7 +789,7 @@ export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome>
       },
     };
   } catch (err) {
-    console.warn("Cached GLB preview load failed, falling back to live 3MF parse", err);
+    if (!signal?.aborted) console.warn("Cached GLB preview load failed", err);
     return { status: "fallback" };
   }
 }

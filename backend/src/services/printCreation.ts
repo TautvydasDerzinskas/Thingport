@@ -2,11 +2,15 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
+import { removeModel } from "../modelFiles/removeModel";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
-import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { LEGACY } from "../files/kinds";
+import { nameKey, normalizeFileName } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
+import { fileStateSync, type StorageSite } from "../modelFiles/storageFs";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
@@ -16,15 +20,12 @@ import {
   managedPlatePath,
   pruneEmptyStorageDirs,
   relocatePrint,
-  removeAssetHome,
-  assetOwnerIds,
   removePlatePictures,
   renderPlateStoragePath,
   saveThumbFromFile,
 } from "./printService";
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
-import { printAssetHome } from "./modelAssets";
 import { deleteAdapted3mfs } from "./adapted3mfCache";
 import { storePlateFormat } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
@@ -34,12 +35,12 @@ import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
-import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
+import { saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
 
-const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
+const IMAGE_EXTS = LEGACY.photo;
 
 export type NewPlateInput = {
   /** Untrusted; will be sanitized. */
@@ -93,7 +94,8 @@ export type PrintMetaInput = {
  *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
  *  after a file saved at a path its row just freed); removing the temp file is not. */
 async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<string | null> {
-  await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
+  // Nothing is placed for a tool's plate, which reads the tool's file: no folder is made for it either.
+  if (input.tempFilePath || input.copyFromPath) await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
   try {
     if (input.tempFilePath) {
       const tempFilePath = input.tempFilePath;
@@ -164,18 +166,29 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
   }
 }
 
-export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourcePath">): string | null {
-  const managed = managedPlatePath(plate);
-  if (fsSync.existsSync(managed)) return managed;
-  if (plate.sourcePath && fsSync.existsSync(plate.sourcePath)) return plate.sourcePath;
-  return null;
+/** The plate's file, or null when no file is there. A plate with a sourcePath (a tool's) is read there only: the file
+ *  is the tool's, and its path under storage is only reserved. An error other than a missing file throws (Fs 1), so a
+ *  caller never takes a disk that failed to answer for a file that's gone. */
+export function resolvePlateFilePath(
+  plate: Pick<Plate, "storagePath" | "sourcePath">,
+  site: StorageSite = "plate.file",
+): string | null {
+  const abs = plate.sourcePath ?? managedPlatePath(plate);
+  return fileStateSync(abs, site).state === "file" ? abs : null;
 }
 
 export async function refreshAutoPreparedMetadata(printId: string): Promise<void> {
   const plate0 = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
   let metadata: Prisma.InputJsonValue | null = null;
   if (plate0) {
-    const filePath = resolvePlateFilePath(plate0);
+    let filePath: string | null;
+    try {
+      filePath = resolvePlateFilePath(plate0);
+    } catch (err) {
+      // An error says nothing of what the file holds, so the reading stays. The caller's change is saved already.
+      console.warn(`Couldn't look at plate ${plate0.id}'s file; the model's print facts stay as they were:`, err);
+      return;
+    }
     if (filePath) {
       const sniffed = await inspectPreparedPrint(filePath, plate0.filename);
       if (sniffed) metadata = sniffed as unknown as Prisma.InputJsonValue;
@@ -194,7 +207,7 @@ async function createPlateAtPosition(
   input: NewPlateInput,
   position: number,
 ): Promise<CreatedPlate> {
-  const sanitized = sanitizeFilename(input.filename);
+  const sanitized = normalizeFileName(input.filename);
   const folder = normalizeFolder(input.folder);
   const desiredFilename = await availablePlateFilename(print.id, sanitized, undefined, folder);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position, folder);
@@ -247,7 +260,7 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
   const keyOf = (filename: string, folder: string | null | undefined) =>
-    `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
+    nameKey(normalizeFolder(folder), normalizeFileName(filename));
   const stored = new Set(
     (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
       keyOf(file.filename, file.folder),
@@ -261,7 +274,7 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
       continue;
     }
     // Compared as it will be stored, since that is the name a second copy would collide with.
-    const key = keyOf(sanitizeFilename(input.filename), input.folder);
+    const key = keyOf(input.filename, input.folder);
     if (stored.has(key)) continue;
     try {
       // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
@@ -397,20 +410,12 @@ export async function discardPrint(printId: string): Promise<void> {
 /** The same, failing when the print couldn't be removed, for a caller that must know it's gone. One that isn't there
  *  is gone already. */
 export async function discardPrintOrThrow(printId: string): Promise<void> {
-  if (!(await prisma.print.findUnique({ where: { id: printId }, select: { id: true } }))) return;
-  const plates = await prisma.plate.findMany({ where: { printId } });
-  const home = await printAssetHome(printId);
-  const assetOwners = await assetOwnerIds(printId);
-  await deleteAllPrintFiles(printId);
-  await prisma.print.delete({ where: { id: printId } });
-  for (const plate of plates) {
-    await removePlatePictures(plate.id, home);
-    if (plate.sourcePath) continue;
-    const managed = managedPlatePath(plate);
-    await fs.rm(managed, { force: true });
-    await pruneEmptyStorageDirs(path.dirname(managed));
-  }
-  await removeAssetHome(home, assetOwners);
+  const went = await removeModel(printId);
+  if (!went) return;
+  // An author or tag only this model brought, as an import's can be, goes with it. Loaded here: the tag services lead
+  // back to the provider registry, which loads this module.
+  const { pruneWhatModelsLeft } = await import("./printEditService");
+  await pruneWhatModelsLeft(went.userId, [went]);
 }
 
 export async function addPlatesToPrint(
@@ -459,7 +464,7 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId } });
   if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id, plate.folder);
+  const nextFilename = await availablePlateFilename(print.id, normalizeFileName(filename), plate.id, plate.folder);
   if (nextFilename !== plate.filename) {
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
@@ -468,8 +473,10 @@ export async function renamePlate(print: Print, plateId: string, filename: strin
   return nextFilename;
 }
 
-export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {
+export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath" | "sourcePath">): Promise<void> {
   await deleteAdapted3mfs(plate.id);
+  // A tool's plate reads the tool's file, which isn't the model's to remove.
+  if (plate.sourcePath) return;
   const abs = path.join(STORAGE, plate.storagePath);
   try {
     await fs.rm(abs, { force: true });

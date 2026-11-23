@@ -9,8 +9,9 @@ import crypto from "node:crypto";
 import { Prisma, type Author, type Print, type PrintFile } from "@prisma/client";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
+import { isMissingError } from "../modelFiles/storageFs";
 import { withStorageLock } from "../utils/storageLock";
-import { buildImportSourceUrl } from "./importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 import { licenseOut, providerName, storedLicense, type LicenseOut } from "./licenseService";
 import { managedPrintFilePath } from "./printFileService";
 import { printFilePathFree, pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
@@ -137,7 +138,11 @@ const isCanonical = (file: Pick<PrintFile, "storagePath">) => path.basename(file
 async function rewrite(found: PrintFile, body: Buffer): Promise<void> {
   const file = isCanonical(found) ? found : await backToCanonical(found);
   const destination = managedPrintFilePath(file);
-  const existing = await fs.readFile(destination).catch(() => null);
+  // Only a file that isn't there reads as none: one that can't be read stays as it is, rather than written over.
+  const existing = await fs.readFile(destination).catch((err: unknown) => {
+    if (isMissingError(err)) return null;
+    throw err;
+  });
   const same = existing?.equals(body) ?? false;
   if (!same) await writeAtomically(destination, body);
   // Also when the bytes are already right: a write whose row update failed left the row saying what was there before.

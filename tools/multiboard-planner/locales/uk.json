@@ -104,5 +104,17 @@
   "unused.title": "Невикористаний простір",
   "wall.height": "Висота",
   "wall.title": "Розмір стіни",
-  "wall.width": "Ширина"
+  "wall.width": "Ширина",
+  "parts.tiles": "Плитки",
+  "parts.optional": "Необов’язково",
+  "parts.count": "Плиток: {count}",
+  "parts.empty": "Деталей поки немає.",
+  "error.largeTitle": "Стіна завелика",
+  "error.large": "Потрібно приблизно {estimate} плиток. Перевірте розміри й одиниці вимірювання або виберіть більшу плитку (межа: {limit} плиток).",
+  "error.dimensionsTitle": "Неправильні розміри",
+  "error.dimensions": "Введіть ширину та висоту більше нуля.",
+  "error.smallTitle": "Плитка замала",
+  "error.small": "Для цього кріплення потрібні плитки більші за {size}×{size}.",
+  "error.noFitTitle": "Жодна плитка не вміщується",
+  "error.noFit": "Для плиток {size}×{size} ширина та висота стіни мають бути не меншими за {required}. Виберіть меншу плитку."
 }

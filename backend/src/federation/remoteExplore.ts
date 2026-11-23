@@ -1,6 +1,6 @@
 import { licenseOut, type LicenseOut } from "../services/licenseService";
 import type { RemoteModelDetails } from "./remoteIndex";
-import { buildImportSourceUrl } from "../services/importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 import type { Peer, Prisma, RemoteCollection, RemoteModel, RemotePerson } from "@prisma/client";
 import { canSeeRemoteModel } from "./sharedCollections";
 import type { RemoteOriginOut } from "../dto";
@@ -11,6 +11,7 @@ import { getAchievementSettings } from "../services/settingsService";
 import { libraryCopyOfRemote, type RemoteSource } from "./remoteCopy";
 import { fileKey, filesOf } from "./remoteFiles";
 import { isFederationLive } from "./settings";
+import { capsOf, kindOfStored, type Caps, type FileRole, type Kind } from "../files/kinds";
 
 /** What Explore shows of partners, from the index (remoteIndex.ts): only ACTIVE partners', pictures through this
  *  instance (media.ts), files through it too (remoteFiles.ts). */
@@ -353,6 +354,11 @@ export async function remotePersonModels(
   return { models: rows.map(modelCardOut), total };
 }
 
+/** A partner's file that isn't a plate: its prepared print, one kept beside the plates, or null where the partner
+ *  didn't say which. */
+const roleOfFile = (role: string | undefined): FileRole | null =>
+  role === "PREPARED" ? "prepared" : role === "SUPPORTING" ? "supporting" : null;
+
 export type RemoteModelOut = RemoteModelCardOut & {
   /** As its owner's library has it; absent when its partner doesn't say. */
   license?: LicenseOut | null;
@@ -362,7 +368,18 @@ export type RemoteModelOut = RemoteModelCardOut & {
   description: string | null;
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for it. */
-  files: { name: string; folder: string | null; size: number | null; media_type: string | null; url: string | null }[];
+  files: {
+    name: string;
+    folder: string | null;
+    size: number | null;
+    media_type: string | null;
+    url: string | null;
+    /** What it is to the model, as the partner said; null from a partner index row made before partners said. */
+    role: FileRole | null;
+    /** What the file is, and what the page may offer of it, worked out here from its name (files/kinds.ts). */
+    content_kind: Kind;
+    caps: Caps;
+  }[];
   updated_at: string | null;
   owner_handle: string | null;
   /** Its owner's public collections it's in. */
@@ -395,13 +412,21 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
     ...modelCardOut(row),
     description: row.description,
     images: row.images.flatMap((url) => mediaAddress(url) ?? []),
-    files: filesOf(row, row.peer.origin).map((file) => ({
-      name: file.name,
-      folder: file.folder ?? null,
-      size: file.size,
-      media_type: file.mediaType,
-      url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,
-    })),
+    files: filesOf(row, row.peer.origin).map((file) => {
+      const role = file.kind === "plate" ? "plate" : file.kind === "file" ? roleOfFile(file.role) : null;
+      const kind = kindOfStored(file.name);
+      return {
+        name: file.name,
+        folder: file.folder ?? null,
+        size: file.size,
+        media_type: file.mediaType,
+        url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,
+        role,
+        content_kind: kind,
+        // One whose role the partner didn't say is offered as a plate, as the page offered every file before.
+        caps: capsOf(kind, file.name, role ?? "plate"),
+      };
+    }),
     updated_at: row.updatedAt?.toISOString() ?? null,
     owner_handle: row.person.username ? `${row.person.username}@${new URL(row.peer.origin).host}` : null,
     collections,

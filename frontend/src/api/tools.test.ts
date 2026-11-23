@@ -22,6 +22,7 @@ function fakeStorage(): Storage {
 /** Every toolsApi call, by the name it has in the module. */
 const calls: Record<string, () => Promise<unknown>> = {
   list: () => toolsApi.list(),
+  status: () => toolsApi.status(),
   save: () => toolsApi.save({ slug: "t", metadata: "{}", script: "", html: null }),
   remove: () => toolsApi.remove("id"),
   models: () => toolsApi.models("id"),
@@ -34,6 +35,7 @@ const calls: Record<string, () => Promise<unknown>> = {
   catalog: () => toolsApi.catalog(),
   install: () => toolsApi.install("slug", true),
   importModels: () => toolsApi.importModels("slug"),
+  setEnabled: () => toolsApi.setEnabled("slug", false),
   uninstall: () => toolsApi.uninstall("slug"),
   fetchModels: () => toolsApi.fetchModels("slug"),
   getAccess: () => toolsApi.getAccess(),
@@ -67,7 +69,7 @@ describe("toolsApi", () => {
     expect(sent[0].headers.get("Authorization")).toBe(`Bearer ${TOKEN}`);
   });
 
-  it.each(["save", "fetchNeededModels", "storageSet", "fetchVia", "install", "setAccess"])(
+  it.each(["save", "fetchNeededModels", "storageSet", "fetchVia", "install", "setEnabled", "setAccess"])(
     "sends %s as JSON, with its body",
     async (name) => {
       await calls[name]();
@@ -75,4 +77,21 @@ describe("toolsApi", () => {
       await expect(sent[0].text()).resolves.not.toBe("");
     },
   );
+
+  it("preserves an explicit empty shared prefix", async () => {
+    const options = { model: "model-a", preview: "image:image-a" };
+    await toolsApi.sharedList("id", { ...options, prefix: "" });
+    await toolsApi.sharedList("id", options);
+
+    expect(new URL(sent[0].url).searchParams.get("prefix")).toBe("");
+    expect(new URL(sent[1].url).searchParams.has("prefix")).toBe(false);
+  });
+
+  // The browser resolves "." and ".." in a path, escaped or not: "shared/.." is the tool itself, which a delete removes.
+  it.each([".", ".."])("never sends a request for the key %s", async (key) => {
+    await expect(toolsApi.storageDelete("id", key)).rejects.toThrow("A key can't be . or ..");
+    await expect(toolsApi.sharedDelete("id", key)).rejects.toThrow("A key can't be . or ..");
+    await expect(toolsApi.sharedSet("id", key, { value: 1 })).rejects.toThrow("A key can't be . or ..");
+    expect(sent).toEqual([]);
+  });
 });

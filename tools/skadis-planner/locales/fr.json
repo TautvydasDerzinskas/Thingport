@@ -41,9 +41,9 @@
   "list.and": " et ",
   "list.biggestFirst": "les plus grands d'abord",
   "list.board": "Panneau {cols} × {rows}",
+  "list.boardLabel": "{cols} × {rows} trous, {size}",
   "list.boardWord.one": "panneau",
   "list.boardWord.other": "panneaux",
-  "list.boardLabel": "{cols} × {rows} trous, {size}",
   "list.boards": "Panneaux",
   "list.boardsFrom": "Panneaux",
   "list.buy": "À acheter",
@@ -104,6 +104,7 @@
   "plans.kept": "Gardé dans l'outil, pour vous",
   "plans.nameThis": "Nommez ce mur",
   "plans.open": "L'ouvrir",
+  "plans.opened": "« {name} » ouvert",
   "plans.save": "L'enregistrer",
   "plans.saveThe": "Enregistrer le plan",
   "plans.savedInTool": "Le plan est enregistré dans l'outil",
@@ -130,5 +131,6 @@
   "view.mountsAria": "Afficher les points de fixation",
   "view.plan": "Le plan",
   "view.zoomIn": "Zoom avant",
-  "view.zoomOut": "Zoom arrière"
+  "view.zoomOut": "Zoom arrière",
+  "plans.deleteBody": "« {name} » sera supprimé de l’outil. Les éléments enregistrés dans la bibliothèque resteront."
 }

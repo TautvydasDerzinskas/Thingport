@@ -1,19 +1,19 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
+import { fileState } from "../modelFiles/storageFs";
 import { mapWithConcurrency } from "../utils/concurrency";
 import { isProviderId } from "../providers/index.generated";
 import { PROVIDERS } from "../providers/registry";
-import { buildImportSourceUrl } from "./importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 
 // Finding the models whose files are gone. An instance moved without its storage volume, or a deleted folder,
 // leaves every row in place with nothing behind it: the library lists models that can't be opened, printed or
 // pictured. The repair the owner is then offered is in modelRepairService.ts.
 //
-// A model counts as broken only when it has files recorded and none of them is there -- neither where Thingport
-// put it nor where it was consumed from. One plate of several missing is a lesser problem with its own answer
+// A model counts as broken only when it has files recorded and none of them is there -- where Thingport put it, or
+// for a tool's plate, in the tool's folder. One plate of several missing is a lesser problem with its own answer
 // (the model still opens), and a model whose pictures alone are gone isn't counted at all: its files still print.
 
 const log = createLogger("missing-files");
@@ -71,24 +71,15 @@ export type MissingFilesSummary = {
 type CacheEntry = { scan: MissingFilesScan; at: number };
 const cache = new Map<string, CacheEntry>();
 
-/** Absent, rather than unreadable: a flaky or unmounted network volume answers EIO or EACCES for a file that is
- *  very much there, and taking that for "gone" would offer to fetch or delete a whole library that is fine. Those
- *  throw instead, so the scan fails and nothing is offered. */
-const exists = (absolute: string) =>
-  fs.access(absolute).then(
-    () => true,
-    (err: NodeJS.ErrnoException) => {
-      if (err?.code === "ENOENT" || err?.code === "ENOTDIR") return false;
-      throw err;
-    },
-  );
-
 type PlateFile = { storagePath: string; sourcePath: string | null };
 
-/** Where a plate's file would be: under storage, or the folder it was consumed from in place. */
+/** Whether the plate's file is there: under storage, or a tool's plate's at its sourcePath only. A folder in its place
+ *  isn't the file. Absent, rather than unreadable: a flaky or unmounted network volume answers EIO or EACCES for a
+ *  file that is very much there, and taking that for "gone" would offer to fetch or delete a whole library that is
+ *  fine. Those throw instead, so the scan fails and nothing is offered. */
 async function plateFileThere(plate: PlateFile): Promise<boolean> {
-  if (await exists(path.join(STORAGE, plate.storagePath))) return true;
-  return plate.sourcePath ? exists(plate.sourcePath) : false;
+  const abs = plate.sourcePath ?? path.join(STORAGE, plate.storagePath);
+  return (await fileState(abs, "scan.plate")).state === "file";
 }
 
 function routeOf(print: { sourceProvider: string | null; sourceExternalId: string | null }) {

@@ -12,6 +12,7 @@ export const DOCUMENT_VERSION = 1;
 
 export type { Vec2, Vec3 } from "./vec.generated";
 import { applyMatrix, cross, frameMatrix, normalize, type Vec2, type Vec3 } from "./vec.generated";
+import type { StudioPrintProfile } from "./printProfile.generated";
 import { treatCorners } from "./shapes2d.generated";
 import { textContours, type TextShape } from "./text.generated";
 import { pathContours } from "./svgPath.generated";
@@ -51,6 +52,7 @@ export type EdgeRef = { a: Vec3; b: Vec3 };
 
 type Common = {
   id: string;
+  plate_id?: string;
   /** Empty until someone names it; the UI then shows its type and number. */
   name: string;
   visible: boolean;
@@ -58,7 +60,7 @@ type Common = {
    *  "shapes.0.radius". The numbers themselves are kept in the feature too, worked out again as parameters change. */
   expressions?: Record<string, string>;
 };
-type Body = Common & { transform: Transform };
+type Body = Common & { transform: Transform; color?: string };
 
 export type BoxFeature = Body & { type: "box"; width: number; depth: number; height: number };
 export type CylinderFeature = Body & {
@@ -147,6 +149,15 @@ export type HoleFeature = Body & {
 };
 export type ShellFeature = Body & { type: "shell"; target_id: string; thickness: number; open_faces: FaceRef[] };
 /** One of the two parts a split makes; the split makes both. */
+export type SplitConnector = {
+  diameter: number;
+  depth: number;
+  /** Radial socket clearance, in mm. */
+  clearance: number;
+  offset: Vec2;
+  count: number;
+  spacing: number;
+};
 export type SplitFeature = Body & {
   type: "split";
   source_id: string;
@@ -155,6 +166,10 @@ export type SplitFeature = Body & {
   tool_id: string | null;
   /** By a plane: the side its normal points to (front) or the other (back). By a body: inside it or outside it. */
   keep: "front" | "back" | "inside" | "outside";
+  connector?: SplitConnector;
+  /** In-plane connector U axis in the source's own frame. */
+  connector_u?: Vec3;
+  fit_sample?: { size: number; label: string };
 };
 export type SketchFeature = Common & {
   type: "sketch";
@@ -177,7 +192,7 @@ export type MeshFeature = Body & {
   /** How many loose parts it came in as, which separate_parts makes bodies of their own. Not known for older imports. */
   parts?: number;
   /** Where it came from, as it was then. */
-  source: { model_id: string; file_id: string; file_name: string; model_title: string };
+  source: { model_id: string; file_id: string; file_name: string; model_title: string; build_plate?: number | null };
 };
 /** One of the loose parts of a body, which separate_parts makes all of. */
 export type PartFeature = Body & {
@@ -249,6 +264,13 @@ export type Parameter = { name: string; value: number; unit?: ParameterUnit };
 
 export type StudioDocument = {
   version: typeof DOCUMENT_VERSION;
+  plates?: StudioPlate[];
+  next_plate_id?: number;
+  print_setup?: StudioPrintSetup;
+  /** The slicer settings it's meant to print with (printProfile.ts); absent until one is set. */
+  print_profile?: StudioPrintProfile;
+  locked_layout?: string[];
+  filament_slots?: StudioFilamentSlot[];
   /** The units the design is shown and typed in, as a CAD document's are; mm when absent. Only how sizes read: every
    *  size in the document, and in every command, is in mm. */
   units?: LengthUnit;
@@ -259,6 +281,44 @@ export type StudioDocument = {
   /** The number in the next feature's id. Ids are never reused, so an old one can't point at a new feature. */
   next_id: number;
 };
+
+export type StudioPrintSetup = {
+  printer: string;
+  nozzle: string;
+  bed: Vec3;
+  outline?: { shape: "circle" } | { shape: "polygon"; points: Vec2[] };
+  minWall: number;
+  overhang?: number;
+};
+
+export const STUDIO_DEFAULT_BODY_COLOR = "#b0b0b0";
+export const STUDIO_FILAMENT_MATERIALS = ["PLA", "PETG", "ABS", "ASA", "TPU", "PA", "PC", "PVA", "HIPS"] as const;
+export const STUDIO_FILAMENT_SLOT_LIMIT = 16;
+export type StudioFilamentSlot = { color: string; slot: number; material: (typeof STUDIO_FILAMENT_MATERIALS)[number] };
+
+export type StudioPlateSource = {
+  archive_id: string;
+  index: number | null;
+  model: MeshFeature["source"];
+};
+
+export type StudioPlate = {
+  id: string;
+  name: string;
+  /** The ordinal for a generated label, translated by the viewer until the plate is named. */
+  default_name?: number;
+  source?: StudioPlateSource;
+};
+export const DEFAULT_PLATE_ID = "plate-1";
+export const MAX_PLATES = 32;
+
+export function studioPlates(doc: StudioDocument): readonly StudioPlate[] {
+  return doc.plates ?? [{ id: DEFAULT_PLATE_ID, name: "Plate 1" }];
+}
+
+export function plateOf(feature: Feature): string {
+  return feature.plate_id ?? DEFAULT_PLATE_ID;
+}
 
 // What one design may hold. A server evaluates designs for assistants, so these keep that bounded.
 export const LIMITS = {
@@ -273,6 +333,9 @@ export const LIMITS = {
   segmentsMax: 256,
   /** An imported mesh's triangles. */
   meshTriangles: 1_000_000,
+  /** A dense source plate opened on demand can hold larger exact meshes. */
+  sourceBodyTriangles: 2_000_000,
+  sourcePlateTriangles: 4_000_000,
   /** The edges one fillet or chamfer rounds. */
   edgesPerFeature: 100,
   /** A shell builds walls under every face, which takes time with every triangle: past this it's refused. */

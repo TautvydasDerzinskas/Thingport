@@ -10,7 +10,8 @@ import { buildZipEntries, resolvePrintsForDownload } from "../src/services/downl
 import { modelFilesFromZip, parametricSourcesFromZip } from "../src/services/importService";
 import { createPrint, renamePlate } from "../src/services/printCreation";
 import { getStorageTemplate, setStorageTemplate } from "../src/services/printService";
-import { isZipJunk, joinFolders, normalizeFolder, withoutSharedTop } from "../src/utils/fileFolder";
+import { isJunk } from "../src/files/names";
+import { joinFolders, normalizeFolder, withoutSharedTop } from "../src/utils/fileFolder";
 import { grabcadFolderFrom } from "../src/providers/grabcad/api";
 
 // The folders a model's files came in -- a site's, a zip's, a partner's -- kept on each file, and what they decide:
@@ -80,10 +81,10 @@ describe("a folder as it's kept", () => {
   });
 
   it("knows what macOS leaves in a zip", () => {
-    expect(isZipJunk("__MACOSX/Pack/._Arm.stl")).toBe(true);
-    expect(isZipJunk("Pack/._Arm.stl")).toBe(true);
-    expect(isZipJunk("Pack/.DS_Store")).toBe(true);
-    expect(isZipJunk("Pack/Arm.stl")).toBe(false);
+    expect(isJunk("__MACOSX/Pack/._Arm.stl")).toBe(true);
+    expect(isJunk("Pack/._Arm.stl")).toBe(true);
+    expect(isJunk("Pack/.DS_Store")).toBe(true);
+    expect(isJunk("Pack/Arm.stl")).toBe(false);
   });
 });
 

@@ -13,12 +13,8 @@ import { createLog } from "./auditLog";
 import { upsertAuthorFromImport } from "./authorService";
 import { localizeDescriptionImages, pruneDescriptionImages } from "./descriptionImageService";
 import type { ImportedPageMetadata } from "./importResolvers";
-import {
-  attachImportedPreviewImages,
-  buildImportSourceUrl,
-  PREVIEW_IMAGE_MAX_COUNT,
-  resolveCategoryIdByCategory,
-} from "./importService";
+import { attachImportedPreviewImages, PREVIEW_IMAGE_MAX_COUNT, resolveCategoryIdByCategory } from "./importService";
+import { buildImportSourceUrl } from "../sources/sourceUrls";
 import { reorderPreviewImages } from "./previewImageService";
 import { assertNotToolModel } from "./printEditService";
 import { availableModelName, relocatePrint } from "./printService";

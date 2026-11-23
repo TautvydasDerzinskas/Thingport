@@ -1,4 +1,5 @@
 import type { ImportStatus, SourceGap } from "../shared/api";
+import { t } from "../shared/i18n";
 import type { Classification } from "../shared/urls";
 import type { MissingProfiles } from "./profiles";
 
@@ -57,6 +58,6 @@ export function setContext(context: ImportContext | null): void {
 /** Throws once an SPA navigation has cleared it; flows that must survive capture what they need
  *  up front. */
 export function ctx(): ImportContext {
-  if (!current) throw new Error("The page changed while this was running");
+  if (!current) throw new Error(t("pageChangedDuringAction"));
   return current;
 }

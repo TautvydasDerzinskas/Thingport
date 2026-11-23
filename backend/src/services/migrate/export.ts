@@ -5,6 +5,7 @@ import path from "node:path";
 import type { Response } from "express";
 import { STORAGE } from "../../config";
 import { prisma } from "../../db";
+import { fileState, isMissingError } from "../../modelFiles/storageFs";
 import { createLog } from "../auditLog";
 import { liveDatabaseServer } from "../databaseSettingsService";
 import { sslEnv } from "./postgres";
@@ -80,19 +81,20 @@ export async function markExportRead(value: Stored): Promise<void> {
   void createLog({ userId: value.createdById, action: "migration_export_read" });
 }
 
-/** A file of this instance's storage by the path its database gives it: inside storage, through no link out of it. */
+/** A file of this instance's storage by the path its database gives it: inside storage, through no link out of it.
+ *  Null when nothing is there or it isn't a file; one that can't be read throws, so the instance copying this one
+ *  stops rather than go on without it (migrate/remote.ts). */
 export async function storageFile(relative: string): Promise<string | null> {
   if (!relative || path.isAbsolute(relative)) return null;
   const root = await fs.realpath(STORAGE);
   const joined = path.resolve(root, relative);
   if (!joined.startsWith(root + path.sep)) return null;
-  try {
-    const real = await fs.realpath(joined);
-    if (!real.startsWith(root + path.sep)) return null;
-    return (await fs.stat(real)).isFile() ? real : null;
-  } catch {
-    return null;
-  }
+  const real = await fs.realpath(joined).catch((err: unknown) => {
+    if (isMissingError(err)) return null;
+    throw err;
+  });
+  if (!real?.startsWith(root + path.sep)) return null;
+  return (await fileState(real, "migrate.export")).state === "file" ? real : null;
 }
 
 /** A folder with more files than one listing gives: copying only some of them would lose the rest unsaid. */

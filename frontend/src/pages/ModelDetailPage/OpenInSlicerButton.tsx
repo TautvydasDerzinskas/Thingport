@@ -15,9 +15,14 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import DesignServicesOutlinedIcon from "@mui/icons-material/DesignServicesOutlined";
 import DownloadIcon from "@mui/icons-material/Download";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
+import ToolIcon from "../../components/tools/ToolIcon";
+import type { OfferedCommand } from "../../components/tools/toolCommands";
+import type { SendTargetSummary } from "../../api/sendTargets";
+import { SendKindIcon, kindOf } from "../../components/sendTo/sendKinds";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerHref, type ModelFile } from "./useOpenInSlicer";
 
@@ -31,15 +36,26 @@ type Props = {
   onOpened: (slicerId: string) => void;
   downloading: boolean;
   onDownload: () => void;
-  /** Offered with more than one file. */
+  /** How many files the zip holds: offered with more than one. */
   zipCount: number;
   onDownloadZip: () => void;
   /** Set for a model that came with its generator script, which then takes the main action. */
   onCustomize?: () => void;
   /** Set when the file can open in Studio as a new design. */
   onOpenInStudio?: () => void;
-  openingInStudio?: boolean;
+  /** What the installed tools offer to do with the model, last in the menu; none leaves the menu as it was. */
+  toolCommands?: OfferedCommand[];
+  onToolCommand?: (offered: OfferedCommand) => void;
+  /** The user's Send to destinations shown in the menu, after the slicers; none leaves the menu as it was. */
+  sendTargets?: SendTargetSummary[];
+  onSend?: (target: SendTargetSummary) => void;
+  /** Those being sent to, while they are. */
+  sending?: ReadonlySet<string>;
 };
+
+const NO_COMMANDS: OfferedCommand[] = [];
+const NO_TARGETS: SendTargetSummary[] = [];
+const NONE_SENDING: ReadonlySet<string> = new Set();
 
 /** A slicer's logo on the white tile it's drawn for, so the dark parts stay visible in dark mode. */
 function LogoTile({ id, size }: { id: string; size: number }) {
@@ -81,7 +97,11 @@ export default function OpenInSlicerButton({
   onDownloadZip,
   onCustomize,
   onOpenInStudio,
-  openingInStudio,
+  toolCommands = NO_COMMANDS,
+  onToolCommand,
+  sendTargets = NO_TARGETS,
+  onSend,
+  sending = NONE_SENDING,
 }: Props) {
   const { t } = useTranslation(["models"]);
   // Those the user sends through the Bridge, picked in the Slicer settings.
@@ -96,7 +116,10 @@ export default function OpenInSlicerButton({
   const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
-  const hasMenu = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  const offersTools = Boolean(onToolCommand) && toolCommands.length > 0;
+  const offersSending = Boolean(onSend) && sendTargets.length > 0;
+  const offersAbove = offersSlicers || offersSending || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  const hasMenu = offersAbove || offersTools;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
 
@@ -174,25 +197,43 @@ export default function OpenInSlicerButton({
               <ListItemText primaryTypographyProps={{ variant: "body2" }}>{option.label}</ListItemText>
             </MenuItem>
           ))}
+        {offersSending && (
+          <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.sendTo.heading")}</ListSubheader>
+        )}
+        {offersSending &&
+          sendTargets.map((target) => (
+            <MenuItem
+              key={target.id}
+              disabled={sending.has(target.id)}
+              onClick={() => {
+                onSend?.(target);
+                close();
+              }}
+            >
+              <ListItemIcon>
+                {sending.has(target.id) ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <SendKindIcon kind={kindOf(target)} size={22} />
+                )}
+              </ListItemIcon>
+              <ListItemText primaryTypographyProps={{ variant: "body2" }}>{target.name}</ListItemText>
+            </MenuItem>
+          ))}
         {onOpenInStudio && (
           <MenuItem
-            disabled={openingInStudio}
             onClick={() => {
               onOpenInStudio();
               close();
             }}
           >
             <ListItemIcon>
-              {openingInStudio ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <DesignServicesOutlinedIcon fontSize="small" />
-              )}
+              <DesignServicesOutlinedIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primaryTypographyProps={{ variant: "body2" }}>{t("models:detail.openInStudio")}</ListItemText>
           </MenuItem>
         )}
-        {(offersSlicers || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
+        {(offersSlicers || offersSending || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
         {offersDownload && (
           <MenuItem
             disabled={downloading}
@@ -221,6 +262,81 @@ export default function OpenInSlicerButton({
             </ListItemText>
           </MenuItem>
         )}
+        {offersTools && offersAbove && <Divider />}
+        {offersTools && <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.toolsHeading")}</ListSubheader>}
+        {offersTools && onToolCommand && toolCommandItems(toolCommands, onToolCommand, close)}
+      </Menu>
+    </>
+  );
+}
+
+/** The menu's Tools group: each command with its tool's icon and name. An array, as a Menu takes no fragment. */
+function toolCommandItems(commands: OfferedCommand[], onRun: (offered: OfferedCommand) => void, close: () => void) {
+  return commands.map((offered) => (
+    <MenuItem
+      key={offered.key}
+      onClick={() => {
+        onRun(offered);
+        close();
+      }}
+    >
+      <ListItemIcon sx={{ color: "primary.main" }}>
+        <ToolIcon iconUrl={offered.tool.manifest.iconUrl} size={18} />
+      </ListItemIcon>
+      <ListItemText
+        primary={offered.label}
+        secondary={offered.tool.manifest.name}
+        primaryTypographyProps={{ variant: "body2" }}
+        secondaryTypographyProps={{ variant: "caption" }}
+        sx={{ my: 0 }}
+      />
+    </MenuItem>
+  ));
+}
+
+/** In the main button's place on a model with no file: the tools' model commands alone, behind one button. */
+export function ToolCommandsButton({
+  commands,
+  onRun,
+}: {
+  commands: OfferedCommand[];
+  onRun: (offered: OfferedCommand) => void;
+}) {
+  const { t } = useTranslation(["models"]);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const close = () => setAnchor(null);
+  return (
+    <>
+      <Button
+        variant="outlined"
+        fullWidth
+        onClick={(e) => setAnchor(e.currentTarget)}
+        aria-haspopup="menu"
+        aria-expanded={Boolean(anchor)}
+        startIcon={<HandymanOutlinedIcon fontSize="small" />}
+        endIcon={
+          <ArrowDropDownIcon
+            sx={{
+              transition: "transform 150ms",
+              transform: anchor ? "rotate(180deg)" : "none",
+              "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+            }}
+          />
+        }
+        sx={{ "& .MuiButton-endIcon": { ml: "auto" } }}
+      >
+        {t("models:detail.toolsHeading")}
+      </Button>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={close}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { sx: { width: anchor?.offsetWidth } } }}
+      >
+        <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.toolsHeading")}</ListSubheader>
+        {toolCommandItems(commands, onRun, close)}
       </Menu>
     </>
   );

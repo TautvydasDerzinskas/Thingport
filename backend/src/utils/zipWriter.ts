@@ -2,6 +2,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import { Readable } from "node:stream";
 import zlib from "node:zlib";
+import { isMissingError, openStored, type StorageSite } from "../modelFiles/storageFs";
 
 // Minimal streaming ZIP writer on node:zlib; yauzl is read-only.
 
@@ -37,9 +38,47 @@ function dosDateTime(date: Date): { time: number; date: number } {
   return { time, date: dateVal };
 }
 
-/** A file on disk, or bytes made for the zip (a model's LICENSE.txt). */
+/** A model's file in storage, written from the handle the file door opened (Fs 2): left out when nothing is there by
+ *  then or `stillNames` says its row, read again, no longer names it. */
+export type StoredZipEntry = {
+  arcname: string;
+  filePath: string;
+  site: StorageSite;
+  stillNames: () => Promise<boolean>;
+};
+
+/** A model's file in storage, any other file on disk, or bytes made for the zip (a model's LICENSE.txt). */
 export type ZipEntryDescriptor =
-  { arcname: string; filePath: string } | { arcname: string; content: Buffer; mtime?: Date };
+  StoredZipEntry | { arcname: string; filePath: string } | { arcname: string; content: Buffer; mtime?: Date };
+
+/** The most entries a zip from writeZip holds. 0xFFFF there, like 0xFFFFFFFF in a size or an offset, tells a reader
+ *  to look in a ZIP64 record, which this writer doesn't make. */
+export const ZIP_MAX_ENTRIES = 0xfffe;
+const ZIP_MAX_FIELD = 0xfffffffe;
+
+/** At the most, where writeZip's central directory starts (after each entry's header, name, data and descriptor) and
+ *  how long it is. Data that doesn't compress comes out of deflate bigger, by less than allowed here: zlib's
+ *  deflateBound says under 0.04% and 7 bytes, with its default settings. A file that's gone counts as empty, since
+ *  writeZip leaves it out. */
+export function zipExtent(entries: ZipEntryDescriptor[]): { data: number; central: number } {
+  let data = 0;
+  let central = 0;
+  for (const entry of entries) {
+    const size =
+      "content" in entry ? entry.content.length : (fs.statSync(entry.filePath, { throwIfNoEntry: false })?.size ?? 0);
+    const name = Buffer.byteLength(entry.arcname.replace(/\\/g, "/"), "utf-8");
+    data += 30 + name + size + Math.ceil(size / 1024) + 64 + 16;
+    central += 46 + name;
+  }
+  return { data, central };
+}
+
+/** Whether writeZip can write these without ZIP64: how many, and every offset and size under its 32 bits. */
+export function zipFits(entries: ZipEntryDescriptor[]): boolean {
+  if (entries.length > ZIP_MAX_ENTRIES) return false;
+  const { data, central } = zipExtent(entries);
+  return data <= ZIP_MAX_FIELD && central <= ZIP_MAX_FIELD;
+}
 
 type CentralRecord = {
   nameBuf: Buffer;
@@ -51,7 +90,46 @@ type CentralRecord = {
   date: number;
 };
 
-/** Skips entries whose source file no longer exists. */
+/** Where an entry's bytes come from: its time, its bytes, and what to close once they're written. */
+type EntrySource = { mtime: Date; read: () => Readable; close: () => Promise<void> };
+
+const nothingToClose = async () => undefined;
+
+/** An entry's source, or null to leave it out: a file that's gone by now (only ENOENT and ENOTDIR say so), or a
+ *  stored one that isn't a regular file or whose row no longer names it. Any other error fails the zip, rather than
+ *  leave a file out of it unsaid. */
+async function sourceOf(entry: ZipEntryDescriptor): Promise<EntrySource | null> {
+  if ("content" in entry) {
+    return { mtime: entry.mtime ?? new Date(), read: () => Readable.from([entry.content]), close: nothingToClose };
+  }
+  if ("site" in entry) {
+    const opened = await openStored(entry.filePath, entry.site);
+    if (!opened) return null;
+    let named = false;
+    try {
+      named = await entry.stillNames();
+    } finally {
+      if (!named) await opened.handle.close();
+    }
+    if (!named) return null;
+    return {
+      mtime: new Date(Number(BigInt(opened.mtimeNs) / 1_000_000n)),
+      // From the handle, from its start: the file that was opened, whatever is at its path by now.
+      read: () => opened.handle.createReadStream({ start: 0, autoClose: false }),
+      close: () => opened.handle.close(),
+    };
+  }
+  let stat: fs.Stats;
+  try {
+    stat = await fsp.stat(entry.filePath);
+  } catch (err) {
+    if (isMissingError(err)) return null;
+    throw err;
+  }
+  return { mtime: stat.mtime, read: () => fs.createReadStream(entry.filePath), close: nothingToClose };
+}
+
+/** Leaves out entries whose file is gone; any other error reading one fails the whole zip. */
 export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]): Promise<void> {
   const out = fs.createWriteStream(destPath);
   let offset = 0;
@@ -62,21 +140,16 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
     });
 
   const records: CentralRecord[] = [];
+  // The entry being written, closed once it's in or the zip fails.
+  let writing: EntrySource | null = null;
 
   try {
     for (const entry of entries) {
-      let mtime: Date;
-      if ("content" in entry) {
-        mtime = entry.mtime ?? new Date();
-      } else {
-        try {
-          mtime = (await fsp.stat(entry.filePath)).mtime;
-        } catch {
-          continue;
-        }
-      }
+      const source = await sourceOf(entry);
+      if (!source) continue;
+      writing = source;
       const nameBuf = Buffer.from(entry.arcname.replace(/\\/g, "/"), "utf-8");
-      const { time, date } = dosDateTime(mtime);
+      const { time, date } = dosDateTime(source.mtime);
       const localHeaderOffset = offset;
 
       const localHeader = Buffer.alloc(30);
@@ -99,7 +172,7 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
       let compressedSize = 0;
 
       await new Promise<void>((resolve, reject) => {
-        const readStream = "content" in entry ? Readable.from([entry.content]) : fs.createReadStream(entry.filePath);
+        const readStream = source.read();
         const deflate = zlib.createDeflateRaw();
         readStream.on("data", (raw: string | Buffer) => {
           const chunk = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
@@ -129,6 +202,8 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
       await write(descriptor);
 
       records.push({ nameBuf, crc, compressedSize, uncompressedSize, localHeaderOffset, time, date });
+      writing = null;
+      await source.close();
     }
 
     const cdStart = offset;
@@ -169,7 +244,9 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
 
     await new Promise<void>((resolve, reject) => out.end((err?: Error | null) => (err ? reject(err) : resolve())));
   } catch (err) {
-    out.destroy();
+    await writing?.close().catch(() => undefined);
+    // Closed before the caller removes the file: an open still under way would make it again after the removal.
+    if (!out.closed) await new Promise<void>((resolve) => out.once("close", () => resolve()).destroy());
     throw err;
   }
 }

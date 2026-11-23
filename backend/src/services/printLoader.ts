@@ -1,6 +1,6 @@
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
-import { toPrintOut, type PrintOut } from "../dto";
+import { supportingFilesOut, toPrintOut, type PrintOut } from "../dto";
 import { remoteOriginOut } from "../federation/remoteExplore";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
 import { aiDescriptionOut } from "./aiDescriptionService";
@@ -72,6 +72,7 @@ export async function printOutById(
   return {
     ...out,
     ...withProfiles,
+    supporting_files: supportingFilesOut(full.files),
     license_pending: licensePending(full.print),
     license_filling: licenseFillRunning(full.print.id),
     license_failed: !licenseFillRunning(full.print.id) && licenseReadFailed(full.print.id),

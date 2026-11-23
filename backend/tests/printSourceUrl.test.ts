@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
+import { buildImportSourceUrl, identifySourceModel } from "../src/sources/sourceUrls";
 import { toPrintOut } from "../src/dto";
 import { prisma } from "../src/db";
 

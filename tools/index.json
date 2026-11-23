@@ -8,6 +8,10 @@
     "skadis-planner",
     "keyring-generator",
     "qr-code-generator",
-    "openscad-customizer"
+    "openscad-customizer",
+    "print-queue",
+    "filament-shelf",
+    "notes",
+    "3d-printing-wiki"
   ]
 }

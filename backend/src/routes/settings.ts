@@ -83,6 +83,7 @@ import {
   getUserSlicerSettings,
   setUserSlicerSettings,
 } from "../services/slicerPreferenceService";
+import { sendTargetSummaries } from "../services/sendTargetService";
 import { CATEGORIES_VIEWS, getCategoriesView, setCategoriesView } from "../services/categoriesViewService";
 import { getToolsView, setToolsView, toolsViewSchema } from "../services/toolsViewService";
 import {
@@ -845,9 +846,16 @@ router.post(
 router.get(
   "/settings/slicer",
   asyncHandler(async (req, res) => {
-    res.json(await getUserSlicerSettings(req.userId!));
+    res.json(await withSendTargets(req.userId!, getUserSlicerSettings(req.userId!)));
   }),
 );
+
+/** The slicer settings with the user's Send to destinations beside them: what a model's page offers, in the one
+ *  request it already makes. Someone with none gets the settings exactly as before. */
+async function withSendTargets<T extends object>(userId: string, settings: Promise<T>) {
+  const [value, targets] = await Promise.all([settings, sendTargetSummaries(userId)]);
+  return targets.length ? { ...value, send_targets: targets } : value;
+}
 
 // `slicer` alone, as older frontends send it, also adds it to `slicers`.
 const slicerSettingsSchema = z.object({
@@ -871,7 +879,7 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(slicerSettingsSchema, req.body);
     try {
-      res.json(await setUserSlicerSettings(req.userId!, body));
+      res.json(await withSendTargets(req.userId!, setUserSlicerSettings(req.userId!, body)));
     } catch (err) {
       if (err instanceof NotYourPrinterError) throw new HttpError(422, "That printer isn't one of yours.");
       throw err;

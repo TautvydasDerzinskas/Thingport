@@ -8,6 +8,7 @@ import { isMakerworldUrl } from "../shared/urls";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
 import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "../providers/makerworld/cookie";
 import { backgroundText } from "./localize";
+import { instanceErrorText, proxyErrorText, thingportDetail } from "./instanceErrors";
 
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
@@ -15,14 +16,6 @@ const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 const CLIENT_HEADERS = { "X-Thingport-Client": "grab" };
 
 type Credentials = Pick<ConfiguredConfig, "instanceUrl" | "email" | "password" | "connectionToken">;
-
-async function errorDetail(res: Response, fallback: string): Promise<string> {
-  try {
-    const body = (await res.json()) as { detail?: string } | null;
-    if (body && body.detail) return body.detail;
-  } catch {}
-  return fallback;
-}
 
 /** The instance answered a call with an error status, its own message as the message. */
 export class ApiError extends Error {
@@ -187,8 +180,10 @@ export async function loginAndStoreToken(credentials: Credentials): Promise<stri
     },
   );
   if (!res.ok) {
-    const detail = await errorDetail(res, await backgroundText("couldNotSignInToThingport", { status: res.status }));
-    throw res.status === 401 || res.status === 403 ? new LoginRejectedError(detail) : new Error(detail);
+    const detail = await thingportDetail(res);
+    // Only Thingport's own refusal is about the credentials: a sign-in page in front of it turns everyone away.
+    if (detail && (res.status === 401 || res.status === 403)) throw new LoginRejectedError(detail);
+    throw new Error(detail ?? (await proxyErrorText(res.status)));
   }
   const data = (await res.json()) as LoginResult;
   const tokenExpiresAt = Date.now() + data.expires_in * 1000;
@@ -334,11 +329,7 @@ export async function apiCall<T = unknown>(
   if (account && !account.token) throw new ApiError(await backgroundText("accountNotSignedIn"), 401);
   let res = await doFetch(account ? account.token! : await ensureToken(config));
   if (res.status === 401 && !account) res = await doFetch(await ensureToken(config, { forceRefresh: true }));
-  if (!res.ok)
-    throw new ApiError(
-      await errorDetail(res, await backgroundText("requestFailed", { status: res.status })),
-      res.status,
-    );
+  if (!res.ok) throw new ApiError(await instanceErrorText(res), res.status);
   if (res.status === 204) return null as T;
   return (await res.json()) as T;
 }

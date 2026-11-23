@@ -4,6 +4,7 @@ import { type Request, type Response, Router } from "express";
 import { z, type ZodType, type ZodTypeDef } from "zod";
 import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
+import { isJunk } from "../files/names";
 import { prisma } from "../db";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -364,7 +365,11 @@ async function assertNoActiveJob(userId: string): Promise<void> {
   if (active) throw new HttpError(409, "An import is already in progress");
 }
 
-const zipExtractRequestSchema = importRequestSchema.extend({ entries: z.array(z.string()) });
+// What the zip's system left in it is dropped first, so it's never imported, counted or the only thing asked for.
+// What the zip's system left in it is dropped first, so it's never imported, counted or the only thing asked for.
+const zipExtractRequestSchema = importRequestSchema.extend({
+  entries: z.array(z.string()).transform((entries) => entries.filter((entry) => !isJunk(entry))),
+});
 
 router.post(
   "/import/zip",
@@ -378,6 +383,7 @@ router.post(
       return;
     }
     const body = parseBody(zipExtractRequestSchema, req.body);
+    if (!body.entries.length) throw new HttpError(400, "No files to import");
     await assertNoActiveJob(req.userId!);
     const url = await enabledImportUrl(body.url);
     const job = await createJob(req.userId!, "ZIP", {

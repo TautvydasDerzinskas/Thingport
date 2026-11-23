@@ -18,23 +18,32 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
-import type { Plate } from "../../api/prints";
+import type { Plate, PrintFile } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import { useToastHost } from "../../components/ToastProvider";
 import { fileRowText } from "./fileRowText";
 import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
 import { folderLabel, groupByFolder, hasFolders, shortNames } from "../../utils/fileFolders";
+import TypeTile from "../../components/supportingFiles/TypeTile";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   downloading: boolean;
   sortedPlates: Plate[];
+  /** How many files "Download all" puts in the zip, the model's other files besides its plates. */
+  zipFileCount: number;
   downloadAllZip: () => void;
   /** One folder of the model's (Plate.folder), with the folders in it, as a zip. */
   downloadFolderZip: (folder: string) => void;
   downloadPlate: (plate: Plate) => void;
+  /** The files kept beside the plates, from the model's detail (a list's model has none here). */
+  supportingFiles?: PrintFile[];
+  downloadSupporting?: (file: PrintFile) => void;
 };
+
+const NO_FILES: PrintFile[] = [];
 
 const folderOf = (plate: Plate) => plate.folder;
 
@@ -43,11 +52,16 @@ export default function DownloadPickerDialog({
   onClose,
   downloading,
   sortedPlates,
+  zipFileCount,
   downloadAllZip,
   downloadFolderZip,
   downloadPlate,
+  supportingFiles = NO_FILES,
+  downloadSupporting,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  // A download that fails says so in here, where a screen reader and the keyboard can reach it.
+  const toastHost = useToastHost(open);
   const grouped = hasFolders(sortedPlates, folderOf);
   const names = useMemo(
     () =>
@@ -85,7 +99,13 @@ export default function DownloadPickerDialog({
     </ListItemButton>
   );
   return (
-    <Dialog open={open} onClose={() => !downloading && onClose()} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={() => !downloading && onClose()}
+      fullWidth
+      maxWidth="xs"
+      slotProps={{ paper: { ref: toastHost } }}
+    >
       <DialogTitle>{t("models:detail.downloadPickerTitle")}</DialogTitle>
       <DialogContent>
         <Stack spacing={1.5}>
@@ -95,7 +115,7 @@ export default function DownloadPickerDialog({
             disabled={downloading}
             startIcon={downloading ? <CircularProgress size={14} /> : <DownloadIcon fontSize="small" />}
           >
-            {t("models:detail.downloadAllZip", { count: sortedPlates.length })}
+            {t("models:detail.downloadAllZip", { count: zipFileCount })}
           </Button>
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>
@@ -132,6 +152,32 @@ export default function DownloadPickerDialog({
                 ))
               : sortedPlates.map(row)}
           </List>
+          {supportingFiles.length > 0 && downloadSupporting && (
+            <>
+              <Divider>{t("models:supporting.title")}</Divider>
+              <List disablePadding>
+                {supportingFiles.map((file) => (
+                  <ListItemButton
+                    key={file.id}
+                    onClick={() => downloadSupporting(file)}
+                    disabled={downloading}
+                    title={file.filename}
+                    sx={{ borderRadius: 1 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 60, pl: 0.75 }}>
+                      <TypeTile kind={file.content_kind} view={file.caps?.view} size={36} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={file.filename}
+                      secondary={[file.folder, formatFileSize(file.size)].filter(Boolean).join(" · ")}
+                      primaryTypographyProps={{ noWrap: true }}
+                      secondaryTypographyProps={{ noWrap: true }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            </>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

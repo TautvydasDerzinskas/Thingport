@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -13,6 +14,8 @@ import Typography from "@mui/material/Typography";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DownloadIcon from "@mui/icons-material/Download";
 import LaunchIcon from "@mui/icons-material/Launch";
+import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { printsApi } from "../../api/prints";
 import type { AdminTool } from "../../api/tools";
@@ -27,6 +30,7 @@ type Props = {
   onImportModels: () => void;
   onRetry: () => void;
   onUninstall: () => void;
+  onChangeAvailability: () => void;
   /** Opens the admin's own copy; absent where the tool isn't installed or isn't theirs to open. */
   onOpen?: () => void;
 };
@@ -40,6 +44,7 @@ export default function ToolDetailsDialog({
   onImportModels,
   onRetry,
   onUninstall,
+  onChangeAvailability,
   onOpen,
 }: Props) {
   const { t } = useTranslation("app");
@@ -48,6 +53,7 @@ export default function ToolDetailsDialog({
   const models = installed?.models ?? null;
   const missing = models ? models.total - models.ready : 0;
   const brings = manifest.collection?.models.length ?? 0;
+  const disabled = installed?.enabled === false;
 
   const status = !installed
     ? { label: t("adminSettings.tools.repo.notInstalled"), color: "default" as const }
@@ -82,6 +88,9 @@ export default function ToolDetailsDialog({
               alignItems: "center",
               justifyContent: "center",
               color: "primary.main",
+              transition: "opacity 200ms ease, filter 200ms ease",
+              ...(disabled && { opacity: 0.45, filter: "grayscale(1)" }),
+              "@media (prefers-reduced-motion: reduce)": { transition: "none" },
             }}
           >
             <ToolIcon iconUrl={manifest.iconUrl} size={26} />
@@ -90,13 +99,38 @@ export default function ToolDetailsDialog({
             <Typography variant="h6" sx={{ fontSize: "1.05rem", lineHeight: 1.3 }}>
               {manifest.name}
             </Typography>
-            <Chip size="small" variant="outlined" color={status.color} label={status.label} sx={{ mt: 0.5 }} />
+            <Stack direction="row" spacing={0.75} sx={{ mt: 0.5 }}>
+              <Chip size="small" variant="outlined" color={status.color} label={status.label} />
+              {disabled && (
+                <Chip size="small" variant="outlined" color="warning" label={t("adminSettings.tools.repo.disabled")} />
+              )}
+            </Stack>
           </Box>
         </Stack>
       </DialogTitle>
 
       <DialogContent dividers>
         <Stack spacing={1.5}>
+          {disabled && (
+            <Alert
+              severity="warning"
+              icon={<PauseCircleOutlineIcon fontSize="inherit" />}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  startIcon={<PlayCircleOutlineIcon fontSize="small" />}
+                  disabled={busy}
+                  onClick={onChangeAvailability}
+                  sx={{ whiteSpace: "nowrap" }}
+                >
+                  {t("adminSettings.tools.repo.enable")}
+                </Button>
+              }
+            >
+              {t("adminSettings.tools.repo.disabledBanner")}
+            </Alert>
+          )}
           {manifest.description && <Typography variant="body2">{manifest.description}</Typography>}
           <Typography variant="caption" color="text.secondary">
             {[
@@ -164,16 +198,28 @@ export default function ToolDetailsDialog({
 
       <DialogActions sx={{ px: 2, py: 1.5, gap: 1 }}>
         {installed && (
-          <Button
-            size="small"
-            color="error"
-            startIcon={<DeleteOutlineIcon fontSize="small" />}
-            disabled={busy}
-            onClick={onUninstall}
-            sx={{ mr: "auto" }}
-          >
-            {t("adminSettings.tools.repo.uninstall")}
-          </Button>
+          <Stack direction="row" spacing={1} sx={{ mr: "auto" }}>
+            <Button
+              size="small"
+              color="error"
+              startIcon={<DeleteOutlineIcon fontSize="small" />}
+              disabled={busy}
+              onClick={onUninstall}
+            >
+              {t("adminSettings.tools.repo.uninstall")}
+            </Button>
+            {!disabled && (
+              <Button
+                size="small"
+                color="inherit"
+                startIcon={<PauseCircleOutlineIcon fontSize="small" />}
+                disabled={busy}
+                onClick={onChangeAvailability}
+              >
+                {t("adminSettings.tools.repo.disable")}
+              </Button>
+            )}
+          </Stack>
         )}
         {onOpen && (
           <Button size="small" startIcon={<LaunchIcon fontSize="small" />} onClick={onOpen}>

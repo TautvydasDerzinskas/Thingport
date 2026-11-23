@@ -29,6 +29,8 @@
     "adapter:check": "node scripts/sync-adapter.mjs --check",
     "printers:update": "node scripts/printers/update.mjs",
     "printers:sync": "node scripts/sync-printers.mjs",
-    "printers:check": "node scripts/sync-printers.mjs --check"
+    "printers:check": "node scripts/sync-printers.mjs --check",
+    "kinds:sync": "node scripts/sync-kinds.mjs",
+    "kinds:check": "node scripts/sync-kinds.mjs --check"
   }
 }

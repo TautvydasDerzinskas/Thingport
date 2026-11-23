@@ -19,7 +19,7 @@ import {
 } from "../src/providers/thangs/api";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
 import { normalizeThangsSession } from "../src/providers/thangs/session";
-import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
+import { buildImportSourceUrl, identifySourceModel } from "../src/sources/sourceUrls";
 
 // The Thangs client against the shapes its own site gets back, with fetch mocked. No database.
 

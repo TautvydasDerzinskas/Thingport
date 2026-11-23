@@ -330,5 +330,8 @@
   "toast.logoPartly": "{count} élément(s) de ce fichier ne sont pas des contours et ont été laissés de côté.",
   "toast.projectOpened": "Modèle ouvert.",
   "toast.projectFailed": "Ce n'est pas un modèle écrit par cet outil.",
-  "toast.noWebgl": "Ce navigateur n'a pas de 3D : il ne reste que la vue à plat."
+  "toast.noWebgl": "Ce navigateur n'a pas de 3D : il ne reste que la vue à plat.",
+  "error.badSvg": "Ce fichier SVG ne peut pas être lu.",
+  "error.noSvg": "Ce fichier ne contient pas d’élément SVG.",
+  "error.noOutline": "Ce fichier ne contient aucun contour imprimable."
 }

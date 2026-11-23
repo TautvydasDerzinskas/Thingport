@@ -17,6 +17,7 @@ import {
   provisionEveryoneSoon,
   repoToolScreenshot,
   retryModelFetch,
+  setRepoToolEnabled,
   uninstallRepoTool,
 } from "../services/toolsService";
 import { listStorageFolder } from "../services/storageBrowserService";
@@ -113,6 +114,9 @@ router.get(
     const { breakdown, freeable } = usage;
     res.json({
       model_bytes: usage.modelBytes,
+      // Parts of model_bytes.
+      supporting_bytes: usage.supportingBytes,
+      prepared_bytes: usage.preparedBytes,
       model_count: usage.modelCount,
       total_bytes: usage.totalBytes,
       picture_bytes: usage.pictureBytes,
@@ -474,6 +478,16 @@ router.post(
   asyncHandler(async (req, res) => {
     await retryModelFetch(String(req.params.slug), req.userId!);
     res.status(202).json({ ok: true });
+  }),
+);
+
+const availabilitySchema = z.object({ enabled: z.boolean() });
+router.patch(
+  "/tools/:slug/availability",
+  asyncHandler(async (req, res) => {
+    const { enabled } = parseBody(availabilitySchema, req.body);
+    await setRepoToolEnabled(String(req.params.slug), enabled, req.userId!);
+    res.status(204).end();
   }),
 );
 

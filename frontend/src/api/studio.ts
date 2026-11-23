@@ -1,8 +1,9 @@
+import i18next from "i18next";
 import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { authHeaders } from "../utils/auth";
 import { apiBase, UnauthorizedError } from "./client";
 import type { StudioCommandArgs, StudioCommandName } from "../studio/commands";
-import type { StudioDocument } from "../studio/document";
+import { LIMITS, MAX_PLATES, type StudioDocument } from "../studio/document";
 
 export type StudioDesignSummary = {
   id: string;
@@ -16,6 +17,7 @@ export type StudioDesign = StudioDesignSummary & {
   document: StudioDocument;
   can_undo: boolean;
   can_redo: boolean;
+  undone_source_plate_ids?: string[];
   created_at: string;
 };
 
@@ -74,7 +76,34 @@ export class StudioError extends Error {
   }
 }
 
-async function request<T>(path: string, method = "GET", payload?: unknown): Promise<T> {
+const importErrors = new Map([
+  ["studio_import_archive_limit", "archiveLimit"],
+  ["studio_import_no_plates", "noPlates"],
+  ["studio_import_plate_limit", "plateLimit"],
+  ["studio_import_body_limit", "bodyLimit"],
+  ["studio_import_missing_parts", "missingParts"],
+  ["studio_import_no_bodies", "noBodies"],
+  ["studio_import_failed", "readFailed"],
+  ["studio_import_too_many_plates", "tooManyPlates"],
+  ["studio_import_too_many_objects", "tooManyObjects"],
+  ["studio_plate_pending", "loadPlateFirst"],
+]);
+
+export function studioErrorMessage(message: string, code: string | null | undefined): string {
+  if (code === "studio_arrange_empty") return i18next.t("studio.print.arrangeEmpty", { ns: "app" });
+  const key = code && importErrors.get(code);
+  if (!key) return message;
+  const { format } = new Intl.NumberFormat(i18next.resolvedLanguage);
+  return i18next.t(`studio.importModel.${key}`, {
+    ns: "app",
+    objects: format(LIMITS.features),
+    plates: format(MAX_PLATES),
+    plateTriangles: format(LIMITS.sourcePlateTriangles),
+    bodyTriangles: format(LIMITS.sourceBodyTriangles),
+  });
+}
+
+async function requestResponse(path: string, method = "GET", payload?: unknown): Promise<Response> {
   const res = await fetch(`${apiBase()}${path}`, {
     method,
     headers: authHeaders(payload === undefined ? undefined : { "Content-Type": "application/json" }),
@@ -89,15 +118,37 @@ async function request<T>(path: string, method = "GET", payload?: unknown): Prom
       if (typeof body.detail === "string") message = body.detail;
       if (typeof body.code === "string") code = body.code;
     } catch {}
-    throw new StudioError(message, res.status, code);
+    throw new StudioError(studioErrorMessage(message, code), res.status, code);
   }
+  return res;
+}
+
+async function request<T>(path: string, method = "GET", payload?: unknown): Promise<T> {
+  const res = await requestResponse(path, method, payload);
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
 const design = (id: string) => `/studio/designs/${encodeURIComponent(id)}`;
 
-/** Where Studio's assistant shows: the bar under the view, or a panel beside it. */
-export type StudioPromptLayout = "bar" | "panel";
+export type StudioExport = {
+  format?: "3mf" | "stl" | "stl-zip";
+  slicer?: string;
+  printer?: { id: string; nozzle: string };
+  plate?: string;
+};
+
+export function studioExportPath(id: string, filename: string, options?: StudioExport): string {
+  const parts = [
+    options?.format ?? (options ? "3mf" : "auto"),
+    options?.slicer ?? "-",
+    options?.printer?.id ?? "-",
+    options?.printer?.nozzle ?? "-",
+    options?.plate ?? "-",
+    filename,
+  ];
+  return `${design(id)}/export/${parts.map(encodeURIComponent).join("/")}`;
+}
+
 /** How the grid behind a design is drawn and snapped to, as a CAD program's grid settings: adaptive, it follows the zoom
  *  at a density; fixed, it's `major` mm apart with `subdivisions` minor lines between. */
 export type StudioGridSettings = {
@@ -109,9 +160,11 @@ export type StudioGridSettings = {
   snap: boolean;
 };
 /** A person's own Studio settings, kept on the account. */
-export type StudioSettings = { prompt_layout: StudioPromptLayout; units: "mm" | "cm" | "in"; grid: StudioGridSettings };
+export type StudioSettings = { units: "mm" | "cm" | "in"; grid: StudioGridSettings };
 
 export const studioApi = {
+  export: (id: string, filename: string, options?: StudioExport) =>
+    requestResponse(studioExportPath(id, filename, options)),
   status: () => request<{ enabled: boolean }>("/studio/status"),
   settings: () => request<StudioSettings>("/studio/settings"),
   /** `grid` takes only what changes, as the rest do. */
@@ -135,12 +188,18 @@ export const studioApi = {
   create: (name: string) => request<StudioDesign>("/studio/designs", "POST", { name }),
   get: (id: string) => request<StudioDesign>(design(id)),
   version: (id: string) => request<{ version: number }>(`${design(id)}/version`),
-  remove: (id: string) => request<void>(design(id), "DELETE"),
+  remove: (id: string, options?: { expected_version: number }) => request<void>(design(id), "DELETE", options),
   assistant: (id: string) => request<StudioAssistantThread>(`${design(id)}/assistant`),
   /** Starts the assistant on a prompt; it works in the background, which `assistant` follows. */
   ask: (
     id: string,
-    body: { prompt: string; ai_connection_id: string | null; selected: string[]; pictures?: string[] },
+    body: {
+      prompt: string;
+      ai_connection_id: string | null;
+      selected: string[];
+      active_plate?: string;
+      pictures?: string[];
+    },
   ) => request<{ run: StudioAssistantRun }>(`${design(id)}/assistant`, "POST", body),
   /** Keeps a picture with the design: the server turns it upright and makes it no bigger than it needs. */
   addPicture: async (id: string, file: Blob): Promise<StudioPicture> => {
@@ -161,7 +220,11 @@ export const studioApi = {
     return res.json();
   },
   /** Saves the design to the library as a new model; `picture_id` is the picture to show it by. */
-  saveToLibrary: async (id: string, body: { name?: string; picture_id?: string }) => {
+  /** As a new model, or with `model_id` as one more print profile of that model. */
+  saveToLibrary: async (
+    id: string,
+    body: { name?: string; picture_id?: string; model_id?: string; profile_name?: string },
+  ) => {
     const saved = await request<{ model: { id: string; name: string; title: string | null } }>(
       `${design(id)}/save-to-library`,
       "POST",

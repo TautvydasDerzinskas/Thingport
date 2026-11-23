@@ -1,0 +1,28 @@
+{
+  "data": {
+    "moreCollectionModels": {
+      "items": [
+        {
+          "id": "1786545",
+          "model": {
+            "id": "1786545",
+            "name": "Strong garden hose holder",
+            "slug": "strong-garden-hose-holder",
+            "image": { "filePath": "media/prints/1786545/title.jpg" }
+          }
+        },
+        { "id": "2", "unavailableModel": { "id": "2", "name": "Deleted print" } },
+        {
+          "id": "1482294",
+          "model": {
+            "id": "1482294",
+            "name": "Charger Cable Organizer",
+            "slug": "charger-cable-organizer",
+            "image": { "filePath": "media/prints/1482294/title.jpg" }
+          }
+        }
+      ],
+      "cursor": ""
+    }
+  }
+}

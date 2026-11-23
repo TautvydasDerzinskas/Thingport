@@ -7,7 +7,7 @@ Make Thingport look the way you like, under **Configuration → Appearance**, fr
   <img src="../../frontend/src/assets/screenshots/light/15_profile_configuration.png" alt="Configuration, Appearance section, with language, theme, accent colour, render colour and model cards" width="100%">
 </picture>
 
-- **Language:** English, Español, Français, Lietuvių, Русский, Українська, Беларуская and 简体中文, and any language someone
+- **Language:** English, Deutsch, Español, Français, Lietuvių, Русский, Українська, Беларуская and 简体中文, and any language someone
   has [translated it into](../TRANSLATING.md).
 - **Theme:** Light, Dark, or **System** to follow your device's setting.
 - **Accent colour:** Thingport green, graphite, or a provider's brand colour: Thingiverse blue, Printables orange,
@@ -16,9 +16,10 @@ Make Thingport look the way you like, under **Configuration → Appearance**, fr
 - **Render colour:** the colour generated 3D renders and the [3D preview](3d-previews.md) are drawn in; a model that
   carries colours of its own keeps them in the preview. Picking an accent sets it to match; pick one here to give
   renders a colour of their own, or light grey for no tint.
-- **Model cards:** what cards show first. **Images** shows the pictures a model came with, or a 3D render where it has
-  none. **3D renders** shows a render of every model in your render colour, for a uniform grid, falling back to its
-  pictures where a file can't be drawn.
+- **Model cards:** what cards show first. **Images** shows a model's first picture, or a 3D render where it has none:
+  to pick another, open **Edit model** and use **Use as thumbnail** on it, or move it to the front. **3D renders**
+  shows a render of every model in your render colour, for a uniform grid, falling back to its pictures where a file
+  can't be drawn.
 - **Print profiles:** how a model [imported with print profiles](importing.md#what-comes-with-a-model) shows them on
   its page: a **Picker** like the file picker, with the picked profile's numbers below it; a **List** of every profile
   at once; or **Tiles** of their pictures. **Off** shows them as plain files.

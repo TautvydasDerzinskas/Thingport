@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -25,7 +25,8 @@ type Props = {
   collectionId?: string;
   onRemovedFromCollection?: () => void;
   /** How many collections hold the model, each time that's loaded or changed. */
-  onCountChange?: (count: number) => void;
+  /** With the model it's for, so a page that has moved on can tell. */
+  onCountChange?: (count: number, printId: string) => void;
 };
 
 /** Each chip click toggles membership immediately; there's no save step. */
@@ -73,9 +74,16 @@ export default function AddToCollectionModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, printId]);
 
+  // Said when the list changes, not when the page hands over a new callback: a closed dialog's list is an old one.
+  const report = useRef(onCountChange);
+  useLayoutEffect(() => {
+    report.current = onCountChange;
+  });
   useEffect(() => {
-    if (collections) onCountChange?.(collections.filter((c) => c.in_collection).length);
-  }, [collections, onCountChange]);
+    if (collections) report.current?.(collections.filter((c) => c.in_collection).length, printId);
+    // The list is the model's it was fetched for: a new model's id comes with a new list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collections]);
 
   const setMembership = async (collection: CollectionMembership, nextIn: boolean) => {
     setPendingIds((prev) => [...prev, collection.id]);

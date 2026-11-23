@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { removeModel } from "../modelFiles/removeModel";
 import { afterAccountGone, roomsWithPartnersOf } from "./chatService";
 import path from "node:path";
 import type { Role } from "@prisma/client";
@@ -105,15 +106,17 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   const [actor, target] = await Promise.all([loadActor(actorId), loadTarget(targetId)]);
   if (!permissionsOver(actor, target).canDelete) throw new HttpError(403, "You can't delete this user");
   const models = await deleteAllPrintsForUser(target.id);
-  // What a tool brought stays out of the count above -- it is the tool's, not theirs -- but the account taking it
-  // with it is right: the models are the account's rows, and the tool's own files are not under u-<id>.
-  const authorIds = (
-    await prisma.print.findMany({
-      where: { userId: target.id, authorId: { not: null } },
-      select: { authorId: true },
-      distinct: ["authorId"],
-    })
-  ).map((print) => print.authorId!);
+  // What a tool brought stays out of the count above -- it is the tool's, not theirs -- but goes with the account, the
+  // one way, so its pictures in the old shared folders go too. The tool's own files stay.
+  const toolModels = await prisma.print.findMany({
+    where: { userId: target.id, toolId: { not: null } },
+    select: { id: true },
+  });
+  const authorIds = new Set<string>();
+  for (const { id } of toolModels) {
+    const went = await removeModel(id);
+    if (went?.authorId) authorIds.add(went.authorId);
+  }
   await removeUserTagMosaics(target.id);
   await removeUserIcons(target.id);
   await removeUserCover(target.id);
@@ -126,7 +129,7 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   const rooms = await roomsWithPartnersOf(target.id);
   await deleteAccountRow(target.id);
   await afterAccountGone(target.id, rooms).catch((err) => console.error("[federation] Couldn't tell partners:", err));
-  // Their models went with the account, so an author only they had is now an author of nothing.
+  // With the account gone too, an author only those models had is an author of nothing.
   for (const authorId of authorIds) await deleteAuthorIfOrphaned(authorId);
   // Logged as the admin's: the user's own log entries went with them.
   void createLog({

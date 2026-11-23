@@ -74,6 +74,15 @@ export const DOCS = [
     description: "Run Thingport on CasaOS as a customized app or over SSH.",
   },
   {
+    slug: "guides/reverse-proxy",
+    source: "docs/guides/reverse-proxy.md",
+    group: "Getting started",
+    title: "Behind a reverse proxy",
+    nav: "Reverse proxy",
+    description:
+      "What Nginx Proxy Manager, Caddy, Traefik or nginx in front of Thingport has to let through, and what its errors mean.",
+  },
+  {
     slug: "providers",
     source: "docs/PROVIDER_SETUP.md",
     group: "Providers",
@@ -196,7 +205,7 @@ export const DOCS = [
     title: "Organize and search",
     nav: "Organize and search",
     description:
-      "Categories, folders, collections, tags, favourites and bookmarks, bulk actions and merges, a filter by site, plus search across your whole library.",
+      "Categories, folders, collections, tags, favourites and bookmarks, bulk actions and merges, a filter by site, sorting by name or anything else, plus search across your whole library.",
   },
   {
     slug: "features/dashboard",
@@ -233,6 +242,15 @@ export const DOCS = [
     description: "Open files straight in Bambu Studio, OrcaSlicer, PrusaSlicer, Cura and other slicers.",
   },
   {
+    slug: "guides/send-to",
+    source: "docs/guides/send-to.md",
+    group: "Features",
+    title: "Send to",
+    nav: "Send to",
+    description:
+      "Send a model's file from its page to OctoPrint, Klipper or PrusaLink, a Home Assistant, n8n or Node-RED webhook, or an address of your own.",
+  },
+  {
     slug: "features/adapted-3mf",
     source: "docs/features/adapted-3mf.md",
     group: "Features",
@@ -248,7 +266,16 @@ export const DOCS = [
     title: "Everything to print it",
     nav: "Supporting files",
     description:
-      "Keep instructions, notes and a ready-to-print sliced file next to each model, and customize one that came with its OpenSCAD script right in your browser.",
+      "Instructions, parts lists and a ready-to-print sliced file next to each model, opened right on its page, and models that came with their OpenSCAD script customized in your browser.",
+  },
+  {
+    slug: "features/file-kinds",
+    source: "docs/features/file-kinds.md",
+    group: "Features",
+    title: "File kinds",
+    nav: "File kinds",
+    description:
+      "What Thingport reads each file as, by its extension or its name: model, laser, sliced and CAD files, scripts, pictures, documents, archives and more.",
   },
   {
     slug: "features/licenses",
@@ -319,7 +346,7 @@ export const DOCS = [
     title: "Themes, colours and languages",
     nav: "Themes and languages",
     description:
-      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian or Simplified Chinese.",
+      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, German, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian or Simplified Chinese.",
   },
   {
     slug: "guides/system-health",
@@ -408,7 +435,7 @@ export const DOCS = [
     title: "Tools",
     nav: "Tools",
     description:
-      "Small apps that open in a window from the Tools page: planners, generators and calculators that work with your library.",
+      "Small apps that work with your library: planners, generators and calculators, a shared print queue and filament shelf, notes on models and a 3D printing wiki.",
   },
   {
     slug: "guides/studio",
@@ -417,7 +444,7 @@ export const DOCS = [
     title: "Studio",
     nav: "Studio",
     description:
-      "A CAD page built for an AI to drive: describe a part, or a change to a model you have, and watch it designed step by step. Or build it yourself from shapes and sketches.",
+      "A CAD page built for an AI to drive: describe a part, or open a 3MF with its plates and colours, and give it the print settings it goes to your slicer with. Or build it yourself from shapes and sketches.",
   },
   {
     slug: "developers",

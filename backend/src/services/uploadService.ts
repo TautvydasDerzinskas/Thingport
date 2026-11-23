@@ -2,10 +2,11 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { Print } from "@prisma/client";
+import type { Prisma, Print } from "@prisma/client";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFileName } from "../files/names";
 import {
   addPlatesToPrint,
   createPrint,
@@ -30,10 +31,14 @@ export type UploadedFile = {
   /** Untrusted; sanitized here. */
   originalname: string;
   mimetype?: string | null;
+  /** A plate that is a print profile (Plate.sourceInstanceId), with what's known of it (Plate.profile): Studio's
+   *  saves. */
+  profile?: { id: string; stored: Prisma.JsonObject };
 };
 
+/** By the name as it will be kept, so "part.STL " is an STL. */
 function isRenderable(file: UploadedFile): boolean {
-  return RENDERABLE_MODEL_EXTS.has(path.extname(file.originalname).toLowerCase());
+  return RENDERABLE_MODEL_EXTS.has(path.extname(normalizeFileName(file.originalname)).toLowerCase());
 }
 
 /** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
@@ -79,8 +84,14 @@ async function createModelFrom(userId: string, meta: PrintMetaInput, files: Uplo
   const plateFiles = renderable.length ? renderable : files;
 
   const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
-    const safeName = sanitizeFilename(f.originalname);
-    return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
+    const safeName = normalizeFileName(f.originalname);
+    return {
+      filename: safeName,
+      mime: mimeFromContentType(f.mimetype, safeName),
+      tempFilePath: f.path,
+      sourceInstanceId: f.profile?.id,
+      profile: f.profile?.stored,
+    };
   });
   const nameHint = path.parse(plateInputs[0].filename).name;
   const { print } = await createPrint(userId, meta, nameHint, plateInputs);
@@ -122,7 +133,7 @@ async function addFilesTo(
 ): Promise<{ plates: number; files: number }> {
   const printId = print.id;
   const isPlate = (f: (typeof files)[number]) =>
-    f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(f.originalname);
+    f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(normalizeFileName(f.originalname));
 
   const plateIds: string[] = [];
   const before = new Set(
@@ -131,9 +142,15 @@ async function addFilesTo(
   try {
     for (const f of files) {
       if (isPlate(f)) {
-        const safeName = sanitizeFilename(f.originalname);
+        const safeName = normalizeFileName(f.originalname);
         const [plate] = await addPlatesToPrint(userId, printId, [
-          { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path },
+          {
+            filename: safeName,
+            mime: mimeFromContentType(f.mimetype, safeName),
+            tempFilePath: f.path,
+            sourceInstanceId: f.profile?.id,
+            profile: f.profile?.stored,
+          },
         ]);
         plateIds.push(plate.id);
       } else {

@@ -1,16 +1,11 @@
 import type { Dirent } from "node:fs";
+import { removeModel } from "../modelFiles/removeModel";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { STORAGE } from "../config";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { MANIFESTS } from "../providers/index.generated";
-import { deleteAllPrintFiles } from "./printFileService";
-import { deleteAllPreviewImages } from "./previewImageService";
-import { deleteAllDescriptionImages } from "./descriptionImageService";
-import { deletePlateFiles } from "./printCreation";
-import { assetOwnerIds, removeAssetHome, removePlatePictures } from "./printService";
-import { loadFullPrint } from "./printLoader";
 import { pruneWhatModelsLeft } from "./printEditService";
 import { removeUserTagMosaics } from "./tagMosaicService";
 import { takeInventory, type StorageInventory, type StorageKindBytes } from "./storageInventory";
@@ -124,19 +119,8 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
     where: { userId, toolId: null },
     select: { id: true, authorId: true, tags: true },
   });
-  for (const { id } of prints) {
-    const full = await loadFullPrint(userId, id);
-    const assetOwners = await assetOwnerIds(id);
-    await deleteAllPrintFiles(id);
-    await deleteAllPreviewImages(id);
-    await deleteAllDescriptionImages(id);
-    await prisma.print.delete({ where: { id } });
-    for (const plate of full.plates) {
-      await deletePlateFiles(plate);
-      await removePlatePictures(plate.id, full.print.assetsPath);
-    }
-    await removeAssetHome(full.print.assetsPath, assetOwners);
-  }
+  // One that went meanwhile is passed over, not a failure of the rest.
+  for (const { id } of prints) await removeModel(id);
   await pruneWhatModelsLeft(userId, prints);
   // Nothing of theirs left at all, not even a tool's: the whole folder of their tag pictures goes, including any
   // for a tag the database has since forgotten.
@@ -146,6 +130,9 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
 
 export type StorageUsage = {
   modelBytes: number;
+  /** The parts of modelBytes that are files kept beside the plates, and prepared prints. */
+  supportingBytes: number;
+  preparedBytes: number;
   modelCount: number;
   /** All of storage on disk: model files plus everything made from them. */
   totalBytes: number;
@@ -220,18 +207,22 @@ export async function getStorageUsage(): Promise<StorageUsage> {
       SELECT COALESCE(SUM(size), 0) AS bytes
       FROM (SELECT DISTINCT ON ("sourcePath") size FROM "Plate" WHERE "sourcePath" IS NOT NULL ORDER BY "sourcePath") s
     `,
-    prisma.printFile.aggregate({ _sum: { size: true } }),
+    prisma.printFile.groupBy({ by: ["role"], _sum: { size: true } }),
     prisma.print.count(),
     measureDisk(),
   ]);
   const sharedBytes = Number(shared[0]?.bytes ?? 0);
-  const modelBytes = (owned._sum.size ?? 0) + sharedBytes + (files._sum.size ?? 0);
+  const bytesOf = (role: string) => files.find((group) => group.role === role)?._sum.size ?? 0;
+  const fileBytes = files.reduce((sum, group) => sum + (group._sum.size ?? 0), 0);
+  const modelBytes = (owned._sum.size ?? 0) + sharedBytes + fileBytes;
   const { bytes, compressSaving, photosBeyond } = disk.inventory;
   const pictureBytes =
     bytes.previews + bytes.old + bytes.photos + bytes.thumbnails + bytes.description + bytes.tagPictures;
   const otherGeneratedBytes = bytes.slicer + bytes.bundles;
   return {
     modelBytes,
+    supportingBytes: bytesOf("SUPPORTING"),
+    preparedBytes: bytesOf("PREPARED"),
     modelCount,
     totalBytes: disk.totalBytes,
     pictureBytes,

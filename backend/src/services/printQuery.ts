@@ -2,9 +2,12 @@ import { LICENSE_ACTIONS, type LicenseAction } from "./licenseCatalog";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { toPrintOut, type PrintOut } from "../dto";
+import type { SortDirection } from "../utils/sortDirection";
 import { getLinkedAuthorIds } from "./authorService";
 import { systemCollectionKeyForId } from "./collectionService";
 import { rankedPrintIds } from "./searchService";
+import { extensionsOf, kindOfStored } from "../files/kinds";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 
 // The library listing's filters and order, shared by GET /prints and the MCP tools so both list the
 // same models for the same filters.
@@ -41,12 +44,13 @@ export function licenseAllowsFromQuery(values: string[]): LicenseAction[] {
  *  sources count them the same way. */
 export const UPLOADED_PROVIDER = "thingport";
 
-export const PRINT_SORT_MODES = ["newest", "popular", "downloads", "relevance"] as const;
+export const PRINT_SORT_MODES = ["newest", "popular", "downloads", "relevance", "name"] as const;
 export type PrintSortMode = (typeof PRINT_SORT_MODES)[number];
 
+const printNameCollator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+
 export function parseSortMode(raw: unknown): PrintSortMode {
-  if (raw === "popular" || raw === "downloads" || raw === "relevance") return raw;
-  return "newest";
+  return PRINT_SORT_MODES.find((mode) => mode === raw) ?? "newest";
 }
 
 /** A comma-separated query parameter as its trimmed, non-empty parts. */
@@ -122,11 +126,20 @@ export async function buildPrintWhere(
   if (filters.licenseAllows?.length) andClauses.push({ licenseAllows: { hasEvery: filters.licenseAllows } });
   if (filters.licensed) andClauses.push({ license: { not: Prisma.DbNull } });
   if (filters.generative) {
-    // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
-    // generated rather than only printed. `.scad` is the only kind so far; config.ts's set is the list.
-    andClauses.push({
-      files: { some: { role: "SUPPORTING", filename: { endsWith: ".scad", mode: "insensitive" } } },
+    // A generator script is kept beside a model, never as one of its plates, so this is what marks one as generated
+    // rather than only printed. Each file is judged as the model's generator_scripts judge it, by the kind table on its
+    // normalised name (so one named with a leading dot is junk): the query only gathers the files that may be scripts.
+    const candidates = await prisma.printFile.findMany({
+      where: {
+        role: "SUPPORTING",
+        storagePath: { not: PENDING_STORAGE_PATH },
+        print: { userId },
+        OR: extensionsOf("script").map((ext) => ({ filename: { contains: ext, mode: "insensitive" as const } })),
+      },
+      select: { printId: true, filename: true },
     });
+    const scripted = candidates.filter((file) => kindOfStored(file.filename) === "script").map((file) => file.printId);
+    andClauses.push({ id: { in: [...new Set(scripted)] } });
   }
   // Matched as the search palette matches, so its "see all results" lists what it found.
   const rankedIds = q ? await rankedPrintIds(userId, q) : null;
@@ -147,7 +160,7 @@ export type PrintListPage = {
 export async function listPrints(
   userId: string,
   filters: PrintFilters,
-  options: { sort?: PrintSortMode; limit?: number; offset?: number } = {},
+  options: { sort?: PrintSortMode; direction?: SortDirection; limit?: number; offset?: number } = {},
 ): Promise<PrintListPage> {
   const { where, rankedIds } = await buildPrintWhere(userId, filters);
   const tagList = filters.tags ?? [];
@@ -166,6 +179,8 @@ export async function listPrints(
   const systemKey = systemCollectionKeyForId(filters.collectionId?.trim() ?? "");
   const recencyField = systemKey === "favorites" ? "favoritedAt" : systemKey === "history" ? "lastViewedAt" : null;
   const sortMode = options.sort ?? "newest";
+  const direction = options.direction ?? (sortMode === "name" ? "asc" : "desc");
+  const sign = direction === "asc" ? 1 : -1;
 
   // Relevance needs a query to rank by; without one it falls back to newest.
   const rank = sortMode === "relevance" && rankedIds ? new Map(rankedIds.map((id, i) => [id, i])) : null;
@@ -178,8 +193,11 @@ export async function listPrints(
   };
 
   const sorted = prints.toSorted((a, b) => {
-    const diff = sortValue(b) - sortValue(a);
-    if (diff !== 0) return diff;
+    const diff =
+      sortMode === "name"
+        ? printNameCollator.compare(a.title || a.name, b.title || b.name)
+        : sortValue(a) - sortValue(b);
+    if (diff !== 0) return sign * diff;
     return a.id.localeCompare(b.id);
   });
 

@@ -10,14 +10,17 @@ import { categoryRefs, type CategoryRef } from "../services/categoryService";
 import { descriptionImagePath } from "../services/descriptionImageService";
 import { previewImagePath } from "../services/previewImageService";
 import { resolvePlateFilePath } from "../services/printCreation";
-import { managedPrintFilePath } from "../services/printFileService";
-import { storedProfile } from "../services/printProfileService";
-import { plateThumbPath } from "../services/printService";
+import { managedPrintFilePath, printFileStillNames } from "../services/printFileService";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
+import { PROFILE_PROVIDER_VERSION, storedProfile } from "../services/printProfileService";
+import { plateStillNames, plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
 import { achievementsOf } from "../services/achievementService";
 import { getAchievementSettings } from "../services/settingsService";
 import { sharedAtOf, sharedModelCounts, sharedModelsWhere, sharers } from "../services/socialService";
 import { FOLDER_MAX, folderLevels, folderPath } from "../utils/fileFolder";
+import { HttpError } from "../utils/fileUtils";
+import { sendStored } from "../utils/sendStored";
 import { originOf } from "./addresses";
 import { canonicalHeaders, keyIdOf } from "./edge";
 import { AP_PREFIX, getRuntime, type Runtime } from "./runtime";
@@ -290,9 +293,9 @@ const MODEL_SELECT = {
     },
   },
   previewImages: { orderBy: { position: "asc" }, select: { id: true, generated: true } },
-  // A partner's copy writes its own LICENSE.txt from the licence.
+  // A partner's copy writes its own LICENSE.txt from the licence; one still "pending" is a save under way.
   files: {
-    where: { role: { not: "LICENSE" } },
+    where: { role: { not: "LICENSE" }, storagePath: { not: PENDING_STORAGE_PATH } },
     select: { id: true, filename: true, folder: true, mime: true, size: true, role: true },
   },
   descriptionImages: { select: { id: true, mime: true } },
@@ -365,14 +368,21 @@ function modelDoc(
   // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
   const attachment = [
     ...print.plates.map((plate) => {
-      const provider = storedProfile(plate.profile)?.provider;
+      const stored = storedProfile(plate.profile);
+      const { studio } = stored ?? {};
       return {
         ...document("plate", plate),
         "thingport:profileId": plate.sourceInstanceId ?? undefined,
-        // What its site said of the print profile, so a copy shows it without asking the site again.
-        "thingport:profile": provider
-          ? { version: storedProfile(plate.profile)?.providerVersion ?? 0, facts: provider }
-          : undefined,
+        // What its site said of the print profile, so a copy shows it without asking the site again. One saved from
+        // Studio has no site: its name, reason and creator go as a site's would, which every partner reads.
+        "thingport:profile": stored?.provider
+          ? { version: stored.providerVersion ?? 0, facts: stored.provider }
+          : studio
+            ? {
+                version: PROFILE_PROVIDER_VERSION,
+                facts: { title: studio.title, description: studio.description, creator: studio.creator },
+              }
+            : undefined,
         // A render is marked: a copy makes its own where its instance renders.
         "thingport:thumb": thumbOf(plate) ?? undefined,
         "thingport:thumbGenerated": plate.thumbGenerated || undefined,
@@ -924,6 +934,7 @@ export async function sendSharedFile(res: Response, kind: string, id: string, pe
       ? await prisma.plate.findUnique({
           where: { id },
           select: {
+            id: true,
             filename: true,
             mime: true,
             storagePath: true,
@@ -934,22 +945,34 @@ export async function sendSharedFile(res: Response, kind: string, id: string, pe
       : kind === "file"
         ? await prisma.printFile.findUnique({
             where: { id },
-            select: { filename: true, mime: true, storagePath: true, print: { select: { id: true, userId: true } } },
+            select: {
+              id: true,
+              printId: true,
+              role: true,
+              filename: true,
+              mime: true,
+              storagePath: true,
+              print: { select: { id: true, userId: true } },
+            },
           })
         : null;
   if (!found || !(await isShared(found.print, peer))) return notFound();
-  const file =
-    kind === "plate"
-      ? resolvePlateFilePath({
-          storagePath: found.storagePath,
-          sourcePath: (found as { sourcePath?: string | null }).sourcePath ?? null,
-        })
-      : managedPrintFilePath(found);
-  if (!file || !fs.existsSync(file)) return notFound();
-  res.attachment(found.filename);
-  res.setHeader("Content-Type", found.mime || "application/octet-stream");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.sendFile(path.resolve(file), (err) => {
-    if (err && !res.headersSent) notFound();
-  });
+  const file = "sourcePath" in found ? resolvePlateFilePath(found) : managedPrintFilePath(found);
+  if (!file) return notFound();
+  try {
+    await sendStored(res, {
+      filePath: file,
+      site: "partner.file",
+      stillNames: () => ("sourcePath" in found ? plateStillNames(found) : printFileStillNames(found)),
+      headers: () => {
+        res.attachment(found.filename);
+        res.setHeader("Content-Type", found.mime || "application/octet-stream");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+      },
+    });
+  } catch (err) {
+    // Only a file that isn't there is "not found": a disk that fails to answer is an error.
+    if (!(err instanceof HttpError && err.status === 404)) throw err;
+    notFound();
+  }
 }

@@ -282,7 +282,8 @@ Rules of thumb:
   unpacked. Many of its models are copies of other sites', and `sourceInfo.url` says whose: the description credits it.
   Its listing pages carry hidden links that only a crawler follows; the provider reads nothing but its JSON API.
 - **Repairs** (`services/modelRepairService.ts`) fetch a model's lost files again through the provider's own import
-  (`sourcedImport`'s `downloadModel`, or the link import) and replace only the files. A provider with a `grabQueue` has
+  (`sourcedImport`'s `downloadModel`, or the link import) and replace the model's plates, keeping its other files that
+  are still on disk. A provider with a `grabQueue` has
   the model wait for Grab instead, so its `customImport.addToExisting` has to put the files back when `kit.filesMissing`
   says they're gone (`kit.replaceFiles`), as MakerOnline's and OwlCAD's do.
 
@@ -384,7 +385,7 @@ Open an issue first, then:
    own to `providers/routes.ts`.
 5. **A contract test**, `backend/tests/providers/<id>.contract.test.ts`, using `describeProviderContract`
    (`tests/providers/contract.ts`), with recorded responses in `tests/fixtures/providers/<id>/`. Never call the real
-   site from a test.
+   site from a test. Every provider has one, so a change to the shared import code runs against all of them.
 6. **App**, `frontend/src/providers/<id>/`: its `CollectionTile.tsx` entered in `collectionTiles.ts`, and an
    `overrides.ts` entry only if needed. Its text goes under `providers.<id>` in every
    `frontend/src/i18n/locales/*.json`; `frontend/src/providers/strings.test.ts` lists what's missing.

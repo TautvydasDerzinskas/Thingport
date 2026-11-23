@@ -1,8 +1,11 @@
 import { STUDIO_UNITS, type StudioUnits } from "../services/studioSettingsService";
 import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
-import { topLevel, type Feature, type Vec3 } from "../studio/document.generated";
+import { isBody, plateOf, studioPlates, topLevel, type Feature, type Vec3 } from "../studio/document.generated";
 import { traceSummary } from "../studio/trace.generated";
+import { DEFAULT_PRINT_BED } from "../studio/printLayout.generated";
+import { checkProfile } from "../studio/printProfile.generated";
+import { prisma } from "../db";
 import {
   createStudioDesign,
   deleteStudioDesign,
@@ -29,6 +32,22 @@ import { WithImages, type McpToolContext, type McpToolDefinition } from "./toolT
 // every step a person takes on the page is one an assistant can take too. Shown to a token's user as a single "Studio"
 // permission.
 
+/** The models a design's imported meshes came from, as the library has them now: what each is and is for. */
+async function sourceModels(userId: string, features: readonly Feature[]) {
+  const ids = [...new Set(features.flatMap((feature) => (feature.type === "mesh" ? [feature.source.model_id] : [])))];
+  if (!ids.length) return [];
+  const models = await prisma.print.findMany({
+    where: { id: { in: ids.slice(0, 20) }, userId },
+    select: { id: true, name: true, title: true, notes: true, tags: true },
+  });
+  return models.map((model) => ({
+    model_id: model.id,
+    title: model.title || model.name,
+    description: model.notes ? model.notes.slice(0, 1200) : null,
+    tags: model.tags.slice(0, 20),
+  }));
+}
+
 const designId = z.string().min(1).describe("The design's id, from studio_list_designs or studio_create_design.");
 const RENDER_COLOR = "#4f8fd8";
 
@@ -43,6 +62,9 @@ function brief(ctx: McpToolContext, design: StudioDesignOut) {
     version: design.version,
     can_undo: design.can_undo,
     can_redo: design.can_redo,
+    pending_plate_ids: studioPlates(design.document)
+      .filter((plate) => plate.source)
+      .map((plate) => plate.id),
     url: designUrl(ctx, design.id),
   };
 }
@@ -90,7 +112,7 @@ const getDesign: McpToolDefinition = {
     "of each body, problems such as a boolean that came out empty, and the latest changes and who made them, the user " +
     "included. Units are mm and Z is up; the bed is the XY plane at z=0. Features listed under top_level show on their " +
     "own; the rest are part of another (a boolean, an extrude, a fillet, a split or separated part...). Read it " +
-    "before changing a design the user has been working on.",
+    "before changing a design the user has been working on. Load plates marked pending_import with studio_load_source_plate.",
   readOnly: true,
   group: "studio",
   inputSchema: { design_id: designId },
@@ -105,25 +127,47 @@ const getDesign: McpToolDefinition = {
       ),
       studioDesignHistory(design, 10),
     ]);
+    const roots = topLevel(design.document);
+    const profile = design.document.print_profile;
     return {
       ...brief(ctx, design),
       units: "mm",
       // What the person sees and types sizes in: every number here and in every tool stays in mm.
       display_units: design.document.units ?? "mm",
       up: "+Z",
+      print_setup: design.document.print_setup ?? null,
+      print_profile: profile ?? null,
+      // What to tell the person about the profile before they print (a material that doesn't suit it, settings their
+      // slicer won't take from the file).
+      profile_checks: profile ? checkProfile(design.document, profile).map((check) => check.text) : [],
+      // The library models its imported meshes came from: their descriptions say what the design is for.
+      made_from: await sourceModels(ctx.userId, design.document.features),
+      locked_layout: design.document.locked_layout ?? [],
+      filament_slots: design.document.filament_slots ?? [],
       // Each with its unit: mm, cm or in for a length, deg, or none.
       parameters: (design.document.parameters ?? []).map((parameter) => ({ unit: "mm", ...parameter })),
       features: briefFeatures(design.document.features),
-      top_level: topLevel(design.document).map((feature) => feature.id),
+      top_level: roots.map((feature) => feature.id),
+      plates: studioPlates(design.document).map((plate) => ({
+        id: plate.id,
+        name: plate.name,
+        pending_import: plate.source ? true : undefined,
+        feature_ids: roots.filter((feature) => plateOf(feature) === plate.id).map((feature) => feature.id),
+      })),
       bodies:
         inspected.status === "ok"
-          ? inspected.bodies.map((body) => ({
-              id: body.id,
-              bounds: body.bounds,
-              size: body.bounds.max.map((max, axis) => max - body.bounds.min[axis]),
-              // An open mesh encloses nothing to measure.
-              volume_mm3: Number.isNaN(body.volume) ? null : Math.round(body.volume * 100) / 100,
-            }))
+          ? inspected.bodies.map((body) => {
+              const feature = design.document.features.find((entry) => entry.id === body.id);
+              return {
+                id: body.id,
+                plate_id: feature ? plateOf(feature) : null,
+                color: feature && isBody(feature) ? (feature.color ?? null) : null,
+                bounds: body.bounds,
+                size: body.bounds.max.map((max, axis) => max - body.bounds.min[axis]),
+                // An open mesh encloses nothing to measure.
+                volume_mm3: Number.isNaN(body.volume) ? null : Math.round(body.volume * 100) / 100,
+              };
+            })
           : null,
       problems:
         inspected.status === "ok"
@@ -147,6 +191,10 @@ const viewDesign: McpToolDefinition = {
   group: "studio",
   inputSchema: {
     design_id: designId,
+    plate_id: z
+      .string()
+      .optional()
+      .describe("A loaded plate ID from studio_get_design. Defaults to the first plate with bodies."),
     views: z.array(z.enum(STUDIO_VIEWS)).min(1).max(4).optional().describe('Up to 4. Default ["iso"].'),
     size: z
       .number()
@@ -158,6 +206,24 @@ const viewDesign: McpToolDefinition = {
   },
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
+    const plate = args.plate_id as string | undefined;
+    const plates = studioPlates(design.document);
+    const selected = plates.find((entry) => entry.id === plate);
+    if (plate !== undefined && !selected) throw new HttpError(400, "That plate doesn't belong to this design.");
+    const firstUnopened = plates.find((entry) => entry.source);
+    const sourceProject =
+      firstUnopened ||
+      design.document.features.some((feature) => feature.type === "mesh" && feature.source.build_plate !== undefined);
+    const visiblePlates = new Set(
+      sourceProject
+        ? topLevel(design.document)
+            .filter((feature) => isBody(feature) && feature.visible)
+            .map(plateOf)
+        : [],
+    );
+    const defaultPlate = plates.find((entry) => visiblePlates.has(entry.id));
+    const pending = selected ?? (defaultPlate ? undefined : firstUnopened);
+    if (pending?.source) throw new HttpError(422, `Call studio_load_source_plate on ${pending.id} before viewing it.`);
     const views = (args.views as (typeof STUDIO_VIEWS)[number][] | undefined) ?? ["iso"];
     const size = (args.size as number | undefined) ?? 512;
     const inspected = await inspectStudioDesign(
@@ -168,13 +234,20 @@ const viewDesign: McpToolDefinition = {
         views,
         size,
         color: RENDER_COLOR,
+        plate: plate ?? defaultPlate?.id,
       },
     );
     if (inspected.status === "too-complex")
       throw new HttpError(422, `The design is too heavy to picture here (about ${inspected.triangles} triangles).`);
     if (inspected.status !== "ok") throw new Error(`studio_view_design failed: ${JSON.stringify(inspected)}`);
     return new WithImages(
-      { ...brief(ctx, design), views, bodies: inspected.bodies.length, problems: inspected.errors },
+      {
+        ...brief(ctx, design),
+        views,
+        plate_id: plate ?? null,
+        bodies: inspected.bodies.length,
+        problems: inspected.errors,
+      },
       inspected.images.map((image) => ({ data: image.png, mimeType: "image/png" })),
     );
   },
@@ -278,32 +351,50 @@ const checkPrintTool: McpToolDefinition = {
     bed: z
       .tuple([z.number().positive().max(2000), z.number().positive().max(2000), z.number().positive().max(2000)])
       .optional()
-      .describe("The printer's build volume, mm [x, y, z], centred on x = y = 0. Default [256, 256, 256]."),
+      .describe("Override the Studio printer's build volume, mm [x, y, z], centered on x = y = 0."),
     overhang: z
       .number()
       .min(0)
-      .max(89)
+      .max(90)
       .optional()
-      .describe("Steepest overhang that prints unsupported, degrees from vertical. Default 45."),
-    min_wall: z.number().positive().max(20).optional().describe("Thinnest wall that prints, mm. Default 0.8."),
+      .describe(
+        "Steepest overhang that prints unsupported, in degrees from vertical. Uses the saved setting if omitted, or 45° if none is saved.",
+      ),
+    min_wall: z
+      .number()
+      .min(0)
+      .max(20)
+      .optional()
+      .describe("Override the minimum wall in mm, or use 0 to skip the wall check."),
   },
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
+    const setup = design.document.print_setup;
     const outcome = await checkStudioPrint(
       `${design.id}:${design.version}`,
       design.document,
       studioAssetDir(ctx.userId, design.id),
       {
-        bed: (args.bed as Vec3 | undefined) ?? [256, 256, 256],
-        overhang: (args.overhang as number | undefined) ?? 45,
-        minWall: (args.min_wall as number | undefined) ?? 0.8,
+        bed: (args.bed as Vec3 | undefined) ?? setup?.bed ?? DEFAULT_PRINT_BED,
+        outline: args.bed ? undefined : setup?.outline,
+        overhang: (args.overhang as number | undefined) ?? setup?.overhang ?? 45,
+        minWall: (args.min_wall as number | undefined) ?? setup?.minWall ?? 0.8,
       },
     );
     if (outcome.status === "too-complex")
       throw new HttpError(422, `The design is too heavy to check here (about ${outcome.triangles} triangles).`);
+    if (outcome.status === "refused") throw new HttpError(422, outcome.reason);
     if (outcome.status !== "checked") throw new Error(`studio_check_print failed: ${JSON.stringify(outcome)}`);
     const { problems, bodies, overlaps } = outcome.check;
-    return { ...brief(ctx, design), ready: problems.length === 0, problems, bodies, overlaps };
+    const plates = new Map(design.document.features.map((feature) => [feature.id, plateOf(feature)]));
+    return {
+      ...brief(ctx, design),
+      printer: setup?.printer ?? null,
+      ready: bodies.length > 0 && problems.length === 0,
+      problems,
+      bodies: bodies.map((body) => Object.assign({}, body, { plate_id: plates.get(body.id) })),
+      overlaps,
+    };
   },
 };
 
@@ -348,21 +439,44 @@ const saveToLibrary: McpToolDefinition = {
   name: "studio_save_to_library",
   title: "Save a Studio design to the library",
   description:
-    "Saves the design to the user's Thingport library as a new model: its visible bodies as one STL in mm, a picture " +
-    "of it, and the requests the user made to Studio's assistant about it as its description. Each save is a new " +
-    "model, a copy of the design as it is now. Save when the user asks to; returns the model's id and link.",
+    "Saves the design to the user's Thingport library: its visible bodies as one 3MF project with its plates, colors " +
+    "and print profile (studio_set_print_profile), made for the profile's slicer and printer. By default it's a new " +
+    "model, with a picture of the design and the requests the user made to Studio's assistant about it as its " +
+    "description. With model_id (a model from search_models or list_models) it's added to that model as one more " +
+    "print profile instead, shown on the model's page beside its other profiles; that needs the design to have a " +
+    "print profile. Each save is a copy of the design as it is now. Save when the user asks to; returns the model's " +
+    "id and link.",
   readOnly: false,
   group: "studio",
   inputSchema: {
     design_id: designId,
-    name: z.string().trim().min(1).max(120).optional().describe("The model's name. Default: the design's."),
+    name: z.string().trim().min(1).max(120).optional().describe("A new model's name. Default: the design's."),
+    model_id: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .optional()
+      .describe("A model of the user's to add the design to as one more print profile, instead of a new model."),
+    profile_name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .optional()
+      .describe("The print profile's name on the model's page. Default: its own name, else its preset and material."),
   },
   async run(ctx, args) {
+    const modelId = args.model_id as string | undefined;
     const model = await saveStudioDesignToLibrary(ctx.userId, args.design_id as string, {
       name: args.name as string | undefined,
+      modelId,
+      profileName: args.profile_name as string | undefined,
     });
     return {
-      done: `Saved the design to the library as “${model.title || model.name}”`,
+      done: modelId
+        ? `Added the design to “${model.title || model.name}” as a print profile`
+        : `Saved the design to the library as “${model.title || model.name}”`,
       model_id: model.id,
       name: model.title || model.name,
       url: ctx.publicUrl ? `${ctx.publicUrl}/models/${model.id}` : null,

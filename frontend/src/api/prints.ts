@@ -1,8 +1,41 @@
 import type { ThreeMfFormat } from "../adapter/format.generated";
 import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
-import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
+import type { SortDirection } from "../utils/sortDirection";
+import { apiBase, assertOk, readCodedError, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
+
+/** What a file is, by the server's kind table (backend/src/files/kinds.ts). */
+export type ContentKind =
+  | "mesh"
+  | "laser"
+  | "sliced"
+  | "cad"
+  | "script"
+  | "picture"
+  | "document"
+  | "licence"
+  | "archive"
+  | "scene-part"
+  | "cg-scene"
+  | "program"
+  | "junk"
+  | "other";
+
+/** What the app may offer of a file, as the server works it out (capsOf in backend/src/files/kinds.ts). Absent from
+ *  an older backend, where utils/fileCaps.ts's legacyCaps stands in. */
+export type FileCaps = {
+  preview3d: boolean;
+  openInSlicer: boolean;
+  openInStudio: boolean;
+  customize: boolean;
+  /** How it shows in place, where that's safe; null for a file that only downloads. Absent from an older backend. */
+  view?: FileView | null;
+};
+
+/** How a file shows in place: the browser's PDF viewer, a picture, Markdown, plain text (a script as code), or a
+ *  table. */
+export type FileView = "pdf" | "image" | "markdown" | "text" | "table";
 
 export type PreparedPrint = {
   printer?: string | null;
@@ -12,6 +45,9 @@ export type PreparedPrint = {
   estimated_seconds?: number | null;
   format?: string | null; // "gcode" | "bgcode" | "gcode_3mf"
   removable: boolean;
+  /** As a plate's, when the prepared print is a file of its own; null when the plates themselves are the sliced files. */
+  content_kind?: ContentKind | null;
+  caps?: FileCaps | null;
 };
 
 /** Where an adapted copy is: being made, made, failed (open the plate itself), or not needed for that slicer. */
@@ -41,6 +77,9 @@ export type Plate = {
   /** What kind of 3MF it is, from which the page tells which slicers get an adapted copy; null for other files, and
    *  absent from an older backend. */
   format?: ThreeMfFormat | null;
+  /** What the file is; named apart from MCP's `kind` and Send to's `file_kind`, which say what it is to its model. */
+  content_kind?: ContentKind;
+  caps?: FileCaps;
 };
 
 export type ProfileFilament = { type: string | null; color: string | null; grams: number | null };
@@ -93,6 +132,9 @@ export type PrintFile = {
   mime: string;
   size: number;
   url: string; // /print/{printId}/files/{fileId}
+  /** As Plate's. */
+  content_kind?: ContentKind;
+  caps?: FileCaps;
 };
 
 export type PreviewImage = {
@@ -116,6 +158,14 @@ export type Author = {
   // Always false on an Author embedded in a Print; only the author endpoints compute it.
   is_linked: boolean;
 };
+
+/** A zip the server won't make: more files, or more bytes, than a zip holds. */
+export class ZipTooLargeError extends Error {
+  constructor() {
+    super("zip_too_large");
+    this.name = "ZipTooLargeError";
+  }
+}
 
 export type Print = {
   id: string;
@@ -158,6 +208,8 @@ export type Print = {
   render_url?: string | null; // the first plate's render_url that isn't null
   own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
+  /** The files kept beside its plates, by name, on the detail fetch only (a list of models has the count). */
+  supporting_files?: PrintFile[];
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
   generator_scripts?: { id: string; filename: string; folder?: string | null }[];
   /** The source had a script for it but its creator chose not to share it: there is none to open, and that is
@@ -250,7 +302,7 @@ export type FillGapsResult = {
 };
 
 /** "relevance" ranks by how well a model matches `q`, as the search palette does. */
-export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance";
+export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance" | "name";
 
 /** A site the library's models came from; `provider` is "thingport" for the ones uploaded here. */
 export type PrintSource = { provider: string; model_count: number };
@@ -359,6 +411,7 @@ export const printsApi = {
       /** Only models with a licence. */
       licensed?: boolean;
       order_by?: PrintSortMode;
+      order_direction?: SortDirection;
       limit?: number;
       offset?: number;
     } = {},
@@ -376,6 +429,7 @@ export const printsApi = {
     if (params.collection_id) qs.set("collection_id", params.collection_id);
     if (params.author_id) qs.set("author_id", params.author_id);
     if (params.order_by) qs.set("orderBy", params.order_by);
+    if (params.order_direction) qs.set("orderDirection", params.order_direction);
     if (typeof params.limit === "number") qs.set("limit", String(params.limit));
     if (typeof params.offset === "number") qs.set("offset", String(params.offset));
     const res = await fetch(`${apiBase()}/prints?${qs.toString()}`, {
@@ -703,18 +757,8 @@ export const printsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
-      let body: unknown;
-      try {
-        body = await res.json();
-      } catch {
-        body = null;
-      }
-      const record = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
-      throw new PrintApiError(
-        typeof record.error === "string" ? record.error : `AI recategorization failed (${res.status})`,
-        res.status,
-        typeof record.code === "string" ? record.code : null,
-      );
+      const { message, code } = await readCodedError(res, `AI recategorization failed (${res.status})`);
+      throw new PrintApiError(message, res.status, code);
     }
   },
 
@@ -911,6 +955,10 @@ export const printsApi = {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(opts),
     });
+    if (res.status === 413) {
+      const body = (await res.json().catch(() => null)) as { code?: string } | null;
+      if (body?.code === "zip_too_large") throw new ZipTooLargeError();
+    }
     assertOk(res, "Download failed");
     return res;
   },

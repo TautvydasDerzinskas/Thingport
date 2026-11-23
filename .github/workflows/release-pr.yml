@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      # What a merge into main releases. The extension goes out on a schedule of its own.
+      # What a merge into main releases. The extension is released by hand (extension-store-release.yml).
       PROJECTS: backend frontend bridge
     steps:
       - uses: actions/checkout@v4

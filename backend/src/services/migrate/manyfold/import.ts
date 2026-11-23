@@ -4,7 +4,9 @@ import { STORAGE } from "../../../config";
 import { prisma } from "../../../db";
 import { createLogger } from "../../../logger";
 import { parseModelUrl } from "../../../providers/index.generated";
-import { mimeFromContentType, sanitizeFilename } from "../../../utils/fileUtils";
+import { mimeFromContentType } from "../../../utils/fileUtils";
+import { LEGACY } from "../../../files/kinds";
+import { normalizeFileName } from "../../../files/names";
 import { normalizeTags } from "../../../utils/tagNormalization";
 import { addPrintsToCollection, normalizeCollectionName } from "../../collectionService";
 import { licenseById, licenseIdFromText, type ProviderLicense } from "../../licenseCatalog";
@@ -33,8 +35,8 @@ import {
 
 const log = createLogger("migrate");
 
-const PLATE_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".glb", ".f3d", ".lbrn", ".lbrn2"]);
-const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"]);
+const PLATE_EXTS = LEGACY.libraryPlate;
+const IMAGE_EXTS = LEGACY.libraryImage;
 const MAX_FAILURES = 50;
 const STOPS = new Set(["manyfold_lost", "manyfold_unreachable", "manyfold_key", "manyfold_slow_down"]);
 
@@ -230,7 +232,7 @@ export class ManyfoldImport {
           this.report.files.missing += 1;
           continue;
         }
-        const name = sanitizeFilename(path.posix.basename(relative));
+        const name = normalizeFileName(path.posix.basename(relative));
         const folder = path.posix.dirname(relative) === "." ? null : path.posix.dirname(relative);
         const local = path.join(temp, `${index}-${name}`);
         if (!(await this.client.download(file.contentUrl, local))) {

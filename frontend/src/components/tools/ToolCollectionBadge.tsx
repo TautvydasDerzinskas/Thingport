@@ -12,14 +12,12 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useTools } from "../../hooks/useTools";
 import { reopenContextMenuBelow, TileMenuHeader } from "../Layout/ConfigurationDialog/AppTiles";
 import ToolIcon from "./ToolIcon";
+import { toolOpenPath } from "./toolCommands";
 
 /** The tool a collection belongs to, from the user's tools; null while they load, or for one they can't open. */
 function useToolOf(toolId: string) {
   return useTools()?.tools.find((tool) => tool.id === toolId) ?? null;
 }
-
-/** Where a tool's collection is opened from the Tools page: it opens the tool's window. */
-export const toolOpenPath = (toolId: string) => `/tools?open=${encodeURIComponent(toolId)}`;
 
 /** A padlock where a synced collection shows its provider: the collection belongs to a tool, which keeps it as it is. */
 export function ToolCollectionBadge({ toolId, size = 30 }: { toolId: string; size?: number }) {

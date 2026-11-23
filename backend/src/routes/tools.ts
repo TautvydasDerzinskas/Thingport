@@ -9,6 +9,7 @@ import {
   getToolData,
   listToolData,
   listTools,
+  toolStatus,
   parseToolManifest,
   saveOwnTool,
   setToolData,
@@ -19,6 +20,18 @@ import {
   toolModelsOf,
   type ToolUser,
 } from "../services/toolsService";
+import {
+  audienceSchema,
+  deleteSharedData,
+  getAudience,
+  listSharedData,
+  replaceEntrySchema,
+  replaceToolEntry,
+  setAudience,
+  setSharedData,
+  shareablePeople,
+  sharedSetSchema,
+} from "../services/toolSharedService";
 
 // The tools a user may open, their own, and what a tool's script calls back for: the data it keeps, its models and
 // the hosts it declares. Its other calls (collections, models, search) go to the API's own routes, as the user.
@@ -34,6 +47,15 @@ router.get(
     const user = userOf(req);
     res.json(await listTools(user));
     syncToolModelsSoon(user);
+  }),
+);
+
+// Only IDs and access: active tabs use this to notice a tool disabled by an admin without refetching its script.
+router.get(
+  "/tools/status",
+  asyncHandler(async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json(await toolStatus(userOf(req)));
   }),
 );
 
@@ -117,6 +139,73 @@ router.delete(
   asyncHandler(async (req, res) => {
     await deleteToolData(userOf(req), String(req.params.id), String(req.params.key));
     res.status(204).end();
+  }),
+);
+
+// Entries the tool's users may read: the user's own, and the others' that reach them.
+const sharedListSchema = z.object({
+  prefix: z.string().max(200).optional(),
+  model: z.string().min(1).max(100).optional(),
+  before: z.string().min(1).max(200).optional(),
+  preview: z
+    .string()
+    .regex(/^(image|render):[a-zA-Z0-9_-]{1,100}$/)
+    .optional(),
+});
+router.get(
+  "/tools/:id/shared",
+  asyncHandler(async (req, res) => {
+    const query = parseBody(sharedListSchema, req.query);
+    res.json({ entries: await listSharedData(userOf(req), String(req.params.id), query) });
+  }),
+);
+
+router.put(
+  "/tools/:id/shared/:key",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(sharedSetSchema, req.body);
+    await setSharedData(userOf(req), String(req.params.id), String(req.params.key), body);
+    res.status(204).end();
+  }),
+);
+
+router.delete(
+  "/tools/:id/shared/:key",
+  asyncHandler(async (req, res) => {
+    await deleteSharedData(userOf(req), String(req.params.id), String(req.params.key));
+    res.status(204).end();
+  }),
+);
+
+router.post(
+  "/tools/:id/replace-entry",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(replaceEntrySchema, req.body);
+    const replaced = await replaceToolEntry(userOf(req), String(req.params.id), body);
+    res.status(replaced ? 204 : 409).end();
+  }),
+);
+
+// Whom the user's shared entries in the tool reach, and the people they may pick.
+router.get(
+  "/tools/:id/audience",
+  asyncHandler(async (req, res) => {
+    res.json(await getAudience(userOf(req), String(req.params.id)));
+  }),
+);
+
+router.put(
+  "/tools/:id/audience",
+  asyncHandler(async (req, res) => {
+    res.json(await setAudience(userOf(req), String(req.params.id), parseBody(audienceSchema, req.body)));
+  }),
+);
+
+router.get(
+  "/tools/:id/people",
+  asyncHandler(async (req, res) => {
+    const { q } = parseBody(z.object({ q: z.string().max(100).default("") }), req.query);
+    res.json({ people: await shareablePeople(userOf(req), String(req.params.id), q) });
   }),
 );
 

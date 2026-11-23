@@ -19,15 +19,15 @@ Coming from Manyfold instead? See [Move from Manyfold](migrate-manyfold.md).
 People come with their passwords, so they sign in as before. Someone who already has an account here, with the same
 email, is merged into it: the account stays as it is, and their models, collections and the rest are added to it.
 
-| Comes                                                                                        | Stays with the old instance                    |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| People, with their passwords, profiles, avatars, dashboards and achievements                 | Sign-in sessions: everyone signs in here again |
-| Models, with their files, categories, creators, pictures and print profiles                  | API tokens and Thingport Grab connections      |
-| Collections and sidebar bookmarks                                                            | The audit log                                  |
-| Synced collections, with the models they've seen, so only new ones are imported              | The import history and queue                   |
-| Provider sign-ins                                                                            | Chats                                          |
-| Studio designs, widgets and tools people made, and what tools keep for them                  | Connected instances, and the instance's keys   |
-| Instance settings and secrets (AI services, sign-in providers, provider API keys), if picked | Its address and storage structure              |
+| Comes                                                                                                         | Stays with the old instance                    |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| People, with their passwords, profiles, avatars, dashboards, achievements and Send to destinations (keys too) | Sign-in sessions: everyone signs in here again |
+| Models, with their files, categories, creators, pictures and print profiles                                   | API tokens and Thingport Grab connections      |
+| Collections and sidebar bookmarks                                                                             | The audit log                                  |
+| Synced collections, with the models they've seen, so only new ones are imported                               | The import history and queue                   |
+| Provider sign-ins                                                                                             | Chats                                          |
+| Studio designs, widgets and tools people made, and what tools keep for them                                   | Connected instances, and the instance's keys   |
+| Instance settings and secrets (AI services, sign-in providers, provider API keys), if picked                  | Its address and storage structure              |
 
 Models are filed where **this** instance's storage structure puts them. A model imported from the same page as one
 already in that person's library isn't brought twice, and one named like another of theirs in the same category gets a

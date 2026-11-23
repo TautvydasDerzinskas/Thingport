@@ -10,7 +10,7 @@ import {
   type QualityReport,
   type QualitySeverity,
 } from "./meshQuality";
-import { checkPlateQuality } from "./modelPreviewCache";
+import { checkPlateQuality, READER_VERSION } from "./modelPreviewCache";
 import { resolvePlateFilePath } from "./printCreation";
 import { getQualityChecks, getQualityChecksOff } from "./settingsService";
 import { readablePrintWhere } from "./socialService";
@@ -20,7 +20,8 @@ import { readablePrintWhere } from "./socialService";
 
 export const QUALITY_CHECK_EXTS = new Set([".stl", ".obj", ".3mf", ".glb"]);
 
-type SkippedCheck = { version: number; status: "skipped"; reason: string };
+/** `reader` is kept with an "unsupported" one (READER_VERSION). */
+type SkippedCheck = { version: number; status: "skipped"; reason: string; reader?: number };
 type StoredCheck = QualityReport | SkippedCheck;
 
 export type FileQualityStatus = "unchecked" | "checking" | "good" | "issues" | "skipped";
@@ -48,7 +49,10 @@ function isCheckable(plate: Pick<Plate, "filename">): boolean {
 
 function storedCheck(plate: Pick<Plate, "qualityCheck">): StoredCheck | null {
   const value = plate.qualityCheck as StoredCheck | null;
-  return value && typeof value === "object" && value.version === QUALITY_CHECK_VERSION ? value : null;
+  if (!value || typeof value !== "object" || value.version !== QUALITY_CHECK_VERSION) return null;
+  // Refused by an older reader, which may read the file now.
+  if (value.status === "skipped" && value.reason === "unsupported" && value.reader !== READER_VERSION) return null;
+  return value;
 }
 
 const SEVERITY_RANK: Record<QualitySeverity, number> = { critical: 0, major: 1, minor: 2 };
@@ -141,6 +145,7 @@ async function checkPlate(plate: Plate): Promise<void> {
           console.warn(`Quality check for plate ${plate.id} stopped: ${outcome.reason}`);
         // Recorded either way, so a file that can't be checked isn't retried on every open.
         result = { version: QUALITY_CHECK_VERSION, status: "skipped", reason: outcome.status };
+        if (outcome.status === "unsupported") result.reader = READER_VERSION;
       }
     }
     await prisma.plate.update({

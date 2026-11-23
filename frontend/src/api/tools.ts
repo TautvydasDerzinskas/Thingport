@@ -1,4 +1,5 @@
 import { authHeaders } from "../utils/auth";
+import type { SdkShared } from "../sdk/types";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
 import { headerRecord } from "./widgets";
 
@@ -25,6 +26,9 @@ export type ToolManifest = {
   description: string;
   /** As a widget's: one of Thingport's icons (`builtin:…`), an uploaded one (`/api/icons/…`) or an image address. */
   iconUrl?: string;
+  /** A one-colour SVG as a `data:` URL, tinted like Thingport's own icons where the tool's commands sit among
+   *  them: a grid's selection toolbar. */
+  symbol?: string;
   version: string;
   author?: string;
   authorUrl?: string;
@@ -40,7 +44,48 @@ export type ToolManifest = {
   collection?: { name: string; description?: string; models: ToolModelSpec[] };
   /** The languages it has labels for, as `locales/<code>.json` beside tool.json. */
   locales?: string[];
+  /** Actions for the model page and the grid selection toolbar. */
+  commands?: ToolCommand[];
+  /** Parts of every model's page it draws itself: in the info box, a tab of the description box, and the picture's
+   *  top right corner. */
+  modelPage?: { info?: boolean; tab?: { title: string }; image?: boolean };
 };
+
+/** An action contributed by a tool to a model page or a grid's selection toolbar. Its title
+ *  translates through the tool's labels, as `commands.<id>`. */
+export type ToolCommand = {
+  id: string;
+  title: string;
+  /** The model, the file picked on its page, or the models selected in a grid. */
+  on: "model" | "file" | "selection";
+  /** The file types a "file" command takes, without the dot; any when left out. */
+  fileTypes?: string[];
+  /** False for one the tool's `run` export does without opening its window. */
+  window: boolean;
+  /** Its own one-colour SVG, as the tool's `symbol`, for its menu item and for its button when it's the tool's only
+   *  selection command. */
+  symbol?: string;
+};
+
+/** Another of the instance's users as a tool shows them: a name and an avatar, never an email. */
+export type ToolPerson = { id: string; display_name: string; avatar_url: string | null };
+
+/** One of the entries a tool's users share, as the reader sees it. */
+export type SharedEntry = {
+  key: string;
+  value: unknown;
+  user: ToolPerson | null;
+  mine: boolean;
+  /** The model it's about, as its writer has it. */
+  model_id: string | null;
+  preview_match?: boolean;
+  updated_at: string;
+  /** Where it is in the order: `before` in a read for the entries after it. */
+  cursor: string;
+};
+
+/** Whom the user's shared entries in a tool reach. */
+export type ToolAudience = { everyone: boolean; people: ToolPerson[] };
 
 /** One language's labels: a flat map of key to sentence, as `locales/<code>.json` holds it. */
 export type ToolLocale = Record<string, string>;
@@ -91,6 +136,7 @@ export type AdminTool = {
   installed: {
     id: string;
     version: string;
+    enabled: boolean;
     installedAt: string;
     updatedAt: string;
     updateAvailable: boolean;
@@ -121,10 +167,23 @@ const json = (body: unknown) => ({
   body: JSON.stringify(body),
 });
 
+/** A key as the last part of a path. Never "." or "..": the browser resolves those, even escaped, so the request would
+ *  reach the tool itself, and a delete would remove it. */
+function keyPath(key: string): string {
+  if (key === "." || key === "..") throw new Error("A key can't be . or ..");
+  return encodeURIComponent(key);
+}
+
 export const toolsApi = {
   list: async (): Promise<{ access: ToolAccess; tools: Tool[] }> => {
     const res = await fetch(`${apiBase()}/tools`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to load the tools");
+    return res.json();
+  },
+
+  status: async (): Promise<{ access: ToolAccess; ids: string[] }> => {
+    const res = await fetch(`${apiBase()}/tools/status`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to check tool availability");
     return res.json();
   },
 
@@ -170,14 +229,14 @@ export const toolsApi = {
 
   /** Undefined when nothing is kept under the key. */
   storageGet: async (id: string, key: string): Promise<unknown> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, { headers: authHeaders() });
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to read the tool's data");
     const answer: { found: boolean; value?: unknown } = await res.json();
     return answer.found ? answer.value : undefined;
   },
 
   storageSet: async (id: string, key: string, value: unknown): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, {
       method: "PUT",
       ...json({ value }),
     });
@@ -185,11 +244,75 @@ export const toolsApi = {
   },
 
   storageDelete: async (id: string, key: string): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, {
       method: "DELETE",
       headers: authHeaders(),
     });
     if (!res.ok) return failed(res, "Failed to delete the tool's data");
+  },
+
+  sharedList: async (
+    id: string,
+    query: { prefix?: string; model?: string; before?: string; preview?: string } = {},
+  ): Promise<SharedEntry[]> => {
+    const params = new URLSearchParams();
+    if (query.prefix !== undefined) params.set("prefix", query.prefix);
+    if (query.model) params.set("model", query.model);
+    if (query.before) params.set("before", query.before);
+    if (query.preview) params.set("preview", query.preview);
+    const res = await fetch(`${apiBase()}/tools/${id}/shared?${params}`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read what the tool's users share");
+    return (await res.json()).entries;
+  },
+
+  sharedSet: async (id: string, key: string, body: { value: unknown; model?: string | null }): Promise<void> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${keyPath(key)}`, {
+      method: "PUT",
+      ...json(body),
+    });
+    if (!res.ok) return failed(res, "Failed to share the tool's data");
+  },
+
+  sharedDelete: async (id: string, key: string): Promise<void> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${keyPath(key)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (!res.ok) return failed(res, "Failed to delete the tool's shared data");
+  },
+
+  replaceEntry: async (
+    id: string,
+    ...[previous, next]: Parameters<NonNullable<SdkShared["replace"]>>
+  ): Promise<boolean> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/replace-entry`, {
+      method: "POST",
+      ...json({ previous, next }),
+    });
+    if (res.status === 409) return false;
+    if (!res.ok) return failed(res, "Failed to update the tool's data");
+    return true;
+  },
+
+  audience: async (id: string): Promise<ToolAudience> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/audience`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read who sees what you share");
+    return res.json();
+  },
+
+  setAudience: async (id: string, body: { everyone: boolean; userIds: string[] }): Promise<ToolAudience> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/audience`, { method: "PUT", ...json(body) });
+    if (!res.ok) return failed(res, "Failed to save who sees what you share");
+    return res.json();
+  },
+
+  /** The others who can use tools, by name, for sharing with. */
+  people: async (id: string, q: string): Promise<ToolPerson[]> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/people?${new URLSearchParams({ q })}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) return failed(res, "Failed to find people");
+    return (await res.json()).people;
   },
 
   /** A tool's request to a host it declares, made by the server; as a Response, as `fetch` gives. */
@@ -238,6 +361,14 @@ export const toolsApi = {
     });
     if (!res.ok) return failed(res, "Failed to import the tool's models");
     return res.json();
+  },
+
+  setEnabled: async (slug: string, enabled: boolean): Promise<void> => {
+    const res = await fetch(`${apiBase()}/admin/tools/${encodeURIComponent(slug)}/availability`, {
+      method: "PATCH",
+      ...json({ enabled }),
+    });
+    if (!res.ok) return failed(res, "Failed to change tool availability");
   },
 
   uninstall: async (slug: string): Promise<void> => {

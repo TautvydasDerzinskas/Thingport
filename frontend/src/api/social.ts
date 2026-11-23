@@ -4,8 +4,10 @@ import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } fro
 import { sharePeopleIn, type Collection, type SharePerson } from "./collections";
 import { FederationError } from "./federation";
 import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
+import type { SortDirection } from "../utils/sortDirection";
 import type { ProfileCoverValue } from "../constants/profileCovers";
 import type { Achievement } from "./achievements";
+import type { ContentKind, FileCaps } from "./prints";
 
 /** Another of the instance's users, as social features show them: never their email. */
 export type UserCard = {
@@ -124,7 +126,19 @@ export type RemoteModel = RemoteModelCard & {
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for the file. */
   /** `folder` as Plate.folder, from a partner new enough to say. */
-  files: { name: string; folder?: string | null; size: number | null; media_type: string | null; url: string | null }[];
+  files: {
+    name: string;
+    folder?: string | null;
+    size: number | null;
+    media_type: string | null;
+    url: string | null;
+    /** What it is to the model, as its partner said; null for one indexed before partners said, absent from an older
+     *  instance. */
+    role?: "plate" | "supporting" | "prepared" | null;
+    /** As Plate's, worked out by this instance from the name; absent from an older one. */
+    content_kind?: ContentKind;
+    caps?: FileCaps;
+  }[];
   updated_at: string | null;
   owner_handle: string | null;
   collections: { id: string; name: string }[];
@@ -369,10 +383,11 @@ export const socialApi = {
   /** A page of a user's own models, once they made them public; null while they're private. */
   userModels: async (
     userId: string,
-    params: { order_by?: PrintSortMode; limit: number; offset: number },
+    params: { order_by?: PrintSortMode; order_direction?: SortDirection; limit: number; offset: number },
   ): Promise<ListPrintsResult | null> => {
     const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
     if (params.order_by) qs.set("orderBy", params.order_by);
+    if (params.order_direction) qs.set("orderDirection", params.order_direction);
     const res = await fetch(`${apiBase()}/explore/user/${encodeURIComponent(userId)}/models?${qs}`, {
       headers: authHeaders(),
     });

@@ -4,9 +4,11 @@ import { keyframes } from "@mui/material/styles";
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -15,12 +17,15 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import LaunchIcon from "@mui/icons-material/Launch";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DownloadIcon from "@mui/icons-material/Download";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { adminApi, type AdminUser } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
 import {
@@ -70,7 +75,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [catalog, setCatalog] = useState<ToolCatalog | null>(null);
   const [own, setOwn] = useState<OwnToolInUse[] | null>(null);
-  // The tools whose install, update or uninstall is in flight, by slug: finishing one tile's work mustn't free
+  // The tools with work in flight, by slug: finishing one tile's work mustn't free
   // another's, now that each tile has an update of its own a click away.
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
   // Kept in a ref as well, so a second click in the same tick is turned away before the state has landed.
@@ -82,8 +87,16 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   // The tool whose details are open, and the one being installed: a tool that brings models asks first.
   const [details, setDetails] = useState<AdminTool | null>(null);
   const [installing, setInstalling] = useState<AdminTool | null>(null);
+  // Update all, while it runs: the tool being updated now, counting from 1.
+  const [updatingAll, setUpdatingAll] = useState<{ name: string; at: number; total: number } | null>(null);
+  // What Update all takes. As with each tile's chip, no update is claimed while the repository can't be read.
+  const updatable = catalog?.repoError
+    ? []
+    : (catalog?.tools.filter((tool) => tool.installed?.updateAvailable && tool.inRepo) ?? []);
   const openable = (tool: AdminTool) =>
-    tool.installed ? (mine?.tools.find((ours) => ours.source === "repo" && ours.slug === tool.slug) ?? null) : null;
+    tool.installed && tool.installed.enabled !== false
+      ? (mine?.tools.find((ours) => ours.source === "repo" && ours.slug === tool.slug) ?? null)
+      : null;
 
   const fail = useCallback(
     (err: unknown, fallback: string) => {
@@ -93,12 +106,21 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     [onUnauthorized, toast],
   );
 
-  const loadCatalog = useCallback(async () => {
+  // Loads overlap (opening, the fetch poll, another admin's change, each action's refresh), so only the latest one
+  // started is shown: an older answer arriving last mustn't bring back a state already left. Returns what it read.
+  const catalogLoads = useRef(0);
+  const loadCatalog = useCallback(async (): Promise<ToolCatalog | null> => {
+    const load = ++catalogLoads.current;
     try {
-      setCatalog(await toolsApi.catalog());
+      const next = await toolsApi.catalog();
+      if (load === catalogLoads.current) setCatalog(next);
+      return next;
     } catch (err) {
-      fail(err, t("adminSettings.tools.repo.failed"));
-      setCatalog((prev) => prev ?? { tools: [], repoError: err instanceof Error ? err.message : String(err) });
+      if (load === catalogLoads.current) {
+        fail(err, t("adminSettings.tools.repo.failed"));
+        setCatalog((prev) => prev ?? { tools: [], repoError: err instanceof Error ? err.message : String(err) });
+      }
+      return null;
     }
   }, [fail, t]);
 
@@ -108,6 +130,13 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     void toolsApi.ownInUse().then(setOwn, () => setOwn([]));
     void loadCatalog();
   }, [fail, loadCatalog, t]);
+
+  // A different admin can change availability while this page is open. The shared tool list refreshes when that
+  // happens; read the catalogue again too so the tile and its menu show the current state.
+  const availableTools = mine?.tools;
+  useEffect(() => {
+    if (availableTools) void loadCatalog();
+  }, [availableTools, loadCatalog]);
 
   // Following a fetch of models as it goes.
   const fetching = catalog?.tools.some((tool) => tool.installed?.models?.fetching) ?? false;
@@ -171,6 +200,69 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
     }
   };
 
+  /** Updates each tool with an update, one at a time, by the same rule as its own Update chip. Disabled tools too: they
+   *  stay disabled. Each is read again just before its turn, as an earlier one's update can take a while: one another
+   *  admin has updated or uninstalled since is left alone, and models imported since are kept. One that can't be read
+   *  again isn't updated, as it may have been uninstalled, and is named among those that failed. One already being
+   *  worked on here is left to that work. */
+  const updateAll = async (tools: AdminTool[]) => {
+    if (updatingAll) return;
+    const queue = tools.filter((tool) => claim(tool.slug));
+    if (queue.length === 0) return;
+    let updated = 0;
+    const failed: { name: string; error: string }[] = [];
+    try {
+      for (const [index, queued] of queue.entries()) {
+        setUpdatingAll({ name: queued.manifest.name, at: index + 1, total: queue.length });
+        const fresh = await loadCatalog();
+        if (!fresh) {
+          failed.push({ name: queued.manifest.name, error: t("adminSettings.tools.repo.failed") });
+          continue;
+        }
+        const tool = fresh.tools.find((one) => one.slug === queued.slug);
+        if (!tool?.installed?.updateAvailable || !tool.inRepo) continue;
+        try {
+          await toolsApi.install(tool.slug, tool.installed.models?.imported === true);
+          updated++;
+        } catch (err) {
+          if (err instanceof UnauthorizedError) {
+            onUnauthorized?.();
+            return;
+          }
+          failed.push({ name: tool.manifest.name, error: err instanceof Error ? err.message : String(err) });
+        }
+      }
+      if (failed.length)
+        toast({
+          message: t("adminSettings.tools.repo.updateAllFailed", {
+            names: failed.map((item) => item.name).join(", "),
+            error: failed[0].error,
+          }),
+          severity: "error",
+        });
+      else if (updated)
+        toast({ message: t("adminSettings.tools.repo.updatedAll", { count: updated }), severity: "success" });
+      await Promise.all([loadCatalog(), reloadTools().catch(() => undefined)]);
+    } finally {
+      setUpdatingAll(null);
+      for (const tool of queue) release(tool.slug);
+    }
+  };
+
+  const changeAvailability = async (tool: AdminTool) => {
+    if (!tool.installed || !claim(tool.slug)) return;
+    const enabled = tool.installed.enabled === false;
+    try {
+      await toolsApi.setEnabled(tool.slug, enabled);
+      if (!enabled) setRunning((open) => (open?.id === tool.installed?.id ? null : open));
+      await Promise.all([loadCatalog(), reloadTools().catch(() => undefined)]);
+    } catch (err) {
+      fail(err, t("adminSettings.tools.repo.availabilityError"));
+    } finally {
+      release(tool.slug);
+    }
+  };
+
   const uninstall = async (tool: AdminTool) => {
     const ok = await confirm({
       title: t("adminSettings.tools.repo.uninstallTitle", { name: tool.manifest.name }),
@@ -224,6 +316,8 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
   // that entry, so its buttons act on it too -- models imported while it stood open are in it, and an update
   // mustn't then be taken as one that wants none, which would throw them away again.
   const current = details && (catalog?.tools.find((one) => one.slug === details.slug) ?? details);
+  // The same for the tile menu: another admin may disable, enable or update the tool while it stands open.
+  const menuTool = menu && (catalog?.tools.find((one) => one.slug === menu.tool.slug) ?? menu.tool);
 
   return (
     <Stack spacing={4}>
@@ -335,6 +429,50 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
         {catalog?.repoError && (
           <Alert severity="warning">{t("adminSettings.tools.repo.unreachable", { error: catalog.repoError })}</Alert>
         )}
+        {(updatingAll || updatable.length > 0) && (
+          <Alert
+            severity="info"
+            icon={<SystemUpdateAltIcon fontSize="inherit" />}
+            aria-live="polite"
+            action={
+              !updatingAll && (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void updateAll(updatable)}
+                  sx={{ whiteSpace: "nowrap" }}
+                >
+                  {t("adminSettings.tools.repo.updateAll")}
+                </Button>
+              )
+            }
+            sx={{
+              animation: `${appear} 220ms ease-out both`,
+              "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+              "& .MuiAlert-message": { flex: 1, minWidth: 0 },
+            }}
+          >
+            {updatingAll ? (
+              <>
+                {t("adminSettings.tools.repo.updatingAll", {
+                  name: updatingAll.name,
+                  done: updatingAll.at,
+                  total: updatingAll.total,
+                })}
+                <LinearProgress
+                  variant="determinate"
+                  value={((updatingAll.at - 1) / updatingAll.total) * 100}
+                  sx={{ mt: 0.75, borderRadius: 1 }}
+                />
+              </>
+            ) : (
+              t("adminSettings.tools.repo.updates", {
+                count: updatable.length,
+                names: updatable.map((tool) => tool.manifest.name).join(", "),
+              })
+            )}
+          </Alert>
+        )}
         {catalog === null ? (
           <ListRowSkeletons count={3} leadSize={44} twoLines trailing />
         ) : catalog.tools.length === 0 ? (
@@ -371,15 +509,21 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
                     size={60}
                     tileBg="background.paper"
                     on={Boolean(tool.installed)}
-                    badge={Boolean(tool.installed)}
+                    badge={tool.installed?.enabled === false ? "disabled" : Boolean(tool.installed)}
                     highlighted={details?.slug === tool.slug || menu?.tool.slug === tool.slug}
-                    tooltip={tool.manifest.description || undefined}
+                    tooltip={
+                      tool.installed?.enabled === false
+                        ? t("adminSettings.tools.repo.disabled")
+                        : tool.manifest.description || undefined
+                    }
                     ariaLabel={t("adminSettings.tools.repo.tileLabel", {
                       name: tool.manifest.name,
                       state: t(
-                        tool.installed
-                          ? "adminSettings.tools.repo.isInstalled"
-                          : "adminSettings.tools.repo.notInstalled",
+                        tool.installed?.enabled === false
+                          ? "adminSettings.tools.repo.disabled"
+                          : tool.installed
+                            ? "adminSettings.tools.repo.isInstalled"
+                            : "adminSettings.tools.repo.notInstalled",
                       ),
                     })}
                     onActivate={() => setDetails(tool)}
@@ -437,10 +581,10 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
       </Stack>
 
       <Menu anchorEl={menu?.anchor} open={Boolean(menu)} onClose={() => setMenu(null)}>
-        {menu && openable(menu.tool) && (
+        {menuTool && openable(menuTool) && (
           <MenuItem
             onClick={() => {
-              const open = openable(menu.tool);
+              const open = openable(menuTool);
               setMenu(null);
               setRunning(open);
             }}
@@ -451,12 +595,12 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
             <ListItemText>{t("adminSettings.tools.repo.open")}</ListItemText>
           </MenuItem>
         )}
-        {menu && openable(menu.tool) && <Divider />}
-        {menu?.tool.installed?.models && menu.tool.installed.models.ready < menu.tool.installed.models.total && (
+        {menuTool && openable(menuTool) && <Divider />}
+        {menuTool?.installed?.models && menuTool.installed.models.ready < menuTool.installed.models.total && (
           <MenuItem
-            disabled={menu.tool.installed.models.fetching}
+            disabled={menuTool.installed.models.fetching}
             onClick={() => {
-              const tool = menu.tool;
+              const tool = menuTool;
               setMenu(null);
               void retry(tool);
             }}
@@ -467,10 +611,35 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
             <ListItemText>{t("adminSettings.tools.repo.retry")}</ListItemText>
           </MenuItem>
         )}
-        {menu?.tool.installed?.models && <Divider />}
+        {menuTool?.installed && (
+          <MenuItem
+            disabled={busy.has(menuTool.slug)}
+            onClick={() => {
+              const tool = menuTool;
+              setMenu(null);
+              void changeAvailability(tool);
+            }}
+          >
+            <ListItemIcon>
+              {menuTool.installed.enabled === false ? (
+                <PlayCircleOutlineIcon fontSize="small" />
+              ) : (
+                <PauseCircleOutlineIcon fontSize="small" />
+              )}
+            </ListItemIcon>
+            <ListItemText>
+              {t(
+                menuTool.installed.enabled === false
+                  ? "adminSettings.tools.repo.enable"
+                  : "adminSettings.tools.repo.disable",
+              )}
+            </ListItemText>
+          </MenuItem>
+        )}
+        <Divider />
         <MenuItem
           onClick={() => {
-            const tool = menu!.tool;
+            const tool = menuTool!;
             setMenu(null);
             void uninstall(tool);
           }}
@@ -496,6 +665,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
         onImportModels={() => current && void importModels(current)}
         onRetry={() => current && void retry(current)}
         onUninstall={() => current && void uninstall(current)}
+        onChangeAvailability={() => current && void changeAvailability(current)}
         onOpen={current && openable(current) ? () => setRunning(openable(current)) : undefined}
       />
       <ToolWindow tool={running} onClose={() => setRunning(null)} onUnauthorized={onUnauthorized} />

@@ -153,7 +153,14 @@ export async function fillPlateFormats(
   for (const plate of plates) {
     if (read >= FILL_PER_REQUEST) break;
     if (!isThreeMfFile(plate.filename)) continue;
-    const filePath = resolveFile(plate);
+    let filePath: string | null;
+    try {
+      filePath = resolveFile(plate);
+    } catch (err) {
+      // Read on a later look: the page this fills for still opens.
+      console.warn(`Couldn't look at plate ${plate.id}'s file for its 3MF format:`, err);
+      continue;
+    }
     if (!filePath || (await currentFormat(plate, filePath))) continue;
     await storePlateFormat(plate.id, plate.filename, filePath);
     read++;

@@ -5,8 +5,11 @@ Thingport's interface is translated with one JSON file per language in
 **Configuration → Appearance** and in the <kbd>!language</kbd> search command, named in its own language. There's
 nothing to register or wire up.
 
-A translation doesn't have to be finished to be useful: any text not translated yet shows in English, so you can
-send a partial translation and fill it in later.
+A translation doesn't have to be finished to be useful: keep every key, and leave any text you haven't translated
+yet in English, where it shows in English, so you can send a partial translation and fill it in later. A language
+file needs every key `en.json` has, and no others, with one difference for plurals: a key that depends on a number
+takes the forms your language uses (see [Plurals](#plurals)), so a `_few` or `_many` form English doesn't have is
+expected, not extra. Every pull request is checked for that.
 
 ## Add a language
 
@@ -49,14 +52,17 @@ drop forms to match; `i18n:check` below lists any form your language is missing.
 With the [development setup](DEVELOPMENT.md) running, pick your language under **Configuration → Appearance**
 and look through the app; the choice is remembered by your browser.
 
-To list what's left to translate, run:
+To check that a language file has every key, run:
 
 ```bash
 npm --prefix frontend run i18n:check es
 ```
 
-It prints how much of the language is done, each key that's still missing, and any key that English no longer
-uses (which you can delete). Without a code, it checks every language.
+It prints the share of English's keys the file has, each key that's still missing, and any key that English no
+longer uses (which you can delete). Without a code, it checks every language. With `--strict`
+(`npm --prefix frontend run i18n:check -- --strict`) it also fails when there's any, as the Format check on every pull
+request does. It checks keys, not words: a text left in English counts as there, so look through the app in your
+language for what's still to translate.
 
 ## Tools and shared widgets
 
@@ -78,5 +84,5 @@ there yet also needs a flag and an entry in Grab's language menu, so ask for it 
 
 ## Keeping up
 
-New features add English text first. Translations catch up whenever someone has time, and until then the new text
-shows in English. If you'd like to look after a language, say so in your pull request, so we know who to ask.
+New features add their text to every language file. Where a translation can't be made yet, the English text stands
+in until someone improves it. If you'd like to look after a language, say so in your pull request, so we know who to ask.

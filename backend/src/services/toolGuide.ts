@@ -93,6 +93,64 @@ What the \`thingport\` argument has is listed under **What \`thingport\` has** b
 window as CSS variables as well (the \`SdkTheme\` table names them), so a stylesheet can use them without the script
 copying anything across.
 
+## Commands on model pages and grids
+
+A tool's \`commands\` show in the **Tools** menu on a model's page or in the selection toolbar of a model grid.
+Thingport lists them from the metadata without running the tool. A grid shows them in its edit mode, enabled when
+at least one model is selected; several selection commands from the same tool share one button with a menu. The
+toolbar draws Thingport's own one-colour icons, so give the tool a **symbol** for it: an SVG as a \`data:\` URL, tinted
+like them, so only its shape counts. A command's own **symbol** is its menu item's.
+
+\`\`\`json
+"commands": [
+  { "id": "estimate", "title": "Estimate print cost", "on": "file", "fileTypes": ["stl", "3mf"] },
+  { "id": "batch", "title": "Process selected models", "on": "selection", "window": false }
+]
+\`\`\`
+
+- **id**: 1-40 lowercase letters, digits and dashes, different for each command; at most 10 commands.
+- **title**: up to 60 characters, as the menu shows it. A label \`commands.<id>\` in the tool's words translates it.
+- **on**: \`"model"\` (the default) for the model as a whole, \`"file"\` for the file picked on its page, or
+  \`"selection"\` for a grid selection. A file command can list its **fileTypes** (endings without the dot).
+- **window**: picking it opens the tool's window, and \`thingport.context\` says what it was opened on:
+  \`{ command, modelId, fileId }\` for a model page or \`{ command, modelIds }\` for a selection, with IDs in grid order. With
+  \`"window": false\` the window stays shut and Thingport calls the script's \`run\` export instead, with the same
+  \`thingport\`: tell the user what happened with \`ui.toast\`, and ask with \`ui.confirm\` when you must.
+
+\`\`\`js
+export async function run(command, thingport) {
+  if (command !== "batch") return;
+  const { modelIds } = thingport.context;
+  // Process the selected models, then report the result.
+  thingport.ui.toast(thingport.t("batch.done", { count: modelIds.length }), "success", {
+    openWindow: thingport.t("batch.open"),
+  });
+}
+\`\`\`
+
+## Shared with the tool's other users
+
+\`thingport.storage\` is the user's own; \`thingport.shared\` is what the tool's users share with each other, such as a
+household's print queue. Each entry is its writer's: \`set\` and \`remove\` touch only the user's own, \`list\` reads
+everyone's with who wrote each and whether it's \`mine\`, 5,000 a read (\`list({ before: last.cursor })\` reads on).
+Whom a user's entries reach is their choice: \`share()\` opens Thingport's dialog for it. \`set(key, value, { model })\`
+ties an entry to a model, and \`list({ model })\` finds everyone's entries about that model or any copy of it.
+
+Never put anything private in a shared value, such as a model's thumbnail address, which carries the user's session.
+
+## Parts of a model's page
+
+\`"modelPage": { "info": true, "tab": { "title": "Filaments" }, "image": true }\` gives the tool parts of every model's
+page, each an empty element it draws into with its own \`<style>\`, the theme on it as the \`--tp-*\` variables, through
+the same \`thingport\` as its window: \`info\` in the info box (export \`modelInfo\`), \`tab\` a tab of the description box
+(export \`modelTab\`, title translated by the label \`modelPage.tab\`), \`image\` the picture's top right corner (export
+\`modelImage\`, keep it small). Each export gets \`thingport\` with \`context = { modelId, fileId, place }\` and may return
+a cleanup; it's drawn again when another file is picked. A part that draws nothing takes no room. In a part,
+\`ui.popover(anchor, draw)\` opens a popover to draw into, \`ui.showTab()\` shows the tool's tab, \`ui.selectFile(id)\`
+picks a file, \`ui.openWindow()\` opens the tool's window, and \`shared.onChange(fn)\` hears the tool's changes.
+Models' files carry \`profile\`: the print profile's id (the provider's, the same in every copy), name, printer and
+filaments ({ type, color, grams, brand }). \`thingport.user\` is the signed-in user, as \`{ id, name, avatarUrl }\`.
+
 ## What \`thingport\` has
 
 ${TOOL_SDK_REFERENCE}

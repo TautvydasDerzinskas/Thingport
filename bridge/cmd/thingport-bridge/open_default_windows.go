@@ -12,7 +12,7 @@ var shellExecuteW = syscall.NewLazyDLL("shell32.dll").NewProc("ShellExecuteW")
 
 // openWithDefaultWindows opens a file with the app Windows associates with its type. Not through
 // `cmd /c start`: cmd.exe would read a & in the filename as the start of another command.
-// handleProtocol has already refused anything but a model file.
+// parseLink has already refused anything but a model file.
 func openWithDefaultWindows(filePath string) error {
 	verb, err := syscall.UTF16PtrFromString("open")
 	if err != nil {

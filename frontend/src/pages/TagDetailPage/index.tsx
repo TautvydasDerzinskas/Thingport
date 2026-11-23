@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
+import { type Print, printsApi } from "../../api/prints";
 import { type Collection, collectionsApi } from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
 import { tagsApi } from "../../api/tags";
@@ -19,6 +19,7 @@ import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
+import { usePrintSort } from "../../hooks/usePrintSort";
 import SortTabs from "../ModelsPage/SortTabs";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
@@ -29,6 +30,8 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useToast } from "../../components/ToastProvider";
+import LoadMoreFailed from "../../components/LoadMoreFailed";
 
 const PAGE_SIZE = 24;
 
@@ -45,6 +48,11 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   const { tagName } = useParams<{ tagName: string }>();
   const tag = tagName ? decodeURIComponent(tagName) : "";
   const { t } = useTranslation(["models", "common"]);
+  const showToast = useToast();
+  // A next page that couldn't be read waits for the user's retry, rather than being asked for again and again.
+  const [moreFailed, setMoreFailed] = useState(false);
+  // A quiet reload keeps the list on screen: no next page is added to it until the reload has replaced it.
+  const [reloading, setReloading] = useState(false);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
     loadingAtFirst: true,
   });
@@ -57,23 +65,11 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   // A page on its way when the list reloads belongs to the old list, and is dropped.
   const listRun = useRef(0);
   const selection = useModelSelection(items);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const sortModeParam = searchParams.get("orderBy");
-  const sortMode: PrintSortMode =
-    sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
+  const { sortMode, direction, setSortMode, setDirection } = usePrintSort();
 
   const filters = useModelFilters();
   const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
-
-  const setSortMode = (mode: PrintSortMode) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (mode === "newest") next.delete("orderBy");
-      else next.set("orderBy", mode);
-      return next;
-    });
-  };
 
   const navigate = useNavigate();
   usePageHeader({
@@ -105,7 +101,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 
@@ -113,11 +109,20 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     if (!tag) return;
     let cancelled = false;
     listRun.current += 1;
+    setMoreFailed(false);
+    setLoadingMore(false);
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
     const kept = returning();
     if (kept !== null) setOffset(kept);
     const background = isBackgroundReload() || kept !== null;
-    if (!background) setLoading(true);
+    setReloading(background);
+    if (!background) {
+      // Only a successful replacement can make this list pageable again.
+      setItems([]);
+      setHasMore(false);
+      setOffset(0);
+      setLoading(true);
+    }
     (async () => {
       try {
         const result = await printsApi.list({
@@ -127,6 +132,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
           license_allows: licenseAllows,
           licensed: licensed || undefined,
           order_by: sortMode,
+          order_direction: direction,
           limit: background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
           offset: 0,
         });
@@ -138,14 +144,17 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         if (cancelled) return;
         handleError(err, background ? undefined : t("models:errors.loadFailed"));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setReloading(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tag, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
+  }, [tag, sortMode, direction, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   useEffect(() => {
     if (!tag) return;
@@ -186,7 +195,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   }, [tag]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore || !tag) return;
+    if (loading || loadingMore || !hasMore || !tag) return;
     const run = listRun.current;
     setLoadingMore(true);
     try {
@@ -197,6 +206,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         license_allows: licenseAllows,
         licensed: licensed || undefined,
         order_by: sortMode,
+        order_direction: direction,
         limit: PAGE_SIZE,
         offset,
       });
@@ -205,23 +215,16 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
-      handleError(err, t("models:errors.loadFailed"));
+      if (run === listRun.current) {
+        handleError(err);
+        setMoreFailed(true);
+      }
     } finally {
-      setLoadingMore(false);
+      if (run === listRun.current) setLoadingMore(false);
     }
   };
 
-  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
-
-  if (loading) {
-    return (
-      <Box sx={{ maxWidth: "1920px", mx: "auto", pt: 7 }}>
-        <Box sx={cardGridSx(6)}>
-          <CardSkeletons count={12} />
-        </Box>
-      </Box>
-    );
-  }
+  const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore && !moreFailed, loading || loadingMore || reloading);
 
   return (
     <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
@@ -235,12 +238,16 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
           onUnauthorized={onUnauthorized}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-          <SortTabs value={sortMode} onChange={setSortMode} />
+          <SortTabs value={sortMode} onChange={setSortMode} direction={direction} onDirectionChange={setDirection} />
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <ModelFiltersButton filters={filters} sources={sources} />
         </Box>
       </Box>
-      {collections.length || items.length ? (
+      {loading ? (
+        <Box sx={cardGridSx(6)}>
+          <CardSkeletons count={12} />
+        </Box>
+      ) : collections.length || items.length ? (
         <Stack spacing={2}>
           <Box sx={cardGridSx(6)}>
             {collections.map((collection) => (
@@ -287,7 +294,12 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
             ))}
             {loadingMore && <CardSkeletons count={6} />}
           </Box>
-          {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
+          {hasMore &&
+            (moreFailed ? (
+              <LoadMoreFailed message={t("models:errors.loadFailed")} onRetry={() => setMoreFailed(false)} />
+            ) : (
+              <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />
+            ))}
         </Stack>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>

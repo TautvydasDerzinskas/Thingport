@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { setLocale } from "../../shared/i18n";
 import { DEFAULT_TARGET, type TargetPrinter } from "../../shared/adaptTargets";
 import { MAX_BYTES, copyFilename, fetchFile, readBody, sourceFilename, tooBig } from "./download";
 
@@ -31,6 +32,18 @@ describe("a copy's file", () => {
     expect(sourceFilename(named('attachment; filename="plate:1.3mf"'), "https://x/y")).toBe("plate_1.3mf");
     expect(sourceFilename(new Response(""), "https://cdn.example/files/model.3mf?sig=1")).toBe("model.3mf");
     expect(sourceFilename(new Response(""), "https://cdn.example/")).toBe("model.3mf");
+  });
+
+  it("formats the received and total sizes in the chosen Grab language", async () => {
+    const megabyte = 1024 * 1024;
+    const progress = vi.fn();
+    setLocale("fr");
+    try {
+      await readBody(new Response(new Uint8Array(1.5 * megabyte)), 2 * megabyte, "Printables", progress);
+      expect(progress).toHaveBeenCalledWith("Téléchargement de 1,5 sur 2,0 Mo…");
+    } finally {
+      setLocale("en");
+    }
   });
 
   it("is refused past the size the browser can adapt, as it comes", async () => {

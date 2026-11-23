@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { identifySourceModel } from "../src/services/importService";
+import { identifySourceModel } from "../src/sources/sourceUrls";
 import { parseSyncSource } from "../src/services/collectionSyncService";
 import { parseMakerworldModelUrl } from "../src/providers/makerworld/api";
 import { parseSnapmakerModelUrl } from "../src/providers/snapmaker/api";

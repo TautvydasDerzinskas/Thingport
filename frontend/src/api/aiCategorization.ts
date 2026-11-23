@@ -1,5 +1,5 @@
 import { authHeaders } from "../utils/auth";
-import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
+import { apiBase, readCodedError, UnauthorizedError } from "./client";
 import type { Print } from "./prints";
 
 export type AiCategorizationMode = "suggest" | "auto";
@@ -60,23 +60,7 @@ async function request<T>(path: string, method = "GET", payload?: unknown): Prom
   });
   if (res.status === 401) throw new UnauthorizedError();
   if (!res.ok) {
-    let code: string | null = null;
-    let message: string;
-    try {
-      const body: unknown = await res.json();
-      if (typeof body === "object" && body !== null) {
-        const record = body as Record<string, unknown>;
-        if (typeof record.code === "string") code = record.code;
-        message =
-          typeof record.error === "string"
-            ? record.error
-            : await readErrorMessage(res, `Request failed (${res.status})`);
-      } else {
-        message = `Request failed (${res.status})`;
-      }
-    } catch {
-      message = `Request failed (${res.status})`;
-    }
+    const { message, code } = await readCodedError(res, `Request failed (${res.status})`);
     throw new AiCategorizationError(message, res.status, code);
   }
   return res.json() as Promise<T>;

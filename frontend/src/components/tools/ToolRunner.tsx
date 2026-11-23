@@ -1,50 +1,84 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
+import Popover from "@mui/material/Popover";
 import Typography from "@mui/material/Typography";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
+import ToolShareDialog from "./ToolShareDialog";
+import ToolModelPicker, { type ModelPickQuestion } from "./ToolModelPicker";
+import type { SdkAudience, SdkModel } from "../../sdk/types";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
-import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
+import {
+  buildToolSdk,
+  PLACE_EXPORTS,
+  type ModelPagePlace,
+  type RunnableTool,
+  type ToolCollection,
+  type ToolContext,
+  type ToolTheme,
+} from "./toolSdk";
+import { loadToolModule } from "./toolModule";
+import { useModelPageTools } from "./modelPageTools";
+import { useAskQueue } from "./useAskQueue";
 import { scriptToast } from "../../sdk/toast";
+import { toolOpenPath } from "./toolCommands";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
-
-type Mount = (thingport: Record<string, unknown>) => unknown;
-
-// One module per version of a tool's script, shared by every window running it.
-const modules = new Map<string, Promise<{ default?: Mount }>>();
-
-function loadModule(tool: RunnableTool): Promise<{ default?: Mount }> {
-  let loaded = modules.get(tool.sha);
-  if (!loaded) {
-    const url = URL.createObjectURL(new Blob([tool.script], { type: "text/javascript" }));
-    loaded = import(/* @vite-ignore */ url);
-    modules.set(tool.sha, loaded);
-    // A script that fails to load is tried afresh next time.
-    loaded.catch(() => modules.delete(tool.sha)).finally(() => URL.revokeObjectURL(url));
-  }
-  return loaded;
-}
 
 type Props = {
   tool: RunnableTool;
   /** What it was opened on, where it was opened from something rather than from the Tools page. */
   context?: ToolContext;
+  /** A part of a model's page rather than the window: drawn by that place's export, into an empty element, as tall as
+   *  what the tool draws. */
+  place?: ModelPagePlace;
+  preview?: { key: string; host: RefObject<HTMLDivElement | null> };
   /** Closes the window it runs in; the tool's `thingport.close()`. */
   onClose: () => void;
   onUnauthorized?: () => void;
+  /** What the page knows about the model, such as whether its print profiles are still filling in: run again when
+   *  it changes, so what's read from the model is current. */
+  revision?: string;
 };
 
+type ShownPopover = {
+  id: number;
+  anchor: Element;
+  draw: (root: HTMLElement) => void | (() => void);
+  placement: "bottom" | "top" | "left" | "right";
+  width: number;
+};
+
+const ORIGINS = {
+  bottom: [
+    { vertical: "bottom", horizontal: "left" },
+    { vertical: "top", horizontal: "left" },
+  ],
+  top: [
+    { vertical: "top", horizontal: "left" },
+    { vertical: "bottom", horizontal: "left" },
+  ],
+  left: [
+    { vertical: "center", horizontal: "left" },
+    { vertical: "center", horizontal: "right" },
+  ],
+  right: [
+    { vertical: "center", horizontal: "right" },
+    { vertical: "center", horizontal: "left" },
+  ],
+} as const;
+
 /**
- * Runs a tool's script in its window, as a custom widget runs in its panel: its HTML goes into the window, then its
- * default export is called with `thingport` (toolSdk.ts), and what it returns is called as its cleanup when the window
- * closes, the theme changes or the script does.
+ * Runs a tool's script, as a custom widget runs in its panel: in its window, its HTML goes in and its default export is
+ * called with `thingport` (toolSdk.ts); in a part of a model's page, that place's export is called with an empty
+ * element. What it returns is called as its cleanup when the window closes or the part goes, the theme, the language,
+ * the picked file or the script changes.
  */
-export default function ToolRunner({ tool, context, onClose, onUnauthorized }: Props) {
+export default function ToolRunner({ tool, context, place, preview, onClose, onUnauthorized, revision }: Props) {
   const { t, i18n } = useTranslation("app");
   const muiTheme = useTheme();
   const navigate = useNavigate();
@@ -52,33 +86,80 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
   const confirm = useConfirm();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [picker, setPicker] = useState<{ title?: string; resolve: (picked: ToolCollection | null) => void } | null>(
-    null,
-  );
+  const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
+  const shares = useAskQueue<object, SdkAudience | null>();
+  const modelPicks = useAskQueue<ModelPickQuestion, SdkModel[]>();
+  const page = useModelPageTools();
+  // The one popover the tool has open, kept while it closes so it can fade out.
+  const [popover, setPopover] = useState<ShownPopover | null>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const popovers = useRef(0);
+  const shownPopover = useRef<number | null>(null);
+  const popoverCleanup = useRef<(() => void) | null>(null);
   const rootId = `tp-tool-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const theme: ToolTheme = sdkTheme(muiTheme);
   const themeKey = JSON.stringify(theme);
+  const contextKey = JSON.stringify(context ?? {});
   // The language a tool is handed, matched to one Thingport has; changing it runs the tool again, as the theme does.
   const language = matchLanguage(i18n.language);
   // Read through refs, so the script isn't run again when the window's own callbacks change.
-  const latest = useRef({ onClose, navigate, toast, confirm, t });
+  const latest = useRef({ onClose, navigate, toast, confirm, t, page });
   useEffect(() => {
-    latest.current = { onClose, navigate, toast, confirm, t };
+    latest.current = { onClose, navigate, toast, confirm, t, page };
   });
 
+  const closePopover = useCallback((id?: number) => {
+    if (shownPopover.current === null || (id !== undefined && shownPopover.current !== id)) return;
+    shownPopover.current = null;
+    setPopoverOpen(false);
+    try {
+      popoverCleanup.current?.();
+    } catch {
+      // A tool's own cleanup failing mustn't keep the popover open.
+    }
+    popoverCleanup.current = null;
+  }, []);
+
+  // The tool draws into the popover once its element is there, the theme on it as on the tool's own root.
+  const drawPopover = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node || !popover || node.dataset.drawn === String(popover.id)) return;
+      node.dataset.drawn = String(popover.id);
+      node.innerHTML = "";
+      setThemeVariables(node, JSON.parse(themeKey) as ToolTheme);
+      try {
+        const out = popover.draw(node);
+        popoverCleanup.current = typeof out === "function" ? out : null;
+      } catch (err) {
+        node.textContent = err instanceof Error ? err.message : String(err);
+      }
+    },
+    [popover, themeKey],
+  );
+
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
+    const frame = rootRef.current;
+    if (!frame) return;
+    // Each run draws into an element of its own, so one that's stopped, as for another picked file, and finishes late
+    // draws into nothing on the page rather than over the run after it.
+    const root = document.createElement("div");
+    root.id = rootId;
+    if (!place) root.style.height = "100%";
+    frame.replaceChildren(root);
     let cancelled = false;
     let cleanup: (() => void) | null = null;
+    // This run's questions, dropped when it stops so the next run's don't wait behind them.
+    const asks = picks.session();
+    const shareAsks = shares.session();
+    const modelAsks = modelPicks.session();
     const listeners = new Set<(size: { width: number; height: number }) => void>();
-    const measure = () => ({ width: Math.round(root.offsetWidth), height: Math.round(root.offsetHeight) });
+    const measure = () => ({ width: Math.round(frame.offsetWidth), height: Math.round(frame.offsetHeight) });
     let size = measure();
     const observer = new ResizeObserver(() => {
       size = measure();
       listeners.forEach((listener) => listener(size));
     });
-    observer.observe(root);
+    observer.observe(frame);
 
     setError(null);
     // The theme as CSS variables on the window itself, before the tool's HTML goes in, so a tool's stylesheet can
@@ -86,15 +167,29 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
     // picks the wrong colour for text on the accent — the paper colour is white in the light theme and dark in the
     // dark one, while what reads on an accent is its own contrast colour.
     setThemeVariables(root, theme);
-    root.innerHTML = tool.html ?? "";
+    const previewHost = preview?.host.current;
+    const previewRoot = previewHost && document.createElement("div");
+    if (previewRoot) {
+      previewRoot.style.position = "absolute";
+      previewRoot.style.inset = "0";
+      setThemeVariables(previewRoot, theme);
+      previewHost.append(previewRoot);
+    }
+    // A part of a page has no HTML of the tool's: it draws all of it.
+    root.innerHTML = place ? "" : (tool.html ?? "");
     const openModel = (id: string) => {
       latest.current.onClose();
       latest.current.navigate(`/models/${encodeURIComponent(id)}`);
     };
+    const openWindow = () => {
+      if (!cancelled) latest.current.page?.openWindow(tool);
+    };
+    const toolId = tool.id;
     const thingport = buildToolSdk({
       tool,
-      context,
+      context: place ? { ...context, place } : context,
       root,
+      preview: preview && previewRoot ? { key: preview.key, root: previewRoot } : undefined,
       selector: `#${rootId}`,
       theme: JSON.parse(themeKey) as ToolTheme,
       language,
@@ -107,7 +202,17 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
       ui: {
         toast: (message, severity = "info", options) =>
           latest.current.toast(
-            scriptToast(message, severity, options, { label: latest.current.t("common:open"), openModel }),
+            scriptToast(message, severity, options, {
+              label: latest.current.t("common:open"),
+              openModel,
+              openWindow:
+                place && toolId
+                  ? () => {
+                      if (!cancelled && latest.current.page) openWindow();
+                      else latest.current.navigate(toolOpenPath(toolId));
+                    }
+                  : undefined,
+            }),
           ),
         confirm: async (options) =>
           (await latest.current.confirm({
@@ -116,30 +221,67 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
             confirmLabel: options.confirmLabel,
             destructive: options.destructive,
           })) === true,
-        pickCollection: (options) => new Promise((resolve) => setPicker({ title: options?.title, resolve })),
+        pickCollection: (options) => asks.ask({ title: options?.title }),
+        pickModels: (options) =>
+          modelAsks.ask({ title: options?.title, confirmLabel: options?.confirmLabel, max: options?.max }),
         openModel,
-        close: () => latest.current.onClose(),
+        // A part of a page isn't the tool's to close.
+        close: () => (place ? undefined : latest.current.onClose()),
+        // A run that's stopped, as for another picked file, may still finish its work: it changes nothing on the page.
+        popover: (anchor, draw, options) => {
+          if (cancelled) return { close: () => undefined };
+          const id = ++popovers.current;
+          closePopover();
+          shownPopover.current = id;
+          setPopover({
+            id,
+            anchor,
+            draw,
+            placement: options?.placement ?? "bottom",
+            width: Math.min(Math.max(options?.width ?? 320, 160), 640),
+          });
+          setPopoverOpen(true);
+          return { close: () => closePopover(id) };
+        },
+        showTab: () => {
+          if (!cancelled && tool.id && tool.manifest.modelPage?.tab) latest.current.page?.showTab(tool.id);
+        },
+        selectFile: (fileId) => {
+          if (!cancelled) latest.current.page?.selectFile(fileId);
+        },
+        openWindow,
       },
+      pickAudience: () => shareAsks.ask({}),
     });
 
     void (async () => {
       try {
-        const module = await loadModule(tool);
+        const module = await loadToolModule(tool);
         if (cancelled) return;
-        if (typeof module.default !== "function") throw new Error(latest.current.t("tools.runner.noExport"));
-        const returned = await module.default(thingport as unknown as Record<string, unknown>);
+        const name = place ? PLACE_EXPORTS[place] : "default";
+        const draw = module[name];
+        if (typeof draw !== "function")
+          throw new Error(
+            place ? latest.current.t("tools.runner.noPartExport", { name }) : latest.current.t("tools.runner.noExport"),
+          );
+        const returned = await draw(thingport);
         if (cancelled) {
           if (typeof returned === "function") returned();
           return;
         }
         if (typeof returned === "function") cleanup = returned as () => void;
       } catch (err) {
+        previewRoot?.remove();
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       }
     })();
 
     return () => {
       cancelled = true;
+      asks.end();
+      shareAsks.end();
+      modelAsks.end();
+      closePopover();
       observer.disconnect();
       listeners.clear();
       try {
@@ -147,16 +289,74 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
       } catch {
         // A tool's own cleanup failing mustn't stop the next run.
       }
-      root.innerHTML = "";
+      root.remove();
+      previewRoot?.remove();
     };
-    // The tool runs again when its code, the theme or the language changes; the objects themselves are rebuilt
-    // each render.
+    // The tool runs again when its code, the theme, the language or what it's on changes; the objects themselves are
+    // rebuilt each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool.sha, tool.id, themeKey, language, rootId]);
+  }, [tool.sha, tool.id, themeKey, language, rootId, contextKey, place, revision, preview?.key, preview?.host]);
+
+  const [anchorOrigin, transformOrigin] = ORIGINS[popover?.placement ?? "bottom"];
+  const popoverElement = popover && (
+    <Popover
+      open={popoverOpen}
+      anchorEl={popover.anchor}
+      onClose={() => closePopover(popover.id)}
+      anchorOrigin={anchorOrigin}
+      transformOrigin={transformOrigin}
+      slotProps={{
+        paper: { sx: { width: popover.width, maxWidth: "calc(100vw - 32px)", mt: 0.5, borderRadius: 2 } },
+        transition: { onExited: () => setPopover((shown) => (shown?.id === popover.id ? null : shown)) },
+      }}
+    >
+      <Box key={popover.id} ref={drawPopover} />
+    </Popover>
+  );
+
+  if (place) {
+    return (
+      <>
+        <Box ref={rootRef} data-tool-frame hidden={Boolean(error)} />
+        {error && (
+          <Typography
+            variant="caption"
+            role="alert"
+            title={error}
+            sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "error.main" }}
+          >
+            <ErrorOutlineIcon sx={{ fontSize: 16 }} />
+            {t("tools.runner.partFailed", { name: tool.manifest.name })}
+          </Typography>
+        )}
+        {popoverElement}
+        <CollectionPickerDialog
+          key={picks.shown?.id ?? 0}
+          open={picks.open}
+          title={picks.shown?.title}
+          onUnauthorized={onUnauthorized}
+          onClose={picks.answer}
+        />
+        <ToolShareDialog
+          key={`share-${shares.shown?.id ?? 0}`}
+          open={shares.open}
+          tool={tool.id ? { id: tool.id, name: tool.manifest.name } : null}
+          onUnauthorized={onUnauthorized}
+          onClose={shares.answer}
+        />
+        <ToolModelPicker
+          question={modelPicks.open ? modelPicks.shown : null}
+          onAnswer={modelPicks.answer}
+          onUnauthorized={onUnauthorized}
+        />
+      </>
+    );
+  }
 
   return (
     <Box sx={{ position: "relative", height: "100%", minHeight: 0 }}>
-      <Box id={rootId} ref={rootRef} sx={{ height: "100%", overflow: "auto" }} />
+      <Box ref={rootRef} data-tool-frame sx={{ height: "100%", overflow: "auto" }} />
+      {popoverElement}
       {error && (
         <Box
           role="alert"
@@ -183,13 +383,23 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         </Box>
       )}
       <CollectionPickerDialog
-        open={Boolean(picker)}
-        title={picker?.title}
+        key={picks.shown?.id ?? 0}
+        open={picks.open}
+        title={picks.shown?.title}
         onUnauthorized={onUnauthorized}
-        onClose={(picked) => {
-          picker?.resolve(picked);
-          setPicker(null);
-        }}
+        onClose={picks.answer}
+      />
+      <ToolShareDialog
+        key={`share-${shares.shown?.id ?? 0}`}
+        open={shares.open}
+        tool={tool.id ? { id: tool.id, name: tool.manifest.name } : null}
+        onUnauthorized={onUnauthorized}
+        onClose={shares.answer}
+      />
+      <ToolModelPicker
+        question={modelPicks.open ? modelPicks.shown : null}
+        onAnswer={modelPicks.answer}
+        onUnauthorized={onUnauthorized}
       />
     </Box>
   );

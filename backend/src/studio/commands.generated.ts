@@ -5,11 +5,18 @@ import {
   ASSET_ID,
   consumerOf,
   DEFAULT_SEGMENTS,
+  DEFAULT_PLATE_ID,
   featureById,
   inputsOf,
   isBody,
   isSolid,
   LIMITS,
+  MAX_PLATES,
+  STUDIO_FILAMENT_MATERIALS,
+  STUDIO_FILAMENT_SLOT_LIMIT,
+  plateOf,
+  studioPlates,
+  topLevel,
   shapeContours,
   transformMatrix,
   type BodyFeature,
@@ -29,6 +36,8 @@ import {
   turnOnto,
   type SketchFeature,
   type SketchShape,
+  type SplitConnector,
+  type SplitFeature,
   type StudioDocument,
   type Transform,
   type Vec3,
@@ -46,8 +55,19 @@ import {
 } from "./expressions.generated";
 import { PATH_CHARACTERS } from "./svgPath.generated";
 import { isoPitch, threadProblem } from "./threads.generated";
+import { arrangeFootprints, DEFAULT_PRINT_BED, isSimpleBedPolygon } from "./printLayout.generated";
+import {
+  PRINT_PRESET_IDS,
+  PROFILE_SETTINGS,
+  PROFILE_SLICERS,
+  printPreset,
+  profileSummary,
+  type ProfileSettingDef,
+  type StudioPrintProfile,
+} from "./printProfile.generated";
 import type { TraceShape, Traced, TraceSettings } from "./trace.generated";
 import {
+  applyDirection,
   applyMatrix,
   applyNormal,
   cross,
@@ -70,7 +90,14 @@ import {
 // are the server's to carry out.
 
 /** A command that can't be carried out as asked. Its message is for whoever asked, person or AI. */
-export class CommandError extends Error {}
+export class CommandError extends Error {
+  constructor(
+    message: string,
+    readonly code?: string,
+  ) {
+    super(message);
+  }
+}
 
 export type CommandOutcome = {
   document: StudioDocument;
@@ -100,10 +127,84 @@ const command = <S extends z.ZodRawShape>(definition: CommandDefinition<S>) => d
 
 // --- Arguments, shared ---
 
+/** A print-profile setting's value as a command takes it, or null to put it back to the slicer's own. */
+function settingArg(setting: ProfileSettingDef) {
+  const unit = setting.kind === "number" && setting.unit ? ` (${setting.unit})` : "";
+  const about = `${setting.names.bambu}${unit}`;
+  if (setting.kind === "switch") return z.boolean().nullable().optional().describe(about);
+  if (setting.kind === "choice")
+    return z
+      .enum(setting.options.map((choice) => choice.value) as [string, ...string[]])
+      .nullable()
+      .optional()
+      .describe(about);
+  const number = z.number().finite().min(setting.min).max(setting.max);
+  return (setting.step >= 1 ? number.int() : number).nullable().optional().describe(about);
+}
+
 const coordinate = z.number().finite().min(-LIMITS.size).max(LIMITS.size);
 const vec2 = z.tuple([coordinate, coordinate]);
 const vec3 = z.tuple([coordinate, coordinate, coordinate]);
+const vectorChange = (value: z.ZodNumber) =>
+  z.union([
+    z.tuple([value, value, value]),
+    z
+      .object({ x: value, y: value, z: value })
+      .partial()
+      .strict()
+      .refine(
+        ({ x, y, z: last }) => x !== undefined || y !== undefined || last !== undefined,
+        "Give at least one axis.",
+      ),
+  ]);
+
+function changedVector(before: Vec3, change: Vec3 | { x?: number; y?: number; z?: number } | undefined): Vec3 {
+  if (!change) return before;
+  return Array.isArray(change) ? change : [change.x ?? before[0], change.y ?? before[1], change.z ?? before[2]];
+}
 const length = (description: string) => z.number().positive().max(LIMITS.size).describe(description);
+const splitConnector = z
+  .object({
+    diameter: length("Pin diameter in mm"),
+    depth: length("Pin protrusion and socket depth in mm"),
+    clearance: z.number().min(0).max(5).describe("Radial clearance added to the socket in mm"),
+    offset: vec2.describe("The center of the pin pattern in the plane, in mm [u, v]."),
+    count: z.number().int().min(1).max(8),
+    spacing: length("Distance between pins along the plane's u axis in mm"),
+  })
+  .strict();
+
+const splitConnectorChanges = splitConnector.partial().extend({
+  offset: z
+    .union([
+      vec2,
+      z
+        .object({ u: coordinate.optional(), v: coordinate.optional() })
+        .strict()
+        .refine(({ u, v }) => u !== undefined || v !== undefined, "Give at least one offset axis."),
+    ])
+    .optional()
+    .describe("The full offset [u, v], or only the axes to change, in mm."),
+});
+
+export type SplitConnectorChanges = z.infer<typeof splitConnectorChanges>;
+
+export function changedSplitConnector(
+  previous: SplitConnector,
+  { offset, ...changes }: SplitConnectorChanges,
+): SplitConnector {
+  const [u, v] = previous.offset;
+  return {
+    ...previous,
+    ...changes,
+    offset: Array.isArray(offset) ? offset : [offset?.u ?? u, offset?.v ?? v],
+  };
+}
+
+function checkConnector(connector: SplitConnector) {
+  if (connector.count > 1 && connector.spacing <= connector.diameter + 2 * connector.clearance)
+    throw new CommandError("Increase the spacing so the connector sockets are separate.");
+}
 const signedLength = (description: string) =>
   z
     .number()
@@ -132,7 +233,18 @@ const bodyId = z
   .describe("The body to work on: a top-level body's id from studio_get_design, e.g. box-1 or boolean-4.");
 const sketchId = z.string().min(1).describe("The sketch's id, e.g. sketch-2.");
 
+const plateId = z
+  .string()
+  .regex(/^plate-[1-9]\d*$/)
+  .describe("A plate ID from studio_get_design.");
+const bodyColor = z
+  .string()
+  .regex(/^#[0-9a-f]{6}$/i)
+  .transform((color) => color.toLowerCase());
+
 const placement = {
+  plate_id: plateId.optional(),
+  color: bodyColor.optional().describe("The whole body’s color as #RRGGBB."),
   position: vec3
     .optional()
     .describe("Where its origin goes, in mm, as [x, y, z]. Default [0, 0, 0]: the middle of the bed."),
@@ -314,9 +426,31 @@ function nextId(doc: StudioDocument, type: FeatureType): string {
   return id;
 }
 
-function addFeature(doc: StudioDocument, feature: Feature): void {
+function findPlate(doc: StudioDocument, id: string) {
+  const plate = studioPlates(doc).find((entry) => entry.id === id);
+  if (!plate) throw new CommandError(`There's no plate ${id} in this design.`);
+  return plate;
+}
+
+function addPlate(doc: StudioDocument, name: string): string {
+  const plates = studioPlates(doc);
+  if (plates.length >= MAX_PLATES) throw new CommandError(`A design holds up to ${MAX_PLATES} plates.`);
+  const next = doc.next_plate_id ?? Math.max(...plates.map((plate) => Number(plate.id.slice(6)))) + 1;
+  const id = `plate-${next}`;
+  doc.next_plate_id = next + 1;
+  doc.plates = [...plates, { id, name }];
+  return id;
+}
+
+function addFeature(doc: StudioDocument, feature: Feature, inheritColor = true): void {
   if (doc.features.length >= LIMITS.features)
     throw new CommandError(`A design holds up to ${LIMITS.features} features. Delete or combine some first.`);
+  const inputId = inputsOf(feature)[0];
+  const input = inputId ? featureById(doc, inputId) : undefined;
+  const plate = feature.plate_id ?? input?.plate_id;
+  if (plate) feature.plate_id = findPlate(doc, plate).id;
+  if (inheritColor && isBody(feature) && feature.color === undefined && input && isBody(input) && input.color)
+    feature.color = input.color;
   doc.features.push(feature);
 }
 
@@ -334,6 +468,23 @@ function findBody(doc: StudioDocument, id: string): BodyFeature {
   const feature = find(doc, id);
   if (!isBody(feature)) throw new CommandError(`${id} is a sketch, not a body. Extrude it first.`);
   return feature;
+}
+
+function splitWithConnector(
+  doc: StudioDocument,
+  id: string,
+): SplitFeature & { connector: SplitConnector; plane: FaceRef } {
+  const feature = findBody(doc, id);
+  if (feature.type !== "split" || !feature.connector || !feature.plane || feature.fit_sample)
+    throw new CommandError("Choose a split body with matching pins and sockets.");
+  return { ...feature, connector: feature.connector, plane: feature.plane };
+}
+
+function splitPair(doc: StudioDocument, sourceId: string) {
+  return doc.features.filter(
+    (feature): feature is SplitFeature =>
+      feature.type === "split" && feature.source_id === sourceId && Boolean(feature.connector) && !feature.fit_sample,
+  );
 }
 
 function findSketch(doc: StudioDocument, id: string): SketchFeature {
@@ -544,7 +695,7 @@ function copyTree(doc: StudioDocument, id: string, copies: Map<string, string>):
       copy.body_ids = copy.body_ids.map(map);
       break;
   }
-  addFeature(doc, copy);
+  addFeature(doc, copy, false);
   return copy.id;
 }
 
@@ -568,6 +719,7 @@ function startSketch(
     offset?: number;
     shapes?: SketchShape[];
     name?: string;
+    plate_id?: string;
   },
 ): CommandOutcome {
   if (Boolean(args.plane) === Boolean(args.face))
@@ -580,6 +732,7 @@ function startSketch(
     type: "sketch",
     name: args.name ?? "",
     visible: true,
+    ...(args.plate_id ? { plate_id: args.plate_id } : {}),
     plane: frame ? "FACE" : args.plane!,
     offset: args.offset ?? 0,
     frame: frame ? { origin: frame.origin, u: frame.u, normal: frame.normal } : null,
@@ -698,6 +851,8 @@ const AXIS_INDEX = { x: 0, y: 1, z: 2, u: 0, v: 1 } as const;
 
 /** A field's number now, or undefined where the feature has no such number. */
 function fieldValue(feature: Feature, field: string): number | undefined {
+  if (field === "connector.clearance" && feature.type === "split" && !feature.fit_sample)
+    return feature.connector?.clearance;
   const transform = TRANSFORM_FIELD.exec(field);
   if (transform && isBody(feature))
     return feature.transform[transform[1] as "position"][AXIS_INDEX[transform[2] as "x"]];
@@ -717,6 +872,13 @@ function fieldValue(feature: Feature, field: string): number | undefined {
 
 /** Sets a field to a formula's value, checked as the command that sets it by hand would check it. */
 function setField(doc: StudioDocument, feature: Feature, field: string, value: number): void {
+  if (field === "connector.clearance" && feature.type === "split" && feature.connector && !feature.fit_sample) {
+    if (value < 0 || value > 5) throw new CommandError("Connector clearance has to be between 0 and 5 mm.");
+    const connector = { ...feature.connector, clearance: value };
+    checkConnector(connector);
+    feature.connector = connector;
+    return;
+  }
   const transform = TRANSFORM_FIELD.exec(field);
   if (transform && isBody(feature)) {
     const part = transform[1] as "position" | "rotation" | "scale";
@@ -881,6 +1043,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         width: args.width,
         depth: args.depth,
         height: args.height,
@@ -903,6 +1067,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         radius: args.radius,
         height: args.height,
         segments: args.segments ?? DEFAULT_SEGMENTS,
@@ -941,6 +1107,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         radius_bottom: args.radius_bottom,
         radius_top: args.radius_top,
         height: args.height,
@@ -964,6 +1132,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         radius: args.radius,
         segments: args.segments ?? DEFAULT_SEGMENTS,
       });
@@ -991,6 +1161,8 @@ export const STUDIO_COMMANDS = {
         name: args.name ?? "",
         visible: true,
         transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
         major_radius: args.major_radius,
         minor_radius: args.minor_radius,
         segments: args.segments ?? DEFAULT_SEGMENTS,
@@ -1038,7 +1210,16 @@ export const STUDIO_COMMANDS = {
         segments: args.segments ?? THREAD_SEGMENTS,
       };
       checkThread(thread);
-      addFeature(doc, { id, type: "thread", name: args.name ?? "", visible: true, transform: placed(args), ...thread });
+      addFeature(doc, {
+        id,
+        type: "thread",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed(args),
+        ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+        ...(args.color ? { color: args.color } : {}),
+        ...thread,
+      });
       return {
         document: doc,
         created: [id],
@@ -1056,6 +1237,7 @@ export const STUDIO_COMMANDS = {
       "says which way u and v point in the world. Give plane or face, not both.",
     args: {
       plane: plane.optional(),
+      plate_id: plateId.optional(),
       face: faceArg
         .optional()
         .describe(
@@ -1132,6 +1314,7 @@ export const STUDIO_COMMANDS = {
       ...textArgs,
       height: length("How far the letters stand out, or are cut in, in mm."),
       plane: plane.optional(),
+      plate_id: plateId.optional(),
       face: faceArg
         .optional()
         .describe(
@@ -1163,7 +1346,13 @@ export const STUDIO_COMMANDS = {
         ...(args.align ? { align: args.align } : {}),
         ...(args.spacing ? { spacing: args.spacing } : {}),
       };
-      const sketch = startSketch(doc, { plane: args.plane, face: args.face, offset: args.offset, shapes: [text] });
+      const sketch = startSketch(doc, {
+        plane: args.plane,
+        face: args.face,
+        offset: args.offset,
+        shapes: [text],
+        plate_id: args.plate_id,
+      });
       const madeSketch = sketch.created[0];
       const solid = extrudeSketch(doc, {
         sketch_id: madeSketch,
@@ -1590,7 +1779,8 @@ export const STUDIO_COMMANDS = {
     description:
       "Splits a body in two, by a plane or by another body, making two bodies that stay editable: by a plane, the part on " +
       "the side its normal points to and the part on the other side; by a body, the part inside it and the part outside " +
-      "it (the cutting body stays as it is). Handy for cutting a model into printable pieces. " +
+      "it (the cutting body stays as it is). A plane can add matching pins and sockets. Optionally put the second " +
+      "piece on a new plate. " +
       BODY_REF_HELP,
     args: {
       feature_id: bodyId,
@@ -1603,12 +1793,20 @@ export const STUDIO_COMMANDS = {
         .optional()
         .describe("A plane to split by."),
       tool_id: z.string().min(1).optional().describe("A body to split by, instead of a plane."),
+      connector: splitConnector
+        .optional()
+        .describe("Adds pins to the front half and matching sockets to the back half."),
+      separate_plates: z.boolean().optional().describe("Put the second half on a new plate."),
     },
     apply(doc, args) {
       if (Boolean(args.plane) === Boolean(args.tool_id))
         throw new CommandError("Give a plane or a tool_id to split by, one of them.");
       const body = freeBody(doc, args.feature_id);
       assertSolid(body);
+      if (args.connector) {
+        if (!args.plane) throw new CommandError("Use a plane to make split connectors.");
+        checkConnector(args.connector);
+      }
       let toolCopy: string | null = null;
       let planeRef: FaceRef | null = null;
       if (args.tool_id) {
@@ -1619,7 +1817,19 @@ export const STUDIO_COMMANDS = {
       } else {
         planeRef = intoFrame(body).face(args.plane!);
       }
-      const parts = (toolCopy ? (["inside", "outside"] as const) : (["front", "back"] as const)).map((keep) => {
+      const connectorU =
+        args.connector && args.plane
+          ? normalize(
+              applyDirection(
+                invertAffine(transformMatrix(body.transform)),
+                perpendicular(normalize(args.plane.normal)),
+              ),
+            )
+          : undefined;
+      const secondPlate = args.separate_plates
+        ? addPlate(doc, `${(body.name || body.id).slice(0, 65)} · 2`)
+        : undefined;
+      const parts = (toolCopy ? (["inside", "outside"] as const) : (["front", "back"] as const)).map((keep, index) => {
         const id = nextId(doc, "split");
         addFeature(doc, {
           id,
@@ -1631,10 +1841,83 @@ export const STUDIO_COMMANDS = {
           plane: planeRef,
           tool_id: toolCopy,
           keep,
+          ...(args.connector ? { connector: { ...args.connector }, connector_u: connectorU } : {}),
+          ...(index === 1 && secondPlate ? { plate_id: secondPlate } : {}),
         });
         return id;
       });
       return { document: doc, created: parts, summary: `Split ${body.id} into ${parts.join(" and ")}` };
+    },
+  }),
+
+  update_split_connector: command({
+    title: "Edit matching split connectors",
+    destructive: true,
+    description: "Edits the connectors on both halves of a planar split. Only provided values change.",
+    args: {
+      feature_id: bodyId,
+      connector: splitConnectorChanges.describe("Connector values to change on the matching halves."),
+    },
+    apply(doc, args) {
+      const feature = splitWithConnector(doc, args.feature_id);
+      const connector = changedSplitConnector(feature.connector, args.connector);
+      checkConnector(connector);
+      for (const part of splitPair(doc, feature.source_id)) {
+        part.connector = { ...connector };
+        if (args.connector.clearance !== undefined) dropExpressions(part, ["connector.clearance"]);
+      }
+      return { document: doc, created: [], summary: `Updated the connectors on ${feature.source_id}` };
+    },
+  }),
+
+  make_fit_test: command({
+    kind: "measure",
+    title: "Make a connector fit test plate",
+    description:
+      "Takes the mating region from a planar split with connectors. Puts one pin sample and a socket sample for each radial clearance on a new plate. The clearance in mm is engraved on each socket.",
+    args: {
+      feature_id: bodyId,
+      clearances: z
+        .array(z.number().min(0).max(5))
+        .min(1)
+        .max(9)
+        .describe("Radial clearances in mm, one per socket sample."),
+      name: z.string().trim().min(1).max(80).optional().describe("Name of the new fit test plate."),
+    },
+  }),
+
+  apply_fit_clearance: command({
+    title: "Use a measured fit clearance",
+    destructive: true,
+    description:
+      "Updates both halves of the split to the chosen radial clearance. Optionally stores the same value as a design parameter in mm.",
+    args: {
+      feature_id: bodyId,
+      clearance: z.number().min(0).max(5).describe("Chosen radial clearance in mm."),
+      parameter: z
+        .string()
+        .min(1)
+        .max(40)
+        .optional()
+        .describe("Name of the length parameter the connector clearance will follow."),
+    },
+    apply(doc, args) {
+      const joint = splitWithConnector(doc, args.feature_id);
+      const connector = { ...joint.connector, clearance: args.clearance };
+      checkConnector(connector);
+      for (const part of splitPair(doc, joint.source_id)) dropExpressions(part, ["connector.clearance"]);
+      const changed = args.parameter
+        ? applyCommand(doc, "set_parameter", { name: args.parameter, value: args.clearance, unit: "mm" }).document
+        : doc;
+      for (const part of splitPair(changed, joint.source_id)) {
+        part.connector = { ...connector };
+        if (args.parameter) part.expressions = { ...part.expressions, "connector.clearance": args.parameter };
+      }
+      return {
+        document: changed,
+        created: [],
+        summary: `Applied ${fmt(args.clearance)} mm clearance ${args.parameter ? `as ${args.parameter}` : "to the joint"}`,
+      };
     },
   }),
 
@@ -1874,12 +2157,15 @@ export const STUDIO_COMMANDS = {
     destructive: true,
     args: {
       feature_id: featureId,
-      position: vec3.optional().describe("Where its origin goes, in mm, as [x, y, z]."),
-      rotation: vec3.optional().describe("Degrees about the world X, then Y, then Z axis."),
-      scale: z
-        .tuple([z.number().positive().max(1000), z.number().positive().max(1000), z.number().positive().max(1000)])
+      position: vectorChange(coordinate)
         .optional()
-        .describe("A factor along each axis, as [x, y, z]; [1, 1, 1] is its own size."),
+        .describe("Position in mm, as [x, y, z] or the axes to change, e.g. { x: 10 }."),
+      rotation: vectorChange(coordinate)
+        .optional()
+        .describe("Degrees about the world axes, as [x, y, z] or the axes to change."),
+      scale: vectorChange(z.number().positive().max(1000))
+        .optional()
+        .describe("Scale factors as [x, y, z] or the axes to change. A factor of 1 keeps the original size."),
     },
     apply(doc, args) {
       const body = findBody(doc, args.feature_id);
@@ -1887,9 +2173,9 @@ export const STUDIO_COMMANDS = {
         throw new CommandError("Give a position, a rotation or a scale to change.");
       const before = body.transform;
       body.transform = {
-        position: args.position ?? before.position,
-        rotation: args.rotation ?? before.rotation,
-        scale: args.scale ?? before.scale,
+        position: changedVector(before.position, args.position),
+        rotation: changedVector(before.rotation, args.rotation),
+        scale: changedVector(before.scale, args.scale),
       };
       // A number given by hand lets go of its formula; the axes left as they were keep theirs.
       dropExpressions(
@@ -2162,6 +2448,312 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  create_plate: command({
+    title: "Create a build plate",
+    description: "Creates an empty named build plate and returns its plate ID in created.",
+    args: { name: z.string().trim().min(1).max(80).describe("The name to show for the plate.") },
+    apply(doc, { name }) {
+      const id = addPlate(doc, name);
+      return { document: doc, created: [id], summary: `Created ${id} “${name}”` };
+    },
+  }),
+
+  set_print_setup: command({
+    title: "Set the Studio printer",
+    destructive: true,
+    description:
+      "Sets the printer, nozzle and centered bed used by print checks and plate arrangement. Null clears it.",
+    args: {
+      setup: z
+        .object({
+          printer: z.string().min(1).max(120),
+          nozzle: z.string().min(1).max(16),
+          bed: z.tuple([length("Bed width in mm"), length("Bed depth in mm"), length("Build height in mm")]),
+          outline: z
+            .discriminatedUnion("shape", [
+              z.object({ shape: z.literal("circle") }),
+              z.object({
+                shape: z.literal("polygon"),
+                points: z
+                  .array(vec2)
+                  .min(3)
+                  .max(256)
+                  .refine(isSimpleBedPolygon, "Give a simple bed outline with distinct corners and nonzero area."),
+              }),
+            ])
+            .optional(),
+          minWall: z.number().min(0).max(20),
+          overhang: z.number().min(0).max(90).optional(),
+        })
+        .strict()
+        .nullable()
+        .describe(
+          "Printer and nozzle with centered bed dimensions, optional outline and minimum wall thickness, or null to clear.",
+        ),
+    },
+    apply(doc, { setup }) {
+      if (setup) doc.print_setup = setup;
+      else delete doc.print_setup;
+      return {
+        document: doc,
+        summary: setup ? `Set up printing with ${setup.printer}` : "Cleared the printer setup",
+        created: [],
+      };
+    },
+  }),
+
+  set_print_profile: command({
+    title: "Set the design's print profile",
+    destructive: true,
+    description:
+      "Sets the design's print profile: the slicer settings it's meant to be printed with, one per design, written into " +
+      "its 3MF when it's exported, opened in a slicer or saved to the library, where it shows as a print profile on the " +
+      "model's page. `preset` starts from a built-in preset (studio_guide lists them: standard, fine, draft, strong, " +
+      "outdoor, water, toy, flexible, heat, vase, smooth) and replaces the settings with the preset's; `settings` then " +
+      "changes single settings by Bambu Studio's key names, null putting one back to the slicer's own preset. Without a " +
+      "preset, `settings` changes only those it names. Lengths are in mm, sparse_infill_density in percent (0-100), " +
+      "support_threshold_angle in degrees from the horizontal. `slicer` and `printer` say what it's for: the person's " +
+      "slicer (one of Thingport's slicer ids) and one of their printers by printer-catalogue id and nozzle in mm; " +
+      "leave them out to keep what's set. `material` is the filament it's meant for. When you choose a profile, give a " +
+      "one- or two-sentence `reason`, which the person sees. Fields left out stay as they are; null clears one. A null " +
+      "profile removes it.",
+    args: {
+      profile: z
+        .object({
+          preset: z
+            .enum(PRINT_PRESET_IDS)
+            .nullable()
+            .optional()
+            .describe("A preset to start from, replacing the settings; null marks the profile as built by hand."),
+          settings: z
+            .object(Object.fromEntries(PROFILE_SETTINGS.map((setting) => [setting.key, settingArg(setting)])))
+            .strict()
+            .optional()
+            .describe("Settings to change, by Bambu Studio's names; null puts one back to the slicer's own value."),
+          slicer: z
+            .enum(Object.keys(PROFILE_SLICERS) as [string, ...string[]])
+            .nullable()
+            .optional()
+            .describe("The slicer it's for."),
+          printer: z
+            .object({
+              id: z.string().trim().min(1).max(120).describe("The printer catalogue's id for the printer."),
+              nozzle: z
+                .string()
+                .regex(/^\d{1,2}(\.\d{1,3})?$/, "A nozzle size in mm, such as 0.4")
+                .describe("Its nozzle in mm, such as 0.4."),
+            })
+            .strict()
+            .nullable()
+            .optional()
+            .describe("The printer it's for."),
+          material: z.enum(STUDIO_FILAMENT_MATERIALS).nullable().optional().describe("The filament it's meant for."),
+          name: z.string().trim().min(1).max(80).nullable().optional().describe("Its name in the library."),
+          reason: z
+            .string()
+            .trim()
+            .min(1)
+            .max(600)
+            .nullable()
+            .optional()
+            .describe("Why these settings, for the person."),
+        })
+        .strict()
+        .nullable()
+        .describe("The changes to the print profile, or null to remove it."),
+    },
+    apply(doc, { profile: change }) {
+      if (!change) {
+        const had = Boolean(doc.print_profile);
+        delete doc.print_profile;
+        return {
+          document: doc,
+          summary: had ? "Removed the print profile" : "There was no print profile",
+          created: [],
+        };
+      }
+      const current = doc.print_profile;
+      const next: StudioPrintProfile = current
+        ? { ...current, settings: { ...current.settings } }
+        : { preset: null, settings: {} };
+      if (change.preset !== undefined) {
+        next.preset = change.preset;
+        const preset = printPreset(change.preset);
+        if (preset) {
+          next.settings = { ...preset.settings };
+          if (change.material === undefined) next.material = preset.materials[0];
+        }
+      }
+      for (const [key, value] of Object.entries(change.settings ?? {})) {
+        if (value === undefined) continue;
+        if (value === null) delete next.settings[key as keyof StudioPrintProfile["settings"]];
+        else next.settings[key as keyof StudioPrintProfile["settings"]] = value;
+      }
+      for (const field of ["slicer", "printer", "material", "name", "reason"] as const) {
+        const value = change[field];
+        if (value === null) delete next[field];
+        else if (value !== undefined) (next as Record<string, unknown>)[field] = value;
+      }
+      // The server records who it was when it isn't the person on the page.
+      next.by = "person";
+      doc.print_profile = next;
+      return { document: doc, summary: `Set the print profile: ${profileSummary(next)}`, created: [] };
+    },
+  }),
+
+  lock_plate_positions: command({
+    title: "Lock or unlock plate positions",
+    destructive: true,
+    description: "Keeps body positions fixed during automatic plate arrangement, or unlocks them.",
+    args: {
+      feature_ids: z.array(bodyId).min(1).max(LIMITS.features).describe("Top-level body IDs to lock or unlock."),
+      locked: z.boolean(),
+    },
+    apply(doc, { feature_ids, locked }) {
+      const ids = new Set((doc.locked_layout ?? []).filter((id) => featureById(doc, id)));
+      for (const id of feature_ids) {
+        freeBody(doc, id);
+        if (locked) ids.add(id);
+        else ids.delete(id);
+      }
+      if (ids.size) doc.locked_layout = [...ids];
+      else delete doc.locked_layout;
+      return {
+        document: doc,
+        summary: `${locked ? "Locked" : "Unlocked"} ${feature_ids.join(", ")} for arrangement`,
+        created: [],
+      };
+    },
+  }),
+
+  arrange_plate: command({
+    kind: "measure",
+    title: "Arrange a build plate",
+    destructive: true,
+    description:
+      "Packs visible bodies on a plate with the requested spacing and keeps locked positions. Can add plates for overflow. Uses the design's printer setup if present.",
+    args: {
+      plate_id: plateId,
+      spacing: z
+        .number()
+        .min(0)
+        .max(100)
+        .optional()
+        .describe("Spacing between bodies and from the edge in mm. Defaults to 3."),
+      overflow: z.boolean().optional().describe("Add plates for bodies that cannot share the first plate."),
+    },
+  }),
+
+  rename_plate: command({
+    title: "Rename a build plate",
+    destructive: true,
+    description: "Gives an existing build plate a new name.",
+    args: { plate_id: plateId, name: z.string().trim().min(1).max(80).describe("The plate’s new name.") },
+    apply(doc, { plate_id, name }) {
+      doc.plates = [...studioPlates(doc)];
+      const plate = findPlate(doc, plate_id);
+      plate.name = name;
+      delete plate.default_name;
+      return { document: doc, created: [], summary: `Named ${plate_id} “${name}”` };
+    },
+  }),
+
+  delete_plate: command({
+    title: "Delete an empty build plate",
+    description: "Deletes an empty build plate. Move its features first. Plate 1 always remains available.",
+    destructive: true,
+    args: { plate_id: plateId },
+    apply(doc, { plate_id }) {
+      if (plate_id === DEFAULT_PLATE_ID) throw new CommandError("The first plate cannot be deleted.");
+      if (findPlate(doc, plate_id).source)
+        throw new CommandError("Load this build plate first.", "studio_plate_pending");
+      if (doc.features.some((feature) => feature.plate_id === plate_id && !consumerOf(doc, feature.id)))
+        throw new CommandError("Move the features off this plate before deleting it.");
+      for (const feature of doc.features) {
+        if (feature.plate_id === plate_id) delete feature.plate_id;
+      }
+      doc.plates = studioPlates(doc).filter((plate) => plate.id !== plate_id);
+      return { document: doc, created: [], summary: `Deleted ${plate_id}` };
+    },
+  }),
+
+  move_to_plate: command({
+    title: "Move features to a build plate",
+    destructive: true,
+    description: "Moves one or more top-level bodies or sketches to a plate, preserving their positions and rotations.",
+    args: {
+      plate_id: plateId,
+      feature_ids: z.array(featureId).min(1).max(LIMITS.features).describe("Top-level body or sketch IDs to move."),
+    },
+    apply(doc, { plate_id, feature_ids }) {
+      const plate = findPlate(doc, plate_id);
+      for (const id of new Set(feature_ids)) {
+        assertFree(doc, id);
+        find(doc, id).plate_id = plate.id;
+      }
+      return { document: doc, created: [], summary: `Moved ${feature_ids.join(", ")} to ${plate.name}` };
+    },
+  }),
+
+  set_body_color: command({
+    title: "Set body colors",
+    destructive: true,
+    description:
+      "Sets the whole-body color of one or more top-level bodies. It is shown in Studio and exported to 3MF.",
+    args: {
+      feature_ids: z.array(bodyId).min(1).max(LIMITS.features).describe("Top-level body IDs to color."),
+      color: bodyColor.nullable().describe("A #RRGGBB color, or null to clear the color."),
+    },
+    apply(doc, { feature_ids, color }) {
+      for (const id of new Set(feature_ids)) {
+        const body = findBody(doc, id);
+        assertFree(doc, id);
+        if (color) body.color = color;
+        else delete body.color;
+      }
+      return {
+        document: doc,
+        created: [],
+        summary: `${color ? `Set color to ${color} on` : "Cleared color on"} ${feature_ids.join(", ")}`,
+      };
+    },
+  }),
+
+  set_filament_slots: command({
+    title: "Map body colors to slicer filament slots",
+    destructive: true,
+    description:
+      "Replaces the design's color to filament slot assignments for Bambu-compatible 3MF handoff. Use one slot per color. An empty list restores automatic assignment.",
+    args: {
+      slots: z
+        .array(
+          z
+            .object({
+              color: bodyColor,
+              slot: z.number().int().min(1).max(STUDIO_FILAMENT_SLOT_LIMIT),
+              material: z.enum(STUDIO_FILAMENT_MATERIALS),
+            })
+            .strict(),
+        )
+        .max(STUDIO_FILAMENT_SLOT_LIMIT)
+        .describe("Color, loaded slot number and material for each assignment."),
+    },
+    apply(doc, { slots }) {
+      if (
+        new Set(slots.map(({ color }) => color)).size !== slots.length ||
+        new Set(slots.map(({ slot }) => slot)).size !== slots.length
+      )
+        throw new CommandError("Each color and slot can appear once in the filament mapping.");
+      if (slots.length) doc.filament_slots = slots.toSorted((a, b) => a.slot - b.slot);
+      else delete doc.filament_slots;
+      return {
+        document: doc,
+        created: [],
+        summary: slots.length ? `Mapped ${slots.length} filament slots` : "Restored automatic filament assignment",
+      };
+    },
+  }),
+
   // --- The feature list ---
 
   rename_feature: command({
@@ -2256,6 +2848,9 @@ export const STUDIO_COMMANDS = {
       picture_id: z.string().regex(ASSET_ID).describe("The picture's id, as the prompt listed it."),
       width: length("How wide the traced outline is, in mm."),
       plane: plane.optional(),
+      plate_id: plateId
+        .optional()
+        .describe("Plate for a new sketch. If sketch_id is given, the sketch must already be on this plate."),
       face: faceArg
         .optional()
         .describe(
@@ -2295,13 +2890,12 @@ export const STUDIO_COMMANDS = {
   import_model: command({
     title: "Import a library model",
     description:
-      "Brings one of the user's library models into the design as a mesh body: an STL, 3MF, STEP, OBJ or GLB file. " +
-      "Find the model with search_models or list_models, and its files with list_model_files. It comes in at its own " +
-      "size in mm, centred and standing on the bed, before position and rotation apply. A closed mesh can be combined, " +
-      "rounded, drilled and hollowed like any body; one with gaps can only be moved, scaled and exported. It comes in " +
-      "as one body however many loose parts it has (a 3MF's plate, or an STL of several pieces): the reply says how " +
-      "many, and separate_parts makes each a body of its own. " +
-      `Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
+      "Brings in an STL, 3MF, STEP, OBJ or GLB from the library. Find the model with search_models and its files " +
+      "with list_model_files. STL, STEP, OBJ and GLB come in as one mesh, centered on the bed. A 3MF brings each " +
+      "printable object as its own body, retaining its name, layout and uniform color where given. The first plate " +
+      "imports into plate_id or the first Studio plate; additional populated plates are created. Each loose piece " +
+      "within a body can be split with separate_parts. A closed mesh can be combined, rounded, drilled and " +
+      `hollowed. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
     kind: "import",
     args: {
       model_id: z.string().min(1).describe("The library model's id."),
@@ -2310,8 +2904,18 @@ export const STUDIO_COMMANDS = {
         .min(1)
         .optional()
         .describe("Which of its 3D files, by its id from list_model_files. Default: its first one."),
+      defer_plates: z.boolean().optional().describe("On a new design, load each source 3MF plate on demand."),
       ...placement,
     },
+  }),
+
+  load_source_plate: command({
+    title: "Load an imported build plate",
+    description:
+      "Loads the original bodies of a source 3MF plate into their Studio build plate. Find plates marked pending_import " +
+      "in studio_get_design. Calling this again on a loaded plate has no effect.",
+    kind: "import",
+    args: { plate_id: plateId },
   }),
 
   rename_design: command({
@@ -2389,7 +2993,7 @@ export function parseCommandArgs(definition: AnyStudioCommand, args: unknown): R
 export function addMesh(
   doc: StudioDocument,
   mesh: Pick<MeshFeature, "asset_id" | "solid" | "triangles" | "size" | "parts" | "source">,
-  args: { position?: Vec3; rotation?: Vec3; name?: string },
+  args: { position?: Vec3; rotation?: Vec3; name?: string; plate_id?: string; color?: string },
 ): CommandOutcome {
   const next = structuredClone(doc);
   const id = nextId(next, "mesh");
@@ -2399,6 +3003,8 @@ export function addMesh(
     name: args.name ?? mesh.source.model_title.slice(0, 80),
     visible: true,
     transform: placed(args),
+    ...(args.plate_id ? { plate_id: args.plate_id } : {}),
+    ...(args.color ? { color: args.color } : {}),
     ...mesh,
   });
   return {
@@ -2431,10 +3037,12 @@ export function traceSettings(args: { threshold?: number | null; invert?: boolea
  *  moment. */
 export function traceTarget(
   doc: StudioDocument,
-  args: { sketch_id?: string; index?: number; plane?: string; face?: unknown },
+  args: { sketch_id?: string; index?: number; plane?: string; face?: unknown; plate_id?: string },
 ): void {
   if (args.sketch_id) {
     const sketch = findSketch(doc, args.sketch_id);
+    if (args.plate_id !== undefined && args.plate_id !== plateOf(sketch))
+      throw new CommandError(`${sketch.id} is on ${plateOf(sketch)}, so it cannot be traced on ${args.plate_id}.`);
     if (args.plane || args.face)
       throw new CommandError("Give a sketch_id, or a plane or face for a new sketch, not both.");
     if (args.index !== undefined && shapeAt(sketch, args.index).type !== "trace")
@@ -2442,6 +3050,7 @@ export function traceTarget(
     if (args.index === undefined && sketch.shapes.length >= LIMITS.shapesPerSketch)
       throw new CommandError(`A sketch holds up to ${LIMITS.shapesPerSketch} shapes.`);
   } else {
+    if (args.plate_id !== undefined) findPlate(doc, args.plate_id);
     if (args.index !== undefined) throw new CommandError("index goes with sketch_id.");
     if (Boolean(args.plane) === Boolean(args.face))
       throw new CommandError("Give a plane or a face to sketch on, one of them, or a sketch_id.");
@@ -2467,6 +3076,7 @@ export function addTrace(
     sketch_id?: string;
     index?: number;
     name?: string;
+    plate_id?: string;
   },
   traced: Traced,
 ): CommandOutcome {
@@ -2495,6 +3105,7 @@ export function addTrace(
       face: args.face,
       offset: args.offset,
       shapes: [traceShape],
+      plate_id: args.plate_id,
       name: args.name,
     }).created;
     into = created[0];
@@ -2520,6 +3131,111 @@ export function addTrace(
 /** A body's extent in the world, as the server or the page measures it for align and lay_flat. */
 export type Bounds = { min: Vec3; max: Vec3 };
 type AlignMode = "start" | "center" | "end" | "before" | "after";
+
+export function makeFitTest(source: StudioDocument, args: StudioCommandArgs<"make_fit_test">): CommandOutcome {
+  const doc = structuredClone(source);
+  const joint = splitWithConnector(doc, args.feature_id);
+  const clearances = [...new Set(args.clearances.map((value) => Number(value.toFixed(3))))];
+  const size = Math.max(14, joint.connector.diameter + 2 * Math.max(...clearances) + 8);
+  const step = size + 3;
+  const plate = addPlate(doc, args.name ?? "Fit test");
+  const count = clearances.length + 1;
+  const bed = doc.print_setup?.bed ?? DEFAULT_PRINT_BED;
+  const columns = Math.min(count, Math.max(1, Math.floor(bed[0] / step)));
+  const rows = Math.ceil(count / columns);
+  const created: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const clearance = i === 0 ? 0 : clearances[i - 1];
+    const label = `${fmt(clearance)}`;
+    const id = nextId(doc, "split");
+    addFeature(doc, {
+      id,
+      type: "split",
+      name: i === 0 ? "Fit test pin" : `Socket ${label} mm`,
+      visible: true,
+      transform: placed({
+        position: [((i % columns) - (columns - 1) / 2) * step, (Math.floor(i / columns) - (rows - 1) / 2) * step, 0],
+      }),
+      source_id: joint.source_id,
+      plate_id: plate,
+      plane: joint.plane,
+      connector_u: joint.connector_u,
+      tool_id: null,
+      keep: i === 0 ? "front" : "back",
+      connector: {
+        ...joint.connector,
+        offset: [
+          joint.connector.offset[0] - ((joint.connector.count - 1) / 2) * joint.connector.spacing,
+          joint.connector.offset[1],
+        ],
+        clearance,
+        count: 1,
+      },
+      fit_sample: { size, label: i === 0 ? "" : label },
+    });
+    created.push(id);
+  }
+  return { document: doc, created, summary: `Made ${count} fit samples on ${plate}` };
+}
+
+export function arrangeMeasures(doc: StudioDocument, args: { plate_id: string }): string[] {
+  if (findPlate(doc, args.plate_id).source)
+    throw new CommandError("Load this build plate first.", "studio_plate_pending");
+  const ids = topLevel(doc)
+    .filter((feature) => isBody(feature) && feature.visible && plateOf(feature) === args.plate_id)
+    .map((feature) => feature.id);
+  if (!ids.length) throw new CommandError("This plate has no visible bodies to arrange.", "studio_arrange_empty");
+  return ids;
+}
+
+export function previewArrangement(
+  doc: StudioDocument,
+  args: { plate_id: string; spacing?: number },
+  bounds: Record<string, Bounds>,
+) {
+  const locked = new Set(doc.locked_layout);
+  const bodies = arrangeMeasures(doc, args).map((id) => {
+    if (!bounds[id]) throw new CommandError(`Couldn't measure ${id} to arrange it.`);
+    return { id, bound: bounds[id], locked: locked.has(id) };
+  });
+  return arrangeFootprints(
+    bodies,
+    doc.print_setup?.bed ?? DEFAULT_PRINT_BED,
+    args.spacing ?? 3,
+    doc.print_setup?.outline,
+  );
+}
+
+export function arrangePlate(
+  doc: StudioDocument,
+  args: { plate_id: string; spacing?: number; overflow?: boolean },
+  bounds: Record<string, Bounds>,
+): CommandOutcome {
+  const { planes, overflow } = previewArrangement(doc, args, bounds);
+  if (overflow.length)
+    throw new CommandError(`Studio couldn't find a placement at this spacing for ${overflow.join(", ")}.`);
+  if (planes.length > 1 && !args.overflow)
+    throw new CommandError("Some bodies need another plate. Enable overflow plates or use less spacing.");
+  const result = structuredClone(doc);
+  const name = findPlate(result, args.plate_id).name;
+  const created: string[] = [];
+  for (const [index, placements] of planes.entries()) {
+    const id = index === 0 ? args.plate_id : addPlate(result, `${name.slice(0, 67)} · ${index + 1}`);
+    if (index > 0) created.push(id);
+    for (const place of placements) {
+      if (place.locked) continue;
+      const body = findBody(result, place.id);
+      body.plate_id = id;
+      body.transform.position = body.transform.position.map((position, axis) => position + place.shift[axis]) as Vec3;
+      dropExpressions(body, ["position.x", "position.y"]);
+    }
+  }
+  return {
+    document: result,
+    created,
+    summary: `Arranged ${name} across ${planes.length} ${planes.length === 1 ? "plate" : "plates"}`,
+  };
+}
 
 /** The bodies align measures, or why it can't: checked before they're measured. */
 export function alignMeasures(
