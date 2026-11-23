@@ -1,8 +1,9 @@
 # Tools
 
 A tool is a small app that opens in a window of its own from the **Tools** page: a planner, a generator, a calculator.
-It's a short JavaScript module with some HTML and CSS, like a [custom dashboard widget](custom-widgets.md), and it works
-with your library: it can browse and make collections, find models, read their files, and save the models it makes.
+Some also show on a model's page, or add actions to its menu. It's a short JavaScript module with some HTML and CSS,
+like a [custom dashboard widget](custom-widgets.md), and it works with your library: it can browse and make
+collections, find models, read their files, and save the models it makes.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/31_tools.png">
@@ -35,7 +36,7 @@ every device:
 
 ## The tools in the repository
 
-Twelve come with Thingport, for an admin to install:
+Thirteen come with Thingport, for an admin to install:
 
 | Tool                      | Shelf       | What it does                                                                                                                                                       |
 | ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -51,9 +52,47 @@ Twelve come with Thingport, for an admin to install:
 | Filament shelf            | Planners    | Everyone's filament spools on one shelf, and on each model's page the filaments it needs and who has them, matched by material and colour.                         |
 | Notes                     | Library     | Pin notes to a model's picture, as bubbles or sticky notes, for yourself or everyone. Open Notes to see and search the notes you've written.                       |
 | MakerWorld 3MF normalizer | Files       | Makes Bambu Studio and MakerWorld 3MFs open in other slicers with their colours, plates and print settings.                                                        |
+| 3D Printing Wiki          | Other       | 46 print problems taken to a fix, the slicer settings that matter with their names in four slicers, printer makers, and a quiz that earns a badge.                 |
 
 A model that came with its script doesn't need the Script customizer: **Customize…** on its own page opens its
-parameters whether the tool is installed or not.
+parameters whether the tool is installed or not. Every tool but the 3D Printing Wiki, which is in English, speaks all
+of Thingport's languages.
+
+### On a model's page
+
+An installed tool can show up beside your models, not only in its window:
+
+- **In the menu beside a model's Open button**, under **Tools**: Print queue's **Add to print queue**, or the Print
+  cost estimator's **Estimate print cost** for the file picked in the model's **Files** box.
+- **In a model grid's toolbar**, in edit mode: select models, then use a tool's button, such as **Print queue** to add
+  or remove them all at once.
+- **On the model's page itself**: Print queue's chips in the info box, Filament shelf's **Filaments** tab and the ring
+  on the picture, and Notes' sticky note in its corner.
+
+### Print queue
+
+A print queue the household shares. Add a model with **Add to print queue**, from its page or a grid selection, or with
+**Add model** on the board. The board has a column per status: drag a card from **Queued** to **Printing**, **Printed**
+or **Failed**, or put your queued cards in order. The model's page shows who has it queued, is printing it or printed it,
+on everyone's copy of it. **Shared with everyone** picks whom your prints reach. More in its
+[README](../../tools/print-queue/README.md).
+
+### Filament shelf
+
+Everyone's spools on one shelf, with their brand, colour, owner and how much is left, to filter by person, material,
+brand or colour. On a model's page, the **Filaments** tab lists the filaments its print profile or 3MF needs, with the
+spool each person has that matches by material and colour, and a ring on the model's picture fills as the household's
+spools cover it. **Edit** there changes a model's filaments for everyone, and **Reset to profile** goes back. More in
+its [README](../../tools/filament-shelf/README.md).
+
+### 3D Printing Wiki
+
+FDM printing in one window: troubleshooting for 46 problems, each with a check, its causes, the fixes in order and a
+way to confirm it worked; a guide to the slicer settings worth changing first, with each one's name in Bambu Studio,
+OrcaSlicer, PrusaSlicer and Cura; drying times for filaments; printer makers' histories; and a glossary, all
+searchable. Its quiz draws 30 questions from 144: **Practice** explains each answer as you go, and passing the
+**Exam** earns the **FDM Fundamentals** badge when [achievements](../features/profile-and-activity.md#achievements) are
+on. More in its [README](../../tools/3d-printing-wiki/README.md).
 
 ### Notes
 
@@ -63,7 +102,7 @@ Select it for its menu:
 - **Add note** puts a new note in the middle of the picture, ready to type in. Drag it by its grip to where it
   belongs, or move it with the arrow keys from the grip, and choose in the toolbar under it whether it shows as a
   **bubble** or a **sticky note**, a sticky's colour, and who sees it: **Only me**, or **Everyone** who can use Notes
-  on this Thingport instance. Who sees a note can't be changed once it's saved.
+  on this Thingport instance. You can change who sees it later with **Edit**.
 - **Open Notes** opens the Notes window.
 - **Show notes** hides every note on the pictures, or shows them again.
 
@@ -84,7 +123,7 @@ to open it; its **⋮** menu, or a right-click, also deletes the note.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/30_admin_tools.png">
-  <img src="../../frontend/src/assets/screenshots/light/30_admin_tools.png" alt="Administration, Tools page: who sees tools, users' own tools switched off, and the nine repository tools installed, each marked Latest" width="100%">
+  <img src="../../frontend/src/assets/screenshots/light/30_admin_tools.png" alt="Administration, Tools page: who sees tools, users' own tools switched on, and the thirteen repository tools installed, Filament shelf and Notes paused" width="100%">
 </picture>
 
 - **Who sees tools**: admins only, everyone, or admins and the users you pick; a new Thingport starts on everyone. Only
@@ -99,22 +138,9 @@ to open it; its **⋮** menu, or a right-click, also deletes the note.
   its **Update all** takes them one after another. Right-click an installed tool to **Open** it, **Fetch missing
   models** when some haven't come in, or **Uninstall** it.
 
-<!-- coderabbit-ai-generated:v1 -->
-
-<!-- coderabbit-ai-generated-section:v1:367b8bd27f1de72a23cd173ae7dc80ab5a343c916382c26774e57bc401be6ad3 -->
-
-<!-- coderabbit-ai-generated:v1 -->
-
-<!-- coderabbit-ai-generated-section:v1:de070da617eb8f94630643c703223eb5c1f774d650131d921c0177b7fd1b13b1 -->
-
-- **Enable or disable a tool**: choose **Disable** from its right-click menu or at the bottom of its details. Its icon
-  stays coloured with a pause badge. Disabled tools stay installed, with their saved data and imported models intact.
-  Choose **Enable** from the menu, or from the banner in its details, to make one available again.
-
-<!-- /coderabbit-ai-generated:v1 -->
-
-<!-- /coderabbit-ai-generated:v1 -->
-
+- **Switch a tool off for a while**: **Disable** in its right-click menu or at the bottom of its details hides it from
+  everyone, and its icon gets a pause badge. It stays installed, with its saved data and models. **Enable**, in the menu
+  or on the banner in its details, brings it back.
 - **Users' own tools**: the tools users made, and whose they are.
 
 ### Tools that bring models

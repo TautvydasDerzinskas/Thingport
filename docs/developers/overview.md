@@ -8,27 +8,27 @@ theme, their language, and a few libraries too big to ship in a script.
 These pages are for writing them. How people install and use them is in the guides to
 [custom widgets](../guides/custom-widgets.md) and [tools](../guides/tools.md).
 
-| Page                                          | What's in it                                                                  |
-| --------------------------------------------- | ----------------------------------------------------------------------------- |
-| [Your first widget](first-widget.md)          | A panel of the newest models in the library, from nothing to on the dashboard |
-| [Your first tool](first-tool.md)              | A tray generator that saves STLs into the library, from nothing to on Tools   |
-| [SDK reference](sdk-reference.md)             | Every member of `thingport`, for widgets and tools, generated from the SDK    |
-| [Recipes](recipes.md)                         | Complete examples: Thingport's API, a printer on the LAN, editing, OpenSCAD   |
-| [Build with an AI assistant](ai-assistant.md) | Describing a widget or a tool to Claude or another assistant, which saves it  |
-| [Publishing](publishing.md)                   | Sharing one with every Thingport instance through the repository              |
+| Page                                          | What's in it                                                                                              |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [Your first widget](first-widget.md)          | A panel of the newest models in the library, from nothing to on the dashboard                             |
+| [Your first tool](first-tool.md)              | A tray generator that saves STLs into the library, from nothing to on Tools                               |
+| [SDK reference](sdk-reference.md)             | Every member of `thingport`, for widgets and tools, generated from the SDK                                |
+| [Recipes](recipes.md)                         | Complete examples: Thingport's API, a printer on the LAN, editing, OpenSCAD, and a tool on the model page |
+| [Build with an AI assistant](ai-assistant.md) | Describing a widget or a tool to Claude or another assistant, which saves it                              |
+| [Publishing](publishing.md)                   | Sharing one with every Thingport instance through the repository                                          |
 
 ## Widget or tool?
 
-|                       | Widget                                                  | Tool                                                       |
-| --------------------- | ------------------------------------------------------- | ---------------------------------------------------------- |
-| Lives in              | A panel on the dashboard, beside the built-in ones      | A window of its own, opened from **Tools**                 |
-| Good for              | Something to glance at: a count, a status, a short list | Something to work in: a generator, a planner, a calculator |
-| Size                  | Grid cells, set in its metadata; the user resizes it    | Pixels, set in its metadata; the user can maximise it      |
-| Options               | Settings in the panel's cog, declared in its metadata   | Its own controls, and `storage` to keep them               |
-| Several at once       | Yes: each panel has its own settings                    | No: one tool window is open at a time                      |
-| Keeps data            | Only its settings                                       | Up to 20 MB of JSON per user in `storage`                  |
-| Asks "save where?"    | No: it saves into a collection its settings name        | Yes: `collections.pick()`                                  |
-| Brings its own models | No                                                      | Only a tool in the repository                              |
+|                       | Widget                                                  | Tool                                                                                               |
+| --------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Lives in              | A panel on the dashboard, beside the built-in ones      | A window of its own, opened from **Tools**, and if it likes a model's menu and page too            |
+| Good for              | Something to glance at: a count, a status, a short list | Something to work in: a generator, a planner, a calculator                                         |
+| Size                  | Grid cells, set in its metadata; the user resizes it    | Pixels, set in its metadata; the user can maximise it                                              |
+| Options               | Settings in the panel's cog, declared in its metadata   | Its own controls, and `storage` to keep them                                                       |
+| Several at once       | Yes: each panel has its own settings                    | No: one tool window is open at a time                                                              |
+| Keeps data            | Only its settings                                       | Up to 20 MB of JSON per user in `storage`, and entries its users share with each other in `shared` |
+| Asks "save where?"    | No: it saves into a collection its settings name        | Yes: `collections.pick()`                                                                          |
+| Brings its own models | No                                                      | Only a tool in the repository                                                                      |
 
 If it should be on screen whenever the dashboard is, it's a widget. If someone opens it to make or change something,
 it's a tool.
@@ -61,6 +61,14 @@ when the theme or the language does. So a script reads `thingport.settings`, `th
 rather than watching them. If the default export throws, or its promise rejects, the panel or window shows the error
 in place of the script.
 
+A tool's script can export more than its window. Its metadata's `commands` put actions in the **Tools** menu beside a
+model's Open button and in a model grid's toolbar: each opens the window, with `thingport.context` saying what it was
+picked on, or, with `"window": false`, runs the script's `run` export without one. Its `modelPage` gives it parts of
+every model's page, drawn by the `modelInfo`, `modelTab` and `modelImage` exports: the info box, a tab of the
+description box, and the corner of the picture.
+[Tool development](../TOOL_DEVELOPMENT.md#commands-on-model-pages-and-grids) has the details, and
+[Printed it](recipes.md#printed-it) is a tool with a command and a part.
+
 There's no build step and nothing to install: the script is the file. It can `import()` a module from a CDN, but the
 libraries Thingport carries (`thingport.library()`: Three.js, opentype.js, Manifold, fonts, OpenSCAD) are better:
 your Thingport instance serves them, so they work without the internet, and every widget and tool shares one copy.
@@ -85,6 +93,9 @@ What the SDK gives it, and the rules a reviewer holds it to:
   metadata address, and gives up after 15 seconds. Installing a community widget shows those hosts, and a
   shared widget's or tool's README says why it needs each. `hosts` limits what `thingport.fetch` reaches; it isn't a sandbox.
 - **Data of its own**, for a tool: `storage` keeps JSON for each user, up to 1 MB a value and 20 MB a tool.
+- **Data its users share**, for a tool: `shared` keeps entries every user of the tool reads, such as a household's
+  print queue. Each is its writer's to change, can be tied to a model so its copies find it, and reaches everyone who
+  uses the tool unless its writer keeps theirs to the people they pick. Nothing private belongs in one.
 
 The limits the server checks when one is saved: a script of up to 500,000 characters, HTML up to 200,000, labels up to
 128 KB a language and 1 MB in all, and for a widget up to 20 settings.

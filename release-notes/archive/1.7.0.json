@@ -1,0 +1,219 @@
+{
+  "version": "1.7.0",
+  "title": "Open any 3MF file as if tailored for you",
+  "summary": "Thingport 1.7.0 opens any 3MF as if it had been made for your slicer and your printer, wherever it comes from, and the Thingport Grab extension downloads those copies straight from the model's page. There's more: free up gigabytes on the Administration → Storage page, import from QIDI Maker and VoxelShare, move in from another instance, earn achievements, and use Thingport in Simplified Chinese.",
+  "contributors": ["CandidB", "maxbrueckl", "nevergone", "SeoliteQ", "slewantoski", "truri83", "WEBzaytsev"],
+  "items": [
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Made for your slicer and printer",
+      "description": "Whatever slicer you use and whatever printer you own, a 3MF from any site now opens as your own: colours, parts, plates and the designer's settings intact, laid out on your printer's bed. Tell Thingport what you print with: pick your slicers and add your printers in the Configuration dialog. It suggests printers from your library, and can even find them in your printer makers' accounts. Then click Open adapted on any model page.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-printers.webp",
+          "caption": "Add your printers in the Configuration dialog, or take the ones Thingport suggests"
+        },
+        {
+          "src": "screenshots/1.7.0-open-adapted.webp",
+          "caption": "Open adapted on the model page, made for your printer"
+        },
+        {
+          "src": "screenshots/1.7.0-which-printer.webp",
+          "caption": "Thingport asks once which printer a slicer's copies are for"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/adapted-3mf.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Download adapted, straight from the model's page",
+      "description": "The Thingport Grab browser extension puts a Download adapted button right beside the download button on nine model sites, MakerWorld and Printables among them. One click, and the 3MF is already made for your slicer and printer. It works even without a Thingport instance connected to the extension: just pick your slicer and printers in its popup.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-grab-download-adapted.webp",
+          "caption": "Download adapted, right beside MakerWorld's own button"
+        },
+        {
+          "src": "screenshots/1.7.0-grab-adapt-settings.webp",
+          "caption": "Pick your slicer and printers in the extension's popup"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md#download-adapted-no-thingport-needed"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Free up gigabytes in a few clicks",
+      "description": "The Administration → Storage page now shows what really fills your disk, and its Free up space button clears what nothing needs: old 3D previews, leftover slicer copies and, if you like, extra photos. New 3D previews take a fifth of the space they used to.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-storage.webp",
+          "caption": "The Administration → Storage page: what fills your disk"
+        },
+        {
+          "src": "screenshots/1.7.0-free-up-space.webp",
+          "caption": "Free up space: pick what goes"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/storage.md#disk-space"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "QIDI Maker and VoxelShare: 23 sites to import from",
+      "description": "Two printer makers' model communities join in, QIDI Maker and VoxelShare, with their print profiles, collections and likes. Their slicers come along too: QIDI Studio and Flash Studio open what you import.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-providers.webp",
+          "caption": "The newest sites on the Administration → Providers page"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/PROVIDER_SETUP.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Move in from another instance",
+      "description": "The new Administration → Migrate page brings another Thingport instance's people and libraries over, online or from a backup of any release since 1.0.0, and never brings anything twice. It can bring a Manyfold library in too.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-migrate.webp",
+          "caption": "The new Administration → Migrate page"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/migrate.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Achievements: badges for what you do",
+      "description": "Earn badges, from bronze to holographic, for importing, downloading, designing in Studio, syncing collections, and a few secrets. They show on your My models page and on the Explore page. An admin turns them on in the Administration → Social page.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-achievements.webp",
+          "caption": "Badges on the My models page"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/profile-and-activity.md#achievements"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "简体中文, and two China sites",
+      "description": "Thingport and the Thingport Grab extension now speak Simplified Chinese, and the China sites of Snapmaker Space and VoxelShare import too.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-languages.webp",
+          "caption": "Simplified Chinese in the language list"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/appearance.md"
+    },
+    {
+      "type": "feature",
+      "title": "One collection, several sources",
+      "description": "A synced collection can now follow lists on several sites at once: a MakerWorld collection and a Printables one, say.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/synced-collections.md"
+    },
+    {
+      "type": "feature",
+      "title": "Files keep their folders",
+      "description": "When a designer sorts a model's files into folders, the folders come along, on the model page and in downloads.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/importing.md#what-comes-with-a-model"
+    },
+    {
+      "type": "feature",
+      "title": "Thingport Grab in your language",
+      "description": "The Thingport Grab extension now speaks every language Thingport does.",
+      "images": [
+        {
+          "src": "screenshots/1.7.0-grab-languages.webp",
+          "caption": "The extension's language, picked in its popup"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md"
+    },
+    {
+      "type": "feature",
+      "title": "Puzzles solved, imports carried on",
+      "description": "When MakerWorld or MakerOnline wants a puzzle solved, the Thingport Grab extension shows it right there and carries on once it's solved.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md#what-counts-as-importable"
+    },
+    {
+      "type": "feature",
+      "title": "eufyMake's print profiles",
+      "description": "eufyMake's print files now import as print profiles, as on the other sites that have them.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/eufymake.md"
+    },
+    {
+      "type": "feature",
+      "title": "Invite links without email",
+      "description": "No email server? The Invite users button on the Administration → Auth page now gives you a link to send yourself.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/multi-user.md"
+    },
+    {
+      "type": "feature",
+      "title": "Thingport Bridge updates",
+      "description": "The Thingport Bridge desktop helper now tells you when a new version is out, and updating it on macOS finally works.",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/bridge/README.md#update"
+    },
+    {
+      "type": "improvement",
+      "title": "Love Thingport? The What's new dialog, the Administration → Overview page and the Thingport Grab popup now show ways to support it"
+    },
+    {
+      "type": "improvement",
+      "title": "After a tool saves a model, an Open button takes you straight to it"
+    },
+    {
+      "type": "improvement",
+      "title": "The model page shows when a model was imported, and fits its category and size on one row"
+    },
+    {
+      "type": "improvement",
+      "title": "Free MyMiniFactory models with archived files import without signing in"
+    },
+    {
+      "type": "improvement",
+      "title": "Russian, Ukrainian and Belarusian translations are complete"
+    },
+    {
+      "type": "fix",
+      "title": "Rotated parts face the right way in 3D previews and model pictures"
+    },
+    {
+      "type": "fix",
+      "title": "Importing several MakerWorld print profiles with the Thingport Grab extension no longer stalls or downloads ones you have"
+    },
+    {
+      "type": "fix",
+      "title": "Pairing the Thingport Grab extension survives the browser's permission prompt"
+    },
+    {
+      "type": "fix",
+      "title": "Some Bambu Studio projects no longer show an empty plate in the 3D preview"
+    },
+    {
+      "type": "fix",
+      "title": "A deleted Snapmaker Space model now says it's gone instead of failing"
+    },
+    {
+      "type": "fix",
+      "title": "More NexPrint models import, with their print profiles"
+    },
+    {
+      "type": "fix",
+      "title": "The Social entry of the Administration menu keeps its icon when an ad blocker is on"
+    },
+    {
+      "type": "fix",
+      "title": "Links and email addresses in plain-text model descriptions are no longer dropped"
+    },
+    {
+      "type": "fix",
+      "title": "The model page's info panel no longer gets stuck out of reach on short screens"
+    }
+  ]
+}

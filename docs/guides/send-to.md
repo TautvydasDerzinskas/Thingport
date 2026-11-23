@@ -4,6 +4,11 @@ Send a model's file from its page straight to your printer, a webhook or any add
 PrusaLink, Home Assistant, n8n, Node-RED, or a link or request of your own. Set them up under **Configuration → Send
 to**, from the user menu. Each person has their own.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/59_configuration_send_to.png">
+  <img src="../../frontend/src/assets/screenshots/light/59_configuration_send_to.png" alt="Configuration, Send to: an OctoPrint, a Klipper printer and two webhooks, each a button on the model's page or in its menu" width="100%">
+</picture>
+
 Each destination shows either as **its own button** under the model's Open button, or **in the menu** beside it, under
 **Send to**. It sends the file picked in the model's **Files** box, and it's offered only for the file types you give
 it: a printer starts with `gcode`, so it doesn't turn up on a 3MF.

@@ -215,14 +215,14 @@ aren't covered). It signs in, captures every shot in the light and the dark them
 and overwrites the files in `light/` and `dark/`. The account's theme, Categories/Folders choice and print profiles
 layout are switched for the shots and restored afterwards, as are social features, which are on for the run so the
 sidebar has Explore and Chats. A shot that can't be taken is reported without stopping the run. The import queue's rows,
-Explore and who a collection is shared with are made up and answered in the browser, so nothing changes on the
-instance.
+Explore, who a collection is shared with, a model's supporting files and the Send to places are made up and answered in
+the browser (the last two from `regression/shot-stubs.mjs`), so nothing changes on the instance.
 
 ```bash
 cd regression
 THINGPORT_PASSWORD='…' npm run screenshots -- --url https://thingport.example --email you@example.com \
   --model <id> --quality-model <id> --ai-description-model <id> --profiles-model <id> --license-model <id> \
-  --shared-collection <id>
+  --shared-collection <id> --studio-plates-design <id>
 npm run screenshots -- --url … --email … --only 03,04     # just some shots
 ```
 
@@ -232,6 +232,9 @@ take the library's first model with a script and first synced collection, unless
 `--synced-collection` names another. The print profiles and licence shots need a model whose profiles and licence were
 read, which happens the first time its owner opens it, and the sharing shot a collection to open the form on. The Open
 adapted shot (56) uses the print profiles model too, with the account's slicers and printers answered in the browser.
+The supporting files shots (57, 58) and the model menu (62) use the details model, whose README, parts list and
+assembly guide are made up for MakerWorld's Cute Wobbly Penguin; 60 and 61 need a Studio design opened from a 3MF, its
+parts in colour on its plates and a print profile set.
 
 The connected-instances shots, 43-49, need two instances paired with each other, which a library instance usually
 isn't, so they're taken from a demo pair: one at home connecting to one on the internet through a link. Take 43-45 and
@@ -248,14 +251,15 @@ are accepted.
 
 The What's new pictures are a different set: cropped to the thing each one is about, WebP, and named after the
 release. `regression/release-shots.mjs` captures them from a running instance into `release-notes/screenshots/`,
-the same way, and skips the shots the instance has nothing for (no model with print profiles, no partner instance)
-rather than failing the run. It holds the current release's shots; earlier ones are in its git history.
+the same way, and skips the shots the instance has nothing for (no Studio design, no model to show) rather than
+failing the run. A tool's pictures are its own screenshots, converted. It holds the current release's shots; earlier
+ones are in its git history.
 
 ```bash
 cd regression
 THINGPORT_PASSWORD='…' npm run release-shots -- --url https://thingport.example --email you@example.com \
-  --profiles-model <id>
-npm run release-shots -- --url … --email … --only storage,providers   # just some shots
+  --model <id> --studio-design <id>
+npm run release-shots -- --url … --email … --only send-to,model-menu   # just some shots
 ```
 
 A shot's file is what an item's `images` then names, so the two are written together -- an item naming a picture

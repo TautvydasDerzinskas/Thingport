@@ -53,7 +53,8 @@ bookmarked. What's kept is the sites you hid, so models from a site new to your 
   page, and neither they nor the collection can be changed or deleted.
 - **Bookmark** the collections and tags you use most to pin them to the sidebar, and drag them into order.
 
-Collections sort by newest, name or most models, and tags by popularity, newest or name.
+Collections sort by newest, name or most models, and tags by popularity, newest or name. Click the chosen sort again
+to flip it, as on model lists.
 
 ## Work on several at once
 
@@ -90,8 +91,10 @@ both, and the dialog says how many were skipped.
 ## Search
 
 The search bar at the top (<kbd>⌘</kbd>/<kbd>Ctrl</kbd> + <kbd>S</kbd>) searches model names, tags, notes and
-authors, plus collections and tags, as you type. Model lists can be sorted by relevance, newest, popularity or
-downloads.
+authors, plus collections and tags, as you type. Model lists can be sorted by relevance, newest, popularity,
+downloads or name. Name goes by the title on the card, with numbers in order: Cable 2 comes before Cable 10. Click the
+chosen sort again to flip it, and its label says which way the list runs: **Newest** becomes **Oldest**, **Name**
+becomes **Name (Z–A)**.
 
 Type <kbd>!</kbd> for commands, such as switching theme or language, opening Configuration, or opening a
 [tool](../guides/tools.md) with `!tool`. Paste a model link and it offers to import it.

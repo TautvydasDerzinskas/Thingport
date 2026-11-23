@@ -19,6 +19,11 @@ their tabs or from the panels button at the right of the status bar, beside the 
 
 ### Plates, colors, and export
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/60_studio_plates.png">
+  <img src="../../frontend/src/assets/screenshots/light/60_studio_plates.png" alt="Studio with a 3MF opened in it: a penguin's parts in their colours on one plate, its connectors on another" width="100%">
+</picture>
+
 The **Objects / Plates** panel lists each plate with its objects nested underneath. Click a plate name to show it in
 the viewport. In Edit mode, use **Add plate** in the panel header or the actions menu on a plate to rename it or
 delete it when empty. Expand an object to see the features it was built from. For multi-plate designs, the panel
@@ -208,6 +213,11 @@ design as its description. If the design has no print profile yet, the dialog as
 model's page. An assistant can save it too when you ask.
 
 ### Print profile
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/61_studio_print_profile.png">
+  <img src="../../frontend/src/assets/screenshots/light/61_studio_print_profile.png" alt="Studio's Print tab: the Toy preset for Bambu Studio and a Bambu Lab P1S, with its settings by section" width="100%">
+</picture>
 
 The **Print** tab beside **Properties** (while editing) sets the design's print profile. **Choose a preset** offers
 Standard, Fine detail, Quick draft, Strong, Outdoor, Water contact, Toy, Flexible, Heat-resistant, Vase and Smooth top,

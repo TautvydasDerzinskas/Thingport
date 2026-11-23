@@ -11,6 +11,7 @@ assistant and ask it to save it.
 | [OctoPrint progress](#octoprint-progress)                      | Widget | A service on the local network through `fetch`, a secret setting, timers |
 | [Tag helper](#tag-helper)                                      | Tool   | Reading the whole library, changing models, confirming, `storage`        |
 | [Box with a lid, from OpenSCAD](#box-with-a-lid-from-openscad) | Tool   | `library("openscad")`: a form built from a script, a cancellable render  |
+| [Printed it](#printed-it)                                      | Tool   | `commands`, `shared` entries about a model, a part of the model's page   |
 
 ## Library at a glance
 
@@ -838,3 +839,296 @@ export default async function mount(thingport) {
   `writeThreeMf()` and `layoutRow()` put several meshes into one 3MF, each named, for a planner making many parts.
 - The same customizer comments drive Thingport's own **Customize** on a model that came with its script; this tool
   uses one of its own instead, but `models.relatedFiles()` and `models.relatedText()` reach a model's.
+
+## Printed it
+
+A tool the household shares: anyone marks a model as printed, and every model's page says who has printed it, on that
+copy or any other of the same model.
+
+- **Two commands**, both `"window": false`: **Mark as printed** under **Tools** in the menu beside a model's Open
+  button (`"on": "model"`), and the same in a model grid's toolbar in edit mode, for the models selected
+  (`"on": "selection"`). Thingport calls the script's `run` export with the command's id, and `context` says which
+  models. Give a selection command a `symbol` for its toolbar button, as in
+  [Tool development](../TOOL_DEVELOPMENT.md#commands-on-model-pages-and-grids).
+- **A shared entry per model**, `shared.set(key, value, { model })`. Each user's entry is their own, so two people
+  marking one model make two entries under the same key. Tying it to the model lets `shared.list({ model })` find it
+  from the model's copies too.
+- **A part of the model's page**: `"modelPage": { "info": true }` and the `modelInfo` export draw a chip in the info box,
+  and `ui.popover()` opens beside it with who and when. `shared.onChange()` redraws it the moment a command or the
+  window marks the model, and the cleanup it returns stops listening.
+- **The window** lists the user's own entries (`mine`), adds more through Thingport's model picker, `ui.pickModels()`,
+  and lets the user choose whom theirs reach with `shared.share()`.
+
+The editor's **Details** have no fields for `commands` and `modelPage`, so hand this one to an
+[AI assistant](ai-assistant.md) to save: `save_tool` takes the whole metadata, and the editor keeps both from then on.
+
+<!-- sdk:example printed-it/tool.js -->
+
+[`printed-it/tool.js`](examples/printed-it/tool.js)
+
+```js
+// @ts-check
+
+// One shared entry per model a user has printed, keyed by the model's id and tied to it, so that the model's copies
+// find it too: the same original, or imported from the same page.
+const PREFIX = "printed:";
+
+/**
+ * Marks models as printed by the user. The name goes with each, so the window can list them without asking for each.
+ *
+ * @param {import("../thingport").ToolSdk} thingport
+ * @param {{ id: string; name: string }[]} models
+ */
+async function mark(thingport, models) {
+  const at = new Date().toISOString();
+  for (const { id, name } of models) await thingport.shared.set(`${PREFIX}${id}`, { name, at }, { model: id });
+}
+
+/**
+ * Both commands: "Mark as printed" under Tools on a model's page, and in a grid's toolbar for the models selected.
+ * They have `"window": false` in the metadata, so Thingport calls this instead of opening the window.
+ *
+ * @param {string} command
+ * @param {import("../thingport").ToolSdk} thingport
+ */
+export async function run(command, thingport) {
+  const { context, models, ui, t } = thingport;
+  const ids = command === "mark-selection" ? (context.modelIds ?? []) : context.modelId ? [context.modelId] : [];
+  const picked = await Promise.all(ids.map((id) => models.get(id)));
+  await mark(thingport, picked);
+  ui.toast(t("marked", { count: picked.length }), "success", { openWindow: t("open") });
+}
+
+/**
+ * The part of every model's page, in its info box: a chip saying how many people have printed it, on this copy or
+ * another, and a popover saying who and when. It draws nothing while nobody has, so it takes no room.
+ *
+ * @param {import("../thingport").ToolSdk} thingport
+ */
+export function modelInfo(thingport) {
+  const { root, context, shared, ui, t, language } = thingport;
+  const modelId = context.modelId;
+  if (!modelId) return;
+  const dates = new Intl.DateTimeFormat(language, { dateStyle: "medium" });
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.style.cssText =
+    "padding: 2px 10px; border: 1px solid var(--tp-divider); border-radius: 999px; background: var(--tp-paper);" +
+    "color: var(--tp-text); font: 12px var(--tp-font); cursor: pointer";
+  /** @type {import("../thingport").SdkSharedEntry[]} */
+  let entries = [];
+
+  chip.addEventListener("click", () =>
+    ui.popover(chip, (box) => {
+      box.style.cssText = "padding: 12px; font: 13px var(--tp-font); color: var(--tp-text)";
+      box.replaceChildren(
+        ...entries.map((entry) => {
+          const line = document.createElement("div");
+          const who = entry.mine ? t("you") : (entry.user?.name ?? t("someone"));
+          const at = new Date(entry.value?.at);
+          line.textContent = Number.isNaN(at.getTime()) ? who : `${who} · ${dates.format(at)}`;
+          return line;
+        }),
+      );
+    }),
+  );
+
+  const draw = async () => {
+    entries = await shared.list({ prefix: PREFIX, model: modelId });
+    chip.textContent = t("chip", { count: entries.length });
+    root.replaceChildren(...(entries.length ? [chip] : []));
+  };
+  // A command or the window marking the model on this page redraws the chip at once.
+  const stop = shared.onChange(() => void draw());
+  void draw();
+  return stop;
+}
+
+/**
+ * The window: what the user has marked, to open or unmark, more to add, and whom theirs reach.
+ *
+ * @param {import("../thingport").ToolSdk} thingport
+ */
+export default async function mount(thingport) {
+  const { root, shared, ui, t, labels } = thingport;
+  labels();
+  const audience = root.querySelector("button.audience");
+  const status = root.querySelector(".status");
+  const list = root.querySelector("ul");
+
+  async function showAudience() {
+    const { everyone, people } = await shared.audience();
+    audience.textContent = everyone ? t("everyone") : t("people", { count: people.length });
+  }
+
+  async function showList() {
+    const mine = (await shared.list({ prefix: PREFIX })).filter((entry) => entry.mine);
+    status.textContent = mine.length ? "" : t("none");
+    list.replaceChildren(
+      ...mine.map((entry) => {
+        const open = document.createElement("button");
+        open.type = "button";
+        open.className = "name";
+        open.textContent = entry.value?.name ?? entry.key;
+        open.addEventListener("click", () => ui.openModel(entry.key.slice(PREFIX.length)));
+        const unmark = document.createElement("button");
+        unmark.type = "button";
+        unmark.textContent = t("unmark");
+        unmark.addEventListener("click", () => void shared.remove(entry.key));
+        const item = document.createElement("li");
+        item.append(open, unmark);
+        return item;
+      }),
+    );
+  }
+
+  // `share()` is Thingport's own dialog for whom the user's entries reach, and null when they close it.
+  audience.addEventListener("click", async () => {
+    if (await shared.share()) await showAudience();
+  });
+  root.querySelector("button.add").addEventListener("click", async () => {
+    const picked = await ui.pickModels({ title: t("add"), confirmLabel: t("addConfirm") });
+    if (picked.length) await mark(thingport, picked);
+  });
+
+  const stop = shared.onChange(() => void showList());
+  await Promise.all([showAudience(), showList()]);
+  return stop;
+}
+```
+
+<!-- /sdk:example -->
+
+<!-- sdk:example printed-it/tool.html -->
+
+[`printed-it/tool.html`](examples/printed-it/tool.html)
+
+```html
+<style>
+  .printed {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 12px;
+    height: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+    font-family: var(--tp-font);
+    color: var(--tp-text);
+  }
+  .printed header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .printed h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 16px;
+  }
+  .printed button {
+    padding: 6px 10px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 8px;
+    background: var(--tp-paper);
+    color: var(--tp-text);
+    font: inherit;
+    cursor: pointer;
+  }
+  .printed button.add {
+    border-color: transparent;
+    background: var(--tp-accent);
+    color: var(--tp-accent-ink);
+  }
+  .printed .status {
+    margin: 0;
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+  .printed ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: auto;
+  }
+  .printed li {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--tp-divider);
+  }
+  .printed li .name {
+    flex: 1;
+    border: 0;
+    padding: 0;
+    text-align: start;
+    background: none;
+  }
+</style>
+<div class="printed">
+  <header>
+    <h2 data-t="title">What you've printed</h2>
+    <button class="audience" type="button" data-t="everyone">Everyone sees yours</button>
+    <button class="add" type="button" data-t="add">Add models</button>
+  </header>
+  <p class="status"></p>
+  <ul></ul>
+</div>
+```
+
+<!-- /sdk:example -->
+
+<!-- sdk:example printed-it/locales/en.json -->
+
+[`printed-it/locales/en.json`](examples/printed-it/locales/en.json)
+
+```json
+{
+  "commands.mark": "Mark as printed",
+  "commands.mark-selection": "Mark as printed",
+  "marked": "Marked {count} as printed",
+  "open": "Open Printed it",
+  "title": "What you've printed",
+  "add": "Add models",
+  "addConfirm": "Mark",
+  "none": "Nothing marked yet. Mark a model from the Tools menu on its page, or add some here.",
+  "unmark": "Not printed",
+  "everyone": "Everyone sees yours",
+  "people": "{count} people see yours",
+  "chip": "Printed by {count}",
+  "you": "You",
+  "someone": "Someone"
+}
+```
+
+<!-- /sdk:example -->
+
+<!-- sdk:example printed-it/tool.json -->
+
+[`printed-it/tool.json`](examples/printed-it/tool.json)
+
+```json
+{
+  "name": "Printed it",
+  "description": "Marks the models you've printed, and shows on each model's page who in the household has printed it.",
+  "version": "1.0.0",
+  "window": { "width": 460, "height": 520 },
+  "hosts": [],
+  "category": "library",
+  "locales": ["en"],
+  "commands": [
+    { "id": "mark", "title": "Mark as printed", "on": "model", "window": false },
+    { "id": "mark-selection", "title": "Mark as printed", "on": "selection", "window": false }
+  ],
+  "modelPage": { "info": true }
+}
+```
+
+<!-- /sdk:example -->
+
+- A model's page shows the entries of everyone whose entries reach the reader, so the chip counts only the people who
+  share with them.
+- Nothing private goes into a shared value: the model's name and a date. A thumbnail's address, for one, carries its
+  writer's session.
+- A model a user marks again keeps one entry, with the new date: `set` replaces their entry under the key.
