@@ -5,7 +5,6 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
-import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import GridOnOutlinedIcon from "@mui/icons-material/GridOnOutlined";
 import StraightenOutlinedIcon from "@mui/icons-material/StraightenOutlined";
 import type { StudioSettings } from "../../api/studio";
@@ -17,13 +16,9 @@ import { PanelHeader, SectionLabel } from "../../components/Layout/Configuration
 import { NumberField } from "./fields";
 import { STUDIO_UNITS, type StudioUnit } from "./units";
 
-// Studio's own settings, kept in Studio: where Ask AI shows; units, as CAD keeps them, the open design's own and the ones
-// a new design starts in; and the grid, adaptive or fixed, and whether points snap to it.
-
-type Section = "assistant" | "units" | "grid";
+type Section = "units" | "grid";
 
 const SECTIONS: { id: Section; icon: React.ReactNode }[] = [
-  { id: "assistant", icon: <AutoAwesomeOutlinedIcon fontSize="small" /> },
   { id: "units", icon: <StraightenOutlinedIcon fontSize="small" /> },
   { id: "grid", icon: <GridOnOutlinedIcon fontSize="small" /> },
 ];
@@ -42,7 +37,7 @@ type Props = {
 
 export default function StudioSettingsDialog({ open, onClose, settings, onChange, designUnits, onDesignUnits }: Props) {
   const { t } = useTranslation("app");
-  const [section, setSection] = useState<Section>("assistant");
+  const [section, setSection] = useState<Section>("units");
   const [failed, setFailed] = useState<Section | null>(null);
   const save = (changes: StudioSettingsChange, from: Section) => {
     setFailed(null);
@@ -65,25 +60,6 @@ export default function StudioSettingsDialog({ open, onClose, settings, onChange
       section={section}
       onSectionChange={setSection}
     >
-      {section === "assistant" && (
-        <>
-          <PanelHeader title={t("studio.settings.sections.assistant")} subtitle={t("studio.settings.assistantIntro")} />
-          <SectionLabel>
-            {t("studio.settings.layout")}
-            <HelpTip text={t("studio.settings.layoutHelp")} />
-          </SectionLabel>
-          <Segmented
-            label={t("studio.settings.layout")}
-            value={settings.prompt_layout}
-            onChange={(layout) => save({ prompt_layout: layout }, "assistant")}
-            options={[
-              { value: "bar", label: t("studio.settings.layouts.bar") },
-              { value: "panel", label: t("studio.settings.layouts.panel") },
-            ]}
-          />
-          {failure("assistant")}
-        </>
-      )}
       {section === "grid" && (
         <>
           <PanelHeader title={t("studio.settings.sections.grid")} subtitle={t("studio.settings.grid.intro")} />

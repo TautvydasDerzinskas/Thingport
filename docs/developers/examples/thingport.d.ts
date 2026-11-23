@@ -859,6 +859,18 @@ export interface SdkShared {
    */
   set(key: string, value: unknown, options?: { model?: string }): Promise<void>;
   /**
+   * Replaces one of the user's existing entries if its value still matches. Changing its key or store moves it
+   * atomically, with the destination store's normal limits. An occupied destination is left alone. Available for saved tools.
+   *
+   * @param previous The entry the user read, including its original JSON value.
+   * @param next Where to keep the new value. A shared entry can name a model the user can open.
+   * @returns Whether the replacement was made. If the source is gone, has changed, or the move's destination is occupied, returns `false`.
+   */
+  replace?(
+    previous: { key: string; store: "storage" | "shared"; value: unknown },
+    next: { key: string; store: "storage" | "shared"; value: unknown; model?: string },
+  ): Promise<boolean>;
+  /**
    * Removes one of the user's entries.
    *
    * @param key The key.

@@ -1114,7 +1114,7 @@ const VALUE_MAX_BYTES = 1024 * 1024;
 const TOOL_DATA_MAX_BYTES = 20 * 1024 * 1024;
 const TOOL_DATA_MAX_KEYS = 2000;
 
-function assertKey(key: string): void {
+export function assertToolDataKey(key: string): void {
   if (!STORAGE_KEY.test(key))
     throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores, and not . or ..");
 }
@@ -1135,7 +1135,7 @@ export async function getToolData(
   toolId: string,
   key: string,
 ): Promise<{ found: boolean; value?: unknown }> {
-  assertKey(key);
+  assertToolDataKey(key);
   const tool = await usableTool(user, toolId);
   const row = await prisma.toolData.findUnique({
     where: { toolId_userId_key: { toolId: tool.id, userId: user.id, key } },
@@ -1144,23 +1144,43 @@ export async function getToolData(
 }
 
 export async function setToolData(user: ToolUser, toolId: string, key: string, value: unknown): Promise<void> {
-  assertKey(key);
-  if (value === undefined) throw new HttpError(400, "There's no value to keep");
+  assertToolDataKey(key);
   const tool = await usableTool(user, toolId);
+  const where = { toolId: tool.id, userId: user.id };
+  await prisma.$transaction(
+    async (tx) => {
+      await lockToolStorage(tx, where);
+      await writeToolData(tx, where, key, value);
+    },
+    { isolationLevel: "ReadCommitted" },
+  );
+}
+
+export async function lockToolStorage(tx: Prisma.TransactionClient, where: { toolId: string; userId: string }) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('tool-storage'), hashtext(${`${where.toolId}:${where.userId}`}))`;
+}
+
+/** Writes under the caller's storage lock, including the destination of a transfer. */
+export async function writeToolData(
+  tx: Prisma.TransactionClient,
+  where: { toolId: string; userId: string },
+  key: string,
+  value: unknown,
+): Promise<void> {
+  if (value === undefined) throw new HttpError(400, "There's no value to keep");
   const size = Buffer.byteLength(JSON.stringify(value));
   if (size > VALUE_MAX_BYTES) throw new HttpError(413, "A value is at most 1 MB as JSON");
-  const where = { toolId: tool.id, userId: user.id };
   const [used, keys, current] = await Promise.all([
-    prisma.toolData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } }),
-    prisma.toolData.count({ where: { ...where, key: { not: key } } }),
-    prisma.toolData.findUnique({ where: { toolId_userId_key: { ...where, key } }, select: { id: true } }),
+    tx.toolData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } }),
+    tx.toolData.count({ where: { ...where, key: { not: key } } }),
+    tx.toolData.findUnique({ where: { toolId_userId_key: { ...where, key } }, select: { id: true } }),
   ]);
   if ((used._sum.size ?? 0) + size > TOOL_DATA_MAX_BYTES)
     throw new HttpError(413, "This tool keeps 20 MB at most for you; delete something first");
   if (!current && keys >= TOOL_DATA_MAX_KEYS)
     throw new HttpError(413, `This tool keeps ${TOOL_DATA_MAX_KEYS} keys at most`);
   const json = value as Prisma.InputJsonValue;
-  await prisma.toolData.upsert({
+  await tx.toolData.upsert({
     where: { toolId_userId_key: { ...where, key } },
     create: { ...where, key, value: json, size },
     update: { value: json, size },
@@ -1168,9 +1188,13 @@ export async function setToolData(user: ToolUser, toolId: string, key: string, v
 }
 
 export async function deleteToolData(user: ToolUser, toolId: string, key: string): Promise<void> {
-  assertKey(key);
+  assertToolDataKey(key);
   const tool = await usableTool(user, toolId);
-  await prisma.toolData.deleteMany({ where: { toolId: tool.id, userId: user.id, key } });
+  const where = { toolId: tool.id, userId: user.id };
+  await prisma.$transaction(async (tx) => {
+    await lockToolStorage(tx, where);
+    await tx.toolData.deleteMany({ where: { ...where, key } });
+  });
 }
 
 // --- Reaching declared hosts ----------------------------------------------------------------------------------------

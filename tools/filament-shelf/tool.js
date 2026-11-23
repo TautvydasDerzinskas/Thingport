@@ -918,7 +918,7 @@ const TAB_CSS = `
 .fs-together > span { flex: 1; min-width: 180px; }
 .fs-actions { display: flex; justify-content: flex-end; gap: 8px; animation: fs-in 180ms ease-out; }
 .fs-blank { display: flex; align-items: center; gap: 10px; padding: 10px 2px; color: var(--tp-text-muted); font-size: 12.5px; }
-.fs-blank > span { flex: 1; }
+.fs-blank-text { flex: 1; }
 .fs-skel-row { display: grid; grid-template-columns: 18px 1fr 110px 110px; gap: 10px; align-items: center; padding: 8px 10px; }
 .fs-skel-row .fs-skel { height: 12px; }
 .fs-skel-row .fs-skel:first-child { height: 18px; border-radius: 50% !important; }
@@ -1128,7 +1128,7 @@ export function modelTab(thingport) {
     const match = matchAll(needs, data.spools, data.everyone);
     let body;
     if (!needs.length && !draft)
-      body = `<div class="fs-blank">${swatch(null, "fs-l")}<span>${escapeHtml(t(data.edit ? "empty.noneSet" : "empty.noFilaments"))}</span><button type="button" class="fs-btn fs-outline fs-small" data-act="start">${icon("add")}${escapeHtml(t("edit.add"))}</button></div>`;
+      body = `<div class="fs-blank">${swatch(null, "fs-l")}<span class="fs-blank-text">${escapeHtml(t(data.edit ? "empty.noneSet" : "empty.noFilaments"))}</span><button type="button" class="fs-btn fs-outline fs-small" data-act="start">${icon("add")}${escapeHtml(t("edit.add"))}</button></div>`;
     else
       body =
         grid(needs, match) +

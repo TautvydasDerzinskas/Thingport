@@ -4,13 +4,21 @@
 // everyone else's copies of the model, recognised by their first original or the page they were imported from.
 
 import { Prisma } from "@prisma/client";
+import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import type { UserCardOut } from "../dto";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { readablePrintWhere, userCards } from "./socialService";
 import { matchingSharedPreviews } from "./toolSharedPreviews";
-import { STORAGE_KEY, toolUsers, usableTool, type ToolUser } from "./toolsService";
+import {
+  assertToolDataKey,
+  lockToolStorage,
+  toolUsers,
+  usableTool,
+  writeToolData,
+  type ToolUser,
+} from "./toolsService";
 
 const SHARED_VALUE_MAX_BYTES = 256 * 1024;
 const SHARED_MAX_BYTES = 5 * 1024 * 1024;
@@ -24,6 +32,16 @@ export const sharedSetSchema = z.object({
   value: z.unknown(),
   /** The model it's about: one the writer can read. */
   model: z.string().min(1).max(100).nullable().optional(),
+});
+
+const entrySchema = z.object({
+  key: z.string(),
+  store: z.enum(["storage", "shared"]),
+  value: z.unknown(),
+});
+export const replaceEntrySchema = z.object({
+  previous: entrySchema,
+  next: entrySchema.extend({ model: sharedSetSchema.shape.model }),
 });
 
 export const audienceSchema = z.object({
@@ -60,11 +78,6 @@ async function readableModel(user: ToolUser, printId: string): Promise<ModelKeys
   });
   if (!print) throw new HttpError(404, "No such model");
   return { id: print.id, ...modelKeysOf(print) };
-}
-
-function assertKey(key: string): void {
-  if (!STORAGE_KEY.test(key))
-    throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores, and not . or ..");
 }
 
 /**
@@ -164,45 +177,97 @@ export async function setSharedData(
   key: string,
   input: z.infer<typeof sharedSetSchema>,
 ): Promise<void> {
-  assertKey(key);
+  assertToolDataKey(key);
   if (input.value === undefined) throw new HttpError(400, "There's no value to keep");
   const tool = await usableTool(user, toolId);
-  const size = Buffer.byteLength(JSON.stringify(input.value));
-  if (size > SHARED_VALUE_MAX_BYTES) throw new HttpError(413, "A shared value is at most 256 KB as JSON");
   const model = input.model ? await readableModel(user, input.model) : null;
   const where = { toolId: tool.id, userId: user.id };
+  await prisma.$transaction(async (tx) => {
+    await lockSharedStorage(tx, where);
+    await writeSharedData(tx, where, key, input.value, model);
+  }, COUNTED_AFTER_LOCK);
+}
+
+async function lockSharedStorage(tx: Prisma.TransactionClient, where: { toolId: string; userId: string }) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('tool-shared'), hashtext(${`${where.toolId}:${where.userId}`}))`;
+}
+
+async function writeSharedData(
+  tx: Prisma.TransactionClient,
+  where: { toolId: string; userId: string },
+  key: string,
+  value: unknown,
+  model: (ModelKeys & { id: string }) | null,
+) {
+  const size = Buffer.byteLength(JSON.stringify(value));
+  if (size > SHARED_VALUE_MAX_BYTES) throw new HttpError(413, "A shared value is at most 256 KB as JSON");
   const data = {
-    value: input.value as Prisma.InputJsonValue,
+    value: value as Prisma.InputJsonValue,
     size,
     printId: model?.id ?? null,
     originKey: model?.originKey ?? null,
     sourceKey: model?.sourceKey ?? null,
   };
-  await prisma.$transaction(async (tx) => {
-    // One write at a time per writer in a tool, so two at once can't both take the room that's left.
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('tool-shared'), hashtext(${`${tool.id}:${user.id}`}))`;
-    const used = await tx.toolSharedData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } });
-    const count = await tx.toolSharedData.count({ where: { ...where, key: { not: key } } });
-    const current = await tx.toolSharedData.findUnique({
-      where: { toolId_userId_key: { ...where, key } },
-      select: { id: true },
-    });
-    if ((used._sum.size ?? 0) + size > SHARED_MAX_BYTES)
-      throw new HttpError(413, "This tool shares 5 MB at most for you; delete something first");
-    if (!current && count >= SHARED_MAX_KEYS)
-      throw new HttpError(413, `This tool shares ${SHARED_MAX_KEYS} entries at most for you`);
-    await tx.toolSharedData.upsert({
-      where: { toolId_userId_key: { ...where, key } },
-      create: { ...where, key, ...data },
-      update: data,
-    });
+  const used = await tx.toolSharedData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } });
+  const count = await tx.toolSharedData.count({ where: { ...where, key: { not: key } } });
+  const current = await tx.toolSharedData.findUnique({
+    where: { toolId_userId_key: { ...where, key } },
+    select: { id: true },
+  });
+  if ((used._sum.size ?? 0) + size > SHARED_MAX_BYTES)
+    throw new HttpError(413, "This tool shares 5 MB at most for you; delete something first");
+  if (!current && count >= SHARED_MAX_KEYS)
+    throw new HttpError(413, `This tool shares ${SHARED_MAX_KEYS} entries at most for you`);
+  await tx.toolSharedData.upsert({
+    where: { toolId_userId_key: { ...where, key } },
+    create: { ...where, key, ...data },
+    update: data,
+  });
+}
+
+/** Replaces an entry only if it still matches the caller's read. A move writes and removes in one transaction. */
+export async function replaceToolEntry(
+  user: ToolUser,
+  toolId: string,
+  { previous, next }: z.infer<typeof replaceEntrySchema>,
+): Promise<boolean> {
+  assertToolDataKey(previous.key);
+  assertToolDataKey(next.key);
+  if (previous.value === undefined || next.value === undefined) throw new HttpError(400, "Both values are required");
+  const tool = await usableTool(user, toolId);
+  const model = next.store === "shared" && next.model ? await readableModel(user, next.model) : null;
+  const where = { toolId: tool.id, userId: user.id };
+  return prisma.$transaction(async (tx) => {
+    // Take the locks in the same order for moves in either direction.
+    if (previous.store === "storage" || next.store === "storage") await lockToolStorage(tx, where);
+    if (previous.store === "shared" || next.store === "shared") await lockSharedStorage(tx, where);
+    const read = (entry: typeof previous) => {
+      const query = { where: { toolId_userId_key: { ...where, key: entry.key } }, select: { value: true } } as const;
+      return entry.store === "storage" ? tx.toolData.findUnique(query) : tx.toolSharedData.findUnique(query);
+    };
+    const current = await read(previous);
+    if (!current || !isDeepStrictEqual(current.value, previous.value)) return false;
+    const moving = previous.store !== next.store || previous.key !== next.key;
+    if (moving) {
+      if (await read(next)) return false;
+      const source = { ...where, key: previous.key };
+      if (previous.store === "storage") await tx.toolData.deleteMany({ where: source });
+      else await tx.toolSharedData.deleteMany({ where: source });
+    }
+    if (next.store === "storage") await writeToolData(tx, where, next.key, next.value);
+    else await writeSharedData(tx, where, next.key, next.value, model);
+    return true;
   }, COUNTED_AFTER_LOCK);
 }
 
 export async function deleteSharedData(user: ToolUser, toolId: string, key: string): Promise<void> {
-  assertKey(key);
+  assertToolDataKey(key);
   const tool = await usableTool(user, toolId);
-  await prisma.toolSharedData.deleteMany({ where: { toolId: tool.id, userId: user.id, key } });
+  const where = { toolId: tool.id, userId: user.id };
+  await prisma.$transaction(async (tx) => {
+    await lockSharedStorage(tx, where);
+    await tx.toolSharedData.deleteMany({ where: { ...where, key } });
+  });
 }
 
 export type AudienceOut = { everyone: boolean; people: UserCardOut[] };

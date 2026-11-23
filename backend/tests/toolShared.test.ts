@@ -98,6 +98,56 @@ afterAll(async () => {
 });
 
 describe("shared entries", () => {
+  it("moves an owned entry between personal and shared storage, including its edited value and model", async () => {
+    writeRepo();
+    toolId = await install();
+    const model = await upload(dad, "shared-entry.stl");
+    const route = `/api/tools/${toolId}`;
+    const personal = { key: "note:personal", store: "storage", value: { text: "Private" } };
+    const published = { key: "note:public", store: "shared", value: { text: "Public" } };
+    const replace = (person: Person, previous: object, next: object) =>
+      request(app).post(`${route}/replace-entry`).set(auth(person.token)).send({ previous, next });
+    const put = await request(app).put(`${route}/storage/${personal.key}`).set(auth(dad.token)).send(personal);
+    expect(put.status).toBe(204);
+    expect((await replace(son, personal, published)).status).toBe(409);
+    expect(await list(son)).toEqual([]);
+
+    expect((await replace(dad, personal, { ...published, model })).status).toBe(204);
+    const before = await request(app).get(`${route}/storage/${personal.key}`).set(auth(dad.token));
+    expect(before.body).toEqual({ found: false });
+    expect(await list(dad, `?model=${model}`)).toMatchObject([{ key: published.key, value: published.value }]);
+    expect(await list(son)).toMatchObject([{ key: published.key, value: published.value }]);
+    expect((await replace(son, published, personal)).status).toBe(409);
+
+    expect((await replace(dad, published, personal)).status).toBe(204);
+    expect(await list(son)).toEqual([]);
+    const after = await request(app).get(`${route}/storage/${personal.key}`).set(auth(dad.token));
+    expect(after.body).toEqual({ found: true, value: personal.value });
+    expect((await replace(dad, published, { ...published, value: { text: "Stale write" } })).status).toBe(409);
+    expect(await list(son)).toEqual([]);
+  });
+
+  it("leaves the source intact when the destination write fails and allows only one concurrent move", async () => {
+    writeRepo();
+    toolId = await install();
+    const route = `/api/tools/${toolId}`;
+    const previous = { key: "note:original", store: "storage", value: { text: "Private" } };
+    const next = { key: "note:public", store: "shared", value: { text: "Public" } };
+    const replace = (destination: object) =>
+      request(app).post(`${route}/replace-entry`).set(auth(dad.token)).send({ previous, next: destination });
+    const put = await request(app).put(`${route}/storage/${previous.key}`).set(auth(dad.token)).send(previous);
+    expect(put.status).toBe(204);
+
+    expect((await replace({ ...next, value: "a".repeat(256 * 1024) })).status).toBe(413);
+    const stored = await request(app).get(`${route}/storage/${previous.key}`).set(auth(dad.token));
+    expect(stored.body).toEqual({ found: true, value: previous.value });
+    expect(await list(son)).toEqual([]);
+
+    const results = await Promise.all([replace(next), replace({ ...next, key: "note:other" })]);
+    expect(results.map((response) => response.status).toSorted()).toEqual([204, 409]);
+    expect(await list(son)).toHaveLength(1);
+  });
+
   it("are read by everyone who uses the tool, and changed only by whoever wrote them", async () => {
     writeRepo();
     toolId = await install();

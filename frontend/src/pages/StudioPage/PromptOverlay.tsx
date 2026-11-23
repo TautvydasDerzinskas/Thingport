@@ -26,7 +26,6 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import StopRoundedIcon from "@mui/icons-material/StopRounded";
 import TuneIcon from "@mui/icons-material/Tune";
-import type { StudioPromptLayout } from "../../api/studio";
 import { studioApi, type StudioPicture } from "../../api/studio";
 import { newLocalId } from "../../utils/localId";
 import HelpTip from "../../components/HelpTip";
@@ -40,7 +39,7 @@ import type { StudioAssistant } from "./useStudioAssistant";
 // follows its run here, and keeps the conversation with the design.
 //
 // The bar stays small so the model can be watched as it changes: while the AI works, one line says the step it's on,
-// and then its answer; the conversation opens only when asked for, or, in the side panel layout, shows beside the view.
+// and then its answer. In View mode, the conversation shows beside the view.
 
 // What the model list's admin items are, as a Select only knows values.
 const ADD_MODEL = "__add_model";
@@ -58,7 +57,7 @@ const rise = keyframes`from { opacity: 0; transform: translate(-50%, 10px) scale
 type Props = {
   assistant: StudioAssistant;
   isAdmin: boolean;
-  layout: StudioPromptLayout;
+  editing: boolean;
   /** How much of the bottom of the view the bar covers, in px: the view keeps the model above it. */
   onInset: (px: number) => void;
 };
@@ -142,15 +141,14 @@ function Status({ assistant, onOpen }: { assistant: StudioAssistant; onOpen: () 
   );
 }
 
-export default function PromptOverlay({ assistant, isAdmin, layout, onInset }: Props) {
+export default function PromptOverlay({ assistant, isAdmin, editing, onInset }: Props) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
   const [text, setText] = useState("");
   // The conversation, opened from the bar; it folds away again as a new run starts, so the model can be watched.
   const [expanded, setExpanded] = useState(false);
   const { offered, models, modelId, messages, running, sending, minimized } = assistant;
-  const panel = layout === "panel";
-  const open = expanded && !panel;
+  const open = expanded && editing;
   const vision = Boolean(models?.find((each) => each.id === modelId)?.vision);
 
   // Pictures, for an AI that sees them: picked, pasted or dropped, kept with the design as soon as they're added.
@@ -366,7 +364,7 @@ export default function PromptOverlay({ assistant, isAdmin, layout, onInset }: P
             )}
           </Select>
         )}
-        {!panel && messages.length > 0 && (
+        {editing && messages.length > 0 && (
           <Tooltip title={open ? t("studio.prompt.hideConversation") : t("studio.prompt.showConversation")}>
             <IconButton
               size="small"
@@ -398,7 +396,7 @@ export default function PromptOverlay({ assistant, isAdmin, layout, onInset }: P
           <AssistantConversation assistant={assistant} maxHeight="min(40vh, 320px)" />
         </Box>
       ) : (
-        !panel && <Status assistant={assistant} onOpen={() => setExpanded(true)} />
+        editing && <Status assistant={assistant} onOpen={() => setExpanded(true)} />
       )}
 
       {off || noModels ? (

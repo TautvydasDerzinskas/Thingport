@@ -250,8 +250,8 @@ that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> start
   your request while it works. **Stop** ends the run after the step it's on, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>
   takes its steps back one at a time.
 - What's selected in the view goes along with your request, so "round the top edges of this" knows what "this" is.
-- Each design keeps its own conversation, so "make it taller" follows on from "make a box". Clear it from the box's
-  header; the design stays as it is.
+- Each design keeps its own conversation, so "make it taller" follows on from "make a box". The conversation header has
+  a **Clear conversation** button.
 - **Pictures**: with an AI that sees pictures (an admin says which, in [AI](ai.md#seeing-pictures)), the box takes up
   to four: the picture button, paste, or drop them on it. A photo or a drawing with sizes on it is something to build
   from; a logo or a silhouette the AI traces into an outline exactly, as **Trace picture** does. The pictures stay
@@ -260,7 +260,5 @@ that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> start
   can't use tools. An admin can give a small local model the compact tool set, which covers shapes, text, tracing,
   moving, combining and holes.
 
-The box stays small so you can watch the design change: while the AI works, one line says the step it's on, and then
-its answer; the conversation opens from the box's header. The view keeps the design above the box. If you'd rather
-read the conversation as it goes, pick **Side panel** under **Ask AI** in **Studio settings** (the gear at the right
-of the status bar, while editing): it then shows beside the view, and the box keeps only the prompt.
+In View mode, the conversation appears beside the viewport and the prompt stays below the design. In Edit mode, the
+compact bar shows the current step or last answer. Open the full conversation from the bar's header.
