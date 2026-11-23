@@ -15,6 +15,8 @@
 //   --synced-collection     SCREENSHOT_SYNCED_COLLECTION     a synced collection; default the first one
 //   --ai-description-model  SCREENSHOT_AI_DESCRIPTION_MODEL  a model whose description AI rewrote; skipped without one
 //   --studio-design         SCREENSHOT_STUDIO_DESIGN         a Studio design Ask AI built; default the one edited last
+//   --studio-plates-design  SCREENSHOT_STUDIO_PLATES_DESIGN  a Studio design opened from a 3MF, its parts in colour on
+//                                                            plates and a print profile set (60, 61)
 //   --profiles-model        SCREENSHOT_PROFILES_MODEL        a model with print profiles and a licence, both read already
 //   --license-model         SCREENSHOT_LICENSE_MODEL         a model whose licence was read, default --profiles-model
 //   --connect-to            SCREENSHOT_CONNECT_TO            an instance's address for the Connect dialog (48), looked up only
@@ -32,7 +34,8 @@
 // Administration -> Social shows them on. Nothing is changed in the library: the merge and download dialogs are only
 // opened, and System Health's full test only checks connections. Email addresses on the page are blurred. The import
 // queue's rows are made up and answered in the browser, so nothing is queued on the instance, and so are Explore (the
-// library's own models, shown as shared by made-up people) and who the sharing form's collection is shared with.
+// library's own models, shown as shared by made-up people), who the sharing form's collection is shared with, the
+// model's supporting files (57, 58) and the Send to places (59), from shot-stubs.mjs.
 //
 // The connected-instances shots (43-49) need a partner instance, and are skipped without one: 43-45 and 48 are taken
 // on the instance that connects from home, as its admin, 46, 47 and 49 on the one it connects to. 48 looks up
@@ -47,6 +50,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { chromium } from "@playwright/test";
+import { stubSendTargets, stubSupportingFiles } from "./shot-stubs.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const { values: args } = parseArgs({
@@ -60,6 +64,7 @@ const { values: args } = parseArgs({
     "synced-collection": { type: "string" },
     "ai-description-model": { type: "string" },
     "studio-design": { type: "string" },
+    "studio-plates-design": { type: "string" },
     "profiles-model": { type: "string" },
     "license-model": { type: "string" },
     "shared-collection": { type: "string" },
@@ -88,6 +93,7 @@ const optionalIds = {
   syncedCollection: args["synced-collection"] || process.env.SCREENSHOT_SYNCED_COLLECTION,
   aiDescriptionModel: args["ai-description-model"] || process.env.SCREENSHOT_AI_DESCRIPTION_MODEL,
   studioDesign: args["studio-design"] || process.env.SCREENSHOT_STUDIO_DESIGN,
+  studioPlatesDesign: args["studio-plates-design"] || process.env.SCREENSHOT_STUDIO_PLATES_DESIGN,
   profilesModel: args["profiles-model"] || process.env.SCREENSHOT_PROFILES_MODEL,
   sharedCollection: args["shared-collection"] || process.env.SCREENSHOT_SHARED_COLLECTION,
 };
@@ -347,6 +353,17 @@ async function confirmedPublicUrl(page) {
     const reachability = { ...json.reachability, kind: "public", reason: null, detail: null };
     await route.fulfill({ response, json: { ...json, reachability, confirmedBy: Math.max(1, json.confirmedBy ?? 0) } });
   });
+}
+
+/** A Studio design opened from a 3MF, its bodies built in a worker once it arrives, and the camera on its plate. */
+async function openStudioPlates(page, design) {
+  await open(page, `/studio?design=${encodeURIComponent(design)}`);
+  await page.getByRole("button", { name: "Edit design" }).waitFor({ timeout: 60000 });
+  await page.locator("canvas").first().waitFor();
+  await page.waitForTimeout(10000);
+  const home = page.getByRole("button", { name: "Home view" });
+  if (await home.isVisible().catch(() => false)) await home.click();
+  await page.waitForTimeout(1500);
 }
 
 const SHOTS = [
@@ -828,6 +845,70 @@ const SHOTS = [
       await ctx.api("PATCH", "/settings/print-profiles-view", { view: "picker" });
       await open(page, `/models/${ctx.profilesModel}`);
       await page.getByRole("group", { name: "Open or download the adapted copy" }).waitFor({ timeout: 20000 });
+    },
+  },
+  {
+    name: "57_model_supporting_files",
+    needs: "model",
+    run: async (page) => {
+      await stubSupportingFiles(page, modelId);
+      await open(page, `/models/${modelId}`);
+      const tab = page.getByRole("tab", { name: /Supporting files/ });
+      await tab.click();
+      await page.getByText("Assembly guide.pdf").waitFor();
+      // The tab and its files, with the pictures' strip still above them. The page scrolls in a box of its own, so
+      // that's what moves.
+      await tab.evaluate((el) => {
+        let box = el.parentElement;
+        while (box && !(box.scrollHeight > box.clientHeight && /auto|scroll/.test(getComputedStyle(box).overflowY))) {
+          box = box.parentElement;
+        }
+        (box ?? document.scrollingElement).scrollTop += el.getBoundingClientRect().top - 300;
+      });
+      // It floats over the corner of a page scrolled down.
+      await page.addStyleTag({ content: '[aria-label="Back to top"] { visibility: hidden !important; }' });
+      await settle(page);
+    },
+  },
+  {
+    name: "58_supporting_file_viewer",
+    needs: "model",
+    run: async (page) => {
+      await stubSupportingFiles(page, modelId);
+      await open(page, `/models/${modelId}?file=shotreadme`);
+      await page.getByRole("dialog").getByText("What you need").waitFor({ timeout: 20000 });
+    },
+  },
+  {
+    name: "59_configuration_send_to",
+    run: async (page) => {
+      await stubSendTargets(page);
+      await open(page, "/?configuration=sendTo");
+      await page.getByRole("dialog", { name: "Configuration" }).getByText("Workshop OctoPrint").waitFor();
+    },
+  },
+  {
+    name: "60_studio_plates",
+    optional: "studioPlatesDesign",
+    run: (page, ctx) => openStudioPlates(page, ctx.studioPlatesDesign),
+  },
+  {
+    name: "61_studio_print_profile",
+    optional: "studioPlatesDesign",
+    run: async (page, ctx) => {
+      await openStudioPlates(page, ctx.studioPlatesDesign);
+      await page.getByRole("button", { name: "Edit design" }).click();
+      await page.getByRole("tab", { name: "Print" }).click();
+      await page.getByRole("button", { name: "Suggest with AI" }).waitFor();
+    },
+  },
+  {
+    name: "62_model_menu",
+    needs: "model",
+    run: async (page) => {
+      await open(page, `/models/${modelId}`);
+      await page.getByRole("button", { name: "More actions" }).first().click();
+      await page.getByRole("menuitem", { name: "Download" }).first().waitFor();
     },
   },
   {
