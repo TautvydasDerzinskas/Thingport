@@ -163,3 +163,25 @@ export function capsOf(kind: Kind, name: string, role: FileRole): Caps {
     view: kind === "junk" ? null : (VIEWS[ext] ?? null),
   };
 }
+
+// The pictures a browser shows by its own type.
+const IMAGE_TYPES: Readonly<Record<string, string>> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+};
+
+/** How a file is sent to be shown in place: a PDF or a picture as its own type, anything else as plain text, which no
+ *  browser runs. Null for one that only downloads. */
+export function inlineTypeOf(name: string): { type: string; view: FileView } | null {
+  const view = capsOf(kindOfStored(name), name, "supporting").view;
+  if (!view) return null;
+  if (view === "pdf") return { type: "application/pdf", view };
+  if (view === "image") {
+    const type = IMAGE_TYPES[path.extname(name).toLowerCase()];
+    return type ? { type, view } : null;
+  }
+  return { type: "text/plain; charset=utf-8", view };
+}

@@ -3,7 +3,7 @@ import { Router, type Response } from "express";
 import type { PrintFile } from "@prisma/client";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { attachmentDisposition, HttpError } from "../utils/fileUtils";
+import { attachmentDisposition, inlineDisposition, HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
 import { sendStored } from "../utils/sendStored";
 import { modelUpload } from "../uploadMiddleware";
@@ -18,13 +18,27 @@ import {
 import { toPrintFileOut } from "../dto";
 import { printOutById } from "../services/printLoader";
 import { readablePrintWhere } from "../services/socialService";
+import { inlineTypeOf } from "../files/kinds";
 
 const router = Router();
 router.use(requireAuth);
 
-function fileHeaders(res: Response, record: PrintFile): void {
-  res.setHeader("Content-Type", record.mime || "application/octet-stream");
-  res.setHeader("Content-Disposition", attachmentDisposition(record.filename));
+/** A supporting file's headers. With `inline`, one its kind shows safely in place is sent to be, and anything else
+ *  downloads as always: an SVG or a web page never runs in the page. */
+function fileHeaders(res: Response, record: PrintFile, inline = false): void {
+  // Never read as another type than the one sent.
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  const shown = inline ? inlineTypeOf(record.filename) : null;
+  if (!shown) {
+    res.setHeader("Content-Type", record.mime || "application/octet-stream");
+    res.setHeader("Content-Disposition", attachmentDisposition(record.filename));
+    return;
+  }
+  res.setHeader("Content-Type", shown.type);
+  res.setHeader("Content-Disposition", inlineDisposition(record.filename));
+  res.setHeader("Referrer-Policy", "no-referrer");
+  // Shown with nothing it may run; the browser's own PDF viewer doesn't work inside a sandbox.
+  if (shown.view !== "pdf") res.setHeader("Content-Security-Policy", "sandbox");
 }
 
 router.get(
@@ -71,7 +85,7 @@ router.get(
       filePath: managedPrintFilePath(record),
       site: "serve.supporting",
       stillNames: () => printFileStillNames(record),
-      headers: () => fileHeaders(res, record),
+      headers: () => fileHeaders(res, record, req.query.inline === "1"),
     });
   }),
 );
