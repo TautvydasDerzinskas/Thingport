@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreeMfFormat } from "../adapter/format.generated";
-import type { Plate, Print, PrintProfile, ProfileFilament } from "../api/prints";
+import type { Plate, Print, PrintFile, PrintProfile, ProfileFilament } from "../api/prints";
 
 const get = vi.fn<(id: string) => Promise<Print>>();
-vi.mock("../api/prints", () => ({ printsApi: { get: (id: string) => get(id), fileUrl: (url: string) => url } }));
+const listFiles = vi.fn<(id: string) => Promise<PrintFile[]>>();
+vi.mock("../api/prints", () => ({
+  printsApi: { get: (id: string) => get(id), listFiles: (id: string) => listFiles(id), fileUrl: (url: string) => url },
+}));
 vi.mock("../api/collections", () => ({ collectionsApi: {} }));
 vi.mock("../api/search", () => ({ searchApi: {} }));
 
@@ -89,5 +92,22 @@ describe("a model's files as a script reads them", () => {
       plate({ profile_id: "42", profile: profile([{ type: "PLA", color: "#FF0000", grams: 3 }]), format: project }),
     ]);
     expect(file.profile?.filaments).toEqual([{ type: "PLA", color: "#FF0000", grams: 3, brand: null }]);
+  });
+});
+
+describe("relatedFiles", () => {
+  it("says what each file is and the folder it's in, and null where an older Thingport doesn't", async () => {
+    const file = { id: "f1", filename: "frog.scad", mime: "text/plain", size: 10, url: "/print/m1/files/f1" };
+    listFiles.mockResolvedValue([
+      { ...file, folder: "Source", content_kind: "script" },
+      { ...file, id: "f2", filename: "README" },
+    ]);
+
+    const related = await buildUserLibrary({ openModel: () => undefined }).models.relatedFiles("m1");
+
+    expect(related.map((one) => [one.id, one.contentKind, one.folder])).toEqual([
+      ["f1", "script", "Source"],
+      ["f2", null, null],
+    ]);
   });
 });

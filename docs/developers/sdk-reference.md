@@ -1554,17 +1554,41 @@ A filament a print profile uses. Unknown facts are null.
 | `grams` | `number \| null` | How much the profile, or the plate, uses.                |
 | `brand` | `string \| null` | Who makes it, where the profile says ("Bambu Lab").      |
 
+### `SdkContentKind`
+
+What a file is, by Thingport's table of file kinds: a 3D mesh, a laser project, a sliced print, a CAD source, an OpenSCAD script, a picture, a document, a licence, an archive and so on. Anything it doesn't know is `"other"`.
+
+```ts
+type SdkContentKind =
+  | "mesh"
+  | "laser"
+  | "sliced"
+  | "cad"
+  | "script"
+  | "picture"
+  | "document"
+  | "licence"
+  | "archive"
+  | "scene-part"
+  | "cg-scene"
+  | "program"
+  | "junk"
+  | "other";
+```
+
 ### `SdkRelatedFile`
 
 A file kept beside a model rather than being one of its plates: a generator script, a readme, a diagram.
 
-| Field  | Type     | What it is     |
-| ------ | -------- | -------------- |
-| `id`   | `string` |                |
-| `name` | `string` |                |
-| `type` | `string` | Its MIME type. |
-| `size` | `number` | In bytes.      |
-| `url`  | `string` |                |
+| Field         | Type                     | What it is                                                                                                   |
+| ------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `id`          | `string`                 |                                                                                                              |
+| `name`        | `string`                 |                                                                                                              |
+| `type`        | `string`                 | Its MIME type.                                                                                               |
+| `size`        | `number`                 | In bytes.                                                                                                    |
+| `url`         | `string`                 |                                                                                                              |
+| `contentKind` | `SdkContentKind \| null` | What the file is, e.g. `"script"` or `"document"`; null from a Thingport too old to say.                     |
+| `folder`      | `string \| null`         | The folder its model's source kept it in, levels joined by "/" (e.g. "Instructions/Printed"); null for none. |
 
 ### `SdkModelPage`
 
