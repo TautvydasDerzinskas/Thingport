@@ -4,7 +4,7 @@ import { legacyCaps, legacyPartnerCaps, plateCaps } from "./fileCaps";
 
 // What an older backend's payload, with no caps, is offered: what the app offered before, frozen.
 
-const NONE = { preview3d: false, openInSlicer: false, openInStudio: false, customize: false };
+const NONE = { preview3d: false, openInSlicer: false, openInStudio: false, customize: false, view: null };
 
 describe("legacyCaps", () => {
   it("draws and opens in Studio the plates the 3D viewer read, and offered every plate to the slicer", () => {

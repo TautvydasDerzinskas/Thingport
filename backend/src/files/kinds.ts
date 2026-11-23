@@ -104,7 +104,14 @@ export type Caps = {
   openInStudio: boolean;
   /** Customize generates the model again from it: an OpenSCAD script. */
   customize: boolean;
+  /** How the app shows it in place, where it can do so safely; null for one it only downloads (SVG and HTML among
+   *  them, which could run in the page). */
+  view: FileView | null;
 };
+
+/** How a file is shown in place: the browser's PDF viewer, a picture, Markdown, plain text (a script as code), or a
+ *  table. */
+export type FileView = "pdf" | "image" | "markdown" | "text" | "table";
 
 /**
  * What Thingport Bridge opens: `isModelFile` in bridge/cmd/thingport-bridge/main.go, pinned by tests/files/kinds.test.ts.
@@ -128,6 +135,21 @@ export const BRIDGE_OPENS: ReadonlySet<string> = new Set([
 
 const FOR_SLICERS: ReadonlySet<Kind> = new Set(["mesh", "laser", "sliced"]);
 
+/** What shows in place, by extension: raster pictures only, as an SVG could run script in the page. */
+const VIEWS: Readonly<Record<string, FileView>> = {
+  ".pdf": "pdf",
+  ".png": "image",
+  ".jpg": "image",
+  ".jpeg": "image",
+  ".webp": "image",
+  ".gif": "image",
+  ".md": "markdown",
+  ".txt": "text",
+  ".scad": "text",
+  ".csv": "table",
+  ".tsv": "table",
+};
+
 /** What a file can do, by its kind, its name and what it is to its model. The 3D viewer reads a name's last extension, as
  *  Bridge does, so a sliced .gcode.3mf plate is drawn as the 3MF it also is. Junk can do nothing. */
 export function capsOf(kind: Kind, name: string, role: FileRole): Caps {
@@ -138,5 +160,6 @@ export function capsOf(kind: Kind, name: string, role: FileRole): Caps {
     openInSlicer: role !== "supporting" && FOR_SLICERS.has(kind) && BRIDGE_OPENS.has(ext),
     openInStudio: drawn,
     customize: kind === "script",
+    view: kind === "junk" ? null : (VIEWS[ext] ?? null),
   };
 }

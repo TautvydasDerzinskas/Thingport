@@ -20,7 +20,19 @@ type Props = {
   onFreeUp: () => void;
 };
 
-const KINDS = ["models", "previews", "old", "photos", "thumbnails", "description", "slicer", "other"] as const;
+// Each beside its family: supporting files after the model files, prepared prints before the slicer copies.
+const KINDS = [
+  "models",
+  "supporting",
+  "previews",
+  "old",
+  "photos",
+  "thumbnails",
+  "description",
+  "prepared",
+  "slicer",
+  "other",
+] as const;
 type ShownKind = (typeof KINDS)[number];
 
 /** The disk Thingport's storage takes, split by what it's for, and the way to free some of it. */
@@ -32,19 +44,26 @@ export default function StorageUsageCard({ usage, freeing, onFreeUp }: Props) {
   const valueOf = (kind: ShownKind): number => {
     if (!usage) return 0;
     const parts = usage.breakdown;
-    if (kind === "models") return usage.model_bytes;
+    const supporting = usage.supporting_bytes ?? 0;
+    const prepared = usage.prepared_bytes ?? 0;
+    if (kind === "models") return Math.max(0, usage.model_bytes - supporting - prepared);
+    if (kind === "supporting") return supporting;
+    if (kind === "prepared") return prepared;
     // Too small to tell apart on a bar, and nothing to act on.
     if (kind === "other") return parts.other + parts.tag_pictures + parts.bundles;
     return parts[kind];
   };
-  // The old previews share their colour with the current ones, striped: older versions of the same thing.
+  // The old previews share their colour with the current ones, striped: older versions of the same thing. Supporting
+  // files and prepared prints are striped likewise, in the colours of the model files and the slicer copies.
   const colorOf: Record<ShownKind, string> = {
     models: series[0],
+    supporting: series[0],
     previews: series[1],
     old: series[1],
     photos: series[2],
     thumbnails: series[3],
     description: series[4],
+    prepared: series[5],
     slicer: series[5],
     other,
   };
@@ -54,7 +73,7 @@ export default function StorageUsageCard({ usage, freeing, onFreeUp }: Props) {
     value: valueOf(kind),
     valueLabel: formatFileSize(valueOf(kind)),
     color: colorOf[kind],
-    hatched: kind === "old",
+    hatched: kind === "old" || kind === "supporting" || kind === "prepared",
   }));
 
   return (

@@ -162,6 +162,7 @@ export function useModelActions({
     sortedPlates,
     zipFileCount,
     recordUse,
+    downloadSupportingFile,
   } = useDownloadPrint(print, onUnauthorized, onUpdated);
   const customize = useCustomize(print, onUnauthorized);
   const studio = useOpenInStudio(print);
@@ -564,6 +565,8 @@ export function useModelActions({
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}
+        supportingFiles={print.supporting_files}
+        downloadSupporting={(file) => void downloadSupportingFile(file)}
       />
 
       {/* The page header keeps this menu across models: a write on its way mustn't land on the next one's list. */}

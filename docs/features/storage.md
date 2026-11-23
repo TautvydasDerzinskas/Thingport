@@ -56,8 +56,8 @@ are now.
 ## Disk space
 
 The top of **Administration → Storage** shows how much of the disk Thingport's storage takes, split by kind: model
-files, 3D previews, old 3D previews, photos, thumbnails and renders, description images, slicer copies, and everything
-else (Studio designs, tag pictures, icons and profile pictures). It's measured every few minutes at most.
+files, supporting files, 3D previews, old 3D previews, photos, thumbnails and renders, description images, prepared
+prints, slicer copies, and everything else (Studio designs, tag pictures, icons and profile pictures). It's measured every few minutes at most.
 
 ### Free up space
 

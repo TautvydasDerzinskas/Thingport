@@ -464,7 +464,7 @@ describe("Explore with partners", () => {
 
   it("hands out a partner's files through this instance, and only those the partner gave", async () => {
     const remoteFiles = await request(app).get(`/api/explore/elsewhere/model/${filesModelId}`).set(auth(viewer));
-    const PLATE = { preview3d: true, openInSlicer: true, openInStudio: true, customize: false };
+    const PLATE = { preview3d: true, openInSlicer: true, openInStudio: true, customize: false, view: null };
     expect(remoteFiles.body.files).toEqual([
       {
         name: "bin.3mf",
@@ -485,7 +485,7 @@ describe("Explore with partners", () => {
         url: null,
         role: "supporting",
         content_kind: "document",
-        caps: { preview3d: false, openInSlicer: false, openInStudio: false, customize: false },
+        caps: { preview3d: false, openInSlicer: false, openInStudio: false, customize: false, view: "pdf" },
       },
       // Somewhere other than the partner's own origin: never fetched. Indexed with no role, as a row from before
       // partners said, so offered as a plate.

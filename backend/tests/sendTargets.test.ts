@@ -358,6 +358,33 @@ describe("sending a model's file", () => {
     expect(req.headers["print-after-upload"]).toBeUndefined();
   });
 
+  it("sends a file kept beside the plates, its link bound to that file", async () => {
+    const added = await request(app)
+      .post(`/api/print/${printId}/files`)
+      .set(auth(owner.token))
+      .attach("file", Buffer.from("Step 1: print it.\n"), { filename: "notes.txt", contentType: "text/plain" });
+    expect(added.status).toBe(200);
+    const files = (await request(app).get(`/api/print/${printId}/files`).set(auth(owner.token))).body;
+    const notes = files.find((file: { filename: string }) => file.filename === "notes.txt");
+    const target = await create(owner, {
+      name: "Archive",
+      how: { type: "request", url: `${base}/hook`, body: "json" },
+    });
+
+    expect((await send(owner, target.body.id, notes.id)).body).toEqual({ ok: true, status: 200 });
+
+    const payload = JSON.parse(last().body.toString("utf8"));
+    expect(payload).toMatchObject({ filename: "notes.txt", file_kind: "supporting", plate_id: null });
+    const file = await request(app).get(new URL(payload.file_url).pathname);
+    expect([file.status, file.text]).toEqual([200, "Step 1: print it.\n"]);
+    // Not another model's: a supporting file is found by its model as well as its id.
+    const otherModel = await request(app)
+      .post("/api/upload")
+      .set(auth(owner.token))
+      .attach("files", Buffer.from(STL), { filename: "other.stl", contentType: "model/stl" });
+    expect((await send(owner, target.body.id, notes.id, otherModel.body.prints[0].id)).status).toBe(404);
+  });
+
   it("hands a webhook a link to just that file, for an hour, that needs no sign-in", async () => {
     const target = await create(owner, {
       name: "n8n",

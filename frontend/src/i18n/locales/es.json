@@ -1534,11 +1534,13 @@
         "failed": "No se pudo medir el almacenamiento.",
         "kinds": {
           "models": "Archivos de modelos",
+          "supporting": "Archivos adjuntos",
           "previews": "Vistas previas 3D",
           "old": "Vistas previas 3D antiguas",
           "photos": "Fotos",
           "thumbnails": "Miniaturas y renders",
           "description": "Imágenes de la descripción",
+          "prepared": "Impresiones preparadas",
           "slicer": "Copias para el laminador",
           "other": "Otros"
         }
@@ -6632,6 +6634,10 @@
         "changeLater": "se cambia en Configuración",
         "open": "Abrir"
       }
+    },
+    "supporting": {
+      "title": "Archivos adjuntos",
+      "actionsFor": "Acciones de {{name}}"
     },
     "customizer": {
       "title": "Personalizando {{model}}",

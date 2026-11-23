@@ -58,7 +58,7 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   const recordDownload = () => record("download");
 
   /** A plate, or any other of the model's files, such as its prepared print. */
-  const downloadFile = async (file: Pick<Plate, "url" | "filename">) => {
+  const download = async (file: Pick<Plate, "url" | "filename">, counted: boolean) => {
     setDownloading(true);
     try {
       // Asked again rather than taken from the cache the 3D viewer filled, which may hold an older name for it.
@@ -67,13 +67,17 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
       if (!res.ok) throw new Error("Download failed");
       await saveResponseToDisk(res, file.filename || "download");
       setPickerOpen(false);
-      record("download");
+      if (counted) record("download");
     } catch (err) {
       handleDownloadError(err);
     } finally {
       setDownloading(false);
     }
   };
+
+  const downloadFile = (file: Pick<Plate, "url" | "filename">) => download(file, true);
+  /** A file kept beside the plates: saved like any other, but not a download of the model. */
+  const downloadSupportingFile = (file: Pick<Plate, "url" | "filename">) => download(file, false);
 
   /** `folder`: only the files in that folder of the model (Plate.folder) and the folders in it. */
   const downloadAllZip = async (folder?: string) => {
@@ -110,6 +114,7 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     handleDownload,
     downloadFile,
     downloadPlate: downloadFile,
+    downloadSupportingFile,
     downloadAllZip,
     sortedPlates,
     zipFileCount: zipFileCount(print),
