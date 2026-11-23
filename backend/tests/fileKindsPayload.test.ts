@@ -16,7 +16,7 @@ let dir: string;
 let owner: { id: string; token: string };
 let printId: string;
 const auth = () => ({ Authorization: `Bearer ${owner.token}` });
-const NONE = { preview3d: false, openInSlicer: false, openInStudio: false, customize: false };
+const NONE = { preview3d: false, openInSlicer: false, openInStudio: false, customize: false, view: null };
 
 beforeAll(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "file-kinds-"));
@@ -36,7 +36,7 @@ describe("a model's files and what each can do", () => {
     const print = (await request(app).get(`/api/print/${printId}`).set(auth())).body;
     expect(
       print.plates.map((plate: { content_kind: string; caps: unknown }) => [plate.content_kind, plate.caps]),
-    ).toEqual([["mesh", { preview3d: true, openInSlicer: true, openInStudio: true, customize: false }]]);
+    ).toEqual([["mesh", { preview3d: true, openInSlicer: true, openInStudio: true, customize: false, view: null }]]);
   });
 
   it("lists the files kept beside the plates on the detail, by name, as GET /files does", async () => {
@@ -46,8 +46,8 @@ describe("a model's files and what each can do", () => {
       list.map((file) => [file.filename, file.content_kind, file.caps]);
 
     expect(shown(print.supporting_files)).toEqual([
-      ["Box.scad", "script", { ...NONE, customize: true }],
-      ["Guide.pdf", "document", NONE],
+      ["Box.scad", "script", { ...NONE, customize: true, view: "text" }],
+      ["Guide.pdf", "document", { ...NONE, view: "pdf" }],
     ]);
     expect(files).toEqual(print.supporting_files);
     expect(print.supporting_file_count).toBe(2);

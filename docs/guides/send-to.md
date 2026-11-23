@@ -36,6 +36,9 @@ A webhook gets JSON with a link to the file, which works for an hour without sig
 }
 ```
 
+`file_kind` is `plate`, `prepared` for a model's prepared print, or `supporting` for a file kept beside the plates, sent
+from its menu in the model's **Supporting files** tab. `plate_id` is null for the last two.
+
 ## Your own
 
 A **custom link** is an address the browser opens, in a new tab, a named tab that's reused, or this tab. A page in a
@@ -55,7 +58,7 @@ These are filled in when you send, encoded for an address. They go in the path o
 | `{filename}`   | The file's name                                              |
 | `{model_name}` | The model's name                                             |
 | `{model_id}`   | The model's id, and `{model_url}` its page in Thingport      |
-| `{plate_id}`   | The file's id, empty for a model's prepared print            |
+| `{plate_id}`   | The file's id, empty for a prepared print or supporting file |
 | `{source_url}` | The page it was imported from, if it was                     |
 
 A slicer running in a browser tab, such as a container's web desktop, can't be handed a file by link. Send the file to

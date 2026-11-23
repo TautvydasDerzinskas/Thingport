@@ -185,11 +185,17 @@ describe("extension lists outside the table", () => {
 
 describe("what a file can do (capsOf)", () => {
   const caps = (name: string, role: FileRole = "plate"): Caps => capsOf(kindOfStored(name), name, role);
-  const NONE: Caps = { preview3d: false, openInSlicer: false, openInStudio: false, customize: false };
+  const NONE: Caps = { preview3d: false, openInSlicer: false, openInStudio: false, customize: false, view: null };
 
   it("draws, slices and opens in Studio a plate the viewer reads", () => {
     for (const name of ["Part.stl", "Part.3MF", "Part.step", "Part.stp", "Part.obj", "Part.glb"]) {
-      expect(caps(name)).toEqual({ preview3d: true, openInSlicer: true, openInStudio: true, customize: false });
+      expect(caps(name)).toEqual({
+        preview3d: true,
+        openInSlicer: true,
+        openInStudio: true,
+        customize: false,
+        view: null,
+      });
     }
   });
 
@@ -199,6 +205,7 @@ describe("what a file can do (capsOf)", () => {
       openInSlicer: true,
       openInStudio: true,
       customize: false,
+      view: null,
     });
   });
 
@@ -212,20 +219,47 @@ describe("what a file can do (capsOf)", () => {
   });
 
   it("lets a script be customized wherever it is kept, but nothing named with a leading dot", () => {
-    expect(caps("Box.scad", "supporting")).toEqual({ ...NONE, customize: true });
+    expect(caps("Box.scad", "supporting")).toEqual({ ...NONE, customize: true, view: "text" });
     expect(caps("._Box.scad", "supporting")).toEqual(NONE);
     expect(caps(".Box.scad", "supporting")).toEqual(NONE);
   });
 
   it("offers nothing of a file kept beside the plates but Customize, until the page shows them", () => {
     expect(caps("Part.stl", "supporting")).toEqual(NONE);
-    expect(caps("Guide.pdf", "supporting")).toEqual(NONE);
+    expect(caps("Guide.pdf", "supporting")).toEqual({ ...NONE, view: "pdf" });
   });
 
   it("offers a prepared print to the slicer only, and only one Bridge opens", () => {
     expect(caps("Tower.gcode", "prepared")).toEqual({ ...NONE, openInSlicer: true });
     expect(caps("Tower.gcode.3mf", "prepared")).toEqual({ ...NONE, openInSlicer: true });
     expect(caps("Tower.gco", "prepared")).toEqual(NONE);
+  });
+
+  it("shows in place only what it can safely: PDFs, raster pictures, Markdown, text and scripts, and tables", () => {
+    const views = [
+      "Guide.pdf",
+      "Photo.JPG",
+      "Shot.webp",
+      "README.md",
+      "notes.txt",
+      "box.scad",
+      "Parts.csv",
+      "Parts.tsv",
+    ];
+    expect(views.map((name) => caps(name, "supporting").view)).toEqual([
+      "pdf",
+      "image",
+      "image",
+      "markdown",
+      "text",
+      "text",
+      "table",
+      "table",
+    ]);
+    // An SVG or a web page could run script in the page, and a Word file has no viewer here: they download.
+    for (const name of ["Logo.svg", "page.html", "Guide.docx", "._Guide.pdf"]) {
+      expect(caps(name, "supporting").view).toBeNull();
+    }
   });
 
   it("reads a stored name kept before the naming rule as the rule would keep it", () => {

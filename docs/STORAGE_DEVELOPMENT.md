@@ -21,7 +21,8 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
   [features/file-kinds.md](features/file-kinds.md) from it, and Format checks the page.
 - **What a file can do comes with it.** `capsOf` (`files/kinds.ts`) works out from a file's kind, name and role what
   the web app may offer of it: the 3D viewer, Open in slicer (only what Bridge's `isModelFile` opens, as an installed
-  Bridge never updates), Studio and Customize. Every plate and file in the REST API carries it as `caps`, with its kind
+  Bridge never updates), Studio, Customize, and how it shows in place (`view`: PDFs, raster pictures, Markdown, text
+  and scripts, and tables; never an SVG or a web page). Every plate and file in the REST API carries it as `caps`, with its kind
   as `content_kind`: named apart from MCP's `kind` and Send to's `file_kind`, which say what a file is to its model. A
   partner's files carry the same, worked out by this instance from each name and the role the partner gave (the wire
   is unchanged), and the SDK's `relatedFiles` carry `contentKind` and `folder`. The

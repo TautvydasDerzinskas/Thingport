@@ -7,6 +7,7 @@ import fs from "node:fs";
 import type { Prisma } from "@prisma/client";
 import { AUTH_SECRET } from "../config";
 import { prisma } from "../db";
+import { PENDING_STORAGE_PATH } from "../modelFiles/pending";
 import { fileState, type OpenedFile } from "../modelFiles/storageFs";
 import { HttpError } from "../utils/fileUtils";
 import { readCapped } from "../utils/readCapped";
@@ -214,16 +215,18 @@ type FileToSend = {
   path: string;
   filename: string;
   mime: string;
-  kind: "plate" | "prepared";
+  kind: "plate" | "prepared" | "supporting";
   plateId: string | null;
   /** The prepared print's file record: what a link to it is bound to, so a replaced one isn't served in its place. */
   preparedId: string | null;
+  /** A file kept beside the plates: its own id, which a link to it is bound to. */
+  supportingId: string | null;
   print: { id: string; name: string; sourceUrl: string | null };
   /** Whether its row, read again once the file is open, still names `path` (Fs 2). */
   stillNames: () => Promise<boolean>;
 };
 
-/** One of the model's files the user may read: a plate, or the prepared print. Only a file that's gone, or a folder in
+/** One of the model's files the user may read: a plate, a file kept beside them, or the prepared print. Only a file that's gone, or a folder in
  *  its place, is "No such file" (Fs 1): one that can't be looked at is an error. */
 async function fileToSend(userId: string, printId: string, fileKey: string): Promise<FileToSend> {
   const print = await prisma.print.findFirst({
@@ -251,11 +254,32 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
       kind: "prepared",
       plateId: null,
       preparedId: record.id,
+      supportingId: null,
       print: model,
       stillNames: () => printFileStillNames(record, { prepared: true }),
     };
   }
   const plate = await prisma.plate.findFirst({ where: { id: fileKey, printId: print.id } });
+  if (!plate) {
+    // A file kept beside the plates, by its own id; none still being saved.
+    const record = await prisma.printFile.findFirst({
+      where: { id: fileKey, printId: print.id, role: "SUPPORTING", storagePath: { not: PENDING_STORAGE_PATH } },
+    });
+    if (!record) throw new HttpError(404, "No such file");
+    const filePath = managedPrintFilePath(record);
+    if ((await fileState(filePath, "send.file")).state !== "file") throw new HttpError(404, "No such file");
+    return {
+      path: filePath,
+      filename: record.filename,
+      mime: record.mime || "application/octet-stream",
+      kind: "supporting",
+      plateId: null,
+      preparedId: null,
+      supportingId: record.id,
+      print: model,
+      stillNames: () => printFileStillNames(record),
+    };
+  }
   // resolvePlateFilePath has looked at the file already.
   const filePath = plate ? resolvePlateFilePath(plate) : null;
   if (!plate || !filePath) throw new HttpError(404, "No such file");
@@ -267,6 +291,7 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
     kind: "plate",
     plateId: plate.id,
     preparedId: null,
+    supportingId: null,
     print: model,
     stillNames: () => plateStillNames(plate),
   };
@@ -333,7 +358,11 @@ export async function fileFromGrant(
 }
 
 function fileUrlOf(origin: string, userId: string, file: FileToSend): string {
-  const grant = makeFileGrant(userId, file.print.id, file.plateId ?? `${PREPARED_FILE}:${file.preparedId}`);
+  const grant = makeFileGrant(
+    userId,
+    file.print.id,
+    file.plateId ?? file.supportingId ?? `${PREPARED_FILE}:${file.preparedId}`,
+  );
   return `${origin}/api/send-file/${grant}/${encodeURIComponent(file.filename)}`;
 }
 
