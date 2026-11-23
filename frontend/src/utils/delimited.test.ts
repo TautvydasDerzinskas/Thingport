@@ -49,6 +49,14 @@ describe("a CSV or TSV preview", () => {
     expect(guessDelimiter("a;b\n1,2,3,4\n", "csv")).toBe(";");
   });
 
+  it("guesses from the header the table shows, past a byte-order mark and blank lines before it", () => {
+    const text = "\npart;qty\nbolt;2\n";
+    expect(guessDelimiter(text, "csv")).toBe(";");
+    expect(previewTable(text, "csv", 10)).toMatchObject({ head: ["part", "qty"], body: [["bolt", "2"]] });
+    expect(guessDelimiter("﻿\r\n\r\na;b\n", "csv")).toBe(";");
+    expect(guessDelimiter('\n"part\n\nname";qty\nbolt,2,3\n', "csv")).toBe(";");
+  });
+
   it("says when a table has more rows than its preview shows", () => {
     const table = (rows: number) => ["part,qty", ...Array.from({ length: rows }, (_, i) => `p${i},${i}`)].join("\n");
     expect(previewTable(table(3), "csv", 3)).toMatchObject({ head: ["part", "qty"], more: false });
