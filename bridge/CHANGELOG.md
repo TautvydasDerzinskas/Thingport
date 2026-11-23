@@ -1,5 +1,12 @@
 # Thingport Bridge changelog
 
+# [thingport-bridge-v1.2.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-bridge-v1.1.0...thingport-bridge-v1.2.0) (2026-11-23)
+
+
+### Features
+
+* show why Thingport Bridge couldn't open a model, and how to allow it on macOS's local network ([#362](https://github.com/TautvydasDerzinskas/Thingport/issues/362)) ([11ad350](https://github.com/TautvydasDerzinskas/Thingport/commit/11ad35024720f5fcb30dcd5def1817d4814b6008)), closes [#337](https://github.com/TautvydasDerzinskas/Thingport/issues/337)
+
 # [thingport-bridge-v1.1.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-bridge-v1.0.1...thingport-bridge-v1.1.0) (2026-11-15)
 
 
