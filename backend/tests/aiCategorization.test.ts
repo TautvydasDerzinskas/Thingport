@@ -1040,6 +1040,22 @@ describe("AI categorization", () => {
     expect(staleAccept.body.code).toBe("stale");
   });
 
+  it("numbers the name of an accepted model the category already has one by", async () => {
+    const target = await category("Target");
+    const twin = await print(target.id, "MANUAL", { name: "Twin" });
+    const baseUrl = await startProvider(() => ({ category_id: target.id, confidence: 0.95, reason: "fits" }));
+    await enable(baseUrl, { mode: "auto" });
+    const model = await print(null, null, { name: "Twin" });
+    // Auto mode can't file it under a name the category has, so it waits for review.
+    const suggested = await request(app).post(`/api/print/${model.id}/recategorize`).set(auth()).send({});
+    expect(suggested.body).toMatchObject({ outcome: "suggested", print: { category_id: null } });
+
+    const accepted = await request(app).post(`/api/print/${model.id}/ai-suggestion/accept`).set(auth()).send({});
+    expect(accepted.status).toBe(200);
+    expect(accepted.body.print).toMatchObject({ category_id: target.id, name: "Twin (2)", ai_suggestion: null });
+    expect(await prisma.print.findUniqueOrThrow({ where: { id: twin.id } })).toMatchObject({ name: "Twin" });
+  });
+
   it("discards an in-flight answer when a user categorizes manually", async () => {
     const target = await category("AI target");
     const manual = await category("Manual winner");

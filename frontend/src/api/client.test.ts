@@ -1,7 +1,7 @@
 import i18next from "i18next";
 import { beforeAll, describe, expect, it } from "vitest";
 import en from "../i18n/locales/en.json";
-import { readErrorMessage } from "./client";
+import { readCodedError, readErrorMessage } from "./client";
 
 const page = (status: number) =>
   new Response(`<html><head><title>${status}</title></head><body><center>nginx</center></body></html>`, { status });
@@ -42,5 +42,16 @@ describe("readErrorMessage", () => {
 
   it("keeps the fallback for a success it was handed", async () => {
     expect(await readErrorMessage(new Response("{}", { status: 200 }), "Couldn't read it")).toBe("Couldn't read it");
+  });
+});
+
+describe("readCodedError", () => {
+  it("reads a coded error and one sent as detail, as a route sends both", async () => {
+    const coded = new Response(JSON.stringify({ error: "Accept it first", code: "suggestion_pending" }), {
+      status: 409,
+    });
+    expect(await readCodedError(coded, "x")).toEqual({ message: "Accept it first", code: "suggestion_pending" });
+    const plain = new Response(JSON.stringify({ detail: 'A print named "Twin" already exists' }), { status: 409 });
+    expect(await readCodedError(plain, "x")).toEqual({ message: 'A print named "Twin" already exists', code: null });
   });
 });
