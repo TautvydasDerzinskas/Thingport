@@ -15,8 +15,11 @@ Supporting files come with the model: when you [upload a folder](../guides/uploa
 folder, its images become photos and its manuals and notes are attached automatically.
 
 On the model page they're in the **Supporting files** tab of its description box, each with its type, folder and size.
-A file's **⋮** menu, or a right-click on it, downloads it or sends it to one of your [Send to](../guides/send-to.md)
-places that takes its type. The **Download** picker lists them below the model files, and a partner's model shows its
+Click one to read it in place: a PDF in your browser's own viewer, a picture, Markdown, plain text and OpenSCAD
+scripts, or a CSV or TSV as a table, with the model's other files beside it. Back closes it, and **Copy link** copies a
+link to the model's page with that file open (never the file's own address). Other files, SVGs and web pages among
+them, download instead. A file's **⋮** menu, or a right-click on it, also downloads it or sends it to one of your
+[Send to](../guides/send-to.md) places that takes its type. The **Download** picker lists them below the model files, and a partner's model shows its
 supporting files in a list of their own. Adding them to a model you already have is on the way.
 
 ## Models you can generate again

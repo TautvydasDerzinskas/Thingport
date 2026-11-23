@@ -44,6 +44,15 @@ function asciiName(name: string): string {
  *  for each such character. One too long for a disk once encoded keeps as much of the name as fits, whole characters,
  *  then a tag from the whole name, so two long names stay two, and its extension. */
 export function attachmentDisposition(name: string): string {
+  return contentDisposition(name, "attachment");
+}
+
+/** As attachmentDisposition, for a file shown in place. */
+export function inlineDisposition(name: string): string {
+  return contentDisposition(name, "inline");
+}
+
+function contentDisposition(name: string, type: "attachment" | "inline"): string {
   // Half a surrogate pair, which a name from a JSON body can hold, can't be encoded: it goes out as U+FFFD.
   const whole = name.replace(/\p{Cs}/gu, "\ufffd");
   let ascii = asciiName(whole);
@@ -55,7 +64,7 @@ export function attachmentDisposition(name: string): string {
     while (kept > 0 && asciiName(chars.slice(0, kept).join("")).length + tail.length > NAME_MAX_BYTES) kept--;
     ascii = asciiName(chars.slice(0, kept).join("")) + tail;
   }
-  return createDisposition(whole, ascii === whole ? undefined : { fallback: ascii });
+  return createDisposition(whole, ascii === whole ? { type } : { type, fallback: ascii });
 }
 
 /** For headers the parser finds no filename in, such as `filename=x.stl` with no disposition type. */

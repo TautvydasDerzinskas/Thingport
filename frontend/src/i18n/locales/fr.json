@@ -6653,7 +6653,17 @@
     },
     "supporting": {
       "title": "Fichiers annexes",
-      "actionsFor": "Actions pour {{name}}"
+      "actionsFor": "Actions pour {{name}}",
+      "open": "Ouvrir",
+      "openInTab": "Ouvrir dans un nouvel onglet",
+      "newTab": "Nouvel onglet",
+      "copyLink": "Copier le lien",
+      "linkCopied": "Lien copié",
+      "noPreview": "Pas d’aperçu pour les fichiers {{type}}",
+      "tooLargeToPreview": "Trop volumineux pour l’aperçu",
+      "previewFailed": "Impossible d’afficher ce fichier",
+      "firstRows": "Affichage des {{count}} premières lignes",
+      "firstColumns": "Affichage des {{count}} premières colonnes"
     },
     "customizer": {
       "title": "Personnalisation de {{model}}",

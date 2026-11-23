@@ -6164,7 +6164,17 @@
     },
     "supporting": {
       "title": "附加文件",
-      "actionsFor": "{{name}} 的操作"
+      "actionsFor": "{{name}} 的操作",
+      "open": "打开",
+      "openInTab": "在新标签页中打开",
+      "newTab": "新标签页",
+      "copyLink": "复制链接",
+      "linkCopied": "链接已复制",
+      "noPreview": "无法预览 {{type}} 文件",
+      "tooLargeToPreview": "文件过大，无法预览",
+      "previewFailed": "无法显示此文件",
+      "firstRows": "显示前 {{count}} 行",
+      "firstColumns": "显示前 {{count}} 列"
     },
     "customizer": {
       "title": "自定义 {{model}}",

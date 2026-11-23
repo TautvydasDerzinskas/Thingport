@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Tooltip from "@mui/material/Tooltip";
@@ -41,15 +42,36 @@ function toModelFile(item: SupportingItem): ModelFile {
   };
 }
 
+/** A row's type tile, name and details. */
+function row(item: SupportingItem, details: string) {
+  return (
+    <>
+      <ListItemIcon sx={{ minWidth: 44 }}>
+        <TypeTile kind={item.kind} view={item.caps?.view} size={32} />
+      </ListItemIcon>
+      <ListItemText
+        primary={item.name}
+        secondary={details || undefined}
+        primaryTypographyProps={{ noWrap: true, title: item.name }}
+      />
+    </>
+  );
+}
+
 /** A model's supporting files: each with its type, folder and size, and a menu (also on right-click) to download it or,
  *  with `sendTo`, send it to one of the user's places. */
 export default function SupportingFilesList({
   items,
+  onOpen,
   onDownload,
+  onCopyLink,
   sendTo,
 }: {
   items: SupportingItem[];
+  /** Where there's a viewer: a row's click opens its file there too. */
+  onOpen?: (item: SupportingItem) => void;
   onDownload: (item: SupportingItem) => void;
+  onCopyLink?: (item: SupportingItem) => void;
   sendTo?: { printId: string; onUnauthorized?: () => void };
 }) {
   const { t } = useTranslation(["models"]);
@@ -90,14 +112,13 @@ export default function SupportingFilesList({
                 </Tooltip>
               }
             >
-              <ListItemIcon sx={{ minWidth: 44 }}>
-                <TypeTile kind={item.kind} view={item.caps?.view} size={32} />
-              </ListItemIcon>
-              <ListItemText
-                primary={item.name}
-                secondary={details || undefined}
-                primaryTypographyProps={{ noWrap: true, title: item.name }}
-              />
+              {onOpen ? (
+                <ListItemButton onClick={() => onOpen(item)} sx={{ borderRadius: 1, pl: 1 }}>
+                  {row(item, details)}
+                </ListItemButton>
+              ) : (
+                row(item, details)
+              )}
             </ListItem>
           );
         })}
@@ -105,7 +126,9 @@ export default function SupportingFilesList({
       <SupportingFileMenu
         anchor={menu?.anchor ?? null}
         onClose={() => setMenu(null)}
+        onOpen={opened && onOpen ? () => onOpen(opened) : undefined}
         onDownload={opened?.url ? () => onDownload(opened) : undefined}
+        onCopyLink={opened && onCopyLink ? () => onCopyLink(opened) : undefined}
         sendTargets={targets}
         sending={send.sending}
         onSend={(target) => void send.send(target)}

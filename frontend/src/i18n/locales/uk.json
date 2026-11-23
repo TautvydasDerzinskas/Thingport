@@ -6326,7 +6326,17 @@
     },
     "supporting": {
       "title": "Допоміжні файли",
-      "actionsFor": "Дії для {{name}}"
+      "actionsFor": "Дії для {{name}}",
+      "open": "Відкрити",
+      "openInTab": "Відкрити в новій вкладці",
+      "newTab": "Нова вкладка",
+      "copyLink": "Копіювати посилання",
+      "linkCopied": "Посилання скопійовано",
+      "noPreview": "Немає попереднього перегляду для файлів {{type}}",
+      "tooLargeToPreview": "Завеликий для попереднього перегляду",
+      "previewFailed": "Не вдалося показати цей файл",
+      "firstRows": "Показано перші {{count}} рядків",
+      "firstColumns": "Показано перші {{count}} стовпців"
     },
     "collections": {
       "pageTitle": "Колекції",

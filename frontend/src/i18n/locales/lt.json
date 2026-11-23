@@ -6770,7 +6770,17 @@
     },
     "supporting": {
       "title": "Papildomi failai",
-      "actionsFor": "{{name}} veiksmai"
+      "actionsFor": "{{name}} veiksmai",
+      "open": "Atverti",
+      "openInTab": "Atverti naujame skirtuke",
+      "newTab": "Naujas skirtukas",
+      "copyLink": "Kopijuoti nuorodą",
+      "linkCopied": "Nuoroda nukopijuota",
+      "noPreview": "{{type}} failų peržiūra negalima",
+      "tooLargeToPreview": "Per didelis peržiūrai",
+      "previewFailed": "Nepavyko parodyti šio failo",
+      "firstRows": "Rodoma pirmųjų {{count}} eilučių",
+      "firstColumns": "Rodoma pirmųjų {{count}} stulpelių"
     },
     "customizer": {
       "title": "Keičiamas {{model}}",

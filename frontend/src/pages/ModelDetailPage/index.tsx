@@ -49,7 +49,7 @@ import { usePrintProfilesView } from "../../hooks/usePrintProfilesView";
 import { usePrintProfiles } from "./PrintProfiles/usePrintProfiles";
 import { profileEntries } from "./PrintProfiles/entries";
 import { plateCaps } from "../../utils/fileCaps";
-import ModelSupportingFiles from "./ModelSupportingFiles";
+import ModelSupportingFiles, { ModelSupportingFileViewer } from "./ModelSupportingFiles";
 
 // The description box's tab of the files kept beside the plates; no tool's id starts with "@".
 const SUPPORTING_TAB = "@supporting-files";
@@ -594,6 +594,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                   )}
                 </Tabs>
               )}
+              {supportingCount > 0 && <ModelSupportingFileViewer print={print} onUnauthorized={onUnauthorized} />}
               {shownTab === SUPPORTING_TAB ? (
                 <ModelSupportingFiles print={print} onUnauthorized={onUnauthorized} />
               ) : shownTabTool ? (
