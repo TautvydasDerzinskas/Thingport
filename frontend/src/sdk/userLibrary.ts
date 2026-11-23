@@ -151,6 +151,8 @@ export function buildUserLibrary({
         type: file.mime,
         size: file.size,
         url: printsApi.fileUrl(file.url),
+        contentKind: file.content_kind ?? null,
+        folder: file.folder ?? null,
       })),
     relatedText: async (id: string, fileId: string): Promise<string> => {
       const files = await models.relatedFiles(id);

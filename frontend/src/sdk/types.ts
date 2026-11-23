@@ -127,6 +127,24 @@ export interface SdkFilament {
   brand: string | null;
 }
 
+/** What a file is, by Thingport's table of file kinds: a 3D mesh, a laser project, a sliced print, a CAD source, an
+ *  OpenSCAD script, a picture, a document, a licence, an archive and so on. Anything it doesn't know is `"other"`. */
+export type SdkContentKind =
+  | "mesh"
+  | "laser"
+  | "sliced"
+  | "cad"
+  | "script"
+  | "picture"
+  | "document"
+  | "licence"
+  | "archive"
+  | "scene-part"
+  | "cg-scene"
+  | "program"
+  | "junk"
+  | "other";
+
 /** A file kept beside a model rather than being one of its plates: a generator script, a readme, a diagram. */
 export interface SdkRelatedFile {
   id: string;
@@ -136,6 +154,10 @@ export interface SdkRelatedFile {
   /** In bytes. */
   size: number;
   url: string;
+  /** What the file is, e.g. `"script"` or `"document"`; null from a Thingport too old to say. */
+  contentKind: SdkContentKind | null;
+  /** The folder its model's source kept it in, levels joined by "/" (e.g. "Instructions/Printed"); null for none. */
+  folder: string | null;
 }
 
 /** A page of models. */

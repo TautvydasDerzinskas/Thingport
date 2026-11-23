@@ -23,3 +23,11 @@ export function legacyCaps(filename: string, role: "plate" | "supporting" | "pre
 export function plateCaps(plate: Pick<Plate, "filename" | "caps">): FileCaps {
   return plate.caps ?? legacyCaps(plate.filename, "plate");
 }
+
+// What the partner page offered a slicer before the server said; anything else was downloaded instead.
+const PARTNER_SLICES = new Set(["stl", "3mf", "step", "stp", "obj"]);
+
+/** What the partner page offered of a partner's file before the server said. Never extended. */
+export function legacyPartnerCaps(filename: string): FileCaps {
+  return { ...legacyCaps(filename, "plate"), openInSlicer: PARTNER_SLICES.has(extOf(filename)) };
+}

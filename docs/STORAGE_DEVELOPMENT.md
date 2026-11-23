@@ -22,10 +22,12 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
 - **What a file can do comes with it.** `capsOf` (`files/kinds.ts`) works out from a file's kind, name and role what
   the web app may offer of it: the 3D viewer, Open in slicer (only what Bridge's `isModelFile` opens, as an installed
   Bridge never updates), Studio and Customize. Every plate and file in the REST API carries it as `caps`, with its kind
-  as `content_kind`: named apart from MCP's `kind` and Send to's `file_kind`, which say what a file is to its model. The
+  as `content_kind`: named apart from MCP's `kind` and Send to's `file_kind`, which say what a file is to its model. A
+  partner's files carry the same, worked out by this instance from each name and the role the partner gave (the wire
+  is unchanged), and the SDK's `relatedFiles` carry `contentKind` and `folder`. The
   web app reads `caps`; `legacyCaps` (`frontend/src/utils/fileCaps.ts`) stands in, frozen, for an older backend.
-  Pinned by `tests/files/kinds.test.ts`, `tests/fileKindsPayload.test.ts`, `tests/mcpDescriptions.test.ts` and
-  `frontend/src/utils/fileCaps.test.ts`.
+  Pinned by `tests/files/kinds.test.ts`, `tests/fileKindsPayload.test.ts`, `tests/mcpDescriptions.test.ts`,
+  `tests/federationExplore.test.ts`, `frontend/src/utils/fileCaps.test.ts` and `frontend/src/sdk/userLibrary.test.ts`.
 - **No list shows a save under way.** A `PrintFile` row still at `"pending"` is in no list of a model's files: the
   detail and its counts and size, `GET /print/:id/files`, MCP, the Generative filter and what partners are published.
   Pinned by `tests/fileKindsPayload.test.ts`, `tests/mcp.test.ts`, `tests/generativeFilter.test.ts` and

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Plate } from "../api/prints";
-import { legacyCaps, plateCaps } from "./fileCaps";
+import { legacyCaps, legacyPartnerCaps, plateCaps } from "./fileCaps";
 
 // What an older backend's payload, with no caps, is offered: what the app offered before, frozen.
 
@@ -32,5 +32,13 @@ describe("plateCaps", () => {
       openInSlicer: true,
       openInStudio: true,
     });
+  });
+});
+
+describe("legacyPartnerCaps", () => {
+  it("offered a slicer only the 3D files the partner page knew, and downloads for the rest", () => {
+    expect(legacyPartnerCaps("Bin.3mf").openInSlicer).toBe(true);
+    for (const name of ["Part.glb", "Tower.gcode", "Guide.pdf"])
+      expect(legacyPartnerCaps(name).openInSlicer).toBe(false);
   });
 });

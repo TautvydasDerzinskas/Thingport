@@ -23,16 +23,12 @@ import { useToast } from "../../../components/ToastProvider";
 import UserAvatar from "../../../components/UserAvatar";
 import { switchSlicer } from "../../../hooks/useSlicerPreference";
 import { saveResponseToDisk } from "../../../utils/downloadResponse";
-import { extOf } from "../../../utils/fileExtensions";
-import { legacyCaps } from "../../../utils/fileCaps";
+import { legacyPartnerCaps } from "../../../utils/fileCaps";
 import ModelFileSelect from "../../ModelDetailPage/ModelFileSelect";
 import OpenInSlicerButton from "../../ModelDetailPage/OpenInSlicerButton";
 import { useSlicerChoice, type ModelFile } from "../../ModelDetailPage/useOpenInSlicer";
 import ElsewhereGone from "./ElsewhereGone";
 import RemoteCopyPanel from "./RemoteCopyPanel";
-
-// What slicers open; anything else is downloaded instead.
-const SLICES = new Set(["stl", "3mf", "step", "stp", "obj"]);
 
 const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" } as const;
 
@@ -102,8 +98,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
                 plate: null,
                 size: file.size,
                 folder: file.folder ?? null,
-                // A partner's files come with no caps yet: what the app offered before.
-                caps: legacyCaps(file.name, "plate"),
+                caps: file.caps ?? legacyPartnerCaps(file.name),
               },
             ]
           : [],
@@ -112,10 +107,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
   );
   // The first a slicer opens, until one is picked.
   const selected =
-    files.find((file) => file.key === selectedKey) ??
-    files.find((file) => SLICES.has(extOf(file.filename))) ??
-    files[0] ??
-    null;
+    files.find((file) => file.key === selectedKey) ?? files.find((file) => file.caps.openInSlicer) ?? files[0] ?? null;
 
   const copied = useCallback(
     (copiedId: string, copyId: string) =>
@@ -291,7 +283,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
               {selected && (
                 <OpenInSlicerButton
                   file={selected}
-                  canOpen={SLICES.has(extOf(selected.filename))}
+                  canOpen={selected.caps.openInSlicer}
                   slicerOption={slicerOption}
                   slicerOptions={slicerOptions}
                   onOpened={(slicerId) => void switchSlicer(slicerId)}
