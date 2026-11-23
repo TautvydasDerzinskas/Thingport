@@ -186,9 +186,10 @@ const viewDesign: McpToolDefinition = {
   name: "studio_view_design",
   title: "Look at a Studio design",
   description:
-    "Pictures of a design's visible bodies from the views asked for, to check how it looks. iso is from the front " +
-    "right, above; front looks along +Y; right along -X; top straight down. Each picture is fitted to the bodies, so " +
-    "it shows no scale: studio_get_design has the sizes.",
+    "Pictures of a design's visible bodies from the views asked for, to check how it looks from any side. iso is " +
+    "from the front right, above; front looks along +Y, back along -Y; right along -X, left along +X; top straight " +
+    "down; bottom straight up from below the bed, the front at the picture's top, which shows what a print stands on. " +
+    "Each picture is fitted to the bodies, so it shows no scale: studio_get_design has the sizes.",
   readOnly: true,
   group: "studio",
   inputSchema: {
@@ -469,6 +470,14 @@ const saveToLibrary: McpToolDefinition = {
       .max(120)
       .optional()
       .describe("The print profile's name on the model's page. Default: its own name, else its preset and material."),
+    picture_plate_id: z
+      .string()
+      .regex(/^plate-[1-9]\d*$/)
+      .optional()
+      .describe(
+        "The plate a new model is pictured by, and whose picture is the 3MF's thumbnail: a plate from " +
+          "studio_get_design that isn't hidden, is loaded and has a visible body. Default: the first such plate.",
+      ),
   },
   async run(ctx, args) {
     const modelId = args.model_id as string | undefined;
@@ -476,6 +485,7 @@ const saveToLibrary: McpToolDefinition = {
       name: args.name as string | undefined,
       modelId,
       profileName: args.profile_name as string | undefined,
+      picturePlateId: args.picture_plate_id as string | undefined,
     });
     return {
       done: modelId

@@ -2659,22 +2659,40 @@ export const STUDIO_COMMANDS = {
   }),
 
   delete_plate: command({
-    title: "Delete an empty build plate",
+    title: "Delete a build plate",
     description:
-      "Deletes an empty build plate. Move its features first. plate-1, where bodies without a plate_id go, always remains.",
+      "Deletes a build plate with everything on it: its bodies and sketches, and the features they're made from. Move " +
+      "anything to keep to another plate first, with move_to_plate. A plate still to load from a 3MF (pending_import) " +
+      "goes without loading. plate-1, where bodies without a plate_id go, always remains.",
     destructive: true,
     args: { plate_id: plateId },
     apply(doc, { plate_id }) {
       if (plate_id === DEFAULT_PLATE_ID) throw new CommandError("plate-1 cannot be deleted.");
-      if (findPlate(doc, plate_id).source)
-        throw new CommandError("Load this build plate first.", "studio_plate_pending");
-      if (doc.features.some((feature) => feature.plate_id === plate_id && !consumerOf(doc, feature.id)))
-        throw new CommandError("Move the features off this plate before deleting it.");
+      findPlate(doc, plate_id);
+      // The plate's bodies and sketches, and all they're made from.
+      const gone = new Set<string>();
+      const take = (id: string) => {
+        if (gone.has(id)) return;
+        gone.add(id);
+        const feature = featureById(doc, id);
+        if (feature) for (const input of inputsOf(feature)) take(input);
+      };
+      for (const feature of topLevel(doc)) if (plateOf(feature) === plate_id) take(feature.id);
+      doc.features = doc.features.filter((feature) => !gone.has(feature.id));
       for (const feature of doc.features) {
         if (feature.plate_id === plate_id) delete feature.plate_id;
       }
+      if (doc.locked_layout) {
+        const kept = doc.locked_layout.filter((id) => !gone.has(id));
+        if (kept.length) doc.locked_layout = kept;
+        else delete doc.locked_layout;
+      }
       doc.plates = studioPlates(doc).filter((plate) => plate.id !== plate_id);
-      return { document: doc, created: [], summary: `Deleted ${plate_id}` };
+      return {
+        document: doc,
+        created: [],
+        summary: gone.size ? `Deleted ${plate_id} and the ${gone.size} features on it` : `Deleted ${plate_id}`,
+      };
     },
   }),
 

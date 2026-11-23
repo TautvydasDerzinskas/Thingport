@@ -586,6 +586,37 @@ describe("Studio", () => {
     const file = await prisma.plate.findFirstOrThrow({ where: { printId: saved.body.model.id } });
     const library = await readBambuPackage(fs.readFileSync(resolvePlateFilePath(file)!));
     expect(library.plates.map(({ name }) => name)).toEqual(["Tests", "Plate 1"]);
+    // Pictured by the first shown plate unless another is chosen; the 3MF's thumbnail follows the choice.
+    const thumbnailOf = async (bytes: Buffer) =>
+      (await (await JSZip.loadAsync(bytes)).file("_rels/.rels")!.async("string")).match(
+        /Target="(\/Metadata\/[^"]+)"/,
+      )?.[1];
+    expect(await thumbnailOf(fs.readFileSync(resolvePlateFilePath(file)!))).toBe("/Metadata/plate_1.png");
+    const picturedBy = (await tool("save_to_library", { name: "By plate 1", picture_plate_id: "plate-1" })).data;
+    const pictured = await prisma.plate.findFirstOrThrow({ where: { printId: picturedBy.model_id } });
+    expect(await thumbnailOf(fs.readFileSync(resolvePlateFilePath(pictured)!))).toBe("/Metadata/plate_2.png");
+    expect(await prisma.previewImage.count({ where: { printId: picturedBy.model_id, generated: false } })).toBe(1);
+    const hiddenPicture = await request(app)
+      .post(`/api/studio/designs/${design.id}/save-to-library`)
+      .set(auth(alice))
+      .send({ picture_plate_id: lids });
+    expect(hiddenPicture.status).toBe(400);
+    expect(hiddenPicture.body.code).toBe("studio_picture_plate_invalid");
+    // The plate pictures the save dialog offers.
+    const platePicture = await request(app)
+      .get(`/api/studio/designs/${design.id}/plates/plate-1/picture?v=1`)
+      .set(auth(alice))
+      .buffer(true)
+      .parse(readBinary);
+    expect(platePicture.status).toBe(200);
+    expect(platePicture.headers["content-type"]).toBe("image/png");
+    expect((await sharp(platePicture.body).metadata()).width).toBe(256);
+    expect(
+      (await request(app).get(`/api/studio/designs/${design.id}/plates/plate-9/picture`).set(auth(alice))).status,
+    ).toBe(404);
+    expect(
+      (await request(app).get(`/api/studio/designs/${design.id}/plates/plate-1/picture`).set(auth(bob))).status,
+    ).toBe(404);
 
     // A hidden plate too heavy to check doesn't stop the check of the shown ones.
     const heavy = (await tool("add_sphere", { plate_id: lids, radius: 5, segments: 256 })).data.created[0];
@@ -1239,9 +1270,15 @@ describe("Studio", () => {
       const viewPending = await callTool(token, "studio_view_design", { design_id: design.id, plate_id: "plate-2" });
       expect(viewPending.isError).toBe(true);
       expect(viewPending.text).toContain("studio_load_source_plate");
+      // A plate still to load goes without loading, and undo brings it back still to load.
       const deletePending = await command(alice, design.id, "delete_plate", { plate_id: "plate-2" });
-      expect(deletePending.status).toBe(400);
-      expect(deletePending.body.code).toBe("studio_plate_pending");
+      expect(deletePending.status).toBe(200);
+      expect(deletePending.body.design.document.plates).toHaveLength(1);
+      const undoneDelete = await command(alice, design.id, "undo");
+      expect(undoneDelete.body.design.document.plates).toMatchObject([
+        { id: "plate-1", source: { archive_id: expect.any(String) } },
+        { id: "plate-2", source: { archive_id: expect.any(String) } },
+      ]);
       const exported = await request(app)
         .get(`/api/studio/designs/${design.id}/export/auto/-/-/-/-/Lazy.3mf`)
         .set(auth(alice))
@@ -1261,7 +1298,7 @@ describe("Studio", () => {
       expect(Object.keys(stlArchive.files)).toEqual(["1 - Plate 1.stl", "2 - Plate 2.stl"]);
       const afterExport = await request(app).get(`/api/studio/designs/${design.id}`).set(auth(alice));
       expect(afterExport.body.document.features).toEqual([]);
-      expect(afterExport.body.version).toBe(opened.body.design.version);
+      expect(afterExport.body.version).toBe(undoneDelete.body.design.version);
       const stored = await prisma.plate.findUniqueOrThrow({ where: { id: fileId } });
       fs.unlinkSync(resolvePlateFilePath(stored)!);
       const loaded = await Promise.all([

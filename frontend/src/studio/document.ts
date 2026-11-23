@@ -325,6 +325,19 @@ export function hiddenPlates(doc: StudioDocument): Set<string> {
   return new Set(studioPlates(doc).flatMap((plate) => (plate.hidden ? [plate.id] : [])));
 }
 
+/** The plates a design saved to the library can be pictured by: shown, loaded and with a visible body, in the
+ *  plates' order. */
+export function picturablePlates(doc: StudioDocument): string[] {
+  const withBodies = new Set(
+    topLevel(doc)
+      .filter((feature) => isBody(feature) && feature.visible)
+      .map(plateOf),
+  );
+  return studioPlates(doc)
+    .filter((plate) => !plate.hidden && !plate.source && withBodies.has(plate.id))
+    .map((plate) => plate.id);
+}
+
 /** Whether saving or exporting the whole design has anything to write: a visible body or an unopened source plate,
  *  on a shown plate. */
 export function exportsSomething(doc: StudioDocument): boolean {
@@ -337,7 +350,7 @@ export function exportsSomething(doc: StudioDocument): boolean {
 
 // What one design may hold. A server evaluates designs for assistants, so these keep that bounded.
 export const LIMITS = {
-  features: 200,
+  features: 500,
   shapesPerSketch: 50,
   pointsPerPolygon: 500,
   /** A text shape's characters. */

@@ -16,6 +16,7 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -58,6 +59,7 @@ import {
 import { FeatureIcon, IntersectIcon, SubtractIcon, UnionIcon } from "./studioIcons";
 import { featureLabel, plateLabel } from "./labels";
 import RenameDialog from "../../components/RenameDialog";
+import { useConfirm } from "../../components/ConfirmProvider";
 import SidePanel from "./SidePanel";
 import type { RunCommand } from "./useStudioDesign";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
@@ -137,6 +139,8 @@ type PlateItemProps = {
   canEdit: boolean;
   hasActions: boolean;
   dropLine: "before" | "after" | null;
+  /** How many objects are on it, shown beside its name. */
+  count: number;
   onActivate: () => void;
   onExpand: (expanded: boolean) => void;
   onMenu: (anchor: MenuAnchor) => void;
@@ -153,6 +157,7 @@ function PlateItem({
   canEdit,
   hasActions,
   dropLine,
+  count,
   onActivate,
   onExpand,
   onMenu,
@@ -172,8 +177,8 @@ function PlateItem({
       aria-label={name}
       aria-expanded={expanded}
       aria-current={active}
-      // The overlay shows the plate being dragged; its place stays as a faint placeholder.
-      sx={{ position: "relative", opacity: isDragging ? 0.4 : 1 }}
+      // The overlay shows the plate being dragged; its place stays as a faint placeholder. Plates sit apart, as bands.
+      sx={{ position: "relative", opacity: isDragging ? 0.4 : 1, "& + &": { mt: 0.75 } }}
     >
       {dropLine && <DropLine at={dropLine} />}
       <ListItemButton
@@ -194,15 +199,21 @@ function PlateItem({
           event.preventDefault();
           onExpand(event.key === "ArrowRight");
         }}
-        sx={{
+        // A plate is a shaded band, unlike an object's plain row; the one in view is tinted, with a bar at its edge.
+        sx={(theme) => ({
           borderRadius: 1,
           px: 0.5,
           py: 0.25,
           gap: 0.5,
-          minHeight: 32,
+          minHeight: 34,
+          bgcolor: alpha(theme.palette.text.primary, 0.05),
+          boxShadow: active ? `inset 3px 0 0 ${theme.palette.primary.main}` : "none",
+          "&:hover": { bgcolor: alpha(theme.palette.text.primary, 0.09) },
+          "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.12) },
+          "&.Mui-selected:hover": { bgcolor: alpha(theme.palette.primary.main, 0.18) },
           "& .row-action": { opacity: 0, transition: "opacity 150ms" },
           "&:hover .row-action, &:focus-within .row-action": { opacity: 1 },
-        }}
+        })}
       >
         {canEdit && (
           <Tooltip title={t("studio.plates.drag")}>
@@ -241,21 +252,40 @@ function PlateItem({
         >
           <ChevronRightIcon sx={{ fontSize: 18, transform: expanded ? "rotate(90deg)" : "none" }} />
         </IconButton>
-        <LayersOutlinedIcon
+        <Box
           sx={{
-            fontSize: 18,
-            color: active ? "primary.main" : "text.secondary",
+            width: 22,
+            height: 22,
             flexShrink: 0,
+            display: "grid",
+            placeItems: "center",
+            borderRadius: 1,
+            bgcolor: "background.paper",
+            color: active ? "primary.main" : "text.secondary",
             opacity: hidden ? 0.5 : 1,
           }}
-        />
-        <Typography
-          variant="body2"
-          noWrap
-          sx={{ flex: 1, minWidth: 0, fontWeight: active ? 600 : 500, opacity: hidden ? 0.5 : 1 }}
         >
+          <LayersOutlinedIcon sx={{ fontSize: 15 }} />
+        </Box>
+        <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0, fontWeight: 650, opacity: hidden ? 0.5 : 1 }}>
           {name}
         </Typography>
+        {count > 0 && (
+          <Typography
+            variant="caption"
+            aria-label={t("studio.plates.objects", { count })}
+            sx={{
+              flexShrink: 0,
+              px: 0.75,
+              lineHeight: "17px",
+              borderRadius: 2,
+              bgcolor: "background.paper",
+              color: "text.secondary",
+            }}
+          >
+            {count}
+          </Typography>
+        )}
         {canEdit && (
           <Tooltip title={t(hidden ? "studio.plates.show" : "studio.plates.hide")}>
             <IconButton
@@ -296,8 +326,20 @@ function PlateItem({
         )}
       </ListItemButton>
       {expanded && (
-        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-        <Box role="group" sx={{ opacity: hidden ? 0.5 : 1 }}>
+        // Its objects hang on a guide line, at the same place in and out of edit mode, so they don't shift.
+        <Box
+          // A tree item's children are a group, which no HTML element is.
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+          role="group"
+          sx={{
+            opacity: hidden ? 0.5 : 1,
+            ml: "13px",
+            pl: 0.5,
+            my: 0.25,
+            borderLeft: 1,
+            borderColor: "divider",
+          }}
+        >
           {children}
         </Box>
       )}
@@ -321,6 +363,7 @@ export default function ObjectsPanel({
   run,
 }: Props) {
   const { t } = useTranslation("app");
+  const confirm = useConfirm();
   const title = t("studio.panels.features");
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", { noSsr: true });
   const sensors = useSensors(
@@ -349,6 +392,21 @@ export default function ObjectsPanel({
     Boolean(plate.source || rootsByPlate.get(plate.id)?.some((feature) => isBody(feature) && feature.visible));
 
   const menuIndex = menuPlate ? plates.indexOf(menuPlate) : -1;
+  // Asks first, saying what goes with the plate; undo brings it all back.
+  const deletePlate = async (plate: StudioPlate) => {
+    const count = rootsByPlate.get(plate.id)?.length ?? 0;
+    const ok = await confirm({
+      title: t("studio.plates.deleteTitle", { name: plateLabel(plate, t) }),
+      message: count
+        ? t("studio.plates.deleteWith", { count })
+        : plate.source
+          ? t("studio.plates.deletePending")
+          : t("studio.actions.deleteHint"),
+      confirmLabel: t("studio.actions.delete"),
+      destructive: true,
+    });
+    if (ok) void run("delete_plate", { plate_id: plate.id });
+  };
   const movePlate = (id: string, position: number) => void run("move_plate", { plate_id: id, position });
   const dropLineOf = (id: string): "before" | "after" | null => {
     if (!drag || drag.over !== id || drag.over === drag.id) return null;
@@ -424,11 +482,11 @@ export default function ObjectsPanel({
           }}
           sx={{
             borderRadius: 1,
-            pl: 2 + depth * 1.5,
+            pl: 0.5,
             pr: 0.25,
             py: 0.25,
             gap: 0.5,
-            minHeight: 32,
+            minHeight: 30,
             cursor: editing || children.length ? "pointer" : "default",
             opacity: feature.visible || depth > 0 ? 1 : 0.5,
             "& .row-action": { opacity: chosen ? 1 : 0, transition: "opacity 150ms" },
@@ -460,7 +518,7 @@ export default function ObjectsPanel({
           <Box sx={{ display: "inline-flex", color: chosen ? "primary.main" : "text.secondary", flexShrink: 0 }}>
             <Icon feature={feature} />
           </Box>
-          <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0, fontSize: "0.8125rem" }}>
             {label}
           </Typography>
           {errors[feature.id] && (
@@ -511,7 +569,9 @@ export default function ObjectsPanel({
         {expanded && (
           // A tree item's children are a group, which no HTML element is.
           // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-          <Box role="group">{children.map((child) => row(child, plateId, depth + 1))}</Box>
+          <Box role="group" sx={{ ml: "13px", pl: 0.5, borderLeft: 1, borderColor: "divider" }}>
+            {children.map((child) => row(child, plateId, depth + 1))}
+          </Box>
         )}
       </Box>
     );
@@ -570,6 +630,7 @@ export default function ObjectsPanel({
                   canEdit={canEditPlates}
                   hasActions={canEditPlates || canExportPlate(plate)}
                   dropLine={dropLineOf(plate.id)}
+                  count={roots.length}
                   onActivate={() => activatePlate(plate.id)}
                   onExpand={(next) => expandPlate(plate.id, next)}
                   onMenu={(anchor) => setPlateMenu({ id: plate.id, anchor })}
@@ -580,7 +641,11 @@ export default function ObjectsPanel({
                   {roots.length ? (
                     roots.map((feature) => row(feature, plate.id, 0))
                   ) : (
-                    <Typography variant="body2" color="text.secondary" sx={{ pl: 3, pr: 1, py: 0.75 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ pl: 1, pr: 1, py: 0.75, fontSize: "0.8125rem" }}
+                    >
                       {t(plate.source ? "studio.importModel.platePending" : "studio.tree.empty")}
                     </Typography>
                   )}
@@ -699,15 +764,10 @@ export default function ObjectsPanel({
           <Divider key="delete-divider" />,
           <MenuItem
             key="delete"
-            disabled={
-              !menuPlate ||
-              menuPlate.id === DEFAULT_PLATE_ID ||
-              Boolean(menuPlate.source) ||
-              rootsByPlate.has(menuPlate.id)
-            }
+            disabled={!menuPlate || menuPlate.id === DEFAULT_PLATE_ID}
             onClick={() => {
-              if (menuPlate) void run("delete_plate", { plate_id: menuPlate.id });
               setPlateMenu(null);
+              if (menuPlate) void deletePlate(menuPlate);
             }}
             sx={{ color: "error.main" }}
           >

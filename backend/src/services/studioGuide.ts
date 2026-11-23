@@ -41,7 +41,8 @@ read it again (studio_get_design) before building on something.
 - studio_import_model accepts defer_plates: true for a 3MF in a new design. The result lists pending_plate_ids,
   and studio_get_design marks those plates with pending_import. Use studio_load_source_plate with the plate_id
   to bring in its bodies before editing or viewing that plate. Load all shown pending plates before studio_check_print.
-- studio_view_design can show an individual plate by plate_id. Saving to the library preserves plates and colors in 3MF.
+- studio_view_design can show an individual plate by plate_id. Saving to the library preserves plates and colors in 3MF;
+  studio_save_to_library's picture_plate_id picks the plate the new model is pictured by.
 
 ## Naming faces and edges
 
@@ -147,7 +148,8 @@ hole_d = 5 mm, holes = 6 with unit none) and set_expression makes features follo
 one change to a parameter then changes them all. Formulas know units: a length field takes a length, a count a plain
 number, and a bare number added to a length is in the design's display_units, so write units in (30 mm) to be sure.
 
-Look at the result with studio_view_design (iso, top, front, right...) as you go.
+Look at the result with studio_view_design as you go: iso, front, back, left, right, top and bottom. Check bottom before
+saving something to print: it shows what the print stands on.
 
 ## Print profiles
 

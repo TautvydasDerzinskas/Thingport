@@ -14,6 +14,8 @@ export type StudioExportOptions = {
   plate?: string;
   slicer?: string;
   printer?: { id: string; nozzle: string };
+  /** The plate whose picture is the 3MF's thumbnail. */
+  thumbnailPlate?: string;
 };
 
 export async function exportStudioDesign(userId: string, design: StudioDesignOut, options: StudioExportOptions) {
@@ -61,6 +63,7 @@ export async function exportStudioDesign(userId: string, design: StudioDesignOut
       format: target ? "3mf" : options.format,
       plate: options.plate,
       target,
+      thumbnailPlate: options.thumbnailPlate,
     }),
   );
   if (made.status === "too-complex")
