@@ -4697,6 +4697,8 @@
         "properties": "Propriétés",
         "hide": "Masquer {{panel}}",
         "show": "Afficher {{panel}}",
+        "resize": "Redimensionner {{panel}}",
+        "resizeHint": "Faites glisser pour redimensionner. Double-cliquez pour la largeur par défaut.",
         "print": "Impression",
         "rightPanel": "Propriétés / Impression"
       },

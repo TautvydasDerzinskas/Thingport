@@ -4684,6 +4684,8 @@
         "properties": "Propiedades",
         "hide": "Ocultar {{panel}}",
         "show": "Mostrar {{panel}}",
+        "resize": "Cambiar el ancho de {{panel}}",
+        "resizeHint": "Arrastra para cambiar el ancho. Doble clic para el ancho predeterminado.",
         "print": "Impresión",
         "rightPanel": "Propiedades / Impresión"
       },

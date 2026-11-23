@@ -4494,6 +4494,8 @@
         "properties": "Properties",
         "hide": "Hide {{panel}}",
         "show": "Show {{panel}}",
+        "resize": "Resize {{panel}}",
+        "resizeHint": "Drag to resize. Double-click for the default width.",
         "print": "Print",
         "rightPanel": "Properties / Print"
       },

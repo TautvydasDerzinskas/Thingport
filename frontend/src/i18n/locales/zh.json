@@ -4307,6 +4307,8 @@
         "properties": "属性",
         "hide": "隐藏 {{panel}}",
         "show": "显示 {{panel}}",
+        "resize": "调整 {{panel}} 宽度",
+        "resizeHint": "拖动以调整宽度，双击恢复默认宽度。",
         "print": "打印",
         "rightPanel": "属性 / 打印"
       },

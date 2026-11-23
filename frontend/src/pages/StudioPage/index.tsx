@@ -60,6 +60,7 @@ import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
+import ResizeHandle from "../../components/ResizeHandle";
 import PrintProfilePanel from "./PrintProfilePanel";
 import StudioSaveDialog, { type StudioSaveDraft, type StudioSaveRequest } from "./StudioSaveDialog";
 import { profileAiPrompt } from "./printProfileUi";
@@ -166,6 +167,9 @@ function panelSx(theme: Theme, side: "left" | "right", order: number) {
   };
 }
 
+/** The Objects / Plates panel's width in px. A changed width lasts while Studio stays open. */
+const OBJECTS_WIDTH = { default: 220, min: 180, max: 480 };
+
 function slideIn(frames: ReturnType<typeof keyframes>) {
   return {
     animation: `${frames} 200ms ease-out`,
@@ -260,6 +264,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   });
   const [mode, setMode] = useState<StudioMode>("select");
   const [panels, setPanels] = useState(storedPanels);
+  const [objectsWidth, setObjectsWidth] = useState(OBJECTS_WIDTH.default);
   const togglePanel = (panel: StudioPanel) =>
     setPanels((prev) => {
       const next = { ...prev, [panel]: !prev[panel] };
@@ -1242,7 +1247,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
               xs: "minmax(0, 1fr)",
               // A hidden panel leaves a strip with its tab.
               md: [
-                showObjectsPanel && (panels.features ? "220px" : "36px"),
+                // The view keeps most of a narrow window, whatever the panel was dragged to.
+                showObjectsPanel && (panels.features ? `min(${objectsWidth}px, 40vw)` : "36px"),
                 "minmax(0, 1fr)",
                 editing && (panels.properties ? "270px" : "36px"),
                 assistantPanel && "300px",
@@ -1254,7 +1260,29 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           }}
         >
           {showObjectsPanel && (
-            <Box sx={(theme) => ({ ...panelSx(theme, "right", 2), ...slideIn(fromLeft) })}>
+            <Box
+              sx={(theme) => ({
+                ...panelSx(theme, "right", 2),
+                ...slideIn(fromLeft),
+                // Above the view, which the resize handle reaches over.
+                position: "relative",
+                zIndex: 1,
+              })}
+            >
+              {panels.features && (
+                <Box sx={{ display: { xs: "none", md: "block" } }}>
+                  <ResizeHandle
+                    edge="right"
+                    width={objectsWidth}
+                    min={OBJECTS_WIDTH.min}
+                    max={OBJECTS_WIDTH.max}
+                    defaultWidth={OBJECTS_WIDTH.default}
+                    onChange={setObjectsWidth}
+                    label={t("studio.panels.resize", { panel: objectsLabel })}
+                    hint={t("studio.panels.resizeHint")}
+                  />
+                </Box>
+              )}
               {panels.features ? (
                 <ObjectsPanel
                   key={designId}

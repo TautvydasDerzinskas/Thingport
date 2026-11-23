@@ -4795,6 +4795,8 @@
         "properties": "Savybės",
         "hide": "Slėpti: {{panel}}",
         "show": "Rodyti: {{panel}}",
+        "resize": "Keisti plotį: {{panel}}",
+        "resizeHint": "Vilkite, kad pakeistumėte plotį. Dukart spustelėkite – numatytasis plotis.",
         "print": "Spausdinimas",
         "rightPanel": "Savybės / Spausdinimas"
       },

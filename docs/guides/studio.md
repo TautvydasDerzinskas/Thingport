@@ -15,7 +15,8 @@ Its **Recent** list jumps to the three designs you edited last.
 The toolbar's **Save** menu is available in both modes. The **Edit** button (the pencil) shows the editing tools,
 **Properties**, and the status bar. You can turn the view and use the undo and redo shortcuts in either mode.
 The **Objects / Plates** and **Properties** panels fold away with the arrows in their headers. Reopen them from
-their tabs or from the panels button at the right of the status bar, beside the print check and **Studio settings**.
+their tabs or from the panels button at the right of the status bar, beside the print check and **Studio settings**. Drag the pill on the **Objects / Plates** panel's edge to widen it for long names, or focus it and use the arrow keys;
+double-click it for the default width. The width lasts while Studio is open, and a new visit starts at the default.
 
 ### Plates, colors, and export
 

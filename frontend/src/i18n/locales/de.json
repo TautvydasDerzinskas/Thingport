@@ -4498,6 +4498,8 @@
         "properties": "Eigenschaften",
         "hide": "{{panel}} ausblenden",
         "show": "{{panel}} einblenden",
+        "resize": "Breite von {{panel}} ändern",
+        "resizeHint": "Zum Ändern der Breite ziehen. Doppelklick stellt die Standardbreite her.",
         "print": "Druck",
         "rightPanel": "Eigenschaften / Druck"
       },
