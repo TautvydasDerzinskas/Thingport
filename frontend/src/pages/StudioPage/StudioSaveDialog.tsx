@@ -187,7 +187,7 @@ export default function StudioSaveDialog({
   const Icon = preset ? PRESET_ICONS[preset.id] : PrintOutlinedIcon;
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open onClose={saving ? undefined : onClose} fullWidth maxWidth="sm">
       <DialogTitle>{t("studio.design.saveToLibrary")}</DialogTitle>
       <DialogContent sx={{ display: "grid", gap: 2, pt: "4px !important" }}>
         <Segmented
@@ -429,7 +429,9 @@ export default function StudioSaveDialog({
             {t("studio.save.willHave", { name: model.title || model.name, count: profilesOf(model) + 1 })}
           </Typography>
         )}
-        <Button onClick={onClose}>{t("common:cancel")}</Button>
+        <Button disabled={saving} onClick={onClose}>
+          {t("common:cancel")}
+        </Button>
         <Button variant="contained" disabled={!ready || saving} onClick={save}>
           {mode === "add" ? t("studio.save.addProfile") : t("common:save")}
         </Button>

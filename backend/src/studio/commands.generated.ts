@@ -2669,10 +2669,22 @@ export const STUDIO_COMMANDS = {
     apply(doc, { plate_id }) {
       if (plate_id === DEFAULT_PLATE_ID) throw new CommandError("plate-1 cannot be deleted.");
       findPlate(doc, plate_id);
-      // The plate's bodies and sketches, and all they're made from.
+      // Features reachable from surviving top-level features must be kept.
+      const needed = new Set<string>();
+      const keep = (id: string) => {
+        if (needed.has(id)) return;
+        needed.add(id);
+        const feature = featureById(doc, id);
+        if (feature) for (const input of inputsOf(feature)) keep(input);
+      };
+      for (const feature of topLevel(doc)) {
+        if (plateOf(feature) !== plate_id) keep(feature.id);
+      }
+
+      // The plate's bodies and sketches, and all they're made from, unless needed by a surviving plate.
       const gone = new Set<string>();
       const take = (id: string) => {
-        if (gone.has(id)) return;
+        if (gone.has(id) || needed.has(id)) return;
         gone.add(id);
         const feature = featureById(doc, id);
         if (feature) for (const input of inputsOf(feature)) take(input);

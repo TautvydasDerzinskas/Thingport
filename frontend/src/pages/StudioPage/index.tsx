@@ -248,6 +248,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [pickedPlate, setPickedPlate] = useState(DEFAULT_PLATE_ID);
   const activePlate =
     doc && studioPlates(doc).some((plate) => plate.id === pickedPlate) ? pickedPlate : DEFAULT_PLATE_ID;
+  const activePlateRef = useRef(activePlate);
+  activePlateRef.current = activePlate;
   const plateInView = doc ? studioPlates(doc).find((plate) => plate.id === activePlate) : undefined;
   const plateSource = plateInView?.source;
   const [slicerOpen, setSlicerOpen] = useState(false);
@@ -797,15 +799,16 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     try {
       const saved = await waitForSaves(design.id);
       if (!saved) return;
+      const chosenPlate = picturePlate ?? activePlate;
       // A new model pictured by the plate in view is shown by the view as it is; by another plate, the server
       // pictures that one. A profile added to a model leaves its pictures alone. A hidden plate draws nothing, so it
-      // gives no picture.
+      // gives no picture. The view's snapshot is only used if the chosen plate is still the one displayed.
       const plateHasBodies =
         !modelId &&
-        (picturePlate ?? activePlate) === activePlate &&
-        !studioPlates(saved.document).some((plate) => plate.id === activePlate && plate.hidden) &&
+        chosenPlate === activePlateRef.current &&
+        !studioPlates(saved.document).some((plate) => plate.id === chosenPlate && plate.hidden) &&
         topLevel(saved.document).some(
-          (feature) => isBody(feature) && feature.visible && plateOf(feature) === activePlate,
+          (feature) => isBody(feature) && feature.visible && plateOf(feature) === chosenPlate,
         );
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
       const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;

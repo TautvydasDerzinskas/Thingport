@@ -125,7 +125,12 @@ export async function saveStudioDesignToLibrary(userId: string, designId: string
       "Picture the design by a plate that's shown and has a visible body",
       "studio_picture_plate_invalid",
     );
-  const made = await exportStudioDesign(userId, design, { ...exportOptionsFor(profile), thumbnailPlate: picturePlate });
+  // One default plate for both the package thumbnail and the model picture.
+  const resolvedPicturePlate = picturePlate ?? picturablePlates(design.document)[0];
+  const made = await exportStudioDesign(userId, design, {
+    ...exportOptionsFor(profile),
+    thumbnailPlate: resolvedPicturePlate,
+  });
   const title = profile ? profileTitle(profile, input.profileName) : null;
   const stored: StoredProfile | null =
     profile && title
@@ -167,8 +172,8 @@ export async function saveStudioDesignToLibrary(userId: string, designId: string
       picture = await fs.readFile(pictureFile);
     } else {
       // Without a picture the library draws its own render of the 3MF, so a failed one isn't the end of it.
-      const plate = picturePlate ?? picturablePlates(design.document)[0];
-      if (plate) picture = await studioPlatePicture(userId, design, plate, PICTURE_PX).catch(() => null);
+      if (resolvedPicturePlate)
+        picture = await studioPlatePicture(userId, design, resolvedPicturePlate, PICTURE_PX).catch(() => null);
     }
 
     const name = (input.name ?? design.name).trim() || design.name;

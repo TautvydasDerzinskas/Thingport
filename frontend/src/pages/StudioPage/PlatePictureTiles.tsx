@@ -60,7 +60,14 @@ export default function PlatePictureTiles({
           if (old) URL.revokeObjectURL(old);
         })
         .catch(() => {
-          if (!cancelled) setPictures((prev) => ({ ...prev, [id]: prev[id] || false }));
+          if (!cancelled) {
+            const old = urls.current[id];
+            if (old) {
+              URL.revokeObjectURL(old);
+              delete urls.current[id];
+            }
+            setPictures((prev) => ({ ...prev, [id]: false }));
+          }
         });
     }
     return () => {

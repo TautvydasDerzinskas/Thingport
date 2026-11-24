@@ -64,6 +64,23 @@ describe("plate order", () => {
     expect(deleted.document.locked_layout).toEqual(["box-4"]);
   });
 
+  it("preserves inputs used by surviving bodies when deleting a plate", () => {
+    let doc = cmd(emptyDocument(), "add_box", { width: 10, depth: 10, height: 10 });
+    doc = cmd(doc, "split", {
+      feature_id: "box-1",
+      plane: { point: [0, 0, 5], normal: [0, 0, 1] },
+      separate_plates: true,
+    });
+    expect(ids(doc)).toEqual(["plate-1", "plate-2"]);
+    const deleted = applyCommand(doc, "delete_plate", { plate_id: "plate-2" });
+    expect(ids(deleted.document)).toEqual(["plate-1"]);
+    // The second half on plate-2 is removed, but the first half and its source_id box-1 survive.
+    const featureIds = deleted.document.features.map((feature) => feature.id);
+    expect(featureIds).toContain("split-2");
+    expect(featureIds).toContain("box-1");
+    expect(featureIds).not.toContain("split-3");
+  });
+
   it("deletes a plate still to load from a 3MF without loading it", () => {
     const doc = threePlates();
     doc.plates![2].source = { archive_id: "a".repeat(24), index: 1, model: undefined as never };
