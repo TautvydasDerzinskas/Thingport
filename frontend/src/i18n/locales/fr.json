@@ -1038,7 +1038,7 @@
         "yourArea": "Votre région",
         "loadError": "Impossible de charger la météo.",
         "highLow": "Max. {{high}}° Min. {{low}}°",
-        "later": "Dans {{hours}} h : {{temperature}}°, {{condition}}",
+        "later": "Dans {{hours}} h : {{temperature}}°, {{condition, lowercase}}",
         "conditions": {
           "clear": "Dégagé",
           "partly": "Partiellement nuageux",

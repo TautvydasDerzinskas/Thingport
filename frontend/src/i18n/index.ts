@@ -39,4 +39,10 @@ void i18n
     },
   });
 
+// `{{word, lowercase}}` lowercases a word put into a sentence, for languages that write it so: German keeps its
+// nouns capitalised by leaving the format off.
+i18n.services.formatter?.add("lowercase", (value: unknown, lng: string | undefined) =>
+  String(value).toLocaleLowerCase(lng),
+);
+
 export default i18n;

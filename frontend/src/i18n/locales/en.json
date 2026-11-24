@@ -998,7 +998,7 @@
         "yourArea": "Your area",
         "loadError": "Couldn't load the weather.",
         "highLow": "H {{high}}° L {{low}}°",
-        "later": "In {{hours}} h: {{temperature}}°, {{condition}}",
+        "later": "In {{hours}} h: {{temperature}}°, {{condition, lowercase}}",
         "conditions": {
           "clear": "Clear",
           "partly": "Partly cloudy",

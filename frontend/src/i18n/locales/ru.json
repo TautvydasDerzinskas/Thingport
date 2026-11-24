@@ -1751,7 +1751,7 @@
         "yourArea": "Ваше местоположение",
         "loadError": "Не удалось загрузить погоду.",
         "highLow": "Макс. {{high}}° Мин. {{low}}°",
-        "later": "Через {{hours}} ч: {{temperature}}°, {{condition}}",
+        "later": "Через {{hours}} ч: {{temperature}}°, {{condition, lowercase}}",
         "conditions": {
           "clear": "Ясно",
           "partly": "Переменная облачность",

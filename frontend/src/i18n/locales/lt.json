@@ -1047,7 +1047,7 @@
         "yourArea": "Jūsų vietovė",
         "loadError": "Nepavyko įkelti orų.",
         "highLow": "Aukšč. {{high}}° žem. {{low}}°",
-        "later": "Po {{hours}} val.: {{temperature}}°, {{condition}}",
+        "later": "Po {{hours}} val.: {{temperature}}°, {{condition, lowercase}}",
         "conditions": {
           "clear": "Giedra",
           "partly": "Mažai debesuota",
