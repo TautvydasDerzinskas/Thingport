@@ -86,7 +86,7 @@ describe("a dashboard change that can't be saved", () => {
     expect(failed).not.toHaveBeenCalled();
   });
 
-  it("is said to the next dashboard opened when the last one closed before the save failed", async () => {
+  it("is said when a dashboard opens after the save failed while none was open", async () => {
     const { change, onDashboardSaveFailed } = await loaded();
     updateDashboard.mockRejectedValue(new Error("400"));
     change();
@@ -94,9 +94,28 @@ describe("a dashboard change that can't be saved", () => {
 
     const failed = vi.fn<() => void>();
     onDashboardSaveFailed(failed);
+    expect(failed).toHaveBeenCalledTimes(1);
     change();
     await settle();
     expect(failed).toHaveBeenCalledTimes(1);
+
+    const later = vi.fn<() => void>();
+    onDashboardSaveFailed(later);
+    expect(later).not.toHaveBeenCalled();
+  });
+
+  it("isn't said when a dashboard opens after a save has since gone through", async () => {
+    const { change, onDashboardSaveFailed } = await loaded();
+    updateDashboard.mockRejectedValueOnce(new Error("400"));
+    change();
+    await settle();
+    updateDashboard.mockResolvedValueOnce({});
+    change();
+    await settle();
+
+    const failed = vi.fn<() => void>();
+    onDashboardSaveFailed(failed);
+    expect(failed).not.toHaveBeenCalled();
   });
 
   it("isn't said when a newer save has gone through", async () => {

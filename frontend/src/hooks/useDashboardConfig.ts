@@ -47,9 +47,10 @@ function load(): Promise<DashboardConfig> {
 
 // The change already shows here, but a save that fails is gone with the next reload, so the dashboard says so: once
 // when saving starts failing rather than with every drag, and again if it fails after one has gone through. A failure
-// while no dashboard is open to say it doesn't count as said, so the next one is. One from a save older than one that
-// has since gone through isn't said at all: what shows is stored after all.
+// while no dashboard is open is said when one opens, unless a save has gone through by then. One from a save older
+// than one that has since gone through isn't said at all: what shows is stored after all.
 let saveFailing = false;
+let failureUnsaid = false;
 let savesSent = 0;
 let lastSaved = 0;
 const failureListeners = new Set<() => void>();
@@ -60,10 +61,12 @@ function save(value: DashboardConfig) {
     () => {
       lastSaved = Math.max(lastSaved, sent);
       saveFailing = false;
+      failureUnsaid = false;
     },
     () => {
-      if (saveFailing || sent < lastSaved || failureListeners.size === 0) return;
+      if (saveFailing || sent < lastSaved) return;
       saveFailing = true;
+      failureUnsaid = failureListeners.size === 0;
       failureListeners.forEach((listener) => listener());
     },
   );
@@ -76,9 +79,14 @@ function publish(value: DashboardConfig) {
   saveTimer = window.setTimeout(() => save(value), SAVE_DELAY_MS);
 }
 
-/** Calls back when a change to the dashboard couldn't be saved; returns the way to stop. */
+/** Calls back when a change to the dashboard couldn't be saved, straight away if one failed while nothing listened;
+ *  returns the way to stop. */
 export function onDashboardSaveFailed(listener: () => void): () => void {
   failureListeners.add(listener);
+  if (failureUnsaid) {
+    failureUnsaid = false;
+    listener();
+  }
   return () => {
     failureListeners.delete(listener);
   };
