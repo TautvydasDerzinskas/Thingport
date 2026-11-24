@@ -143,8 +143,9 @@ function configSchema<W extends z.ZodTypeAny>(instance: W) {
                   z.string().max(2048),
                   z.number(),
                   z.boolean(),
-                  // A list, e.g. the RSS panel's feed addresses.
-                  z.array(z.string().max(2048)).max(20),
+                  // A list, e.g. the RSS panel's feed addresses, or the trending panel's providers, which the
+                  // Homepage template fills with every one and so grows with each provider added.
+                  z.array(z.string().max(2048)).max(100),
                   // A list of records, e.g. the launcher's links: { name, url, icon }.
                   z.array(z.record(z.string().max(20), z.string().max(2048))).max(100),
                   // A record, e.g. a weather panel's own place: { lat, lon, name, source }.

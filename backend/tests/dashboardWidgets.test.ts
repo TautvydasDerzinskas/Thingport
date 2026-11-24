@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { TRENDING_PROVIDER_IDS } from "../src/providers/index.generated";
 
 const app = createApp();
 const stamp = Date.now();
@@ -85,6 +86,14 @@ describe("dashboard templates", () => {
   it("keeps the options of a custom widget's copy", async () => {
     const copy = `custom-${"c".repeat(25)}:${"k".repeat(12)}`;
     expect((await put(template([[copy]], { [copy]: { tz: "Europe/Vilnius" } }))).status).toBe(200);
+  });
+
+  // The Homepage template fills its trending panel with every provider, so it must save however many there are.
+  it("keeps a trending panel with every provider", async () => {
+    const providers = [...TRENDING_PROVIDER_IDS];
+    expect((await put(template([["trending"]], { trending: { providers } }))).status).toBe(200);
+    const saved = (await request(app).get("/api/settings/dashboard").set(auth())).body.config;
+    expect(saved.templates[0].settings.trending.providers).toEqual(providers);
   });
 
   it("rejects an unknown widget or a malformed copy", async () => {
