@@ -45,12 +45,37 @@ function load(): Promise<DashboardConfig> {
   return inFlight;
 }
 
+// The change already shows here, but a save that fails is gone with the next reload, so the dashboard says so: once
+// when saving starts failing rather than with every drag, and again if it fails after one has gone through.
+let saveFailing = false;
+const failureListeners = new Set<() => void>();
+
+function save(value: DashboardConfig) {
+  settingsApi.updateDashboard(value).then(
+    () => {
+      saveFailing = false;
+    },
+    () => {
+      if (saveFailing) return;
+      saveFailing = true;
+      failureListeners.forEach((listener) => listener());
+    },
+  );
+}
+
 function publish(value: DashboardConfig) {
   cached = value;
   listeners.forEach((listener) => listener(value));
   window.clearTimeout(saveTimer);
-  // The change already shows here; a failed save only means other devices won't follow.
-  saveTimer = window.setTimeout(() => settingsApi.updateDashboard(value).catch(() => {}), SAVE_DELAY_MS);
+  saveTimer = window.setTimeout(() => save(value), SAVE_DELAY_MS);
+}
+
+/** Calls back when a change to the dashboard couldn't be saved; returns the way to stop. */
+export function onDashboardSaveFailed(listener: () => void): () => void {
+  failureListeners.add(listener);
+  return () => {
+    failureListeners.delete(listener);
+  };
 }
 
 export type DashboardConfigApi = {

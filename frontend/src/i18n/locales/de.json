@@ -923,6 +923,7 @@
     },
     "dashboard": {
       "loadError": "Dein Dashboard konnte nicht geladen werden.",
+      "saveFailed": "Dein Dashboard konnte nicht gespeichert werden. Änderungen gehen beim Neuladen der Seite verloren.",
       "seeMore": "Mehr anzeigen",
       "viewCount_one": "{{count}} Aufruf",
       "viewCount_other": "{{count}} Aufrufe",

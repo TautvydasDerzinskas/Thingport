@@ -961,6 +961,7 @@
     },
     "dashboard": {
       "loadError": "Impossible de charger votre tableau de bord.",
+      "saveFailed": "Impossible d’enregistrer votre tableau de bord. Les modifications faites maintenant seront perdues au rechargement de la page.",
       "seeMore": "Voir plus",
       "collectionCount": {
         "label": "Collections",
