@@ -93,6 +93,7 @@ export async function writeStudioThreeMf(
   target?: StudioExportTarget,
   setup?: StudioPrintSetup,
   printProfile?: StudioPrintProfile,
+  thumbnailPlate?: string,
 ): Promise<Uint8Array | null> {
   const profile = target ? slicerProfile(target.slicer) : null;
   const recipe = target?.printer?.recipe;
@@ -218,7 +219,12 @@ export async function writeStudioThreeMf(
     ...profileSettingsFor(printProfile, slots.length),
   });
   add("[Content_Types].xml", contentTypesXml());
-  add("_rels/.rels", relsXml(true, `/${plateThumbEntry(1)}`));
+  // The package's own thumbnail, which file browsers and the library show: the plate chosen for it, else the first.
+  const thumbnailIndex = Math.max(
+    0,
+    plates.findIndex((plate) => plate.id === thumbnailPlate),
+  );
+  add("_rels/.rels", relsXml(true, `/${plateThumbEntry(thumbnailIndex + 1)}`));
   add("3D/3dmodel.model", model);
   add(
     "3D/_rels/3dmodel.model.rels",

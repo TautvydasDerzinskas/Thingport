@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { slicerProfile } from "../adapter";
 import { printerTarget } from "../printers/targets";
+import { picturablePlates } from "../studio/document.generated";
 import { printPreset, type StudioPrintProfile } from "../studio/printProfile.generated";
 import { HttpError } from "../utils/fileUtils";
 import { notifyUpload } from "./modelNotifications";
@@ -13,7 +14,7 @@ import { printOutById } from "./printLoader";
 import { STUDIO_PROFILE_PREFIX, type StoredProfile } from "./printProfileService";
 import { inspectStudioDesign } from "./studioInspect";
 import { exportStudioDesign, type StudioExportOptions } from "./studioExport";
-import { getStudioDesign, studioAssetDir, studioPicturePath } from "./studioService";
+import { getStudioDesign, studioAssetDir, studioPicturePath, type StudioDesignOut } from "./studioService";
 import { addUploadedFiles, addUploadedPreviewImages, createUploadedModel, type UploadedFile } from "./uploadService";
 
 // A Studio design saved to the user's library: its visible bodies as one 3MF, as a model of its own (with a picture of
@@ -76,7 +77,29 @@ export type StudioLibraryInput = {
   modelId?: string | null;
   /** The profile's name on the model's page. */
   profileName?: string | null;
+  /** The shown plate a new model is pictured by when there's no `pictureId`, and whose picture is the 3MF's
+   *  thumbnail. The first shown plate with bodies when left out. */
+  picturePlateId?: string | null;
 };
+
+/** A picture of one of the design's plates from the front right, above, as studio_view_design takes it; null when
+ *  it has nothing to draw. */
+export async function studioPlatePicture(
+  userId: string,
+  design: StudioDesignOut,
+  plateId: string,
+  size: number,
+): Promise<Buffer | null> {
+  const pictured = await inspectStudioDesign(
+    `${design.id}:${design.version}`,
+    design.document,
+    studioAssetDir(userId, design.id),
+    { views: ["iso"], size, color: RENDER_COLOR, plate: plateId },
+  );
+  if (pictured.status === "too-complex")
+    throw new HttpError(422, "The plate is too heavy to picture here", "studio_too_complex");
+  return pictured.status === "ok" && pictured.images[0] ? Buffer.from(pictured.images[0].png, "base64") : null;
+}
 
 /**
  * Saves the design to the library: as a new model, or with `modelId` as a print profile added to that model, which
@@ -95,7 +118,19 @@ export async function saveStudioDesignToLibrary(userId: string, designId: string
   if (input.modelId && !(await prisma.print.findFirst({ where: { id: input.modelId, userId }, select: { id: true } })))
     throw new HttpError(404, "That model isn't in your library", "studio_model_not_found");
 
-  const made = await exportStudioDesign(userId, design, exportOptionsFor(profile));
+  const picturePlate = input.picturePlateId ?? undefined;
+  if (picturePlate && !picturablePlates(design.document).includes(picturePlate))
+    throw new HttpError(
+      400,
+      "Picture the design by a plate that's shown and has a visible body",
+      "studio_picture_plate_invalid",
+    );
+  // One default plate for both the package thumbnail and the model picture.
+  const resolvedPicturePlate = picturePlate ?? picturablePlates(design.document)[0];
+  const made = await exportStudioDesign(userId, design, {
+    ...exportOptionsFor(profile),
+    thumbnailPlate: resolvedPicturePlate,
+  });
   const title = profile ? profileTitle(profile, input.profileName) : null;
   const stored: StoredProfile | null =
     profile && title
@@ -131,19 +166,14 @@ export async function saveStudioDesignToLibrary(userId: string, designId: string
     }
 
     let picture: Buffer | null = null;
-    const assetDir = studioAssetDir(userId, design.id);
     if (input.pictureId) {
       const pictureFile = await studioPicturePath(userId, design.id, input.pictureId);
       if (!pictureFile) throw new HttpError(400, "That picture isn't this design's", "studio_picture_not_found");
       picture = await fs.readFile(pictureFile);
     } else {
-      const pictured = await inspectStudioDesign(`${design.id}:${design.version}`, design.document, assetDir, {
-        views: ["iso"],
-        size: PICTURE_PX,
-        color: RENDER_COLOR,
-      });
       // Without a picture the library draws its own render of the 3MF, so a failed one isn't the end of it.
-      if (pictured.status === "ok" && pictured.images[0]) picture = Buffer.from(pictured.images[0].png, "base64");
+      if (resolvedPicturePlate)
+        picture = await studioPlatePicture(userId, design, resolvedPicturePlate, PICTURE_PX).catch(() => null);
     }
 
     const name = (input.name ?? design.name).trim() || design.name;

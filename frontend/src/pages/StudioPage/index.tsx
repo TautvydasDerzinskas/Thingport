@@ -33,6 +33,7 @@ import {
   plateOf,
   studioPlates,
   featureById,
+  inputsOf,
   isBody,
   topLevel,
   type PartMeasure,
@@ -247,6 +248,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [pickedPlate, setPickedPlate] = useState(DEFAULT_PLATE_ID);
   const activePlate =
     doc && studioPlates(doc).some((plate) => plate.id === pickedPlate) ? pickedPlate : DEFAULT_PLATE_ID;
+  const activePlateRef = useRef(activePlate);
+  activePlateRef.current = activePlate;
   const plateInView = doc ? studioPlates(doc).find((plate) => plate.id === activePlate) : undefined;
   const plateSource = plateInView?.source;
   const [slicerOpen, setSlicerOpen] = useState(false);
@@ -418,16 +421,22 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partsHint, doc, design?.id]);
 
-  const newDesign = useCallback(async () => {
-    try {
-      const created = await studioApi.create(t("studio.design.untitled"));
-      setNoDesigns(false);
-      setDesignsOpen(false);
-      setSearchParams({ design: created.id });
-    } catch (error) {
-      showError(error);
-    }
-  }, [setSearchParams, showError, t]);
+  // A new design is named first, as designs are found again by name.
+  const [naming, setNaming] = useState(false);
+  const newDesign = useCallback(() => setNaming(true), []);
+  const createDesign = useCallback(
+    async (name: string) => {
+      try {
+        const created = await studioApi.create(name);
+        setNoDesigns(false);
+        setDesignsOpen(false);
+        setSearchParams({ design: created.id });
+      } catch (error) {
+        showError(error);
+      }
+    },
+    [setSearchParams, showError],
+  );
 
   const selectedBodies = useMemo(
     () =>
@@ -734,10 +743,28 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     if (selectedBodies.length) selectCreated(await run("hull", { feature_ids: selectedBodies }));
   };
 
+  // A person's delete asks first, saying when what a feature is made from stays behind; undo brings it all back.
+  const confirmDelete = (ids: string[]) => {
+    const features = doc ? ids.flatMap((id) => featureById(doc, id) ?? []) : [];
+    if (!features.length) return Promise.resolve(false);
+    return confirm({
+      title:
+        features.length === 1
+          ? t("studio.actions.deleteTitle", { name: featureLabel(features[0], t) })
+          : t("studio.actions.deleteManyTitle", { count: features.length }),
+      message: features.some((feature) => inputsOf(feature).length)
+        ? t("studio.actions.deleteGivesBack")
+        : t("studio.actions.deleteHint"),
+      confirmLabel: t("studio.actions.delete"),
+      destructive: true,
+    });
+  };
+
   const deleteSelected = async () => {
     if (!doc) return;
     // What's part of another feature waits for it: deleting the boolean gives its parts back first.
     const ids = selected.filter((id) => !consumerOf(doc, id));
+    if (!(await confirmDelete(ids))) return;
     for (const id of ids) await run("delete_feature", { feature_id: id });
     setSelected([]);
   };
@@ -764,19 +791,24 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
 
   // Saving to the library: the view as it is, kept with the design, is the model's picture.
   const [saving, setSaving] = useState(false);
-  const saveToLibrary = async ({ name, modelId, profileName }: StudioSaveRequest) => {
+  // The view as shown, for the save dialog's picture of the plate in view.
+  const snapshotView = useCallback(() => viewport.current?.snapshot() ?? Promise.resolve(null), []);
+  const saveToLibrary = async ({ name, modelId, profileName, picturePlate }: StudioSaveRequest) => {
     if (!design || saving) return;
     setSaving(true);
     try {
       const saved = await waitForSaves(design.id);
       if (!saved) return;
-      // A new model is shown by the view as it is; a profile added to a model leaves its pictures alone. A hidden
-      // plate draws nothing, so it gives no picture.
+      const chosenPlate = picturePlate ?? activePlate;
+      // A new model pictured by the plate in view is shown by the view as it is; by another plate, the server
+      // pictures that one. A profile added to a model leaves its pictures alone. A hidden plate draws nothing, so it
+      // gives no picture. The view's snapshot is only used if the chosen plate is still the one displayed.
       const plateHasBodies =
         !modelId &&
-        !studioPlates(saved.document).some((plate) => plate.id === activePlate && plate.hidden) &&
+        chosenPlate === activePlateRef.current &&
+        !studioPlates(saved.document).some((plate) => plate.id === chosenPlate && plate.hidden) &&
         topLevel(saved.document).some(
-          (feature) => isBody(feature) && feature.visible && plateOf(feature) === activePlate,
+          (feature) => isBody(feature) && feature.visible && plateOf(feature) === chosenPlate,
         );
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
       const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;
@@ -785,6 +817,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         picture_id: picture?.id,
         ...(modelId ? { model_id: modelId } : {}),
         ...(profileName ? { profile_name: profileName } : {}),
+        ...(picturePlate && !modelId ? { picture_plate_id: picturePlate } : {}),
       });
       setSaveOpen(false);
       setSaveDraft(null);
@@ -828,7 +861,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       <StudioDesignMenu
         key={openDesignId}
         designId={openDesignId ?? null}
-        onNewDesign={() => void newDesign()}
+        onNewDesign={newDesign}
         onBrowseDesigns={() => setDesignsOpen(true)}
         onSwitchDesign={(id) => setSearchParams({ design: id })}
         onRenameDesign={() => setRenaming({ kind: "design" })}
@@ -1022,12 +1055,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
               {t("studio.design.emptyHint")}
             </Typography>
-            <Button
-              variant="contained"
-              disableElevation
-              startIcon={<AddBoxOutlinedIcon />}
-              onClick={() => void newDesign()}
-            >
+            <Button variant="contained" disableElevation startIcon={<AddBoxOutlinedIcon />} onClick={newDesign}>
               {t("studio.design.new")}
             </Button>
           </Box>
@@ -1604,7 +1632,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             <Divider key="divider" />,
             <MenuItem
               key="delete"
-              onClick={menuAction(() => void run("delete_feature", { feature_id: menuFeature.id }))}
+              onClick={menuAction(() => {
+                const id = menuFeature.id;
+                void confirmDelete([id]).then((ok) => {
+                  if (ok) void run("delete_feature", { feature_id: id });
+                });
+              })}
               sx={{ color: "error.main" }}
             >
               <ListItemIcon sx={{ color: "inherit" }}>
@@ -1640,9 +1673,18 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             setDesignsOpen(false);
             setSearchParams({ design: id });
           }}
-          onNew={() => void newDesign()}
+          onNew={newDesign}
           onImport={importModel}
           onError={showError}
+        />
+        <RenameDialog
+          value={naming ? t("studio.design.untitled") : null}
+          title={t("studio.design.new")}
+          maxLength={120}
+          saveLabel={t("studio.design.create")}
+          selectOnOpen
+          onClose={() => setNaming(false)}
+          onSave={(name) => void createDesign(name)}
         />
         {saveOpen && design && (
           <StudioSaveDialog
@@ -1655,6 +1697,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             about={aboutDesign}
             saving={saving}
             draft={saveDraft}
+            activePlate={activePlate}
+            snapshot={snapshotView}
             onEditProfile={(left) => {
               setSaveDraft(left);
               setSaveOpen(false);

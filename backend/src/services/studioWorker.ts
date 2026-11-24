@@ -94,6 +94,8 @@ export type StudioWorkerInput =
       format: StudioExportFormat;
       plate?: string;
       target?: StudioExportTarget;
+      /** The plate whose picture is the 3MF's own thumbnail; the first one exported when absent or left out. */
+      thumbnailPlate?: string;
     }
   | { kind: "bounds"; document: StudioDocument; assetDir: string; ids: string[] }
   | { kind: "check"; document: StudioDocument; assetDir: string; options: PrintCheckOptions }
@@ -494,6 +496,7 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     input.target,
     input.document.print_setup,
     input.document.print_profile,
+    input.thumbnailPlate,
   );
   if (!bytes)
     return {

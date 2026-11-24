@@ -39,12 +39,15 @@ import {
   suggestedProfileName,
 } from "./printProfileUi";
 import type { RunCommand } from "./useStudioDesign";
+import PlatePictureTiles from "./PlatePictureTiles";
+import { picturablePlates, studioPlates } from "../../studio/document";
 
 // Save to Thingport: the design as a new model, or as one more print profile of a model the person already has, with
 // its print profile settled first: chosen by the person, suggested by Studio's assistant, or left out.
 
-/** `name` is a new model's; a profile added to a model takes none. */
-export type StudioSaveRequest = { name?: string; modelId?: string; profileName?: string };
+/** `name` is a new model's; a profile added to a model takes none. `picturePlate` is the plate a new model is
+ *  pictured by. */
+export type StudioSaveRequest = { name?: string; modelId?: string; profileName?: string; picturePlate?: string };
 
 type Mode = "new" | "add";
 type Choice = "myself" | "ai" | "without";
@@ -57,6 +60,7 @@ export type StudioSaveDraft = {
   choice: Choice;
   profileName: string;
   nameTouched: boolean;
+  picturePlate: string | null;
 };
 
 type Props = {
@@ -71,6 +75,9 @@ type Props = {
   saving: boolean;
   /** The dialog as it was left for the Print tab, to open it with again. */
   draft?: StudioSaveDraft | null;
+  /** The plate in view, which a new model is pictured by unless another is chosen, and a picture of it as shown. */
+  activePlate: string;
+  snapshot: () => Promise<Blob | null>;
   onEditProfile: (draft: StudioSaveDraft) => void;
   onSave: (request: StudioSaveRequest) => void;
   onClose: () => void;
@@ -87,6 +94,8 @@ export default function StudioSaveDialog({
   about,
   saving,
   draft,
+  activePlate,
+  snapshot,
   onEditProfile,
   onSave,
   onClose,
@@ -102,6 +111,12 @@ export default function StudioSaveDialog({
   const [choice, setChoice] = useState<Choice>(draft?.choice ?? (canAskAi && madeByPrompts ? "ai" : "myself"));
   const [profileName, setProfileName] = useState(draft?.profileName ?? "");
   const [nameTouched, setNameTouched] = useState(draft?.nameTouched ?? false);
+  // Offered when there's a choice: shown plates with something to picture. The plate in view first, if it's one.
+  const picturable = picturablePlates(design.document);
+  const picturePlates = studioPlates(design.document).filter((plate) => picturable.includes(plate.id));
+  const [chosenPicture, setChosenPicture] = useState<string | null>(draft?.picturePlate ?? null);
+  const picturePlate =
+    [chosenPicture, activePlate].find((id) => id && picturable.includes(id)) ?? picturable[0] ?? null;
   const { query, setQuery, debounced, models, failed } = useLibraryModels(onUnauthorized);
   const suggested = suggestPresets(about)
     .slice(0, 2)
@@ -132,7 +147,11 @@ export default function StudioSaveDialog({
     if (!ready) return;
     onSave(
       mode === "new"
-        ? { name: name.trim(), ...(profile ? { profileName: profileName.trim() || undefined } : {}) }
+        ? {
+            name: name.trim(),
+            ...(profile ? { profileName: profileName.trim() || undefined } : {}),
+            ...(picturePlate ? { picturePlate } : {}),
+          }
         : { modelId: model!.id, profileName: profileName.trim() },
     );
   };
@@ -168,7 +187,7 @@ export default function StudioSaveDialog({
   const Icon = preset ? PRESET_ICONS[preset.id] : PrintOutlinedIcon;
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open onClose={saving ? undefined : onClose} fullWidth maxWidth="sm">
       <DialogTitle>{t("studio.design.saveToLibrary")}</DialogTitle>
       <DialogContent sx={{ display: "grid", gap: 2, pt: "4px !important" }}>
         <Segmented
@@ -249,6 +268,18 @@ export default function StudioSaveDialog({
           </Box>
         )}
 
+        {mode === "new" && picturePlates.length > 1 && picturePlate && (
+          <PlatePictureTiles
+            designId={design.id}
+            version={design.version}
+            plates={picturePlates}
+            activePlate={activePlate}
+            snapshot={snapshot}
+            value={picturePlate}
+            onChange={setChosenPicture}
+          />
+        )}
+
         <Box>
           <Typography
             variant="caption"
@@ -302,7 +333,9 @@ export default function StudioSaveDialog({
                 </Box>
                 <Button
                   size="small"
-                  onClick={() => onEditProfile({ mode, name, model, choice, profileName, nameTouched })}
+                  onClick={() =>
+                    onEditProfile({ mode, name, model, choice, profileName, nameTouched, picturePlate: chosenPicture })
+                  }
                 >
                   {t("studio.save.editProfile")}
                 </Button>
@@ -396,7 +429,9 @@ export default function StudioSaveDialog({
             {t("studio.save.willHave", { name: model.title || model.name, count: profilesOf(model) + 1 })}
           </Typography>
         )}
-        <Button onClick={onClose}>{t("common:cancel")}</Button>
+        <Button disabled={saving} onClick={onClose}>
+          {t("common:cancel")}
+        </Button>
         <Button variant="contained" disabled={!ready || saving} onClick={save}>
           {mode === "add" ? t("studio.save.addProfile") : t("common:save")}
         </Button>

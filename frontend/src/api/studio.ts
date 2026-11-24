@@ -219,11 +219,12 @@ export const studioApi = {
     }
     return res.json();
   },
-  /** Saves the design to the library as a new model; `picture_id` is the picture to show it by. */
-  /** As a new model, or with `model_id` as one more print profile of that model. */
+  /** Saves the design to the library as a new model, or with `model_id` as one more print profile of that model.
+   *  `picture_id` is a picture to show a new model by; `picture_plate_id` the plate to picture it by without one, and
+   *  the 3MF's thumbnail. */
   saveToLibrary: async (
     id: string,
-    body: { name?: string; picture_id?: string; model_id?: string; profile_name?: string },
+    body: { name?: string; picture_id?: string; model_id?: string; profile_name?: string; picture_plate_id?: string },
   ) => {
     const saved = await request<{ model: { id: string; name: string; title: string | null } }>(
       `${design(id)}/save-to-library`,
@@ -233,6 +234,15 @@ export const studioApi = {
     // A design saved to the library counts towards an achievement.
     requestAchievementCheck();
     return saved;
+  },
+  /** A picture of one plate, as Save to Thingport offers it; `version` is the design's, so a changed one is new. */
+  platePicture: async (id: string, plateId: string, version: number): Promise<Blob> => {
+    const res = await fetch(`${apiBase()}${design(id)}/plates/${encodeURIComponent(plateId)}/picture?v=${version}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new StudioError(`Plate picture failed (${res.status})`, res.status, null);
+    return res.blob();
   },
   picture: async (id: string, pictureId: string): Promise<Blob> => {
     const res = await fetch(`${apiBase()}${design(id)}/pictures/${encodeURIComponent(pictureId)}`, {

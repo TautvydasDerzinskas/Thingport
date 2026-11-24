@@ -1,7 +1,15 @@
 import Module from "manifold-3d";
 import { describe, expect, it } from "vitest";
 import { applyCommand, CommandError } from "./commands";
-import { emptyDocument, exportsSomething, hiddenPlates, studioPlates, type StudioDocument } from "./document";
+import {
+  emptyDocument,
+  exportsSomething,
+  hiddenPlates,
+  LIMITS,
+  picturablePlates,
+  studioPlates,
+  type StudioDocument,
+} from "./document";
 import { checkDesign } from "./geometry";
 
 const wasm = Module().then((module) => {
@@ -42,6 +50,41 @@ describe("plate order", () => {
     expect(() => applyCommand(emptyDocument(), "move_plate", { plate_id: "plate-1", position: 2 })).toThrow(
       /has 1 plate,/,
     );
+  });
+
+  it("deletes a plate with everything on it, and what that's made from", () => {
+    let doc = cmd(threePlates(), "add_cylinder", { plate_id: "plate-2", radius: 2, height: 20 });
+    doc = cmd(doc, "boolean", { operation: "subtract", target_id: "box-1", tool_ids: ["cylinder-2"] });
+    doc = cmd(doc, "add_box", { width: 5, depth: 5, height: 5 });
+    doc = cmd(doc, "lock_plate_positions", { feature_ids: ["boolean-3", "box-4"], locked: true });
+    const deleted = applyCommand(doc, "delete_plate", { plate_id: "plate-2" });
+    expect(deleted.summary).toBe("Deleted plate-2 and the 3 features on it");
+    expect(ids(deleted.document)).toEqual(["plate-1", "plate-3"]);
+    expect(deleted.document.features.map((feature) => feature.id)).toEqual(["box-4"]);
+    expect(deleted.document.locked_layout).toEqual(["box-4"]);
+  });
+
+  it("preserves inputs used by surviving bodies when deleting a plate", () => {
+    let doc = cmd(emptyDocument(), "add_box", { width: 10, depth: 10, height: 10 });
+    doc = cmd(doc, "split", {
+      feature_id: "box-1",
+      plane: { point: [0, 0, 5], normal: [0, 0, 1] },
+      separate_plates: true,
+    });
+    expect(ids(doc)).toEqual(["plate-1", "plate-2"]);
+    const deleted = applyCommand(doc, "delete_plate", { plate_id: "plate-2" });
+    expect(ids(deleted.document)).toEqual(["plate-1"]);
+    // The second half on plate-2 is removed, but the first half and its source_id box-1 survive.
+    const featureIds = deleted.document.features.map((feature) => feature.id);
+    expect(featureIds).toContain("split-2");
+    expect(featureIds).toContain("box-1");
+    expect(featureIds).not.toContain("split-3");
+  });
+
+  it("deletes a plate still to load from a 3MF without loading it", () => {
+    const doc = threePlates();
+    doc.plates![2].source = { archive_id: "a".repeat(24), index: 1, model: undefined as never };
+    expect(ids(cmd(doc, "delete_plate", { plate_id: "plate-3" }))).toEqual(["plate-1", "plate-2"]);
   });
 
   it("still keeps plate-1 once it's no longer first", () => {
@@ -88,5 +131,28 @@ describe("hidden plates", () => {
     const report = checkDesign(m, hidden, options);
     expect(report.bodies.map((body) => body.id)).toEqual(["box-2"]);
     expect(report.problems.join(" ")).not.toMatch(/box-1/);
+  });
+});
+
+describe("picturable plates", () => {
+  it("offers the shown, loaded plates with a visible body, in the plates' order", () => {
+    let doc = cmd(threePlates(), "add_box", { plate_id: "plate-3", width: 10, depth: 10, height: 10 });
+    expect(picturablePlates(doc)).toEqual(["plate-2", "plate-3"]);
+    doc = cmd(doc, "move_plate", { plate_id: "plate-3", position: 1 });
+    expect(picturablePlates(doc)).toEqual(["plate-3", "plate-2"]);
+    doc = cmd(doc, "set_plate_visibility", { plate_id: "plate-2", visible: false });
+    expect(picturablePlates(doc)).toEqual(["plate-3"]);
+    doc = cmd(doc, "set_visibility", { feature_id: "box-2", visible: false });
+    expect(picturablePlates(doc)).toEqual([]);
+  });
+});
+
+describe("design size", () => {
+  it(`holds up to ${LIMITS.features} features`, () => {
+    expect(LIMITS.features).toBe(500);
+    let doc = emptyDocument();
+    for (let i = 0; i < LIMITS.features; i++) doc = cmd(doc, "add_box", { width: 1, depth: 1, height: 1 });
+    expect(doc.features).toHaveLength(500);
+    expect(() => applyCommand(doc, "add_box", { width: 1, depth: 1, height: 1 })).toThrow(/up to 500 features/);
   });
 });

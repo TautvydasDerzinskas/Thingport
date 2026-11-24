@@ -7,7 +7,7 @@ import { normalizeFileName } from "../files/names";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
 import { exportStudioDesign } from "../services/studioExport";
-import { saveStudioDesignToLibrary } from "../services/studioLibrary";
+import { saveStudioDesignToLibrary, studioPlatePicture } from "../services/studioLibrary";
 import { getStudioAssistantPrefs } from "../services/settingsService";
 import {
   getStudioSettings,
@@ -237,6 +237,11 @@ const saveSchema = z
     // A model to add the design to as one more print profile, instead of a new model.
     model_id: z.string().trim().min(1).max(64).optional(),
     profile_name: z.string().trim().min(1).max(120).optional(),
+    // The shown plate that pictures a new model when there's no picture_id, and whose picture is the 3MF's thumbnail.
+    picture_plate_id: z
+      .string()
+      .regex(/^plate-[1-9]\d*$/)
+      .optional(),
   })
   .strict();
 
@@ -250,8 +255,25 @@ router.post(
       pictureId: body.picture_id,
       modelId: body.model_id,
       profileName: body.profile_name,
+      picturePlateId: body.picture_plate_id,
     });
     res.status(201).json({ model });
+  }),
+);
+
+// What Save to Thingport offers to picture a model by: one plate, from the front right, above. `?v=` is the design's
+// version, so a changed design is fetched again.
+router.get(
+  "/studio/designs/:id/plates/:plateId/picture",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const design = await getStudioDesign(req.userId!, req.params.id);
+    if (!studioPlates(design.document).some((plate) => plate.id === req.params.plateId))
+      throw new HttpError(404, "That plate doesn't belong to this design");
+    const picture = await studioPlatePicture(req.userId!, design, req.params.plateId, 256);
+    if (!picture) throw new HttpError(404, "That plate has nothing to picture");
+    res.setHeader("Cache-Control", "private, max-age=86400");
+    res.type("image/png").send(picture);
   }),
 );
 

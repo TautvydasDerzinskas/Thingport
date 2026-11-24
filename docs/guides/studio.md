@@ -11,6 +11,7 @@ ones.
 ## Designing
 
 Use the **⋮** menu next to the design name to create, open, rename, export, or delete a design, or open it in a slicer.
+A new design asks for its name first.
 Its **Recent** list jumps to the three designs you edited last.
 The toolbar's **Save** menu is available in both modes. The **Edit** button (the pencil) shows the editing tools,
 **Properties**, and the status bar. You can turn the view and use the undo and redo shortcuts in either mode.
@@ -27,7 +28,7 @@ double-click it for the default width. The width lasts while Studio is open, and
 
 The **Objects / Plates** panel lists each plate with its objects nested underneath. Click a plate name to show it in
 the viewport. In Edit mode, use **Add plate** in the panel header or the actions menu on a plate to rename it or
-delete it when empty. Expand an object to see the features it was built from. For multi-plate designs, the panel
+delete it with everything on it, after a confirmation (undo brings it back). Expand an object to see the features it was built from. For multi-plate designs, the panel
 also lets you switch plates outside Edit mode.
 
 In Edit mode, drag a plate by its grip, or use **Move up** and **Move down** in its menu, to change the order plates
@@ -44,7 +45,8 @@ Use **Export** in the design menu to download a single **3MF** for all populated
 download a ZIP with one STL per populated plate. From a plate's menu, **Export as STL** downloads that plate's STL directly.
 
 **Save design** downloads STL for one uncolored body on one plate and 3MF for designs with colors, multiple
-bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected
+bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. With more than one shown plate, pick
+one under **Picture**: its picture becomes the model's main image and the 3MF's thumbnail. **Open with slicer** prepares a 3MF for your selected
 slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
 plate at a time, choose which plate to open. Studio prepares unopened plates as needed for export, subject to the
 design's export limits. For Bambu-compatible slicers, open all imported plates that aren't hidden to see every color under
