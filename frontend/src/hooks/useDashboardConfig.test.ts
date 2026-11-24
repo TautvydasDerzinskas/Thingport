@@ -140,4 +140,27 @@ describe("a dashboard change that can't be saved", () => {
     expect(updateDashboard).toHaveBeenCalledTimes(2);
     expect(failed).not.toHaveBeenCalled();
   });
+
+  it("is still said when an older save goes through after a newer one failed", async () => {
+    const { change, onDashboardSaveFailed } = await loaded();
+    let resolveOlder = (_value: unknown) => {};
+    updateDashboard.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOlder = resolve;
+        }),
+    );
+    updateDashboard.mockRejectedValueOnce(new Error("400"));
+    change();
+    await settle();
+    change();
+    await settle();
+    resolveOlder({});
+    await settle();
+
+    const failed = vi.fn<() => void>();
+    onDashboardSaveFailed(failed);
+    expect(updateDashboard).toHaveBeenCalledTimes(2);
+    expect(failed).toHaveBeenCalledTimes(1);
+  });
 });

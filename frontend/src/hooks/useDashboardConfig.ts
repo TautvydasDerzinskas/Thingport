@@ -47,12 +47,14 @@ function load(): Promise<DashboardConfig> {
 
 // The change already shows here, but a save that fails is gone with the next reload, so the dashboard says so: once
 // when saving starts failing rather than with every drag, and again if it fails after one has gone through. A failure
-// while no dashboard is open is said when one opens, unless a save has gone through by then. One from a save older
-// than one that has since gone through isn't said at all: what shows is stored after all.
+// while no dashboard is open is said when one opens, unless a newer save has gone through by then. Saves can finish
+// out of order, so only a newer one settles what an older one did: a failure older than a save that went through isn't
+// said at all, as what shows is stored after all, and a success older than a failure doesn't clear it.
 let saveFailing = false;
 let failureUnsaid = false;
 let savesSent = 0;
 let lastSaved = 0;
+let lastFailed = 0;
 const failureListeners = new Set<() => void>();
 
 function save(value: DashboardConfig) {
@@ -60,11 +62,14 @@ function save(value: DashboardConfig) {
   settingsApi.updateDashboard(value).then(
     () => {
       lastSaved = Math.max(lastSaved, sent);
+      if (sent < lastFailed) return;
       saveFailing = false;
       failureUnsaid = false;
     },
     () => {
-      if (saveFailing || sent < lastSaved) return;
+      if (sent < lastSaved) return;
+      lastFailed = Math.max(lastFailed, sent);
+      if (saveFailing) return;
       saveFailing = true;
       failureUnsaid = failureListeners.size === 0;
       failureListeners.forEach((listener) => listener());
