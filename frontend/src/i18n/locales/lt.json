@@ -968,6 +968,7 @@
     },
     "dashboard": {
       "loadError": "Nepavyko įkelti valdymo skydo.",
+      "saveFailed": "Nepavyko išsaugoti valdymo skydo. Dabar atlikti pakeitimai dings perkrovus puslapį.",
       "seeMore": "Rodyti daugiau",
       "collectionCount": {
         "label": "Kolekcijos",

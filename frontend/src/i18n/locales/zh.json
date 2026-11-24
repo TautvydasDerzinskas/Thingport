@@ -885,6 +885,7 @@
     },
     "dashboard": {
       "loadError": "无法加载你的仪表盘。",
+      "saveFailed": "无法保存你的仪表盘。现在所做的更改会在页面重新加载后丢失。",
       "seeMore": "查看更多",
       "viewCount_other": "{{count}} 次浏览",
       "printCount_other": "{{count}} 次打印",

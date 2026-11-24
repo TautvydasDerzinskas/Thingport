@@ -961,6 +961,7 @@
     },
     "dashboard": {
       "loadError": "No se pudo cargar tu panel.",
+      "saveFailed": "No se pudo guardar tu panel. Los cambios que hagas ahora se perderán al recargar la página.",
       "seeMore": "Ver más",
       "collectionCount": {
         "label": "Colecciones",

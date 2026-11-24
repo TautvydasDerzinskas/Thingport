@@ -34,7 +34,7 @@ import { useToast } from "../../components/ToastProvider";
 import HelpTip from "../../components/HelpTip";
 import SelectionToolbar, { SelectionAction } from "../../components/selection/SelectionToolbar";
 import { useSelection } from "../../hooks/useSelection";
-import { useDashboardConfig } from "../../hooks/useDashboardConfig";
+import { onDashboardSaveFailed, useDashboardConfig } from "../../hooks/useDashboardConfig";
 import { useCustomWidgets } from "../../hooks/useCustomWidgets";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { useBackgroundReload } from "../../hooks/useBackgroundReload";
@@ -97,6 +97,10 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
   const [summary, setSummary] = React.useState<DashboardSummary | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const dashboard = useDashboardConfig(templateId);
+  React.useEffect(
+    () => onDashboardSaveFailed(() => showToast({ message: t("dashboard.saveFailed"), severity: "error" })),
+    [showToast, t],
+  );
   const [customize, setCustomize] = React.useState<CustomizeSection | null>(null);
   const [templatesMenu, setTemplatesMenu] = React.useState<HTMLElement | null>(null);
   const [addMenu, setAddMenu] = React.useState<HTMLElement | null>(null);

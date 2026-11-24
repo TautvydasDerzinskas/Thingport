@@ -45,12 +45,56 @@ function load(): Promise<DashboardConfig> {
   return inFlight;
 }
 
+// The change already shows here, but a save that fails is gone with the next reload, so the dashboard says so: once
+// when saving starts failing rather than with every drag, and again if it fails after one has gone through. A failure
+// while no dashboard is open is said when one opens, unless a newer save has gone through by then. Saves can finish
+// out of order, so only a newer one settles what an older one did: a failure older than a save that went through isn't
+// said at all, as what shows is stored after all, and a success older than a failure doesn't clear it.
+let saveFailing = false;
+let failureUnsaid = false;
+let savesSent = 0;
+let lastSaved = 0;
+let lastFailed = 0;
+const failureListeners = new Set<() => void>();
+
+function save(value: DashboardConfig) {
+  const sent = ++savesSent;
+  settingsApi.updateDashboard(value).then(
+    () => {
+      lastSaved = Math.max(lastSaved, sent);
+      if (sent < lastFailed) return;
+      saveFailing = false;
+      failureUnsaid = false;
+    },
+    () => {
+      if (sent < lastSaved) return;
+      lastFailed = Math.max(lastFailed, sent);
+      if (saveFailing) return;
+      saveFailing = true;
+      failureUnsaid = failureListeners.size === 0;
+      failureListeners.forEach((listener) => listener());
+    },
+  );
+}
+
 function publish(value: DashboardConfig) {
   cached = value;
   listeners.forEach((listener) => listener(value));
   window.clearTimeout(saveTimer);
-  // The change already shows here; a failed save only means other devices won't follow.
-  saveTimer = window.setTimeout(() => settingsApi.updateDashboard(value).catch(() => {}), SAVE_DELAY_MS);
+  saveTimer = window.setTimeout(() => save(value), SAVE_DELAY_MS);
+}
+
+/** Calls back when a change to the dashboard couldn't be saved, straight away if one failed while nothing listened;
+ *  returns the way to stop. */
+export function onDashboardSaveFailed(listener: () => void): () => void {
+  failureListeners.add(listener);
+  if (failureUnsaid) {
+    failureUnsaid = false;
+    listener();
+  }
+  return () => {
+    failureListeners.delete(listener);
+  };
 }
 
 export type DashboardConfigApi = {

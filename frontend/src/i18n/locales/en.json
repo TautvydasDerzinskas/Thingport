@@ -923,6 +923,7 @@
     },
     "dashboard": {
       "loadError": "Failed to load your dashboard.",
+      "saveFailed": "Couldn't save your dashboard. Changes made now are lost when the page reloads.",
       "seeMore": "See more",
       "viewCount_one": "{{count}} view",
       "viewCount_other": "{{count}} views",
