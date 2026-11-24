@@ -11,7 +11,7 @@ vi.mock("react", () => ({
 const saved: DashboardConfig = {
   active: "t1",
   templates: [{ id: "t1", name: "Mine", preset: null, panels: [], layouts: { lg: [] } }],
-} as unknown as DashboardConfig;
+};
 
 const updateDashboard = vi.fn<(config: DashboardConfig) => Promise<unknown>>();
 vi.mock("../api/settings", () => ({
@@ -33,7 +33,11 @@ async function loaded() {
   const { onDashboardSaveFailed, useDashboardConfig } = await import("./useDashboardConfig");
   useDashboardConfig();
   await settle();
-  const change = () => useDashboardConfig()!.update((config) => ({ ...config }));
+  const change = () => {
+    const dashboard = useDashboardConfig();
+    if (!dashboard) throw new Error("The dashboard hasn't loaded");
+    dashboard.update((config) => ({ ...config }));
+  };
   return { change, onDashboardSaveFailed };
 }
 
@@ -79,6 +83,42 @@ describe("a dashboard change that can't be saved", () => {
     updateDashboard.mockRejectedValue(new Error("400"));
     change();
     await settle();
+    expect(failed).not.toHaveBeenCalled();
+  });
+
+  it("is said to the next dashboard opened when the last one closed before the save failed", async () => {
+    const { change, onDashboardSaveFailed } = await loaded();
+    updateDashboard.mockRejectedValue(new Error("400"));
+    change();
+    await settle();
+
+    const failed = vi.fn<() => void>();
+    onDashboardSaveFailed(failed);
+    change();
+    await settle();
+    expect(failed).toHaveBeenCalledTimes(1);
+  });
+
+  it("isn't said when a newer save has gone through", async () => {
+    const { change, onDashboardSaveFailed } = await loaded();
+    const failed = vi.fn<() => void>();
+    onDashboardSaveFailed(failed);
+
+    let rejectOlder = (_error: Error) => {};
+    updateDashboard.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectOlder = reject;
+        }),
+    );
+    updateDashboard.mockResolvedValueOnce({});
+    change();
+    await settle();
+    change();
+    await settle();
+    rejectOlder(new Error("timeout"));
+    await settle();
+    expect(updateDashboard).toHaveBeenCalledTimes(2);
     expect(failed).not.toHaveBeenCalled();
   });
 });
