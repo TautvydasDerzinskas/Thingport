@@ -1000,9 +1000,9 @@
         "highLow": "Max {{high}}° Min {{low}}°",
         "later": "In {{hours}} Std.: {{temperature}}°, {{condition}}",
         "conditions": {
-          "clear": "Klar",
-          "partly": "Teilweise bewölkt",
-          "cloudy": "Bewölkt",
+          "clear": "klar",
+          "partly": "teilweise bewölkt",
+          "cloudy": "bewölkt",
           "fog": "Nebel",
           "drizzle": "Nieselregen",
           "rain": "Regen",
