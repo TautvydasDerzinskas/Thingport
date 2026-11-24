@@ -1109,7 +1109,9 @@
         "splitHint": "Selecciona paneles con pestañas para separarlos",
         "splitDone_one": "Se separó {{count}} panel en sus pestañas",
         "splitDone_many": "Se separaron {{count}} paneles en sus pestañas",
-        "splitDone_other": "Se separaron {{count}} paneles en sus pestañas"
+        "splitDone_other": "Se separaron {{count}} paneles en sus pestañas",
+        "scrollTabsStart": "Mostrar pestañas anteriores",
+        "scrollTabsEnd": "Mostrar más pestañas"
       },
       "templates": {
         "open": "Plantillas",

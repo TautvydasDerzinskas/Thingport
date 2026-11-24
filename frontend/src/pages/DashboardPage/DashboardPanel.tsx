@@ -14,9 +14,12 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
+import Tabs, { tabsClasses } from "@mui/material/Tabs";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import HeightIcon from "@mui/icons-material/Height";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -107,6 +110,8 @@ export default function DashboardPanel({
   const name = panel.widgets.map((id) => labelOf(t, widgetById(id))).join(", ");
   // A chip from another panel hovering here: dropping it adds a tab.
   const mergeTarget = isOver && dragging !== null && dragging.panelId !== panel.id;
+  const tabsRef = React.useRef<HTMLDivElement | null>(null);
+  const { overflow, scrollTabs } = useTabOverflow(tabsRef, tabbed);
 
   // While editing, the widget underneath is only a picture: nothing in it can be clicked or tabbed to.
   React.useEffect(() => {
@@ -136,31 +141,35 @@ export default function DashboardPanel({
         borderColor: cardBorder,
       }}
     >
-      <Tabs
-        value={tab}
-        onChange={(_, value: number) => onTabChange(value)}
-        variant="scrollable"
-        // Arrows only appear when the tabs don't fit, so a mouse can reach the ones cut off at the edge.
-        scrollButtons="auto"
-        allowScrollButtonsMobile
-        aria-label={name}
-        sx={{ minHeight: 44, px: 1, flexShrink: 0, borderBottom: 1, borderColor: "divider" }}
-      >
-        {panel.widgets.map((id, index) => {
-          const widget = widgetById(id);
-          return (
-            <Tab
-              key={id}
-              id={`${panel.id}-tab-${index}`}
-              aria-controls={`${panel.id}-tabpanel`}
-              icon={widget?.icon as React.ReactElement}
-              iconPosition="start"
-              label={labelOf(t, widget)}
-              sx={{ minHeight: 44, minWidth: 0, px: 1.5, py: 0, gap: 0.75, textTransform: "none", fontWeight: 600 }}
-            />
-          );
-        })}
-      </Tabs>
+      <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0, borderBottom: 1, borderColor: "divider" }}>
+        <TabScrollArrow overflow={overflow} side="start" onScroll={scrollTabs} />
+        <Tabs
+          ref={tabsRef}
+          value={tab}
+          onChange={(_, value: number) => onTabChange(value)}
+          variant="scrollable"
+          // Its own arrows miss a half-hidden last tab and ignore reduced motion, so the panel draws its own.
+          scrollButtons={false}
+          aria-label={name}
+          sx={{ minHeight: 44, px: overflow.start || overflow.end ? 0 : 1, flex: 1, minWidth: 0 }}
+        >
+          {panel.widgets.map((id, index) => {
+            const widget = widgetById(id);
+            return (
+              <Tab
+                key={id}
+                id={`${panel.id}-tab-${index}`}
+                aria-controls={`${panel.id}-tabpanel`}
+                icon={widget?.icon as React.ReactElement}
+                iconPosition="start"
+                label={labelOf(t, widget)}
+                sx={{ minHeight: 44, minWidth: 0, px: 1.5, py: 0, gap: 0.75, textTransform: "none", fontWeight: 600 }}
+              />
+            );
+          })}
+        </Tabs>
+        <TabScrollArrow overflow={overflow} side="end" onScroll={scrollTabs} />
+      </Box>
       <Box
         key={panel.widgets[tab]}
         id={`${panel.id}-tabpanel`}
@@ -384,6 +393,93 @@ export default function DashboardPanel({
         </MenuItem>
       </Menu>
     </Box>
+  );
+}
+
+type TabOverflow = { start: boolean; end: boolean };
+
+/**
+ * Whether tabs are hidden past either edge of a scrollable `Tabs`, from its scroll position: a tab cut off partway
+ * counts, which MUI's own scroll buttons miss. `scrollTabs` moves by most of a view, instantly under reduced motion.
+ */
+function useTabOverflow(tabsRef: React.RefObject<HTMLDivElement | null>, active: boolean) {
+  const [overflow, setOverflow] = React.useState<TabOverflow>({ start: false, end: false });
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const scroller = () => tabsRef.current?.querySelector<HTMLElement>(`.${tabsClasses.scroller}`) ?? null;
+
+  React.useEffect(() => {
+    const element = active ? (tabsRef.current?.querySelector<HTMLElement>(`.${tabsClasses.scroller}`) ?? null) : null;
+    if (!element) {
+      setOverflow({ start: false, end: false });
+      return undefined;
+    }
+    const update = () => {
+      const start = element.scrollLeft > 1;
+      const end = element.scrollLeft + element.clientWidth < element.scrollWidth - 1;
+      setOverflow((now) => (now.start === start && now.end === end ? now : { start, end }));
+    };
+    update();
+    element.addEventListener("scroll", update, { passive: true });
+    // The panel's width and the tabs' labels both change what fits.
+    const resize = new ResizeObserver(update);
+    resize.observe(element);
+    if (element.firstElementChild) resize.observe(element.firstElementChild);
+    return () => {
+      element.removeEventListener("scroll", update);
+      resize.disconnect();
+    };
+  }, [active, tabsRef]);
+
+  // Scrolls so a tab starts at the left edge: forward, the first one cut off on the right; back, the earliest one
+  // that fits a view before. Only the last stop can't, as the tabs end there.
+  const scrollTabs = (side: keyof TabOverflow) => {
+    const element = scroller();
+    if (!element) return;
+    const at = element.scrollLeft;
+    const view = element.clientWidth;
+    const box = element.getBoundingClientRect();
+    const tabs = Array.from(element.querySelectorAll<HTMLElement>('[role="tab"]'), (tab) => {
+      const rect = tab.getBoundingClientRect();
+      return { start: rect.left - box.left + at, end: rect.right - box.left + at };
+    });
+    const target =
+      side === "end"
+        ? tabs.find((tab) => tab.end > at + view + 1 && tab.start > at + 1)?.start
+        : (tabs.find((tab) => tab.start >= at - view - 1 && tab.start < at - 1)?.start ?? 0);
+    if (target === undefined) return;
+    element.scrollTo({ left: Math.round(target), behavior: reducedMotion ? "auto" : "smooth" });
+  };
+
+  return { overflow, scrollTabs };
+}
+
+/** An arrow beside a panel's tabs, shown while some are hidden past its side. */
+function TabScrollArrow({
+  overflow,
+  side,
+  onScroll,
+}: {
+  overflow: TabOverflow;
+  side: keyof TabOverflow;
+  onScroll: (side: keyof TabOverflow) => void;
+}) {
+  const { t } = useTranslation("app");
+  // Both take their place while either is needed, so the tabs don't jump as one comes and goes.
+  if (!overflow.start && !overflow.end) return null;
+  const hidden = !overflow[side];
+  const label = t(side === "start" ? "dashboard.edit.scrollTabsStart" : "dashboard.edit.scrollTabsEnd");
+  return (
+    <Tooltip title={hidden ? "" : label}>
+      <IconButton
+        size="small"
+        aria-label={label}
+        disabled={hidden}
+        onClick={() => onScroll(side)}
+        sx={{ flexShrink: 0, mx: 0.25, "&.Mui-disabled": { visibility: "hidden" } }}
+      >
+        {side === "start" ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+      </IconButton>
+    </Tooltip>
   );
 }
 

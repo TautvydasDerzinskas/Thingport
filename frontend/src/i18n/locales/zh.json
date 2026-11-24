@@ -1013,7 +1013,9 @@
         "empty": "此模板还没有面板。",
         "fit": "适应内容",
         "splitHint": "选择带标签页的面板进行拆分",
-        "splitDone_other": "已将 {{count}} 个面板按标签页拆分"
+        "splitDone_other": "已将 {{count}} 个面板按标签页拆分",
+        "scrollTabsStart": "显示前面的标签页",
+        "scrollTabsEnd": "显示更多标签页"
       },
       "templates": {
         "open": "模板",

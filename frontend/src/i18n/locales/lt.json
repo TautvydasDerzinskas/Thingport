@@ -1118,7 +1118,9 @@
         "splitHint": "Pasirinkite skydelius su kortelėmis, kad juos išskaidytumėte",
         "splitDone_one": "{{count}} skydelis išskaidytas į korteles",
         "splitDone_few": "{{count}} skydeliai išskaidyti į korteles",
-        "splitDone_other": "{{count}} skydelių išskaidyta į korteles"
+        "splitDone_other": "{{count}} skydelių išskaidyta į korteles",
+        "scrollTabsStart": "Rodyti ankstesnes korteles",
+        "scrollTabsEnd": "Rodyti daugiau kortelių"
       },
       "templates": {
         "open": "Šablonai",
