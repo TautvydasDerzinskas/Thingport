@@ -1064,7 +1064,9 @@
         "fit": "Fit to content",
         "splitHint": "Select tabbed panels to split them",
         "splitDone_one": "Split {{count}} panel into its tabs",
-        "splitDone_other": "Split {{count}} panels into their tabs"
+        "splitDone_other": "Split {{count}} panels into their tabs",
+        "scrollTabsStart": "Show earlier tabs",
+        "scrollTabsEnd": "Show more tabs"
       },
       "templates": {
         "open": "Templates",

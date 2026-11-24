@@ -1821,7 +1821,9 @@
         "splitDone_one": "{{count}} панэль падзелена на ўкладкі",
         "splitDone_few": "{{count}} панэлі падзелены на ўкладкі",
         "splitDone_many": "{{count}} панэляў падзелена на ўкладкі",
-        "splitDone_other": "{{count}} панэлі падзелены на ўкладкі"
+        "splitDone_other": "{{count}} панэлі падзелены на ўкладкі",
+        "scrollTabsStart": "Паказаць папярэднія ўкладкі",
+        "scrollTabsEnd": "Паказаць яшчэ ўкладкі"
       },
       "templates": {
         "open": "Шаблоны",

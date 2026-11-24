@@ -1109,7 +1109,9 @@
         "splitHint": "Sélectionnez des panneaux à onglets pour les séparer",
         "splitDone_one": "{{count}} panneau séparé en ses onglets",
         "splitDone_many": "{{count}} panneaux séparés en leurs onglets",
-        "splitDone_other": "{{count}} panneaux séparés en leurs onglets"
+        "splitDone_other": "{{count}} panneaux séparés en leurs onglets",
+        "scrollTabsStart": "Afficher les onglets précédents",
+        "scrollTabsEnd": "Afficher plus d’onglets"
       },
       "templates": {
         "open": "Modèles",

@@ -1064,7 +1064,9 @@
         "fit": "An Inhalt anpassen",
         "splitHint": "Wähle Panels mit Tabs aus, um sie aufzuteilen",
         "splitDone_one": "{{count}} Panel in seine Tabs aufgeteilt",
-        "splitDone_other": "{{count}} Panels in ihre Tabs aufgeteilt"
+        "splitDone_other": "{{count}} Panels in ihre Tabs aufgeteilt",
+        "scrollTabsStart": "Vorherige Tabs zeigen",
+        "scrollTabsEnd": "Weitere Tabs zeigen"
       },
       "templates": {
         "open": "Vorlagen",

@@ -1823,7 +1823,9 @@
         "splitDone_one": "{{count}} панель розділено на вкладки",
         "splitDone_few": "{{count}} панелі розділено на вкладки",
         "splitDone_many": "{{count}} панелей розділено на вкладки",
-        "splitDone_other": "{{count}} панелі розділено на вкладки"
+        "splitDone_other": "{{count}} панелі розділено на вкладки",
+        "scrollTabsStart": "Показати попередні вкладки",
+        "scrollTabsEnd": "Показати ще вкладки"
       },
       "templates": {
         "open": "Шаблони",
