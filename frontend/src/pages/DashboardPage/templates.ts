@@ -478,7 +478,7 @@ export const DASHBOARD_PRESETS: DashboardPreset[] = [
       one("trending", 0, 10, 8, 5),
     ],
     settings: {
-      rss: { ...BLOG, title: "Thingport blog" },
+      rss: BLOG,
       launcher: LAUNCHER,
       trending: {
         view: "cards",
