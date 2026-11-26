@@ -2,30 +2,57 @@ import { describe, expect, it, vi } from "vitest";
 import type { Plate, Print } from "../../api/prints";
 import { savePlateChanges, type PlateItem, type PlateSaveApi, type PlateSaveProgress } from "./plateSave";
 
-const plate = (id: string, filename: string, position: number) => ({ id, filename, position }) as Plate;
-const print = (...plates: Plate[]) => ({ id: "model", plates }) as Print;
+const plate = (id: string, filename: string, position: number): Plate => ({
+  id,
+  print_id: "model",
+  position,
+  filename,
+  mime: "model/stl",
+  size: 1,
+  url: `/print/model/plate/${id}/file/${filename}`,
+});
+const print = (...plates: Plate[]): Print => ({
+  id: "model",
+  name: "Model",
+  created_at: "2026-01-01T00:00:00.000Z",
+  tags: [],
+  plates,
+  preview_images: [],
+  supporting_file_count: 0,
+  view_count: 0,
+  print_count: 0,
+  is_favorite: false,
+});
 
 describe("savePlateChanges", () => {
   it("does not repeat uploads, deletions, or renames after a later save step fails", async () => {
     const oldPlate = plate("old", "part.3mf", 0);
-    const savedUpload = plate("uploaded", "part (2).3mf", 1);
-    const initial = print(oldPlate);
-    const afterUpload = print(oldPlate, savedUpload);
-    const afterDelete = print(savedUpload);
-    const afterRename = print(plate("uploaded", "part.3mf", 0));
+    const stalePlate = plate("deleted-elsewhere", "stale.3mf", 1);
+    const concurrentPlate = plate("concurrent", "parallel.3mf", 1);
+    const savedUpload = plate("uploaded", "part (2).3mf", 2);
+    const initial = print(oldPlate, stalePlate);
+    const afterUpload = print(oldPlate, concurrentPlate, savedUpload);
+    const afterDelete = print(plate("concurrent", "parallel.3mf", 0), plate("uploaded", savedUpload.filename, 1));
+    const afterRename = print(plate("concurrent", "parallel.3mf", 0), plate("uploaded", "part.3mf", 1));
+    const afterReorder = print(plate("uploaded", "part.3mf", 0), plate("concurrent", "parallel.3mf", 1));
     let reorderAttempts = 0;
     const api: PlateSaveApi = {
-      addPlates: vi.fn<PlateSaveApi["addPlates"]>(async (_printId, _files) => ({ print: afterUpload })),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(async (_printId, _files) => ({
+        print: afterUpload,
+        added_plate_ids: ["uploaded"],
+      })),
       deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(async (_printId, _plateId) => ({ print: afterDelete })),
       renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async (_printId, _plateId, _filename) => ({
         print: afterRename,
       })),
-      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async (_printId, _plateIds) => {
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async (_printId, plateIds) => {
+        expect(plateIds).toEqual(["uploaded", "concurrent"]);
         if (reorderAttempts++ === 0) throw new Error("temporary failure");
-        return { print: afterRename };
+        return { print: afterReorder };
       }),
     };
     const items: PlateItem[] = [
+      { kind: "existing", id: "deleted-elsewhere", filename: "stale.3mf", filenameEdited: false, folder: null },
       { kind: "new", localId: "upload", file: new File(["model"], "part.3mf"), filename: "part.3mf" },
     ];
     let progress: PlateSaveProgress = { print: initial, items, removedPlateIds: new Set(["old"]) };
@@ -38,6 +65,7 @@ describe("savePlateChanges", () => {
     ).rejects.toThrow("temporary failure");
 
     expect(progress.items).toEqual([
+      { kind: "existing", id: "deleted-elsewhere", filename: "stale.3mf", filenameEdited: false, folder: null },
       { kind: "existing", id: "uploaded", filename: "part.3mf", filenameEdited: false, folder: null },
     ]);
     expect(progress.removedPlateIds).toEqual(new Set());
@@ -48,5 +76,6 @@ describe("savePlateChanges", () => {
     expect(api.deletePlate).toHaveBeenCalledTimes(1);
     expect(api.renamePlate).toHaveBeenCalledTimes(1);
     expect(api.reorderPlates).toHaveBeenCalledTimes(2);
+    expect(api.renamePlate).toHaveBeenCalledWith("model", "uploaded", "part.3mf");
   });
 });

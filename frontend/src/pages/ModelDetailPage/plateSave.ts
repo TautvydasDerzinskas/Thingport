@@ -27,23 +27,23 @@ export async function savePlateChanges(
 
   const newFiles = stagedItems.filter((item) => item.kind === "new").map((item) => item.file);
   if (newFiles.length) {
-    const beforeIds = new Set(latest.plates.map((plate) => plate.id));
     const uploadRes = await api.addPlates(print.id, newFiles);
     latest = uploadRes.print;
-    const uploadedPlates = latest.plates
-      .filter((plate) => !beforeIds.has(plate.id))
-      .toSorted((a, b) => a.position - b.position);
+    if (uploadRes.added_plate_ids.length !== newFiles.length) {
+      throw new Error("The server did not confirm every uploaded model file.");
+    }
     let nextUploaded = 0;
     stagedItems = stagedItems.map((item) => {
       if (item.kind === "existing") return item;
-      const uploaded = uploadedPlates[nextUploaded++];
-      if (!uploaded) throw new Error("Could not match an uploaded model file to its saved plate.");
+      const uploadedId = uploadRes.added_plate_ids[nextUploaded++];
+      if (!uploadedId) throw new Error("The server did not confirm every uploaded model file.");
+      const uploaded = latest.plates.find((plate) => plate.id === uploadedId);
       return {
         kind: "existing",
-        id: uploaded.id,
+        id: uploadedId,
         filename: item.filename,
-        filenameEdited: uploaded.filename !== item.filename,
-        folder: uploaded.folder ?? null,
+        filenameEdited: !uploaded || uploaded.filename !== item.filename,
+        folder: uploaded?.folder ?? null,
       };
     });
     reportProgress();
@@ -85,10 +85,20 @@ export async function savePlateChanges(
     reportProgress();
   }
 
-  const finalOrder = stagedItems.map((item) => {
-    if (item.kind === "new") throw new Error("An uploaded model file is missing its saved plate ID.");
-    return item.id;
-  });
+  const currentPlateIds = new Set(latest.plates.map((plate) => plate.id));
+  const finalOrder: string[] = [];
+  const includedPlateIds = new Set<string>();
+  for (const item of stagedItems) {
+    if (item.kind !== "existing" || !currentPlateIds.has(item.id) || includedPlateIds.has(item.id)) continue;
+    finalOrder.push(item.id);
+    includedPlateIds.add(item.id);
+  }
+  // Concurrent plates absent from the staged list keep their current relative order at the end.
+  for (const plate of latest.plates) {
+    if (includedPlateIds.has(plate.id)) continue;
+    finalOrder.push(plate.id);
+    includedPlateIds.add(plate.id);
+  }
   const reorderRes = await api.reorderPlates(print.id, finalOrder);
   latest = reorderRes.print ?? latest;
   reportProgress();

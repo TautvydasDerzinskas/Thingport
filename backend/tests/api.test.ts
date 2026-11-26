@@ -230,11 +230,14 @@ describe("plate add/remove/reorder/rename", () => {
   });
 
   it("adds a plate to an existing print", async () => {
+    const previousIds = new Set(plateIds);
     const f = tmpFile("plate-z.stl", "solid z endsolid");
     const res = await auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", f);
     expect(res.status).toBe(200);
     expect(res.body.print.plates).toHaveLength(3);
     expect(res.body.print.plates[2].filename).toBe("plate-z.stl");
+    const addedIds = res.body.print.plates.filter((p: any) => !previousIds.has(p.id)).map((p: any) => p.id);
+    expect(res.body.added_plate_ids).toEqual(addedIds);
     plateIds = res.body.print.plates.map((p: any) => p.id);
     fs.rmSync(f, { force: true });
   });

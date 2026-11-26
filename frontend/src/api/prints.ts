@@ -581,7 +581,7 @@ export const printsApi = {
     return res.json();
   },
 
-  addPlates: async (printId: string, files: File[]): Promise<{ print: Print }> => {
+  addPlates: async (printId: string, files: File[]): Promise<{ print: Print; added_plate_ids: string[] }> => {
     const fd = new FormData();
     for (const file of files) {
       fd.append("files", file);

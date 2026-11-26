@@ -52,8 +52,11 @@ router.post(
         const safeName = normalizeFileName(f.originalname);
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
-      await addPlatesToPrint(req.userId!, print.id, plateInputs);
-      res.json({ print: await printOutById(req.userId!, print.id) });
+      const addedPlates = await addPlatesToPrint(req.userId!, print.id, plateInputs);
+      res.json({
+        print: await printOutById(req.userId!, print.id),
+        added_plate_ids: addedPlates.map((plate) => plate.id),
+      });
     } finally {
       for (const f of files) {
         if (fs.existsSync(f.path)) fs.rmSync(f.path, { force: true });
