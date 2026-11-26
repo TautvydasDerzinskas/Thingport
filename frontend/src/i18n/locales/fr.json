@@ -6792,6 +6792,7 @@
       "fileNameRequired": "Le nom du fichier est obligatoire.",
       "uploadConfirmationFailed": "Impossible de confirmer quels fichiers du modèle ont été enregistrés. Veuillez réessayer.",
       "uploadPending": "L’état du téléversement est en cours de vérification. Réessayez la mise à jour avant de supprimer ce fichier.",
+      "removeFile": "Supprimer le fichier du modèle",
       "addFiles": "Ajouter des fichiers",
       "update": "Mettre à jour",
       "confirmDiscard": "Abandonner toutes les modifications non enregistrées de ce modèle ?",

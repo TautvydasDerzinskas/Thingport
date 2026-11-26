@@ -20,7 +20,7 @@ export type PlateSaveProgress = {
 
 export type PlateSaveApi = Pick<
   typeof printsApi,
-  "get" | "addPlates" | "deletePlate" | "renamePlate" | "reorderPlates"
+  "get" | "addPlates" | "supportsIdempotentPlateUploads" | "deletePlate" | "renamePlate" | "reorderPlates"
 >;
 
 export class PlateUploadConfirmationError extends Error {
@@ -52,12 +52,14 @@ function asExisting(item: NewPlateItem, plate: Plate): PlateItem {
   };
 }
 
-function reconcileAttemptedUploads(print: Print, items: PlateItem[]): PlateItem[] {
+function reconcileAttemptedUploads(print: Print, items: PlateItem[], retryUnknown: boolean): PlateItem[] {
   return items.map((item) => {
     if (item.kind !== "new" || !item.uploadAttempted) return item;
     const uploaded = storedUpload(print, uploadMarker(item));
     if (uploaded) return asExisting(item, uploaded);
-    return item.uploadOutcomeUnknown === false ? { ...item, uploadAttempted: false } : item;
+    return item.uploadOutcomeUnknown === false || retryUnknown
+      ? { ...item, uploadAttempted: false, uploadOutcomeUnknown: false }
+      : item;
   });
 }
 
@@ -77,7 +79,11 @@ export async function savePlateChanges(
   if (stagedItems.some((item) => item.kind === "new" && item.uploadAttempted)) {
     latest = await api.get(print.id);
     try {
-      stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+      const hasUnknownOutcome = stagedItems.some(
+        (item) => item.kind === "new" && item.uploadAttempted && item.uploadOutcomeUnknown !== false,
+      );
+      const retryUnknown = hasUnknownOutcome && (await api.supportsIdempotentPlateUploads(print.id));
+      stagedItems = reconcileAttemptedUploads(latest, stagedItems, retryUnknown);
     } catch (error) {
       reportProgress();
       throw error;
@@ -124,7 +130,7 @@ export async function savePlateChanges(
       );
       try {
         latest = await api.get(print.id);
-        stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+        stagedItems = reconcileAttemptedUploads(latest, stagedItems, false);
       } catch (reconciliationError) {
         reportProgress();
         if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
@@ -164,7 +170,7 @@ export async function savePlateChanges(
       stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadOutcomeUnknown: false } : item));
       try {
         latest = await api.get(print.id);
-        stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+        stagedItems = reconcileAttemptedUploads(latest, stagedItems, false);
       } catch (reconciliationError) {
         reportProgress();
         if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;

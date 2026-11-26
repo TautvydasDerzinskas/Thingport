@@ -18,6 +18,7 @@ export const MERGE_RULES = {
   CategorySiteId: { part: "people" },
   Print: { part: "people" },
   Plate: { part: "people" },
+  PlateUploadAttempt: { never: "Upload retry state belongs to the old instance." },
   PreviewImage: { part: "people" },
   DescriptionImage: { part: "people" },
   PrintFile: { part: "people" },

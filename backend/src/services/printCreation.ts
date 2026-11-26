@@ -45,6 +45,8 @@ const IMAGE_EXTS = LEGACY.photo;
 export type NewPlateInput = {
   /** Untrusted; will be sanitized. */
   filename: string;
+  /** Stable client ID for a retryable upload; used to deduplicate uncertain requests. */
+  clientUploadId?: string;
   mime?: string | null;
   size?: number;
   /** Exactly one of tempFilePath / copyFromPath / sourcePath should be set. */
@@ -430,11 +432,125 @@ export async function addPlatesToPrint(
 
   const created: Plate[] = [];
   for (const input of plateInputs) {
-    const { record } = await createPlateAtPosition(print, input, nextPosition);
+    const record = input.clientUploadId
+      ? await createPlateIdempotently(print, input, nextPosition)
+      : (await createPlateAtPosition(print, input, nextPosition)).record;
     created.push(record);
     nextPosition += 1;
   }
   return created;
+}
+
+const UPLOAD_ATTEMPT_POLL_MS = 100;
+const UPLOAD_ATTEMPT_MAX_POLLS = 300;
+
+function uploadMarker(clientUploadId: string): string {
+  return `thingport-upload-${clientUploadId}-`;
+}
+
+async function findPlateForUpload(printId: string, clientUploadId: string): Promise<Plate | undefined> {
+  const matches = await prisma.plate.findMany({
+    where: { printId, filename: { startsWith: uploadMarker(clientUploadId) } },
+    take: 2,
+  });
+  if (matches.length > 1) throw new HttpError(409, "Multiple plates match this upload attempt");
+  return matches[0];
+}
+
+function plateUploadOutcomeRecordingError(uploadError: unknown, attemptError: unknown): AggregateError {
+  return new AggregateError([uploadError, attemptError], "Failed to record the plate upload outcome", {
+    cause: uploadError,
+  });
+}
+
+async function createClaimedPlateUpload(
+  print: Parameters<typeof createPlateAtPosition>[0],
+  input: NewPlateInput,
+  position: number,
+): Promise<Plate> {
+  const clientUploadId = input.clientUploadId!;
+  const where = { printId_clientUploadId: { printId: print.id, clientUploadId } };
+  try {
+    const { record } = await createPlateAtPosition(print, input, position);
+    await prisma.plateUploadAttempt.update({
+      where,
+      data: { status: "complete", plateId: record.id },
+    });
+    return record;
+  } catch (error) {
+    try {
+      const existing = await findPlateForUpload(print.id, clientUploadId);
+      await prisma.plateUploadAttempt.update({
+        where,
+        data: { status: existing ? "complete" : "failed", plateId: existing?.id ?? null },
+      });
+    } catch (attemptError) {
+      throw plateUploadOutcomeRecordingError(error, attemptError);
+    }
+    throw error;
+  }
+}
+
+async function createPlateIdempotently(
+  print: Parameters<typeof createPlateAtPosition>[0],
+  input: NewPlateInput,
+  position: number,
+): Promise<Plate> {
+  const clientUploadId = input.clientUploadId!;
+  const where = { printId_clientUploadId: { printId: print.id, clientUploadId } };
+  const existing = await findPlateForUpload(print.id, clientUploadId);
+  if (existing) {
+    const recorded = await prisma.plateUploadAttempt.createMany({
+      data: [{ printId: print.id, clientUploadId, status: "complete", plateId: existing.id }],
+      skipDuplicates: true,
+    });
+    if (recorded.count === 1) return existing;
+  }
+
+  const claimed = await prisma.plateUploadAttempt.createMany({
+    data: [{ printId: print.id, clientUploadId, status: "pending" }],
+    skipDuplicates: true,
+  });
+  if (claimed.count === 1) return createClaimedPlateUpload(print, input, position);
+
+  for (let poll = 0; poll < UPLOAD_ATTEMPT_MAX_POLLS; poll += 1) {
+    const attempt = await prisma.plateUploadAttempt.findUnique({ where });
+    if (!attempt) {
+      await new Promise((resolve) => setTimeout(resolve, UPLOAD_ATTEMPT_POLL_MS));
+      continue;
+    }
+
+    const existingPlate = await findPlateForUpload(print.id, clientUploadId);
+    if (existingPlate) {
+      await prisma.plateUploadAttempt.update({
+        where,
+        data: { status: "complete", plateId: existingPlate.id },
+      });
+      return existingPlate;
+    }
+
+    if (attempt.status === "complete") {
+      const completedPlate = attempt.plateId
+        ? await prisma.plate.findFirst({ where: { id: attempt.plateId, printId: print.id } })
+        : null;
+      if (!completedPlate) throw new HttpError(409, "The original plate upload is no longer available");
+      return completedPlate;
+    }
+
+    if (attempt.status === "failed") {
+      const retryClaim = await prisma.plateUploadAttempt.updateMany({
+        where: { ...where.printId_clientUploadId, status: "failed" },
+        data: { status: "pending", plateId: null },
+      });
+      if (retryClaim.count === 1) return createClaimedPlateUpload(print, input, position);
+    } else if (attempt.status !== "pending") {
+      throw new HttpError(409, "The plate upload attempt has an invalid status");
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, UPLOAD_ATTEMPT_POLL_MS));
+  }
+
+  throw new HttpError(409, "The matching plate upload is still processing");
 }
 
 /** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */

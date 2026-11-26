@@ -269,6 +269,7 @@ model Print {
   // storage. Null for a model from before, whose pictures are still in the shared folders keyed by id.
   assetsPath               String?                  @unique
   plates                   Plate[]
+  plateUploadAttempts      PlateUploadAttempt[]
   previewImages            PreviewImage[]
   descriptionImages        DescriptionImage[]
   files                    PrintFile[]              @relation("PrintFiles")
@@ -696,6 +697,17 @@ model Plate {
   @@index([printId])
   // Finds a stored copy of a new plate's file to share (services/printCreation.ts).
   @@index([contentSha256])
+}
+
+model PlateUploadAttempt {
+  id             String  @id @default(cuid())
+  printId        String
+  print          Print   @relation(fields: [printId], references: [id], onDelete: Cascade)
+  clientUploadId String
+  status         String  @default("pending")
+  plateId        String?
+
+  @@unique([printId, clientUploadId])
 }
 
 /// A photo of the finished model, stored as a normalized JPEG keyed by id. Position 0 is the

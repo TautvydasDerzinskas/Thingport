@@ -6779,6 +6779,7 @@
       "fileNameRequired": "El nombre del archivo es obligatorio.",
       "uploadConfirmationFailed": "No se pudo confirmar qué archivos del modelo se guardaron. Inténtalo de nuevo.",
       "uploadPending": "Aún se está confirmando el estado de la carga. Vuelve a actualizar antes de eliminar este archivo.",
+      "removeFile": "Quitar archivo del modelo",
       "addFiles": "Añadir archivos",
       "update": "Actualizar",
       "confirmDiscard": "¿Descartar todos los cambios no guardados de este modelo?",

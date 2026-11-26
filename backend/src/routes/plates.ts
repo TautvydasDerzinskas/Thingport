@@ -37,6 +37,18 @@ import { readZipEntry } from "../utils/zipReader";
 
 const router = Router();
 router.use(requireAuth);
+const CLIENT_UPLOAD_ID_PREFIX =
+  /^thingport-upload-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})-/i;
+
+router.get(
+  "/print/:id/plates/upload-idempotency",
+  asyncHandler(async (req, res) => {
+    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    if (!print) throw new HttpError(404, "Print not found");
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ supported: true });
+  }),
+);
 
 router.post(
   "/print/:id/plates",
@@ -50,7 +62,13 @@ router.post(
 
       const plateInputs: NewPlateInput[] = files.map((f) => {
         const safeName = normalizeFileName(f.originalname);
-        return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
+        const uploadId = CLIENT_UPLOAD_ID_PREFIX.exec(safeName)?.[1];
+        return {
+          filename: safeName,
+          clientUploadId: uploadId,
+          mime: mimeFromContentType(f.mimetype, safeName),
+          tempFilePath: f.path,
+        };
       });
       const addedPlates = await addPlatesToPrint(req.userId!, print.id, plateInputs);
       res.json({

@@ -242,6 +242,30 @@ describe("plate add/remove/reorder/rename", () => {
     fs.rmSync(f, { force: true });
   });
 
+  it("returns the same plate for concurrent retries with the same upload id", async () => {
+    const capability = await auth(request(app).get(`/api/print/${printId}/plates/upload-idempotency`));
+    expect(capability.status).toBe(200);
+    expect(capability.body).toEqual({ supported: true });
+
+    const uploadId = "00000000-0000-4000-8000-000000000457";
+    const filename = `thingport-upload-${uploadId}-retry.stl`;
+    const firstFile = tmpFile(filename, "solid retry endsolid");
+    const secondFile = tmpFile(filename, "solid retry endsolid");
+    const post = (file: string) => auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", file);
+
+    const [first, second] = await Promise.all([post(firstFile), post(secondFile)]);
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(first.body.added_plate_ids).toHaveLength(1);
+    expect(second.body.added_plate_ids).toEqual(first.body.added_plate_ids);
+    expect(
+      second.body.print.plates.filter((p: any) => p.filename.startsWith(`thingport-upload-${uploadId}-`)),
+    ).toHaveLength(1);
+    plateIds = second.body.print.plates.map((p: any) => p.id);
+    fs.rmSync(firstFile, { force: true });
+    fs.rmSync(secondFile, { force: true });
+  });
+
   it("reorders plates", async () => {
     const reversed = plateIds.toReversed();
     const res = await auth(request(app).post(`/api/print/${printId}/plates/reorder`)).send({ plate_ids: reversed });

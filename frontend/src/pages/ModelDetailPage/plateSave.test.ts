@@ -54,6 +54,7 @@ describe("savePlateChanges", () => {
         }
         return { print: afterUpload, added_plate_ids: ["uploaded-two"] };
       }),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(async () => false),
       deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
       renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async () => ({ print: afterRename })),
       reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async (_printId, plateIds) => {
@@ -100,7 +101,7 @@ describe("savePlateChanges", () => {
     expect(api.get).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps an uncertain upload pending until its marker appears", async () => {
+  it("keeps an uncertain upload pending on servers without idempotent retry support", async () => {
     const original = plate("original", "base.3mf", 0);
     const uploadName = "thingport-upload-pending-upload-part.3mf";
     const initial = print(original);
@@ -116,6 +117,7 @@ describe("savePlateChanges", () => {
       addPlates: vi.fn<PlateSaveApi["addPlates"]>(async () => {
         throw new PlateUploadOutcomeUnknownError(new Error("network lost"));
       }),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(async () => false),
       deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
       renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async () => ({ print: afterRename })),
       reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async () => ({ print: afterReorder })),
@@ -145,6 +147,50 @@ describe("savePlateChanges", () => {
     ]);
   });
 
+  it("retries an uncertain upload with the same id when the server supports idempotency", async () => {
+    const original = plate("original", "base.3mf", 0);
+    const uploadName = "thingport-upload-safe-retry-part.3mf";
+    const initial = print(original);
+    const afterUpload = print(original, plate("uploaded", uploadName, 1));
+    const afterRename = print(original, plate("uploaded", "part.3mf", 1));
+    const afterReorder = print(original, plate("uploaded", "part.3mf", 1));
+    const uploadedNames: string[] = [];
+    const api: PlateSaveApi = {
+      get: vi.fn<PlateSaveApi["get"]>(async () => initial),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(async (_printId, files) => {
+        uploadedNames.push(files[0].name);
+        if (uploadedNames.length === 1) {
+          throw new PlateUploadOutcomeUnknownError(new Error("network lost"));
+        }
+        return { print: afterUpload, added_plate_ids: ["uploaded"] };
+      }),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(async () => true),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async () => ({ print: afterRename })),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async () => ({ print: afterReorder })),
+    };
+    const items: PlateItem[] = [
+      { kind: "new", localId: "safe-retry", file: new File(["model"], "part.3mf"), filename: "part.3mf" },
+    ];
+    let progress: PlateSaveProgress = { print: initial, items, removedPlateIds: new Set() };
+    const onProgress = (next: PlateSaveProgress) => {
+      progress = next;
+    };
+
+    await expect(
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
+    ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+
+    await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
+
+    expect(api.addPlates).toHaveBeenCalledTimes(2);
+    expect(uploadedNames).toEqual([uploadName, uploadName]);
+    expect(api.supportsIdempotentPlateUploads).toHaveBeenCalledTimes(1);
+    expect(progress.items).toEqual([
+      { kind: "existing", id: "uploaded", filename: "part.3mf", filenameEdited: false, folder: null },
+    ]);
+  });
+
   it("tracks legacy upload responses by request-specific filename when a concurrent plate is present", async () => {
     const original = plate("original", "base.3mf", 0);
     const concurrent = plate("concurrent", "parallel.3mf", 1);
@@ -161,6 +207,7 @@ describe("savePlateChanges", () => {
         expect(files.map((file) => file.name)).toEqual([uploadName]);
         return { print: afterUpload };
       }),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(async () => false),
       deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
       renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async () => ({ print: afterRename })),
       reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async (_printId, plateIds) => {
@@ -208,6 +255,7 @@ describe("savePlateChanges", () => {
         print: afterUpload,
         added_plate_ids: ["uploaded"],
       })),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(async () => false),
       deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(async (_printId, _plateId) => ({ print: afterDelete })),
       renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async (_printId, _plateId, _filename) => ({
         print: afterRename,

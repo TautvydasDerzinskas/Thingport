@@ -745,11 +745,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     >
                       <ArrowDownwardIcon fontSize="small" />
                     </IconButton>
-                    <Tooltip title={uploadPending ? t("models:edit.uploadPending") : undefined}>
+                    <Tooltip title={uploadPending ? t("models:edit.uploadPending") : t("models:edit.removeFile")}>
                       <span>
                         <IconButton
                           size="small"
                           disabled={saving || plateItems.length <= 1 || uploadPending}
+                          aria-label={t("models:edit.removeFile")}
                           onClick={() => removePlateItem(key)}
                         >
                           <DeleteIcon fontSize="small" color="error" />

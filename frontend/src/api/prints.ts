@@ -613,6 +613,21 @@ export const printsApi = {
     return res.json();
   },
 
+  supportsIdempotentPlateUploads: async (printId: string): Promise<boolean> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/plates/upload-idempotency`, {
+      headers: authHeaders(),
+      cache: "no-store",
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (res.status === 404) return false;
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not check plate upload retry support"));
+    const body: unknown = await res.json();
+    if (typeof body !== "object" || body === null || !("supported" in body) || body.supported !== true) {
+      throw new Error("The server returned an invalid plate upload capability");
+    }
+    return true;
+  },
+
   deletePlate: async (printId: string, plateId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/plates/${plateId}`, {
       method: "DELETE",
