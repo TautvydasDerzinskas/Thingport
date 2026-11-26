@@ -53,7 +53,7 @@ type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
 
 type PlateItem =
-  | { kind: "existing"; id: string; filename: string; folder: string | null }
+  | { kind: "existing"; id: string; filename: string; filenameEdited: boolean; folder: string | null }
   | { kind: "new"; localId: string; file: File; filename: string };
 
 function imageKey(img: ImageItem): string {
@@ -124,6 +124,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       kind: "existing",
       id: p.id,
       filename: p.filename,
+      filenameEdited: false,
       folder: p.folder ?? null,
     })),
   );
@@ -224,7 +225,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
   const renamePlateItem = (key: string, filename: string) => {
-    const updatedItems = plateItems.map((item) => (plateKey(item) === key ? { ...item, filename } : item));
+    const updatedItems = plateItems.map((item) => {
+      if (plateKey(item) !== key) return item;
+      return item.kind === "existing" ? { ...item, filename, filenameEdited: true } : { ...item, filename };
+    });
     setPlateItems(updatedItems);
     setError(hasInvalidPlateFilename(updatedItems) ? t("models:edit.fileNameRequired") : null);
     markDirty();
@@ -340,6 +344,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       // Rename after removals so a replaced file can take the name of the one it replaced.
       let nextNewPlate = 0;
       for (const item of plateItems) {
+        if (item.kind === "existing" && !item.filenameEdited) continue;
         const plateId = item.kind === "existing" ? item.id : newPlateIdsInOrder[nextNewPlate++];
         const wanted = item.filename;
         const current = latest.plates.find((p) => p.id === plateId);
