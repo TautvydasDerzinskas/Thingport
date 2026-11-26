@@ -4,6 +4,7 @@ import { afterAccountGone, roomsWithPartnersOf } from "./chatService";
 import path from "node:path";
 import type { Prisma, Role } from "@prisma/client";
 import { STORAGE, STUDIO_ASSETS } from "../config";
+import { requireCurrentAdmin } from "../auth";
 import { prisma } from "../db";
 import { kickSharing, queueAccountGone } from "../federation/sharedCollections";
 import { HttpError } from "../utils/fileUtils";
@@ -43,16 +44,6 @@ export function permissionsOver(actor: Actor, target: Target): UserPermissions {
   };
 }
 
-async function loadActor(actorId: string, db: UserClient = prisma): Promise<Actor> {
-  const actor = await db.user.findUnique({
-    where: { id: actorId },
-    select: { id: true, role: true, isOwner: true },
-  });
-  if (!actor) throw new HttpError(401, "Unauthorized");
-  if (actor.role !== "ADMIN") throw new HttpError(403, "Admin access required");
-  return { id: actor.id, isOwner: actor.isOwner };
-}
-
 async function loadTarget(targetId: string, db: UserClient = prisma) {
   const target = await db.user.findUnique({
     where: { id: targetId },
@@ -64,7 +55,7 @@ async function loadTarget(targetId: string, db: UserClient = prisma) {
 
 export async function setUserRole(actorId: string, targetId: string, role: Role): Promise<void> {
   const change = await withSignInMethodsTransaction(async (tx) => {
-    const [actor, target] = await Promise.all([loadActor(actorId, tx), loadTarget(targetId, tx)]);
+    const [actor, target] = await Promise.all([requireCurrentAdmin(actorId, tx), loadTarget(targetId, tx)]);
     if (target.role === role) return { actor, target, changed: false };
     const allowed = permissionsOver(actor, target);
     if (role === "ADMIN" ? !allowed.canPromote : !allowed.canDemote) {
@@ -87,7 +78,7 @@ export async function setUserRole(actorId: string, targetId: string, role: Role)
 
 /** Every model of the user's and its files; the account and the rest of what's theirs stay. Returns how many went. */
 export async function deleteUserModels(actorId: string, targetId: string): Promise<number> {
-  const [actor, target] = await Promise.all([loadActor(actorId), loadTarget(targetId)]);
+  const [actor, target] = await Promise.all([requireCurrentAdmin(actorId), loadTarget(targetId)]);
   if (!permissionsOver(actor, target).canDeleteModels) throw new HttpError(403, "You can't delete this user's models");
   const models = await deleteAllPrintsForUser(target.id);
   // The admin's, naming whose: the user's own model_deleted entries aren't written for these.
@@ -139,7 +130,10 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
     authorIds: orphanAuthors,
   } = await withSignInMethodsLock(async () => {
     const { target } = await prisma.$transaction(async (tx) => {
-      const [currentActor, currentTarget] = await Promise.all([loadActor(actorId, tx), loadTarget(targetId, tx)]);
+      const [currentActor, currentTarget] = await Promise.all([
+        requireCurrentAdmin(actorId, tx),
+        loadTarget(targetId, tx),
+      ]);
       if (!permissionsOver(currentActor, currentTarget).canDelete)
         throw new HttpError(403, "You can't delete this user");
       if (!(await getEmailPasswordEnabled(tx))) await requireAdminOidcSignInPath(tx, currentTarget.id);
@@ -171,7 +165,10 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
 
     const { actor, deletedTarget } = await prisma.$transaction(
       async (tx) => {
-        const [currentActor, currentTarget] = await Promise.all([loadActor(actorId, tx), loadTarget(targetId, tx)]);
+        const [currentActor, currentTarget] = await Promise.all([
+          requireCurrentAdmin(actorId, tx),
+          loadTarget(targetId, tx),
+        ]);
         if (!permissionsOver(currentActor, currentTarget).canDelete)
           throw new HttpError(403, "You can't delete this user");
         if (!(await getEmailPasswordEnabled(tx))) await requireAdminOidcSignInPath(tx, currentTarget.id);

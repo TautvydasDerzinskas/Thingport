@@ -439,7 +439,7 @@ export async function otherWaysIn(
 }
 
 export async function hasAdminOidcSignInPath(
-  db: Pick<Prisma.TransactionClient, "oidcProvider" | "userIdentity">,
+  db: Pick<Prisma.TransactionClient, "userIdentity">,
   excludingUserId?: string,
 ): Promise<boolean> {
   const adminIdentity = await db.userIdentity.findFirst({
@@ -449,23 +449,17 @@ export async function hasAdminOidcSignInPath(
     },
     select: { id: true },
   });
-  if (adminIdentity) return true;
-
-  const providerWithEmailLinking = await db.oidcProvider.findFirst({
-    where: { enabled: true, linkByEmail: true },
-    select: { id: true },
-  });
-  return Boolean(providerWithEmailLinking);
+  return Boolean(adminIdentity);
 }
 
 export async function requireAdminOidcSignInPath(
-  db: Pick<Prisma.TransactionClient, "oidcProvider" | "userIdentity">,
+  db: Pick<Prisma.TransactionClient, "userIdentity">,
   excludingUserId?: string,
 ): Promise<void> {
   if (await hasAdminOidcSignInPath(db, excludingUserId)) return;
   throw new HttpError(
     409,
-    "Keep an administrator sign-in path through an enabled OIDC provider before disabling password sign-in or changing providers",
+    "At least one administrator must have an account connected to an enabled OIDC provider while password sign-in is disabled",
   );
 }
 

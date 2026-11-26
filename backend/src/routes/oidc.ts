@@ -1,7 +1,7 @@
 import type { OidcProvider } from "@prisma/client";
 import { type Response, Router } from "express";
 import { z } from "zod";
-import { requireAdmin, requireAuth, signedInRecently } from "../auth";
+import { requireAdmin, requireAuth, requireCurrentAdmin, signedInRecently } from "../auth";
 import { startSession } from "../services/sessionService";
 import { prisma } from "../db";
 import { toUserOut } from "../dto";
@@ -419,6 +419,7 @@ router.patch(
       }
     }
     await withSignInMethodsTransaction(async (tx) => {
+      await requireCurrentAdmin(req.userId!, tx);
       if (!body.email_password_enabled) await requireAdminOidcSignInPath(tx);
       await setEmailPasswordEnabled(body.email_password_enabled, tx);
     });
@@ -473,6 +474,7 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(updateSchema, req.body);
     const updated = await withSignInMethodsTransaction(async (tx) => {
+      await requireCurrentAdmin(req.userId!, tx);
       const existing = await tx.oidcProvider.findUnique({ where: { id: req.params.id } });
       if (!existing) throw new HttpError(404, "Provider not found");
       const emailPasswordEnabled = await getEmailPasswordEnabled(tx);
@@ -504,6 +506,7 @@ router.delete(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await withSignInMethodsTransaction(async (tx) => {
+      await requireCurrentAdmin(req.userId!, tx);
       const emailPasswordEnabled = await getEmailPasswordEnabled(tx);
       const deleted = await tx.oidcProvider.deleteMany({ where: { id: req.params.id } });
       if (!deleted.count) throw new HttpError(404, "Provider not found");

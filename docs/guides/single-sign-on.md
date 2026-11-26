@@ -46,15 +46,16 @@ On the first run it's taken from `PUBLIC_URL` in `.env`; after that it's managed
 
 After testing and enabling a provider, an admin can turn off **Email & password** in **Sign-in Methods**. The sign-in
 page then offers only enabled OIDC providers. Email/password registration, login, password resets and setting a
-password are disabled too. Email verification still works, but no longer signs the person in.
+password are disabled too. Email verification still works, but no longer signs the person in. If you change your
+email address while signed in, sign out of Thingport before opening the verification link sent to your new address.
 
-Thingport requires the public URL and an administrator sign-in path through an enabled provider before allowing this
-change. While email and password are off, provider changes that would remove the last such path are rejected. Keep an
-administrator identity connected to an enabled provider. Verified-email linking alone does not establish an
-administrator sign-in path: the provider must verify an address that matches the administrator's account. Test the
-OIDC flow with an administrator account before switching; if one identity provider is down, an admin can still sign
-in through another enabled provider connected to their account. If none is available, an admin who still has an active
-session can turn password sign-in back on.
+Set the public URL and connect at least one administrator account to an enabled OIDC provider before turning off
+email and password. An administrator can connect a provider from **Profile** or complete an OIDC sign-in with verified
+email linking enabled and a matching email address. While email and password are off, Thingport rejects changes that
+would remove the last administrator connection to an enabled provider.
+
+If one provider is down, an administrator can sign in through another enabled provider connected to their account.
+An administrator with an active session can turn password sign-in back on.
 
 **Scopes** are what Thingport asks the provider for. `openid email profile` suits most providers, and `openid` is
 always needed.
