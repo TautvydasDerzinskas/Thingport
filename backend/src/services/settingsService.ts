@@ -174,11 +174,12 @@ const SIGN_IN_METHODS_LOCK = 74_210_305;
 // Serialize setting and provider changes that could remove the last usable sign-in method.
 export async function withSignInMethodsTransaction<T>(
   operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  options: { timeout?: number } = {},
 ): Promise<T> {
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SIGN_IN_METHODS_LOCK})`;
     return operation(tx);
-  });
+  }, options);
 }
 
 export async function getEmailPasswordEnabled(db: SettingClient = prisma): Promise<boolean> {

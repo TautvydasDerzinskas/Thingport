@@ -61,6 +61,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
   const [test, setTest] = React.useState<{ provider: OidcProvider; outcome: OidcTestOutcome | "closed" } | null>(null);
   const testRun = React.useRef(0);
   const settingsRequest = React.useRef(0);
+  const settingsMutationInFlight = React.useRef(false);
 
   const fail = React.useCallback(
     (err: unknown) => {
@@ -115,6 +116,8 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
       });
       if (!ok) return;
     }
+    if (settingsMutationInFlight.current) return;
+    settingsMutationInFlight.current = true;
     setBusy(provider.id);
     setNotice(null);
     try {
@@ -123,6 +126,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
     } catch (err) {
       fail(err);
     } finally {
+      settingsMutationInFlight.current = false;
       setBusy(null);
     }
   };
@@ -137,6 +141,8 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
       });
       if (!ok) return;
     }
+    if (settingsMutationInFlight.current) return;
+    settingsMutationInFlight.current = true;
     setBusy("email-password");
     setNotice(null);
     try {
@@ -146,6 +152,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
     } catch (err) {
       fail(err);
     } finally {
+      settingsMutationInFlight.current = false;
       setBusy(null);
     }
   };
@@ -171,12 +178,18 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
       destructive: true,
     });
     if (!ok) return;
+    if (settingsMutationInFlight.current) return;
+    settingsMutationInFlight.current = true;
+    setBusy(`delete-${provider.id}`);
     setNotice(null);
     try {
       await oidcApi.remove(provider.id);
       load();
     } catch (err) {
       fail(err);
+    } finally {
+      settingsMutationInFlight.current = false;
+      setBusy(null);
     }
   };
 
@@ -328,7 +341,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
                             <span>
                               <IconButton
                                 aria-label={t("adminSettings.signIn.delete")}
-                                disabled={lastEnabledProvider}
+                                disabled={busy !== null || lastEnabledProvider}
                                 onClick={() => void remove(provider)}
                               >
                                 <DeleteOutlineIcon />

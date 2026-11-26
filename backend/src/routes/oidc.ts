@@ -1,4 +1,4 @@
-import type { OidcProvider, Prisma } from "@prisma/client";
+import type { OidcProvider } from "@prisma/client";
 import { type Response, Router } from "express";
 import { z } from "zod";
 import { requireAdmin, requireAuth, signedInRecently } from "../auth";
@@ -29,6 +29,7 @@ import {
   matchOut,
   normalizeIssuerUrl,
   otherWaysIn,
+  requireAdminOidcSignInPath,
   recordTest,
   redeemLoginCode,
   redirectUriFor,
@@ -52,25 +53,6 @@ router.use(["/auth/oidc", "/profile/sign-in", "/settings/auth/oidc"], (_req, res
   }, next);
 });
 const publicUrlOf = (res: Response): string => res.locals.publicUrl as string;
-
-async function requireAdminOidcSignInPath(tx: Prisma.TransactionClient): Promise<void> {
-  const adminIdentity = await tx.userIdentity.findFirst({
-    where: { user: { role: "ADMIN" }, provider: { enabled: true } },
-    select: { id: true },
-  });
-  if (adminIdentity) return;
-
-  const providerWithEmailLinking = await tx.oidcProvider.findFirst({
-    where: { enabled: true, linkByEmail: true },
-    select: { id: true },
-  });
-  if (!providerWithEmailLinking) {
-    throw new HttpError(
-      409,
-      "Keep an administrator sign-in path through an enabled OIDC provider before disabling password sign-in or changing providers",
-    );
-  }
-}
 
 function failSignIn(res: Response, message: string, page?: string): void {
   res.setHeader("Set-Cookie", clearFlowCookie());
