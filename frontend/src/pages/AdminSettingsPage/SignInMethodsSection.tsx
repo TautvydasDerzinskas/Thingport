@@ -60,6 +60,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
   const [notice, setNotice] = React.useState<{ severity: "success" | "error" | "info"; text: string } | null>(null);
   const [test, setTest] = React.useState<{ provider: OidcProvider; outcome: OidcTestOutcome | "closed" } | null>(null);
   const testRun = React.useRef(0);
+  const settingsRequest = React.useRef(0);
 
   const fail = React.useCallback(
     (err: unknown) => {
@@ -70,7 +71,15 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
   );
 
   const load = React.useCallback(() => {
-    oidcApi.get().then(setSettings, fail);
+    const request = ++settingsRequest.current;
+    oidcApi.get().then(
+      (nextSettings) => {
+        if (request === settingsRequest.current) setSettings(nextSettings);
+      },
+      (err) => {
+        if (request === settingsRequest.current) fail(err);
+      },
+    );
   }, [fail]);
   React.useEffect(load, [load]);
   // A test still polling stops when the page goes.
@@ -132,6 +141,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
     setNotice(null);
     try {
       const updatedSettings = await oidcApi.setEmailPasswordEnabled(enabled);
+      settingsRequest.current += 1;
       setSettings(updatedSettings);
     } catch (err) {
       fail(err);

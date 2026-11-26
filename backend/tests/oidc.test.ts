@@ -219,6 +219,82 @@ describe("OIDC providers (admin)", () => {
     }
   });
 
+  it("preserves an administrator OIDC sign-in path when providers change", async () => {
+    await setEmailPasswordEnabled(true);
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    const testProviderIds: string[] = [];
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+
+      const emailLinkProvider = await addProvider({ link_by_email: true });
+      testProviderIds.push(emailLinkProvider.id);
+      const unrelatedProvider = await addProvider();
+      testProviderIds.push(unrelatedProvider.id);
+
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+
+      const unlinked = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${emailLinkProvider.id}`)
+        .set(asAdmin())
+        .send({ link_by_email: false });
+      expect(unlinked.status).toBe(409);
+
+      const unavailable = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${emailLinkProvider.id}`)
+        .set(asAdmin())
+        .send({ enabled: false });
+      expect(unavailable.status).toBe(409);
+
+      const deleted = await request(app)
+        .delete(`/api/settings/auth/oidc/providers/${emailLinkProvider.id}`)
+        .set(asAdmin());
+      expect(deleted.status).toBe(409);
+
+      const adminUser = await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" } });
+      await prisma.userIdentity.create({
+        data: { userId: adminUser.id, providerId: unrelatedProvider.id, subject: `admin-${stamp}-other` },
+      });
+
+      const unlinkedWithOtherPath = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${emailLinkProvider.id}`)
+        .set(asAdmin())
+        .send({ link_by_email: false });
+      expect(unlinkedWithOtherPath.status).toBe(200);
+
+      const emailFallbackProvider = await addProvider({ link_by_email: true });
+      testProviderIds.push(emailFallbackProvider.id);
+      await prisma.userIdentity.deleteMany({
+        where: { userId: adminUser.id, providerId: unrelatedProvider.id },
+      });
+
+      const disabledWithOtherPath = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${emailLinkProvider.id}`)
+        .set(asAdmin())
+        .send({ enabled: false });
+      expect(disabledWithOtherPath.status).toBe(200);
+
+      const deletedWithOtherPath = await request(app)
+        .delete(`/api/settings/auth/oidc/providers/${emailLinkProvider.id}`)
+        .set(asAdmin());
+      expect(deletedWithOtherPath.status).toBe(204);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      await prisma.oidcProvider.deleteMany({ where: { id: { in: testProviderIds } } });
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
   it("keeps the client secret write-only and gives the redirect URI to register", async () => {
     const created = await addProvider({ name: `Pocket ID ${stamp}`, slug: undefined });
     const list = await request(app).get("/api/settings/auth/oidc").set(asAdmin());
@@ -644,6 +720,10 @@ describe("connecting providers from the profile", () => {
     const methods = await request(app).get("/api/profile/sign-in").set(as);
     const connection = methods.body.providers.find((p: { slug: string }) => p.slug === provider.slug).connection;
 
+    const adminUser = await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" } });
+    await prisma.userIdentity.create({
+      data: { userId: adminUser.id, providerId: provider.id, subject: `admin-${stamp}-disabled-password` },
+    });
     const disabled = await request(app)
       .patch("/api/settings/auth/oidc")
       .set(asAdmin())

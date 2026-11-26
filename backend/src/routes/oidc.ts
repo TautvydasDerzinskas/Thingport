@@ -1,4 +1,4 @@
-import type { OidcProvider } from "@prisma/client";
+import type { OidcProvider, Prisma } from "@prisma/client";
 import { type Response, Router } from "express";
 import { z } from "zod";
 import { requireAdmin, requireAuth, signedInRecently } from "../auth";
@@ -52,6 +52,25 @@ router.use(["/auth/oidc", "/profile/sign-in", "/settings/auth/oidc"], (_req, res
   }, next);
 });
 const publicUrlOf = (res: Response): string => res.locals.publicUrl as string;
+
+async function requireAdminOidcSignInPath(tx: Prisma.TransactionClient): Promise<void> {
+  const adminIdentity = await tx.userIdentity.findFirst({
+    where: { user: { role: "ADMIN" }, provider: { enabled: true } },
+    select: { id: true },
+  });
+  if (adminIdentity) return;
+
+  const providerWithEmailLinking = await tx.oidcProvider.findFirst({
+    where: { enabled: true, linkByEmail: true },
+    select: { id: true },
+  });
+  if (!providerWithEmailLinking) {
+    throw new HttpError(
+      409,
+      "Keep an administrator sign-in path through an enabled OIDC provider before disabling password sign-in or changing providers",
+    );
+  }
+}
 
 function failSignIn(res: Response, message: string, page?: string): void {
   res.setHeader("Set-Cookie", clearFlowCookie());
@@ -418,24 +437,7 @@ router.patch(
       }
     }
     await withSignInMethodsTransaction(async (tx) => {
-      if (!body.email_password_enabled) {
-        const adminIdentity = await tx.userIdentity.findFirst({
-          where: { user: { role: "ADMIN" }, provider: { enabled: true } },
-          select: { id: true },
-        });
-        if (!adminIdentity) {
-          const providerWithEmailLinking = await tx.oidcProvider.findFirst({
-            where: { enabled: true, linkByEmail: true },
-            select: { id: true },
-          });
-          if (!providerWithEmailLinking) {
-            throw new HttpError(
-              409,
-              "Connect an administrator to an enabled OIDC provider or enable verified-email linking before disabling email and password sign-in",
-            );
-          }
-        }
-      }
+      if (!body.email_password_enabled) await requireAdminOidcSignInPath(tx);
       await setEmailPasswordEnabled(body.email_password_enabled, tx);
     });
     res.json(await listOut(publicUrlOf(res)));
@@ -491,15 +493,8 @@ router.patch(
     const updated = await withSignInMethodsTransaction(async (tx) => {
       const existing = await tx.oidcProvider.findUnique({ where: { id: req.params.id } });
       if (!existing) throw new HttpError(404, "Provider not found");
-      if (existing.enabled && body.enabled === false && !(await getEmailPasswordEnabled(tx))) {
-        const otherEnabledProviders = await tx.oidcProvider.count({
-          where: { enabled: true, id: { not: existing.id } },
-        });
-        if (otherEnabledProviders === 0) {
-          throw new HttpError(409, "Enable email and password sign-in before disabling the last OIDC provider");
-        }
-      }
-      return tx.oidcProvider.update({
+      const emailPasswordEnabled = await getEmailPasswordEnabled(tx);
+      const updatedProvider = await tx.oidcProvider.update({
         where: { id: existing.id },
         data: {
           ...(body.name !== undefined ? { name: body.name } : {}),
@@ -513,6 +508,8 @@ router.patch(
         },
         include: { _count: { select: { identities: true } } },
       });
+      if (!emailPasswordEnabled) await requireAdminOidcSignInPath(tx);
+      return updatedProvider;
     });
     forgetProviderConfig(updated.id);
     res.json(providerOut(updated, publicUrlOf(res)));
@@ -525,22 +522,10 @@ router.delete(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await withSignInMethodsTransaction(async (tx) => {
-      if (!(await getEmailPasswordEnabled(tx))) {
-        const providerToDelete = await tx.oidcProvider.findFirst({
-          where: { id: req.params.id, enabled: true },
-          select: { id: true },
-        });
-        if (providerToDelete) {
-          const otherEnabledProviders = await tx.oidcProvider.count({
-            where: { enabled: true, id: { not: providerToDelete.id } },
-          });
-          if (otherEnabledProviders === 0) {
-            throw new HttpError(409, "Enable email and password sign-in before deleting the last OIDC provider");
-          }
-        }
-      }
+      const emailPasswordEnabled = await getEmailPasswordEnabled(tx);
       const deleted = await tx.oidcProvider.deleteMany({ where: { id: req.params.id } });
       if (!deleted.count) throw new HttpError(404, "Provider not found");
+      if (!emailPasswordEnabled) await requireAdminOidcSignInPath(tx);
     });
     forgetProviderConfig(req.params.id);
     res.status(204).end();

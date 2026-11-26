@@ -48,10 +48,12 @@ After testing and enabling a provider, an admin can turn off **Email & password*
 page then offers only enabled OIDC providers. Email/password registration, login, password resets and setting a
 password are disabled too. Email verification still works, but no longer signs the person in.
 
-Thingport requires the public URL and at least one enabled provider before allowing this change. While email and
-password are off, the last enabled OIDC provider can't be disabled or deleted. Turn email and password back on first
-if you need to remove or disable that provider. Test the OIDC flow before switching; if the identity provider is down,
-only an admin who can still access Thingport through an active session can turn password sign-in back on.
+Thingport requires the public URL and an administrator sign-in path through an enabled provider before allowing this
+change. While email and password are off, provider changes that would remove the last such path are rejected. Keep an
+administrator identity on an enabled provider, or leave verified-email linking enabled on one. Test the OIDC flow
+before switching; if one identity provider is down, an admin can still sign in through another enabled provider
+connected to their account. If none is available, an admin who still has an active session can turn password sign-in
+back on.
 
 **Scopes** are what Thingport asks the provider for. `openid email profile` suits most providers, and `openid` is
 always needed.
