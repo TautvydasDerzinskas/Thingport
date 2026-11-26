@@ -25,17 +25,38 @@ export async function savePlateChanges(
   const reportProgress = () =>
     onProgress({ print: latest, items: stagedItems, removedPlateIds: new Set(pendingRemovals) });
 
-  const newFiles = stagedItems.filter((item) => item.kind === "new").map((item) => item.file);
-  if (newFiles.length) {
-    const uploadRes = await api.addPlates(print.id, newFiles);
+  const newItems = stagedItems.filter((item): item is Extract<PlateItem, { kind: "new" }> => item.kind === "new");
+  if (newItems.length) {
+    const uploads = newItems.map((item) => ({
+      item,
+      marker: `thingport-upload-${item.localId}-`,
+    }));
+    const uploadFiles = uploads.map(
+      ({ item, marker }) =>
+        new File([item.file], `${marker}${item.file.name}`, {
+          type: item.file.type,
+          lastModified: item.file.lastModified,
+        }),
+    );
+    const uploadRes = await api.addPlates(print.id, uploadFiles);
     latest = uploadRes.print;
-    if (uploadRes.added_plate_ids.length !== newFiles.length) {
-      throw new Error("The server did not confirm every uploaded model file.");
+    let uploadedIds: string[];
+    if (uploadRes.added_plate_ids !== undefined) {
+      if (uploadRes.added_plate_ids.length !== newItems.length) {
+        throw new Error("The server did not confirm every uploaded model file.");
+      }
+      uploadedIds = uploadRes.added_plate_ids;
+    } else {
+      uploadedIds = uploads.map(({ marker }) => {
+        const matches = latest.plates.filter((plate) => plate.filename.startsWith(marker));
+        if (matches.length !== 1) throw new Error("The server did not confirm every uploaded model file.");
+        return matches[0].id;
+      });
     }
     let nextUploaded = 0;
     stagedItems = stagedItems.map((item) => {
       if (item.kind === "existing") return item;
-      const uploadedId = uploadRes.added_plate_ids[nextUploaded++];
+      const uploadedId = uploadedIds[nextUploaded++];
       if (!uploadedId) throw new Error("The server did not confirm every uploaded model file.");
       const uploaded = latest.plates.find((plate) => plate.id === uploadedId);
       return {

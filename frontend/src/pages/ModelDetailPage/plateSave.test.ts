@@ -25,6 +25,51 @@ const print = (...plates: Plate[]): Print => ({
 });
 
 describe("savePlateChanges", () => {
+  it("tracks legacy upload responses by request-specific filename when a concurrent plate is present", async () => {
+    const original = plate("original", "base.3mf", 0);
+    const concurrent = plate("concurrent", "parallel.3mf", 1);
+    const uploadName = "thingport-upload-legacy-upload-part.3mf";
+    const uploaded = plate("uploaded", uploadName, 2);
+    const initial = print(original);
+    const afterUpload = print(original, concurrent, uploaded);
+    const afterRename = print(original, concurrent, plate("uploaded", "part.3mf", 2));
+    const afterReorder = print(plate("uploaded", "part.3mf", 0), original, concurrent);
+    let reorderAttempts = 0;
+    const api: PlateSaveApi = {
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(async (_printId, files) => {
+        expect(files.map((file) => file.name)).toEqual([uploadName]);
+        return { print: afterUpload };
+      }),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async () => ({ print: afterRename })),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async (_printId, plateIds) => {
+        expect(plateIds).toEqual(["uploaded", "original", "concurrent"]);
+        if (reorderAttempts++ === 0) throw new Error("temporary failure");
+        return { print: afterReorder };
+      }),
+    };
+    const items: PlateItem[] = [
+      { kind: "new", localId: "legacy-upload", file: new File(["model"], "part.3mf"), filename: "part.3mf" },
+    ];
+    let progress: PlateSaveProgress = { print: initial, items, removedPlateIds: new Set() };
+    const onProgress = (next: PlateSaveProgress) => {
+      progress = next;
+    };
+
+    await expect(
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
+    ).rejects.toThrow("temporary failure");
+
+    expect(progress.items).toEqual([
+      { kind: "existing", id: "uploaded", filename: "part.3mf", filenameEdited: false, folder: null },
+    ]);
+
+    await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
+
+    expect(api.addPlates).toHaveBeenCalledTimes(1);
+    expect(api.renamePlate).toHaveBeenCalledWith("model", "uploaded", "part.3mf");
+  });
+
   it("does not repeat uploads, deletions, or renames after a later save step fails", async () => {
     const oldPlate = plate("old", "part.3mf", 0);
     const stalePlate = plate("deleted-elsewhere", "stale.3mf", 1);
