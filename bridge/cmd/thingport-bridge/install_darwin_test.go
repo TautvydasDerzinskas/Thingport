@@ -23,10 +23,14 @@ func TestInfoPlistExplainsLocalNetworkAccess(t *testing.T) {
 }
 
 func TestSignAppBundleUsesBundleIdentifier(t *testing.T) {
-	dir := t.TempDir()
+	dir := filepath.Join(t.TempDir(), "path with spaces")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
 	argsFile := filepath.Join(dir, "args")
 	codesign := filepath.Join(dir, "codesign")
-	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > " + argsFile + "\n"
+	t.Setenv("ARGS_FILE", argsFile)
+	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$ARGS_FILE\"\n"
 	if err := os.WriteFile(codesign, []byte(script), 0755); err != nil {
 		t.Fatal(err)
 	}
