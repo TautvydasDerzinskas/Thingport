@@ -6788,6 +6788,7 @@
       "moveImageRight": "Déplacer à droite",
       "newBadge": "Nouveau",
       "modelFiles": "Fichiers du modèle",
+      "fileName": "Nom du fichier",
       "addFiles": "Ajouter des fichiers",
       "update": "Mettre à jour",
       "confirmDiscard": "Abandonner toutes les modifications non enregistrées de ce modèle ?",

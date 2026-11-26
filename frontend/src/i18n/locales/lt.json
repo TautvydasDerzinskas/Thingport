@@ -6908,6 +6908,7 @@
       "moveImageRight": "Perkelti dešinėn",
       "newBadge": "Nauja",
       "modelFiles": "Modelio failai",
+      "fileName": "Failo pavadinimas",
       "addFiles": "Pridėti failų",
       "update": "Atnaujinti",
       "confirmDiscard": "Atmesti visus neišsaugotus šio modelio pakeitimus?",

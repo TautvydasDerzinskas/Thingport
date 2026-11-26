@@ -6775,6 +6775,7 @@
       "moveImageRight": "Mover a la derecha",
       "newBadge": "Nuevo",
       "modelFiles": "Archivos del modelo",
+      "fileName": "Nombre del archivo",
       "addFiles": "Añadir archivos",
       "update": "Actualizar",
       "confirmDiscard": "¿Descartar todos los cambios no guardados de este modelo?",

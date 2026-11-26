@@ -54,7 +54,7 @@ type ImageItem =
 
 type PlateItem =
   | { kind: "existing"; id: string; filename: string; folder: string | null }
-  | { kind: "new"; localId: string; file: File };
+  | { kind: "new"; localId: string; file: File; filename: string };
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -214,8 +214,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       kind: "new",
       localId: newLocalId(),
       file,
+      filename: file.name,
     }));
     setPlateItems((prev) => [...prev, ...newItems]);
+    markDirty();
+  };
+  const renamePlateItem = (key: string, filename: string) => {
+    setPlateItems((prev) => prev.map((item) => (plateKey(item) === key ? { ...item, filename } : item)));
     markDirty();
   };
   const removePlateItem = (key: string) => {
@@ -322,9 +327,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         const res = await printsApi.deletePlate(print.id, original.id);
         latest = res.print ?? latest;
       }
-      // The replaced file got its " (2)" suffix from the old one; rename back now it's gone.
-      for (const [index, plateId] of newPlateIdsInOrder.entries()) {
-        const wanted = newPlateFiles[index].name;
+      // Rename after removals so a replaced file can take the name of the one it replaced.
+      let nextNewPlate = 0;
+      for (const item of plateItems) {
+        const plateId = item.kind === "existing" ? item.id : newPlateIdsInOrder[nextNewPlate++];
+        const wanted = item.filename;
         const current = latest.plates.find((p) => p.id === plateId);
         if (!current || current.filename === wanted) continue;
         const res = await printsApi.renamePlate(print.id, plateId, wanted);
@@ -678,7 +685,6 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             <Stack spacing={1}>
               {plateItems.map((p, idx) => {
                 const key = plateKey(p);
-                const filename = p.kind === "existing" ? p.filename : p.file.name;
                 const folder = p.kind === "existing" ? p.folder : null;
                 return (
                   <Stack
@@ -690,9 +696,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                   >
                     <InsertDriveFileIcon fontSize="small" color="action" />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" noWrap title={filename}>
-                        {filename}
-                      </Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        label={t("models:edit.fileName")}
+                        value={p.filename}
+                        disabled={saving}
+                        onChange={(event) => renamePlateItem(key, event.target.value)}
+                      />
                       {/* Its order is the model's, across folders, so the folder is said on each file. */}
                       {folder && (
                         <Typography

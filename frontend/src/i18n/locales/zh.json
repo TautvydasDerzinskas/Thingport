@@ -6293,6 +6293,7 @@
       "moveImageRight": "右移",
       "newBadge": "新增",
       "modelFiles": "模型文件",
+      "fileName": "文件名",
       "addFiles": "添加文件",
       "update": "更新",
       "confirmDiscard": "放弃对此模型的所有未保存更改？",

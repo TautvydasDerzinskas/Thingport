@@ -6539,6 +6539,7 @@
       "moveImageRight": "Nach rechts",
       "newBadge": "Neu",
       "modelFiles": "Modelldateien",
+      "fileName": "Dateiname",
       "addFiles": "Dateien hinzufügen",
       "update": "Aktualisieren",
       "confirmDiscard": "Alle ungespeicherten Änderungen an diesem Modell verwerfen?",

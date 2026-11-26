@@ -6533,6 +6533,7 @@
       "moveImageRight": "Move right",
       "newBadge": "New",
       "modelFiles": "Model files",
+      "fileName": "File name",
       "addFiles": "Add files",
       "update": "Update",
       "confirmDiscard": "Discard all unsaved changes to this model?",
