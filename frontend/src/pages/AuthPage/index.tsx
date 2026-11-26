@@ -19,9 +19,10 @@ type Props = {
   onSuccess: (token: string, expires_in: number, user: AuthUser) => void;
   apiUp: boolean | null;
   allowRegistrations: boolean;
+  emailPasswordEnabled: boolean;
   passwordResetEnabled: boolean;
   invite?: Invite | null;
-  /** Offered under the password form; none means the page looks as it always has. */
+  /** Shown with password sign-in on the normal auth form, or on its own in OIDC-only mode. */
   oidcProviders?: SignInProvider[];
 };
 
@@ -31,6 +32,7 @@ export default function AuthPage({
   onSuccess,
   apiUp,
   allowRegistrations,
+  emailPasswordEnabled,
   passwordResetEnabled,
   invite = null,
   oidcProviders = NO_PROVIDERS,
@@ -40,7 +42,7 @@ export default function AuthPage({
   // Set while the forgot-password form replaces the tabs; carries over the typed sign-in email.
   const [forgotEmail, setForgotEmail] = React.useState<string | null>(null);
   // Closed registrations hide the Register tab unless this visit came from an invitation.
-  const canRegister = allowRegistrations || invite !== null;
+  const canRegister = emailPasswordEnabled && (allowRegistrations || invite !== null);
 
   return (
     <Paper
@@ -69,7 +71,14 @@ export default function AuthPage({
         </Alert>
       )}
 
-      {forgotEmail === null && canRegister && (
+      {!emailPasswordEnabled ? (
+        <>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {t("auth.oidcOnly")}
+          </Typography>
+          <SingleSignOnButtons providers={oidcProviders} inviteToken={invite?.token} />
+        </>
+      ) : forgotEmail === null && canRegister ? (
         <Tabs
           value={tab}
           onChange={(_e, value) => setTab(value)}
@@ -79,9 +88,9 @@ export default function AuthPage({
           <Tab value="signIn" label={t("auth.signInTab")} />
           <Tab value="register" label={t("auth.registerTab")} />
         </Tabs>
-      )}
+      ) : null}
 
-      {forgotEmail !== null ? (
+      {!emailPasswordEnabled ? null : forgotEmail !== null ? (
         <ForgotPasswordPanel initialEmail={forgotEmail} onBack={() => setForgotEmail(null)} />
       ) : tab === "register" && canRegister ? (
         <>

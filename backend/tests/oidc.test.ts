@@ -8,7 +8,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { getPublicUrl, setPublicUrl } from "../src/services/settingsService";
+import {
+  getEmailPasswordEnabled,
+  getPublicUrl,
+  setEmailPasswordEnabled,
+  setPublicUrl,
+} from "../src/services/settingsService";
 
 const app = createApp();
 const stamp = Date.now();
@@ -75,6 +80,7 @@ function startIdp(): Promise<void> {
 
 let admin: string;
 let member: string;
+let previousEmailPasswordEnabled: boolean;
 // The redirect URI and the callback page are built from it; it's one instance-wide row, so it's put back after.
 let previousPublicUrl: string;
 
@@ -137,6 +143,8 @@ async function exchange(fragment: URLSearchParams) {
 }
 
 beforeAll(async () => {
+  previousEmailPasswordEnabled = await getEmailPasswordEnabled();
+  await setEmailPasswordEnabled(true);
   previousPublicUrl = await getPublicUrl();
   await setPublicUrl("http://thingport.test");
   await startIdp();
@@ -147,6 +155,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await setEmailPasswordEnabled(previousEmailPasswordEnabled);
   await setPublicUrl(previousPublicUrl || null);
   await prisma.oidcProvider.deleteMany({ where: { name: { contains: String(stamp) } } });
   await new Promise((resolve) => idp.close(resolve));
@@ -187,6 +196,103 @@ describe("OIDC providers (admin)", () => {
       .get("/api/settings/auth/oidc")
       .set({ Authorization: `Bearer ${member}` });
     expect(res.status).toBe(403);
+    const update = await request(app)
+      .patch("/api/settings/auth/oidc")
+      .set({ Authorization: `Bearer ${member}` })
+      .send({ email_password_enabled: false });
+    expect(update.status).toBe(403);
+  });
+
+  it("lets admins disable password sign-in when OIDC is available, and keeps the last provider enabled", async () => {
+    const provider = await addProvider();
+    await setPublicUrl(null);
+    const missingPublicUrl = await request(app)
+      .patch("/api/settings/auth/oidc")
+      .set(asAdmin())
+      .send({ email_password_enabled: false });
+    expect(missingPublicUrl.status).toBe(409);
+    await setPublicUrl("http://thingport.test");
+
+    const disabled = await request(app)
+      .patch("/api/settings/auth/oidc")
+      .set(asAdmin())
+      .send({ email_password_enabled: false });
+    expect(disabled.status).toBe(200);
+    expect(disabled.body.email_password_enabled).toBe(false);
+    expect((await request(app).get("/api/health")).body.email_password_enabled).toBe(false);
+
+    expect(
+      (
+        await request(app)
+          .post("/api/login")
+          .send({ email: `oidc-member-${stamp}@example.com`, password: "password123" })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .post("/api/register")
+          .send({ displayName: "Disabled auth", email: `disabled-${stamp}@example.com`, password: "password123" })
+      ).status,
+    ).toBe(403);
+    expect((await request(app).get("/api/reset-password/unused")).status).toBe(403);
+    expect(
+      (
+        await request(app)
+          .post("/api/forgot-password")
+          .send({ email: `oidc-member-${stamp}@example.com` })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await request(app)
+          .patch("/api/profile")
+          .set({ Authorization: `Bearer ${member}` })
+          .send({ current_password: "password123", new_password: "new-password-123" })
+      ).status,
+    ).toBe(403);
+
+    const verificationToken = `verify-disabled-${stamp}`;
+    const memberUser = await prisma.user.findUniqueOrThrow({ where: { email: `oidc-member-${stamp}@example.com` } });
+    await prisma.user.update({
+      where: { id: memberUser.id },
+      data: {
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: new Date(Date.now() + 60_000),
+      },
+    });
+    try {
+      const verified = await request(app).post("/api/verify-email").send({ token: verificationToken });
+      expect(verified.body).toEqual({ verified: true });
+    } finally {
+      await prisma.user.update({
+        where: { id: memberUser.id },
+        data: { emailVerified: true, emailVerificationToken: null, emailVerificationExpires: null },
+      });
+    }
+
+    const disableProvider = await request(app)
+      .patch(`/api/settings/auth/oidc/providers/${provider.id}`)
+      .set(asAdmin())
+      .send({ enabled: false });
+    const otherEnabledProviders = await prisma.oidcProvider.count({
+      where: { enabled: true, id: { not: provider.id } },
+    });
+    expect(disableProvider.status).toBe(otherEnabledProviders === 0 ? 409 : 200);
+
+    const enabled = await request(app)
+      .patch("/api/settings/auth/oidc")
+      .set(asAdmin())
+      .send({ email_password_enabled: true });
+    expect(enabled.status).toBe(200);
+    expect(
+      (
+        await request(app)
+          .post("/api/login")
+          .send({ email: `oidc-member-${stamp}@example.com`, password: "password123" })
+      ).status,
+    ).toBe(200);
   });
 
   it("checks an issuer by its discovery document", async () => {

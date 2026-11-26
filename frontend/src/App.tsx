@@ -826,6 +826,7 @@ export default function App() {
               onSuccess={handleLogin}
               apiUp={apiUp}
               allowRegistrations={health?.allow_registrations ?? true}
+              emailPasswordEnabled={health?.email_password_enabled ?? true}
               passwordResetEnabled={health?.password_reset_enabled ?? false}
               invite={invite}
               oidcProviders={health?.oidc_providers}

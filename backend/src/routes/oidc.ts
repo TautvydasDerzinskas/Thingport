@@ -6,7 +6,7 @@ import { startSession } from "../services/sessionService";
 import { prisma } from "../db";
 import { toUserOut } from "../dto";
 import { createLog } from "../services/auditLog";
-import { getPublicUrl } from "../services/settingsService";
+import { getEmailPasswordEnabled, getPublicUrl, setEmailPasswordEnabled } from "../services/settingsService";
 import { findValidInvitation } from "../services/invitationService";
 import {
   SLUG_PATTERN,
@@ -342,7 +342,11 @@ async function listOut(publicUrl: string) {
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     include: { _count: { select: { identities: true } } },
   });
-  return { public_url: publicUrl || null, providers: providers.map((provider) => providerOut(provider, publicUrl)) };
+  return {
+    public_url: publicUrl || null,
+    email_password_enabled: await getEmailPasswordEnabled(),
+    providers: providers.map((provider) => providerOut(provider, publicUrl)),
+  };
 }
 
 const providerFields = {
@@ -389,6 +393,26 @@ router.get(
   requireAuth,
   requireAdmin,
   asyncHandler(async (_req, res) => {
+    res.json(await listOut(publicUrlOf(res)));
+  }),
+);
+
+router.patch(
+  "/settings/auth/oidc",
+  requireAuth,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(z.object({ email_password_enabled: z.boolean() }).strict(), req.body);
+    if (!body.email_password_enabled) {
+      if (!publicUrlOf(res)) {
+        throw new HttpError(409, "Set the public URL before disabling email and password sign-in");
+      }
+      const enabledProviders = await prisma.oidcProvider.count({ where: { enabled: true } });
+      if (enabledProviders === 0) {
+        throw new HttpError(409, "Add and enable an OIDC provider before disabling email and password sign-in");
+      }
+    }
+    await setEmailPasswordEnabled(body.email_password_enabled);
     res.json(await listOut(publicUrlOf(res)));
   }),
 );
@@ -441,6 +465,14 @@ router.patch(
     const body = parseBody(updateSchema, req.body);
     const existing = await prisma.oidcProvider.findUnique({ where: { id: req.params.id } });
     if (!existing) throw new HttpError(404, "Provider not found");
+    if (existing.enabled && body.enabled === false && !(await getEmailPasswordEnabled())) {
+      const otherEnabledProviders = await prisma.oidcProvider.count({
+        where: { enabled: true, id: { not: existing.id } },
+      });
+      if (otherEnabledProviders === 0) {
+        throw new HttpError(409, "Enable email and password sign-in before disabling the last OIDC provider");
+      }
+    }
     const updated = await prisma.oidcProvider.update({
       where: { id: existing.id },
       data: {
@@ -465,6 +497,20 @@ router.delete(
   requireAuth,
   requireAdmin,
   asyncHandler(async (req, res) => {
+    if (!(await getEmailPasswordEnabled())) {
+      const providerToDelete = await prisma.oidcProvider.findFirst({
+        where: { id: req.params.id, enabled: true },
+        select: { id: true },
+      });
+      if (providerToDelete) {
+        const otherEnabledProviders = await prisma.oidcProvider.count({
+          where: { enabled: true, id: { not: providerToDelete.id } },
+        });
+        if (otherEnabledProviders === 0) {
+          throw new HttpError(409, "Enable email and password sign-in before deleting the last OIDC provider");
+        }
+      }
+    }
     const deleted = await prisma.oidcProvider.deleteMany({ where: { id: req.params.id } });
     if (!deleted.count) throw new HttpError(404, "Provider not found");
     forgetProviderConfig(req.params.id);

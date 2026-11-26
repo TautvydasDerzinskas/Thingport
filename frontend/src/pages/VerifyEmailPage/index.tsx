@@ -18,6 +18,7 @@ type Props = {
 export default function VerifyEmailPage({ onSuccess }: Props) {
   const { t } = useTranslation("app");
   const [error, setError] = React.useState<string | null>(null);
+  const [verified, setVerified] = React.useState(false);
 
   React.useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
@@ -29,7 +30,8 @@ export default function VerifyEmailPage({ onSuccess }: Props) {
       try {
         const res = await authApi.verifyEmail(token);
         window.history.replaceState(null, "", "/");
-        onSuccess(res.token, res.expires_in, res.user);
+        if ("token" in res) onSuccess(res.token, res.expires_in, res.user);
+        else setVerified(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : t("auth.verifyEmail.failed"));
       }
@@ -66,6 +68,15 @@ export default function VerifyEmailPage({ onSuccess }: Props) {
                 window.location.reload();
               }}
             >
+              {t("auth.verifyEmail.backToSignIn")}
+            </Button>
+          </Stack>
+        ) : verified ? (
+          <Stack spacing={2} alignItems="center">
+            <Typography variant="body2" color="text.secondary">
+              {t("auth.verifyEmail.verified")}
+            </Typography>
+            <Button variant="contained" onClick={() => window.location.reload()}>
               {t("auth.verifyEmail.backToSignIn")}
             </Button>
           </Stack>

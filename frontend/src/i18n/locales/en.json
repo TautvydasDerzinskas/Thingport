@@ -8,6 +8,7 @@
     },
     "auth": {
       "subtitle": "Sign in to continue",
+      "oidcOnly": "Email and password sign-in is disabled. Choose a provider to continue.",
       "apiOffline": "API appears offline. Ensure the API service is running.",
       "signInTab": "Sign In",
       "registerTab": "Register",
@@ -46,6 +47,7 @@
         "verifying": "Confirming your email…",
         "missingToken": "This verification link is missing its token.",
         "failed": "This verification link is invalid or has expired.",
+        "verified": "Your email is verified. Sign in with an OIDC provider to continue.",
         "backToSignIn": "Back to sign in"
       },
       "forgotPassword": {
@@ -2420,9 +2422,15 @@
       },
       "signIn": {
         "heading": "Sign-in Methods",
-        "subtitle": "How people sign in to Thingport. Email and password always works; each single sign-on (OIDC) provider adds a button to the sign-in page.",
+        "subtitle": "How people sign in to Thingport. Enable an OIDC provider to let people sign in with it; turn off email and password for OIDC-only sign-in.",
         "password": "Email & password",
         "passwordDescription": "Sign in and register with an email address and a password.",
+        "passwordDisabledDescription": "Email and password sign-in is disabled. Users can sign in only with an enabled OIDC provider.",
+        "passwordNeedsOidc": "Set the public URL and add and enable an OIDC provider before disabling email and password sign-in.",
+        "disablePasswordTitle": "Disable email and password sign-in?",
+        "disablePasswordMessage": "Only enabled OIDC providers will be available for sign-in. Test your provider first; if it becomes unavailable, you won't be able to sign in until email and password sign-in is enabled again.",
+        "disablePasswordConfirm": "Disable sign-in",
+        "keepOidcEnabled": "Keep at least one OIDC provider enabled while email and password sign-in is disabled.",
         "alwaysOn": "Always on",
         "userCount_one": "{{count}} person signed in with it",
         "userCount_other": "{{count}} people signed in with it",

@@ -8,6 +8,7 @@
     },
     "auth": {
       "subtitle": "Inicia sesión para continuar",
+      "oidcOnly": "El inicio de sesión con correo y contraseña está desactivado. Elige un proveedor para continuar.",
       "apiOffline": "La API parece desconectada. Asegúrate de que el servicio de la API esté en marcha.",
       "signInTab": "Iniciar sesión",
       "registerTab": "Registrarse",
@@ -46,6 +47,7 @@
         "verifying": "Confirmando tu correo electrónico…",
         "missingToken": "Al enlace de verificación le falta el token.",
         "failed": "Este enlace de verificación no es válido o ha caducado.",
+        "verified": "Tu correo electrónico está verificado. Inicia sesión con un proveedor OIDC para continuar.",
         "backToSignIn": "Volver al inicio de sesión"
       },
       "forgotPassword": {
@@ -2507,9 +2509,15 @@
       },
       "signIn": {
         "heading": "Métodos de inicio de sesión",
-        "subtitle": "Cómo inician sesión las personas en Thingport. El correo electrónico y la contraseña siempre funcionan; cada proveedor de inicio de sesión único (OIDC) añade un botón a la página de inicio de sesión.",
+        "subtitle": "Cómo inicia sesión la gente en Thingport. Activa un proveedor OIDC para permitir el inicio de sesión con él; desactiva el correo y la contraseña para usar solo OIDC.",
         "password": "Correo electrónico y contraseña",
         "passwordDescription": "Inicio de sesión y registro con una dirección de correo electrónico y una contraseña.",
+        "passwordDisabledDescription": "El inicio de sesión con correo y contraseña está desactivado. Los usuarios solo pueden iniciar sesión con un proveedor OIDC activado.",
+        "passwordNeedsOidc": "Configura la URL pública y añade y activa un proveedor OIDC antes de desactivar el inicio de sesión con correo y contraseña.",
+        "disablePasswordTitle": "¿Desactivar el inicio de sesión con correo y contraseña?",
+        "disablePasswordMessage": "Solo estarán disponibles los proveedores OIDC activados. Prueba primero tu proveedor; si deja de estar disponible, no podrás iniciar sesión hasta volver a activar el acceso con correo y contraseña.",
+        "disablePasswordConfirm": "Desactivar inicio de sesión",
+        "keepOidcEnabled": "Mantén al menos un proveedor OIDC activado mientras el inicio de sesión con correo y contraseña esté desactivado.",
         "alwaysOn": "Siempre activado",
         "userCount_one": "{{count}} persona ha iniciado sesión con él",
         "userCount_other": "{{count}} personas han iniciado sesión con él",

@@ -166,6 +166,16 @@ export async function setAllowRegistrations(value: boolean): Promise<void> {
   await setBoolSetting(ALLOW_REGISTRATIONS_KEY, value);
 }
 
+const EMAIL_PASSWORD_ENABLED_KEY = "email_password_enabled";
+
+export async function getEmailPasswordEnabled(): Promise<boolean> {
+  return getBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, true);
+}
+
+export async function setEmailPasswordEnabled(value: boolean): Promise<void> {
+  await setBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, value);
+}
+
 const SIMPLIFY_PREVIEWS_KEY = "simplify_previews";
 
 export async function getSimplifyPreviews(): Promise<boolean> {

@@ -8,6 +8,7 @@
     },
     "auth": {
       "subtitle": "Melde dich an, um fortzufahren",
+      "oidcOnly": "Die Anmeldung mit E-Mail und Passwort ist deaktiviert. Wähle einen Anbieter, um fortzufahren.",
       "apiOffline": "Die API scheint offline zu sein. Stelle sicher, dass der API-Dienst läuft.",
       "signInTab": "Anmelden",
       "registerTab": "Registrieren",
@@ -46,6 +47,7 @@
         "verifying": "Deine E-Mail-Adresse wird bestätigt …",
         "missingToken": "Diesem Bestätigungslink fehlt sein Token.",
         "failed": "Dieser Bestätigungslink ist ungültig oder abgelaufen.",
+        "verified": "Deine E-Mail-Adresse ist bestätigt. Melde dich mit einem OIDC-Anbieter an, um fortzufahren.",
         "backToSignIn": "Zurück zur Anmeldung"
       },
       "forgotPassword": {
@@ -2420,9 +2422,15 @@
       },
       "signIn": {
         "heading": "Anmeldemethoden",
-        "subtitle": "Wie sich Leute bei Thingport anmelden. E-Mail-Adresse und Passwort funktionieren immer; jeder Single-Sign-on-Anbieter (OIDC) fügt der Anmeldeseite einen Knopf hinzu.",
+        "subtitle": "Wie sich Leute bei Thingport anmelden. Aktiviere einen OIDC-Anbieter, damit sich Leute damit anmelden können; deaktiviere E-Mail und Passwort für eine reine OIDC-Anmeldung.",
         "password": "E-Mail-Adresse & Passwort",
         "passwordDescription": "Anmelden und registrieren mit E-Mail-Adresse und Passwort.",
+        "passwordDisabledDescription": "Die Anmeldung mit E-Mail und Passwort ist deaktiviert. Nutzer können sich nur mit einem aktivierten OIDC-Anbieter anmelden.",
+        "passwordNeedsOidc": "Lege die öffentliche URL fest und füge einen OIDC-Anbieter hinzu und aktiviere ihn, bevor du die Anmeldung mit E-Mail und Passwort deaktivierst.",
+        "disablePasswordTitle": "Anmeldung mit E-Mail und Passwort deaktivieren?",
+        "disablePasswordMessage": "Zur Anmeldung stehen dann nur aktivierte OIDC-Anbieter zur Verfügung. Teste deinen Anbieter zuerst. Falls er nicht verfügbar ist, kannst du dich erst wieder anmelden, wenn E-Mail und Passwort erneut aktiviert sind.",
+        "disablePasswordConfirm": "Anmeldung deaktivieren",
+        "keepOidcEnabled": "Lass mindestens einen OIDC-Anbieter aktiviert, solange die Anmeldung mit E-Mail und Passwort deaktiviert ist.",
         "alwaysOn": "Immer an",
         "userCount_one": "{{count}} Person hat sich damit angemeldet",
         "userCount_other": "{{count}} Personen haben sich damit angemeldet",

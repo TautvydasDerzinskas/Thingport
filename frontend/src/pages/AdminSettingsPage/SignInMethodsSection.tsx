@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -87,6 +86,14 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
   const elsewhere = publicUrl !== null && new URL(publicUrl).origin !== window.location.origin;
 
   const setEnabled = async (provider: OidcProvider, enabled: boolean) => {
+    if (
+      !enabled &&
+      settings &&
+      !settings.email_password_enabled &&
+      settings.providers.filter((each) => each.enabled).length === 1
+    ) {
+      return;
+    }
     if (!enabled && provider.user_count > 0) {
       const ok = await confirm({
         title: t("adminSettings.signIn.disableTitle", { name: provider.name }),
@@ -108,7 +115,37 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
     }
   };
 
+  const setEmailPasswordEnabled = async (enabled: boolean) => {
+    if (!enabled) {
+      const ok = await confirm({
+        title: t("adminSettings.signIn.disablePasswordTitle"),
+        message: t("adminSettings.signIn.disablePasswordMessage"),
+        confirmLabel: t("adminSettings.signIn.disablePasswordConfirm"),
+        destructive: true,
+      });
+      if (!ok) return;
+    }
+    setBusy("email-password");
+    setNotice(null);
+    try {
+      await oidcApi.setEmailPasswordEnabled(enabled);
+      load();
+    } catch (err) {
+      fail(err);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const remove = async (provider: OidcProvider) => {
+    if (
+      settings &&
+      !settings.email_password_enabled &&
+      provider.enabled &&
+      settings.providers.filter((each) => each.enabled).length === 1
+    ) {
+      return;
+    }
     const ok = await confirm({
       title: t("adminSettings.signIn.deleteTitle", { name: provider.name }),
       message:
@@ -185,65 +222,129 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
               <MethodRow
                 icon={<LockOutlinedIcon />}
                 title={t("adminSettings.signIn.password")}
-                description={t("adminSettings.signIn.passwordDescription")}
-                actions={<Chip size="small" label={t("adminSettings.signIn.alwaysOn")} />}
+                description={
+                  settings
+                    ? settings.email_password_enabled
+                      ? t("adminSettings.signIn.passwordDescription")
+                      : t("adminSettings.signIn.passwordDisabledDescription")
+                    : ""
+                }
+                actions={
+                  settings ? (
+                    <Tooltip
+                      title={
+                        !settings.email_password_enabled ||
+                        (settings.public_url && settings.providers.some((provider) => provider.enabled))
+                          ? ""
+                          : t("adminSettings.signIn.passwordNeedsOidc")
+                      }
+                    >
+                      <span>
+                        <Switch
+                          checked={settings.email_password_enabled}
+                          disabled={
+                            busy !== null ||
+                            (settings.email_password_enabled &&
+                              (!settings.public_url || !settings.providers.some((provider) => provider.enabled)))
+                          }
+                          onChange={(event) => void setEmailPasswordEnabled(event.target.checked)}
+                          slotProps={{
+                            input: { "aria-label": t("adminSettings.signIn.password") },
+                          }}
+                        />
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    <Skeleton variant="rounded" width={74} height={32} />
+                  )
+                }
               />
               {settings === null ? (
                 <Box sx={{ px: 2, py: 1.5 }}>
                   <Skeleton width="60%" />
                 </Box>
               ) : (
-                settings.providers.map((provider) => (
-                  <MethodRow
-                    key={provider.id}
-                    icon={<KeyOutlinedIcon />}
-                    dim={!provider.enabled}
-                    title={provider.name}
-                    description={[
-                      hostOf(provider.issuer_url),
-                      t("adminSettings.signIn.userCount", { count: provider.user_count }),
-                      provider.create_accounts ? t("adminSettings.signIn.createsAccounts") : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                    actions={
-                      <>
-                        <Tooltip title={t("adminSettings.signIn.test")}>
-                          <span>
+                settings.providers.map((provider) => {
+                  const lastEnabledProvider =
+                    !settings.email_password_enabled &&
+                    provider.enabled &&
+                    settings.providers.filter((each) => each.enabled).length === 1;
+                  return (
+                    <MethodRow
+                      key={provider.id}
+                      icon={<KeyOutlinedIcon />}
+                      dim={!provider.enabled}
+                      title={provider.name}
+                      description={[
+                        hostOf(provider.issuer_url),
+                        t("adminSettings.signIn.userCount", { count: provider.user_count }),
+                        provider.create_accounts ? t("adminSettings.signIn.createsAccounts") : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      actions={
+                        <>
+                          <Tooltip title={t("adminSettings.signIn.test")}>
+                            <span>
+                              <IconButton
+                                aria-label={t("adminSettings.signIn.test")}
+                                disabled={!publicUrl || test !== null}
+                                onClick={() => void runTest(provider)}
+                              >
+                                <NetworkCheckIcon />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title={t("adminSettings.signIn.edit")}>
                             <IconButton
-                              aria-label={t("adminSettings.signIn.test")}
-                              disabled={!publicUrl || test !== null}
-                              onClick={() => void runTest(provider)}
+                              aria-label={t("adminSettings.signIn.edit")}
+                              onClick={() => setEditing(provider)}
                             >
-                              <NetworkCheckIcon />
+                              <EditOutlinedIcon />
                             </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title={t("adminSettings.signIn.edit")}>
-                          <IconButton aria-label={t("adminSettings.signIn.edit")} onClick={() => setEditing(provider)}>
-                            <EditOutlinedIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t("adminSettings.signIn.delete")}>
-                          <IconButton
-                            aria-label={t("adminSettings.signIn.delete")}
-                            onClick={() => void remove(provider)}
+                          </Tooltip>
+                          <Tooltip
+                            title={
+                              lastEnabledProvider
+                                ? t("adminSettings.signIn.keepOidcEnabled")
+                                : t("adminSettings.signIn.delete")
+                            }
                           >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Switch
-                          checked={provider.enabled}
-                          disabled={busy !== null}
-                          onChange={(event) => void setEnabled(provider, event.target.checked)}
-                          slotProps={{
-                            input: { "aria-label": t("adminSettings.signIn.showOnSignIn", { name: provider.name }) },
-                          }}
-                        />
-                      </>
-                    }
-                  />
-                ))
+                            <span>
+                              <IconButton
+                                aria-label={t("adminSettings.signIn.delete")}
+                                disabled={lastEnabledProvider}
+                                onClick={() => void remove(provider)}
+                              >
+                                <DeleteOutlineIcon />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip
+                            title={
+                              lastEnabledProvider
+                                ? t("adminSettings.signIn.keepOidcEnabled")
+                                : t("adminSettings.signIn.showOnSignIn", { name: provider.name })
+                            }
+                          >
+                            <span>
+                              <Switch
+                                checked={provider.enabled}
+                                disabled={busy !== null || lastEnabledProvider}
+                                onChange={(event) => void setEnabled(provider, event.target.checked)}
+                                slotProps={{
+                                  input: {
+                                    "aria-label": t("adminSettings.signIn.showOnSignIn", { name: provider.name }),
+                                  },
+                                }}
+                              />
+                            </span>
+                          </Tooltip>
+                        </>
+                      }
+                    />
+                  );
+                })
               )}
             </Paper>
 

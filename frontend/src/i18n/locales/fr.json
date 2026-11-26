@@ -8,6 +8,7 @@
     },
     "auth": {
       "subtitle": "Connectez-vous pour continuer",
+      "oidcOnly": "La connexion par e-mail et mot de passe est désactivée. Choisissez un fournisseur pour continuer.",
       "apiOffline": "L’API semble hors ligne. Vérifiez que le service de l’API est en cours d’exécution.",
       "signInTab": "Se connecter",
       "registerTab": "S’inscrire",
@@ -46,6 +47,7 @@
         "verifying": "Confirmation de votre adresse e-mail…",
         "missingToken": "Il manque le jeton à ce lien de vérification.",
         "failed": "Ce lien de vérification n’est pas valide ou a expiré.",
+        "verified": "Votre adresse e-mail est vérifiée. Connectez-vous avec un fournisseur OIDC pour continuer.",
         "backToSignIn": "Retour à la connexion"
       },
       "forgotPassword": {
@@ -2507,9 +2509,15 @@
       },
       "signIn": {
         "heading": "Méthodes de connexion",
-        "subtitle": "Comment les utilisateurs se connectent à Thingport. L’adresse e-mail et le mot de passe fonctionnent toujours ; chaque fournisseur d’authentification unique (OIDC) ajoute un bouton sur la page de connexion.",
+        "subtitle": "Comment les utilisateurs se connectent à Thingport. Activez un fournisseur OIDC pour permettre la connexion avec celui-ci ; désactivez l’e-mail et le mot de passe pour n’utiliser que l’OIDC.",
         "password": "Adresse e-mail et mot de passe",
         "passwordDescription": "Connexion et inscription avec une adresse e-mail et un mot de passe.",
+        "passwordDisabledDescription": "La connexion par e-mail et mot de passe est désactivée. Les utilisateurs ne peuvent se connecter qu’avec un fournisseur OIDC activé.",
+        "passwordNeedsOidc": "Définissez l’URL publique, puis ajoutez et activez un fournisseur OIDC avant de désactiver la connexion par e-mail et mot de passe.",
+        "disablePasswordTitle": "Désactiver la connexion par e-mail et mot de passe ?",
+        "disablePasswordMessage": "Seuls les fournisseurs OIDC activés seront disponibles. Testez d’abord votre fournisseur ; s’il devient indisponible, vous ne pourrez plus vous connecter avant d’avoir réactivé l’e-mail et le mot de passe.",
+        "disablePasswordConfirm": "Désactiver la connexion",
+        "keepOidcEnabled": "Gardez au moins un fournisseur OIDC activé tant que la connexion par e-mail et mot de passe est désactivée.",
         "alwaysOn": "Toujours activé",
         "userCount_one": "{{count}} personne s’est connectée avec ce moyen",
         "userCount_other": "{{count}} personnes se sont connectées avec ce moyen",

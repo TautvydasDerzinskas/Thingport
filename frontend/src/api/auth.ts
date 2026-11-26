@@ -123,7 +123,7 @@ export const authApi = {
     return res.json();
   },
 
-  verifyEmail: (token: string): Promise<AuthResult> => postAuth("/verify-email", { token }),
+  verifyEmail: (token: string): Promise<AuthResult | { verified: true }> => postAuth("/verify-email", { token }),
 
   resendVerification: (email: string): Promise<{ message: string }> => postAuth("/resend-verification", { email }),
 
