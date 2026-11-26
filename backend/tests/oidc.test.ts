@@ -295,6 +295,73 @@ describe("OIDC providers (admin)", () => {
     ).toBe(200);
   });
 
+  it("serializes disabling password sign-in against deleting the last provider", async () => {
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    let providerId: string | undefined;
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+      const provider = await addProvider();
+      providerId = provider.id;
+      const [passwordDisabled, providerDeleted] = await Promise.all([
+        request(app).patch("/api/settings/auth/oidc").set(asAdmin()).send({ email_password_enabled: false }),
+        request(app).delete(`/api/settings/auth/oidc/providers/${provider.id}`).set(asAdmin()),
+      ]);
+      expect(
+        (passwordDisabled.status === 200 && providerDeleted.status === 409) ||
+          (passwordDisabled.status === 409 && providerDeleted.status === 204),
+      ).toBe(true);
+      const emailPasswordEnabled = await getEmailPasswordEnabled();
+      const enabledProviders = await prisma.oidcProvider.count({ where: { enabled: true } });
+      expect(emailPasswordEnabled || enabledProviders > 0).toBe(true);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      if (providerId) await request(app).delete(`/api/settings/auth/oidc/providers/${providerId}`).set(asAdmin());
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
+  it("serializes concurrent attempts to disable the last OIDC provider", async () => {
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    const testProviderIds: string[] = [];
+
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+      const first = await addProvider();
+      const second = await addProvider();
+      testProviderIds.push(first.id, second.id);
+      await setEmailPasswordEnabled(false);
+      const responses = await Promise.all(
+        [first, second].map((provider) =>
+          request(app)
+            .patch(`/api/settings/auth/oidc/providers/${provider.id}`)
+            .set(asAdmin())
+            .send({ enabled: false }),
+        ),
+      );
+      expect(responses.map((response) => response.status).toSorted()).toEqual([200, 409]);
+      expect(await prisma.oidcProvider.count({ where: { enabled: true } })).toBe(1);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      for (const id of testProviderIds)
+        await request(app).delete(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin());
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
   it("checks an issuer by its discovery document", async () => {
     const good = await request(app).post("/api/settings/auth/oidc/check").set(asAdmin()).send({ issuer_url: issuer });
     expect(good.body).toEqual({ ok: true, issuer });
@@ -508,6 +575,30 @@ describe("connecting providers from the profile", () => {
       200,
     );
     expect((await request(app).delete(`/api/profile/sign-in/connections/${connection.id}`).set(as)).status).toBe(204);
+  });
+
+  it("doesn't count a stored password when password sign-in is disabled", async () => {
+    const provider = await addProvider({ create_accounts: true });
+    const person = await ssoUser(provider.slug, `disabled-password-${stamp}`, `disabled-password-${stamp}@example.com`);
+    const as = { Authorization: `Bearer ${person.token}` };
+    expect((await request(app).patch("/api/profile").set(as).send({ new_password: "new-password-123" })).status).toBe(
+      200,
+    );
+    const methods = await request(app).get("/api/profile/sign-in").set(as);
+    const connection = methods.body.providers.find((p: { slug: string }) => p.slug === provider.slug).connection;
+
+    const disabled = await request(app)
+      .patch("/api/settings/auth/oidc")
+      .set(asAdmin())
+      .send({ email_password_enabled: false });
+    expect(disabled.status).toBe(200);
+    try {
+      const refused = await request(app).delete(`/api/profile/sign-in/connections/${connection.id}`).set(as);
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe("LAST_SIGN_IN_METHOD");
+    } finally {
+      await setEmailPasswordEnabled(true);
+    }
   });
 });
 

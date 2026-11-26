@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import * as oidc from "openid-client";
-import type { Invitation, OidcProvider, User } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Invitation, type OidcProvider, type User } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { seedDefaultCategories } from "./categoryService";
@@ -426,12 +425,17 @@ export async function isConnectedIdentity(provider: OidcProvider, claims: Claims
 }
 
 /** Ways the user can still sign in without this connection: their password, and providers still on. */
-export async function otherWaysIn(userId: string, exceptIdentityId: string): Promise<number> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { passwordHash: true } });
-  const others = await prisma.userIdentity.count({
+export async function otherWaysIn(
+  userId: string,
+  exceptIdentityId: string,
+  emailPasswordEnabled: boolean,
+  db: Pick<Prisma.TransactionClient, "user" | "userIdentity"> = prisma,
+): Promise<number> {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { passwordHash: true } });
+  const others = await db.userIdentity.count({
     where: { userId, id: { not: exceptIdentityId }, provider: { enabled: true } },
   });
-  return (user?.passwordHash ? 1 : 0) + others;
+  return (emailPasswordEnabled && user?.passwordHash ? 1 : 0) + others;
 }
 
 /** A short-lived, single-use code the browser trades for a session, so the session never sits in a URL. */

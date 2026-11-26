@@ -3,14 +3,16 @@ import { prisma } from "../db";
 import { FLARESOLVERR_REQUIRE_HTTPS, FLARESOLVERR_URL, PUBLIC_URL } from "../config";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
 
-async function getBoolSetting(key: string, fallback: boolean): Promise<boolean> {
-  const row = await prisma.setting.findUnique({ where: { key } });
+type SettingClient = Pick<Prisma.TransactionClient, "setting">;
+
+async function getBoolSetting(key: string, fallback: boolean, db: SettingClient = prisma): Promise<boolean> {
+  const row = await db.setting.findUnique({ where: { key } });
   if (row === null || row === undefined) return fallback;
   return typeof row.value === "boolean" ? row.value : fallback;
 }
 
-async function setBoolSetting(key: string, value: boolean): Promise<void> {
-  await prisma.setting.upsert({
+async function setBoolSetting(key: string, value: boolean, db: SettingClient = prisma): Promise<void> {
+  await db.setting.upsert({
     where: { key },
     create: { key, value },
     update: { value },
@@ -167,13 +169,24 @@ export async function setAllowRegistrations(value: boolean): Promise<void> {
 }
 
 const EMAIL_PASSWORD_ENABLED_KEY = "email_password_enabled";
+const SIGN_IN_METHODS_LOCK = 74_210_305;
 
-export async function getEmailPasswordEnabled(): Promise<boolean> {
-  return getBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, true);
+// Serialize setting and provider changes that could remove the last usable sign-in method.
+export async function withSignInMethodsTransaction<T>(
+  operation: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SIGN_IN_METHODS_LOCK})`;
+    return operation(tx);
+  });
 }
 
-export async function setEmailPasswordEnabled(value: boolean): Promise<void> {
-  await setBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, value);
+export async function getEmailPasswordEnabled(db: SettingClient = prisma): Promise<boolean> {
+  return getBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, true, db);
+}
+
+export async function setEmailPasswordEnabled(value: boolean, db: SettingClient = prisma): Promise<void> {
+  await setBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, value, db);
 }
 
 const SIMPLIFY_PREVIEWS_KEY = "simplify_previews";

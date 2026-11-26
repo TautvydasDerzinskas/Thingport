@@ -97,7 +97,10 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
     if (!enabled && provider.user_count > 0) {
       const ok = await confirm({
         title: t("adminSettings.signIn.disableTitle", { name: provider.name }),
-        message: t("adminSettings.signIn.disableMessage", { name: provider.name, count: provider.user_count }),
+        message:
+          settings?.email_password_enabled === false
+            ? t("adminSettings.signIn.disableMessageOidcOnly", { name: provider.name, count: provider.user_count })
+            : t("adminSettings.signIn.disableMessage", { name: provider.name, count: provider.user_count }),
         confirmLabel: t("adminSettings.signIn.disableConfirm"),
         destructive: true,
       });
@@ -150,7 +153,9 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
       title: t("adminSettings.signIn.deleteTitle", { name: provider.name }),
       message:
         provider.user_count > 0
-          ? t("adminSettings.signIn.deleteUsedMessage", { name: provider.name, count: provider.user_count })
+          ? settings?.email_password_enabled === false
+            ? t("adminSettings.signIn.deleteUsedMessageOidcOnly", { name: provider.name, count: provider.user_count })
+            : t("adminSettings.signIn.deleteUsedMessage", { name: provider.name, count: provider.user_count })
           : t("adminSettings.signIn.deleteMessage", { name: provider.name }),
       confirmLabel: t("adminSettings.signIn.delete"),
       destructive: true,

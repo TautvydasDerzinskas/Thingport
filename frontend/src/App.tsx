@@ -526,8 +526,16 @@ export default function App() {
   }, [muiTheme]);
   const isAdmin = user?.role === "ADMIN";
   React.useEffect(() => {
-    (async () => setHealth(await healthApi.get()))();
-  }, []);
+    if (signedIn) return;
+    let active = true;
+    (async () => {
+      const currentHealth = await healthApi.get();
+      if (active) setHealth(currentHealth);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [signedIn]);
   React.useEffect(() => {
     if (!token) return;
     (async () => {
