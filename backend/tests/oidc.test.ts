@@ -15,6 +15,8 @@ import {
   setEmailPasswordEnabled,
   setPublicUrl,
   setSmtpSettings,
+  withSignInMethodsLock,
+  withSignInMethodsTransaction,
 } from "../src/services/settingsService";
 
 const app = createApp();
@@ -143,6 +145,34 @@ async function exchange(fragment: URLSearchParams) {
     .post("/api/auth/oidc/exchange")
     .send({ code: fragment.get("code") });
 }
+
+it("keeps sign-in method changes waiting during long account cleanup", async () => {
+  let markStarted!: () => void;
+  const started = new Promise<void>((resolve) => {
+    markStarted = resolve;
+  });
+  let finishCleanup!: () => void;
+  const cleanup = new Promise<void>((resolve) => {
+    finishCleanup = resolve;
+  });
+  const deletion = withSignInMethodsLock(async () => {
+    markStarted();
+    await cleanup;
+  });
+  await started;
+
+  let mutationRan = false;
+  const mutation = withSignInMethodsTransaction(async () => {
+    mutationRan = true;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  const wasBlocked = !mutationRan;
+  finishCleanup();
+  await Promise.all([deletion, mutation]);
+
+  expect(wasBlocked).toBe(true);
+  expect(mutationRan).toBe(true);
+});
 
 beforeAll(async () => {
   previousEmailPasswordEnabled = await getEmailPasswordEnabled();
@@ -795,7 +825,7 @@ describe("connecting providers from the profile", () => {
       const confirmation = await request(app)
         .post(`/api/profile/sign-in/${provider.slug}/confirm`)
         .set({ Authorization: `Bearer ${stale}` })
-        .send({ next: "/profile" });
+        .send({ next: "/profile/email" });
       expect(confirmation.status).toBe(200);
       const confirmedPage = await roundTrip(confirmation.body.url, cookieOf(confirmation), {
         sub: `email-change-${stamp}`,

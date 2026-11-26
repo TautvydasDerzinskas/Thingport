@@ -14,7 +14,7 @@ import { removeUserTagMosaics } from "./tagMosaicService";
 import { removeUserIcons } from "./iconService";
 import { removeUserCover } from "./publicProfileService";
 import { removeUserAvatar } from "./avatarService";
-import { getEmailPasswordEnabled, withSignInMethodsTransaction } from "./settingsService";
+import { getEmailPasswordEnabled, withSignInMethodsLock, withSignInMethodsTransaction } from "./settingsService";
 import { hasAdminOidcSignInPath, requireAdminOidcSignInPath } from "./oidcService";
 
 // Any admin manages members; only the owner (the first admin) manages other admins. Nobody demotes or
@@ -127,59 +127,69 @@ export async function deleteAccountRow(userId: string): Promise<boolean> {
 /** Everything of the user's: their models and every file of them, their own folders, then the account, whose
  *  collections, bookmarks, categories and the rest go with it. */
 export async function deleteUser(actorId: string, targetId: string): Promise<{ models: number }> {
-  const { target } = await withSignInMethodsTransaction(async (tx) => {
-    const [currentActor, currentTarget] = await Promise.all([loadActor(actorId, tx), loadTarget(targetId, tx)]);
-    if (!permissionsOver(currentActor, currentTarget).canDelete) throw new HttpError(403, "You can't delete this user");
-    if (!(await getEmailPasswordEnabled(tx))) await requireAdminOidcSignInPath(tx, currentTarget.id);
-    return { target: currentTarget };
-  });
-
-  const models = await deleteAllPrintsForUser(target.id);
-  // What a tool brought stays out of the count above -- it is the tool's, not theirs -- but goes with the account,
-  // the one way, so its pictures in the old shared folders go too. The tool's own files stay.
-  const toolModels = await prisma.print.findMany({
-    where: { userId: target.id, toolId: { not: null } },
-    select: { id: true },
-  });
-  const authorIds = new Set<string>();
-  for (const { id } of toolModels) {
-    const went = await removeModel(id);
-    if (went?.authorId) authorIds.add(went.authorId);
-  }
-  await removeUserTagMosaics(target.id);
-  await removeUserIcons(target.id);
-  await removeUserCover(target.id);
-  await removeUserAvatar(target.id);
-  // Model files live under u-<id>; anything left there (a file the database lost track of) goes too.
-  await fs.rm(path.join(STORAGE, `u-${target.id}`), { recursive: true, force: true });
-  // And the meshes their Studio designs imported, which the designs' rows took with them.
-  await fs.rm(path.join(STUDIO_ASSETS, `u-${target.id}`), { recursive: true, force: true });
-  // Rooms they shared with partners' people: told once they're out of them.
-  const rooms = await roomsWithPartnersOf(target.id);
-
-  const { actor, deletedTarget } = await withSignInMethodsTransaction(
-    async (tx) => {
+  const {
+    actor: deletedBy,
+    deletedTarget: removedAccount,
+    models: deletedModels,
+    rooms: deletedRooms,
+    authorIds: orphanAuthors,
+  } = await withSignInMethodsLock(async () => {
+    const { target } = await prisma.$transaction(async (tx) => {
       const [currentActor, currentTarget] = await Promise.all([loadActor(actorId, tx), loadTarget(targetId, tx)]);
       if (!permissionsOver(currentActor, currentTarget).canDelete)
         throw new HttpError(403, "You can't delete this user");
       if (!(await getEmailPasswordEnabled(tx))) await requireAdminOidcSignInPath(tx, currentTarget.id);
-      await deleteAccountRowInTransaction(tx, currentTarget.id);
-      return { actor: currentActor, deletedTarget: currentTarget };
-    },
-    { timeout: 2 * 60 * 1000 },
-  );
+      return { target: currentTarget };
+    });
+
+    const models = await deleteAllPrintsForUser(target.id);
+    // What a tool brought stays out of the count above -- it is the tool's, not theirs -- but goes with the account,
+    // the one way, so its pictures in the old shared folders go too. The tool's own files stay.
+    const toolModels = await prisma.print.findMany({
+      where: { userId: target.id, toolId: { not: null } },
+      select: { id: true },
+    });
+    const authorIds = new Set<string>();
+    for (const { id } of toolModels) {
+      const went = await removeModel(id);
+      if (went?.authorId) authorIds.add(went.authorId);
+    }
+    await removeUserTagMosaics(target.id);
+    await removeUserIcons(target.id);
+    await removeUserCover(target.id);
+    await removeUserAvatar(target.id);
+    // Model files live under u-<id>; anything left there (a file the database lost track of) goes too.
+    await fs.rm(path.join(STORAGE, `u-${target.id}`), { recursive: true, force: true });
+    // And the meshes their Studio designs imported, which the designs' rows took with them.
+    await fs.rm(path.join(STUDIO_ASSETS, `u-${target.id}`), { recursive: true, force: true });
+    // Rooms they shared with partners' people: told once they're out of them.
+    const rooms = await roomsWithPartnersOf(target.id);
+
+    const { actor, deletedTarget } = await prisma.$transaction(
+      async (tx) => {
+        const [currentActor, currentTarget] = await Promise.all([loadActor(actorId, tx), loadTarget(targetId, tx)]);
+        if (!permissionsOver(currentActor, currentTarget).canDelete)
+          throw new HttpError(403, "You can't delete this user");
+        if (!(await getEmailPasswordEnabled(tx))) await requireAdminOidcSignInPath(tx, currentTarget.id);
+        await deleteAccountRowInTransaction(tx, currentTarget.id);
+        return { actor: currentActor, deletedTarget: currentTarget };
+      },
+      { timeout: 2 * 60 * 1000 },
+    );
+    return { actor, deletedTarget, models, rooms, authorIds };
+  });
   kickSharing();
-  await afterAccountGone(deletedTarget.id, rooms).catch((err) =>
+  await afterAccountGone(removedAccount.id, deletedRooms).catch((err) =>
     console.error("[federation] Couldn't tell partners:", err),
   );
   // With the account gone too, an author only those models had is an author of nothing.
-  for (const authorId of authorIds) await deleteAuthorIfOrphaned(authorId);
+  for (const authorId of orphanAuthors) await deleteAuthorIfOrphaned(authorId);
   // Logged as the admin's: the user's own log entries went with them.
   void createLog({
-    userId: actor.id,
+    userId: deletedBy.id,
     action: "user_deleted",
-    targetId: deletedTarget.id,
-    details: { email: deletedTarget.email, name: deletedTarget.displayName, models },
+    targetId: removedAccount.id,
+    details: { email: removedAccount.email, name: removedAccount.displayName, models: deletedModels },
   });
-  return { models };
+  return { models: deletedModels };
 }

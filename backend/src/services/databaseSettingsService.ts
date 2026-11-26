@@ -14,6 +14,7 @@ import {
   importWorkerStatus,
   recoverAfterDatabaseSwitch,
 } from "./importWorker";
+import { withSignInMethodsLock } from "./settingsService";
 
 const log = createLogger("import");
 const POLL_WAIT_MS = 2_000;
@@ -138,26 +139,28 @@ const inMemoryImportWork = () =>
 export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise<DatabaseInfo> {
   const url = buildCandidateUrl(creds);
   if (!url) throw new Error("DATABASE_URL is not set for this instance -- nothing to switch relative to.");
-  if (!beginDatabaseSwitch()) throw new Error("Another database switch is under way.");
-  try {
-    const candidate = await connectCandidate(url);
-    await pollSettled();
-    const rows = await runningRows();
-    // Nothing awaited from this check to the swap, so nothing can start in between.
-    if (rows > 0 || inMemoryImportWork()) {
-      await candidate.$disconnect().catch(() => undefined);
-      throw new Error("Imports are running. Pause them or let them finish, then try again.");
+  return withSignInMethodsLock(async () => {
+    if (!beginDatabaseSwitch()) throw new Error("Another database switch is under way.");
+    try {
+      const candidate = await connectCandidate(url);
+      await pollSettled();
+      const rows = await runningRows();
+      // Nothing awaited from this check to the swap, so nothing can start in between.
+      if (rows > 0 || inMemoryImportWork()) {
+        await candidate.$disconnect().catch(() => undefined);
+        throw new Error("Imports are running. Pause them or let them finish, then try again.");
+      }
+      if (migrationBusy()) {
+        await candidate.$disconnect().catch(() => undefined);
+        throw new Error("A migration is under way. Let it finish, then try again.");
+      }
+      setActiveClient(candidate, url);
+      active = creds;
+      forgetJobsOfLastDatabase();
+      await recoverAfterDatabaseSwitch();
+      return getDatabaseInfo();
+    } finally {
+      endDatabaseSwitch();
     }
-    if (migrationBusy()) {
-      await candidate.$disconnect().catch(() => undefined);
-      throw new Error("A migration is under way. Let it finish, then try again.");
-    }
-    setActiveClient(candidate);
-    active = creds;
-    forgetJobsOfLastDatabase();
-    await recoverAfterDatabaseSwitch();
-    return getDatabaseInfo();
-  } finally {
-    endDatabaseSwitch();
-  }
+  });
 }

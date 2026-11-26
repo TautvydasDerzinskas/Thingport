@@ -1,5 +1,5 @@
-import type { AiProviderKind, Prisma } from "@prisma/client";
-import { prisma } from "../db";
+import { PrismaClient, type AiProviderKind, type Prisma } from "@prisma/client";
+import { getActiveDatabaseUrl, prisma } from "../db";
 import { FLARESOLVERR_REQUIRE_HTTPS, FLARESOLVERR_URL, PUBLIC_URL } from "../config";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
 
@@ -172,6 +172,31 @@ const EMAIL_PASSWORD_ENABLED_KEY = "email_password_enabled";
 const SIGN_IN_METHODS_LOCK = 74_210_305;
 
 // Serialize setting and provider changes that could remove the last usable sign-in method.
+// The session lock lets long user cleanup hold the same lock without keeping a transaction open.
+export async function withSignInMethodsLock<T>(operation: () => Promise<T>): Promise<T> {
+  while (true) {
+    const databaseUrl = getActiveDatabaseUrl();
+    const lockUrl = new URL(databaseUrl);
+    lockUrl.searchParams.set("connection_limit", "1");
+    // Keep the session-level lock pinned to one connection until the long operation ends.
+    const client = new PrismaClient({ datasources: { db: { url: lockUrl.toString() } } });
+    let locked = false;
+    try {
+      await client.$connect();
+      await client.$executeRaw`SELECT pg_advisory_lock(${SIGN_IN_METHODS_LOCK})`;
+      locked = true;
+      if (databaseUrl !== getActiveDatabaseUrl()) continue;
+      return await operation();
+    } finally {
+      try {
+        if (locked) await client.$executeRaw`SELECT pg_advisory_unlock(${SIGN_IN_METHODS_LOCK})`;
+      } finally {
+        await client.$disconnect();
+      }
+    }
+  }
+}
+
 export async function withSignInMethodsTransaction<T>(
   operation: (tx: Prisma.TransactionClient) => Promise<T>,
   options: { timeout?: number } = {},

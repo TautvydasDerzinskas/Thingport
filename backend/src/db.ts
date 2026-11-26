@@ -13,6 +13,7 @@ for (const old of ["sanitized-3mf", "normalized-3mf"]) {
 }
 
 let client = new PrismaClient();
+let activeDatabaseUrl = process.env.DATABASE_URL;
 
 // Forwards to whichever client is current, so databaseSettingsService.ts can swap it without
 // every importer holding a stale reference.
@@ -23,8 +24,14 @@ export const prisma = new Proxy({} as PrismaClient, {
 });
 
 /** Only called after the new connection has been verified. */
-export function setActiveClient(next: PrismaClient): void {
+export function setActiveClient(next: PrismaClient, databaseUrl: string): void {
   const old = client;
   client = next;
+  activeDatabaseUrl = databaseUrl;
   void old.$disconnect().catch(() => undefined);
+}
+
+export function getActiveDatabaseUrl(): string {
+  if (!activeDatabaseUrl) throw new Error("DATABASE_URL is not set for this instance");
+  return activeDatabaseUrl;
 }

@@ -50,10 +50,11 @@ password are disabled too. Email verification still works, but no longer signs t
 
 Thingport requires the public URL and an administrator sign-in path through an enabled provider before allowing this
 change. While email and password are off, provider changes that would remove the last such path are rejected. Keep an
-administrator identity on an enabled provider, or leave verified-email linking enabled on one. Test the OIDC flow
-before switching; if one identity provider is down, an admin can still sign in through another enabled provider
-connected to their account. If none is available, an admin who still has an active session can turn password sign-in
-back on.
+administrator identity connected to an enabled provider. Verified-email linking alone does not establish an
+administrator sign-in path: the provider must verify an address that matches the administrator's account. Test the
+OIDC flow with an administrator account before switching; if one identity provider is down, an admin can still sign
+in through another enabled provider connected to their account. If none is available, an admin who still has an active
+session can turn password sign-in back on.
 
 **Scopes** are what Thingport asks the provider for. `openid email profile` suits most providers, and `openid` is
 always needed.
