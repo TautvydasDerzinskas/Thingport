@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"unsafe"
 )
 
@@ -73,6 +74,10 @@ func installSelf() (string, error) {
 		return "", fmt.Errorf("write app icon: %w", err)
 	}
 
+	if err := signAppBundle(appDir); err != nil {
+		return "", fmt.Errorf("sign app bundle: %w", err)
+	}
+
 	// Best-effort: registration also happens on the periodic system rescan.
 	if _, err := os.Stat(lsregisterBin); err == nil {
 		_ = exec.Command(lsregisterBin, "-f", appDir).Run()
@@ -84,6 +89,25 @@ func installSelf() (string, error) {
 	}
 
 	return targetExe, nil
+}
+
+func signAppBundle(appDir string) error {
+	cmd := exec.Command("codesign",
+		"--force",
+		"--deep",
+		"--sign", "-",
+		"--identifier", bundleID,
+		appDir,
+	)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		message := strings.TrimSpace(string(output))
+		if message != "" {
+			return fmt.Errorf("%w: %s", err, message)
+		}
+		return err
+	}
+	return nil
 }
 
 func quitOtherBridges(graceSeconds float64) int {
