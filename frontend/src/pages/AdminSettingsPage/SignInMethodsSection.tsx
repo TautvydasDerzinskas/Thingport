@@ -131,8 +131,8 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
     setBusy("email-password");
     setNotice(null);
     try {
-      await oidcApi.setEmailPasswordEnabled(enabled);
-      load();
+      const updatedSettings = await oidcApi.setEmailPasswordEnabled(enabled);
+      setSettings(updatedSettings);
     } catch (err) {
       fail(err);
     } finally {

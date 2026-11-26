@@ -2363,7 +2363,7 @@
         "deleteTitle": "要删除 {{name}} 吗？",
         "deleteMessage": "登录页面将不再提供 {{name}}。",
         "deleteUsedMessage_other": "已有 {{count}} 人用 {{name}} 登录过。他们的账号会保留，但没有密码的人将无法登录。再次添加该提供商也不会自动重新连接他们的账号。",
-        "deleteUsedMessageOidcOnly_other": "已有 {{count}} 人用 {{name}} 登录过。他们的账号会保留，但在该提供商重新开启之前将无法登录。再次添加提供商也不会自动重新连接他们的账号。",
+        "deleteUsedMessageOidcOnly_other": "已有 {{count}} 人用 {{name}} 登录过。他们的账号会保留，但删除提供商会移除他们的连接。他们需要使用其他登录方式。",
         "testTitle": "测试登录：{{name}}",
         "testWaiting": "请在打开的窗口中用 {{name}} 登录。Thingport 中不会有任何更改：这只会显示 {{name}} 发送的内容。",
         "testClosed": "登录完成前测试窗口就被关闭了。如果窗口中显示了错误，那就是问题所在。",

@@ -419,9 +419,21 @@ router.patch(
     }
     await withSignInMethodsTransaction(async (tx) => {
       if (!body.email_password_enabled) {
-        const enabledProviders = await tx.oidcProvider.count({ where: { enabled: true } });
-        if (enabledProviders === 0) {
-          throw new HttpError(409, "Add and enable an OIDC provider before disabling email and password sign-in");
+        const adminIdentity = await tx.userIdentity.findFirst({
+          where: { user: { role: "ADMIN" }, provider: { enabled: true } },
+          select: { id: true },
+        });
+        if (!adminIdentity) {
+          const providerWithEmailLinking = await tx.oidcProvider.findFirst({
+            where: { enabled: true, linkByEmail: true },
+            select: { id: true },
+          });
+          if (!providerWithEmailLinking) {
+            throw new HttpError(
+              409,
+              "Connect an administrator to an enabled OIDC provider or enable verified-email linking before disabling email and password sign-in",
+            );
+          }
         }
       }
       await setEmailPasswordEnabled(body.email_password_enabled, tx);
