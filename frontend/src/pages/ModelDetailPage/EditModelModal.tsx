@@ -48,13 +48,10 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
+import { savePlateChanges, type PlateItem } from "./plateSave";
 
 type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
-
-type PlateItem =
-  | { kind: "existing"; id: string; filename: string; filenameEdited: boolean; folder: string | null }
-  | { kind: "new"; localId: string; file: File; filename: string };
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -128,6 +125,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       folder: p.folder ?? null,
     })),
   );
+  const [removedPlateIds, setRemovedPlateIds] = useState<Set<string>>(new Set());
+  const latestPrint = useRef(print);
   const [categories, setCategories] = useState<Category[] | null>(null);
   // "source": what its source lists; "": none, for a model with no source; otherwise a licence id the owner picks.
   const initialLicense =
@@ -141,6 +140,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const createdUrlsRef = useRef<string[]>([]);
   const addImageInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    latestPrint.current = print;
+  }, [print]);
 
   useEffect(() => {
     categoriesApi
@@ -234,7 +237,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
   const removePlateItem = (key: string) => {
-    setPlateItems((prev) => (prev.length <= 1 ? prev : prev.filter((p) => plateKey(p) !== key)));
+    if (plateItems.length <= 1) return;
+    const target = plateItems.find((item) => plateKey(item) === key);
+    if (target?.kind === "existing") {
+      setRemovedPlateIds((prev) => new Set(prev).add(target.id));
+    }
+    setPlateItems((prev) => prev.filter((p) => plateKey(p) !== key));
     markDirty();
   };
   const movePlateItemBy = (key: string, dir: -1 | 1) => {
@@ -268,7 +276,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     }
     setSaving(true);
     setError(null);
-    let latest: Print = print;
+    let latest: Print = latestPrint.current;
     try {
       const metaRes = await printsApi.updateMeta(print.id, {
         title,
@@ -323,46 +331,20 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         }
       }
 
-      // Upload before delete so a model's only file can be swapped in one save.
-      const newPlateFiles = plateItems.filter((p) => p.kind === "new").map((p) => p.file);
-      let newPlateIdsInOrder: string[] = [];
-      if (newPlateFiles.length) {
-        const beforeIds = new Set(latest.plates.map((p) => p.id));
-        const uploadRes = await printsApi.addPlates(print.id, newPlateFiles);
-        latest = uploadRes.print;
-        newPlateIdsInOrder = latest.plates
-          .filter((p) => !beforeIds.has(p.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((p) => p.id);
-      }
-      const keptPlateIds = new Set(plateItems.filter((p) => p.kind === "existing").map((p) => p.id));
-      for (const original of print.plates) {
-        if (keptPlateIds.has(original.id)) continue;
-        const res = await printsApi.deletePlate(print.id, original.id);
-        latest = res.print ?? latest;
-      }
-      // Rename after removals so a replaced file can take the name of the one it replaced.
-      let nextNewPlate = 0;
-      for (const item of plateItems) {
-        if (item.kind === "existing" && !item.filenameEdited) continue;
-        const plateId = item.kind === "existing" ? item.id : newPlateIdsInOrder[nextNewPlate++];
-        const wanted = item.filename;
-        const current = latest.plates.find((p) => p.id === plateId);
-        if (!current || current.filename === wanted) continue;
-        const res = await printsApi.renamePlate(print.id, plateId, wanted);
-        latest = res.print ?? latest;
-      }
-      {
-        let nextNew = 0;
-        const finalOrder = plateItems.map((p) => (p.kind === "existing" ? p.id : newPlateIdsInOrder[nextNew++]));
-        const reorderRes = await printsApi.reorderPlates(print.id, finalOrder);
-        latest = reorderRes.print ?? latest;
-      }
+      latestPrint.current = latest;
+      latest = await savePlateChanges(latest, plateItems, removedPlateIds, printsApi, (progress) => {
+        latest = progress.print;
+        latestPrint.current = progress.print;
+        setPlateItems(progress.items);
+        setRemovedPlateIds(progress.removedPlateIds);
+      });
+      latestPrint.current = latest;
 
       onUpdated(latest);
       showToast({ message: t("models:edit.updateSuccess") });
       onClose();
     } catch (err) {
+      latestPrint.current = latest;
       onUpdated(latest);
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
