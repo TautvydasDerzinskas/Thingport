@@ -4,9 +4,10 @@ import type { Server } from "node:http";
 import express from "express";
 import jwt from "jsonwebtoken";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../src/app";
+import * as dbModule from "../src/db";
 import { prisma } from "../src/db";
 import {
   getEmailPasswordEnabled,
@@ -172,6 +173,28 @@ it("keeps sign-in method changes waiting during long account cleanup", async () 
 
   expect(wasBlocked).toBe(true);
   expect(mutationRan).toBe(true);
+});
+
+it("rejects sign-in changes when the active database changes while waiting", async () => {
+  const sourceUrl = dbModule.getActiveDatabaseUrl();
+  const changedUrl = new URL(sourceUrl);
+  changedUrl.searchParams.set("active-database-change-test", "true");
+  const getActiveDatabaseUrl = vi.spyOn(dbModule, "getActiveDatabaseUrl");
+  getActiveDatabaseUrl.mockReturnValueOnce(sourceUrl).mockReturnValue(changedUrl.toString());
+  let operationRan = false;
+  try {
+    await expect(
+      withSignInMethodsLock(async () => {
+        operationRan = true;
+      }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "database_changed",
+    });
+    expect(operationRan).toBe(false);
+  } finally {
+    getActiveDatabaseUrl.mockRestore();
+  }
 });
 
 beforeAll(async () => {

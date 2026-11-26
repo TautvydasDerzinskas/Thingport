@@ -5,6 +5,8 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE, TAG_MOSAICS } from "../src/config";
 import { prisma } from "../src/db";
+import { setUserRole } from "../src/services/userAdminService";
+import { withSignInMethodsLock } from "../src/services/settingsService";
 
 const app = createApp();
 const STL =
@@ -81,6 +83,31 @@ describe("roles", () => {
     expect((await request(app).get("/api/admin/users").set(as(admin))).status).toBe(200);
     await setRole(owner, admin, "MEMBER");
     expect((await request(app).get("/api/admin/users").set(as(admin))).status).toBe(403);
+  });
+
+  it("rejects a role change from an admin demoted while it waited for the sign-in lock", async () => {
+    let markStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    let finishDemotion!: () => void;
+    const demotion = new Promise<void>((resolve) => {
+      finishDemotion = resolve;
+    });
+    const lockHolder = withSignInMethodsLock(async () => {
+      markStarted();
+      await demotion;
+      await prisma.user.update({ where: { id: admin.id }, data: { role: "MEMBER" } });
+    });
+    await started;
+
+    const queuedChange = setUserRole(admin.id, member.id, "ADMIN");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    finishDemotion();
+    await lockHolder;
+
+    await expect(queuedChange).rejects.toMatchObject({ status: 403 });
+    expect(await roleOf(member)).toBe("MEMBER");
   });
 
   it("tell each admin what they may do to whom", async () => {

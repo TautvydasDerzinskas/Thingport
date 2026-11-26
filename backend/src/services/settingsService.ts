@@ -200,7 +200,13 @@ export async function withSignInMethodsLock<T>(operation: () => Promise<T>): Pro
         }
         await new Promise((resolve) => setTimeout(resolve, Math.min(SIGN_IN_METHODS_LOCK_POLL_MS, remaining)));
       }
-      if (databaseUrl !== getActiveDatabaseUrl()) continue;
+      if (databaseUrl !== getActiveDatabaseUrl()) {
+        throw new HttpError(
+          409,
+          "The active database changed while the request was waiting. Try again.",
+          "database_changed",
+        );
+      }
       return await operation();
     } finally {
       try {

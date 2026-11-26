@@ -44,9 +44,13 @@ export function permissionsOver(actor: Actor, target: Target): UserPermissions {
 }
 
 async function loadActor(actorId: string, db: UserClient = prisma): Promise<Actor> {
-  const actor = await db.user.findUnique({ where: { id: actorId }, select: { id: true, isOwner: true } });
+  const actor = await db.user.findUnique({
+    where: { id: actorId },
+    select: { id: true, role: true, isOwner: true },
+  });
   if (!actor) throw new HttpError(401, "Unauthorized");
-  return actor;
+  if (actor.role !== "ADMIN") throw new HttpError(403, "Admin access required");
+  return { id: actor.id, isOwner: actor.isOwner };
 }
 
 async function loadTarget(targetId: string, db: UserClient = prisma) {

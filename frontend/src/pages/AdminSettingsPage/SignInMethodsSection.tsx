@@ -29,6 +29,7 @@ import {
   type OidcProvider,
   type OidcSettings,
   type OidcTestOutcome,
+  type OidcProviderInput,
 } from "../../api/oidc";
 import { useConfirm } from "../../components/ConfirmProvider";
 import SectionHeader from "../../components/SectionHeader";
@@ -151,6 +152,22 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
       setSettings(updatedSettings);
     } catch (err) {
       fail(err);
+    } finally {
+      settingsMutationInFlight.current = false;
+      setBusy(null);
+    }
+  };
+
+  const saveProvider = async (
+    provider: OidcProvider | null,
+    input: OidcProviderInput,
+  ): Promise<OidcProvider | null> => {
+    if (settingsMutationInFlight.current) return null;
+    settingsMutationInFlight.current = true;
+    setBusy("provider");
+    setNotice(null);
+    try {
+      return provider ? await oidcApi.update(provider.id, input) : await oidcApi.create(input);
     } finally {
       settingsMutationInFlight.current = false;
       setBusy(null);
@@ -326,6 +343,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
                           <Tooltip title={t("adminSettings.signIn.edit")}>
                             <IconButton
                               aria-label={t("adminSettings.signIn.edit")}
+                              disabled={busy !== null}
                               onClick={() => setEditing(provider)}
                             >
                               <EditOutlinedIcon />
@@ -383,7 +401,7 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
                   <Button
                     variant="outlined"
                     startIcon={<AddIcon />}
-                    disabled={!publicUrl}
+                    disabled={!publicUrl || busy !== null}
                     onClick={() => setEditing("new")}
                   >
                     {t("adminSettings.signIn.add")}
@@ -406,7 +424,9 @@ export default function SignInMethodsSection({ onUnauthorized }: Props) {
           key={editing === "new" ? "new" : editing.id}
           provider={editing === "new" ? null : editing}
           publicUrl={publicUrl}
+          saveBlocked={busy !== null}
           onClose={() => setEditing(null)}
+          onSave={saveProvider}
           onSaved={(saved, added) => {
             setEditing(null);
             load();
