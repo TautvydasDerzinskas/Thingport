@@ -6909,6 +6909,7 @@
       "newBadge": "Nauja",
       "modelFiles": "Modelio failai",
       "fileName": "Failo pavadinimas",
+      "fileNameRequired": "Failo pavadinimas privalomas.",
       "addFiles": "Pridėti failų",
       "update": "Atnaujinti",
       "confirmDiscard": "Atmesti visus neišsaugotus šio modelio pakeitimus?",

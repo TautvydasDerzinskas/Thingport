@@ -64,6 +64,10 @@ function plateKey(p: PlateItem): string {
   return p.kind === "existing" ? p.id : p.localId;
 }
 
+function hasInvalidPlateFilename(items: PlateItem[]): boolean {
+  return items.some((item) => !item.filename.trim());
+}
+
 function moveItem<T>(list: T[], index: number, dir: -1 | 1): T[] {
   const swapIndex = index + dir;
   if (index < 0 || swapIndex < 0 || swapIndex >= list.length) return list;
@@ -220,7 +224,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
   const renamePlateItem = (key: string, filename: string) => {
-    setPlateItems((prev) => prev.map((item) => (plateKey(item) === key ? { ...item, filename } : item)));
+    const updatedItems = plateItems.map((item) => (plateKey(item) === key ? { ...item, filename } : item));
+    setPlateItems(updatedItems);
+    setError(hasInvalidPlateFilename(updatedItems) ? t("models:edit.fileNameRequired") : null);
     markDirty();
   };
   const removePlateItem = (key: string) => {
@@ -252,6 +258,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
+    if (hasInvalidPlateFilename(plateItems)) {
+      setError(t("models:edit.fileNameRequired"));
+      return;
+    }
     setSaving(true);
     setError(null);
     let latest: Print = print;
@@ -701,6 +711,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                         fullWidth
                         label={t("models:edit.fileName")}
                         value={p.filename}
+                        error={!p.filename.trim()}
+                        helperText={!p.filename.trim() ? t("models:edit.fileNameRequired") : undefined}
                         disabled={saving}
                         onChange={(event) => renamePlateItem(key, event.target.value)}
                       />
@@ -772,7 +784,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving}
+          disabled={saving || hasInvalidPlateFilename(plateItems)}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

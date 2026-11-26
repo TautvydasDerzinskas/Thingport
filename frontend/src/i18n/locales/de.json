@@ -6540,6 +6540,7 @@
       "newBadge": "Neu",
       "modelFiles": "Modelldateien",
       "fileName": "Dateiname",
+      "fileNameRequired": "Dateiname erforderlich.",
       "addFiles": "Dateien hinzufügen",
       "update": "Aktualisieren",
       "confirmDiscard": "Alle ungespeicherten Änderungen an diesem Modell verwerfen?",

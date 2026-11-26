@@ -6534,6 +6534,7 @@
       "newBadge": "New",
       "modelFiles": "Model files",
       "fileName": "File name",
+      "fileNameRequired": "File name is required.",
       "addFiles": "Add files",
       "update": "Update",
       "confirmDiscard": "Discard all unsaved changes to this model?",

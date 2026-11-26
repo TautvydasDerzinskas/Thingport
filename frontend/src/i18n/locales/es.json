@@ -6776,6 +6776,7 @@
       "newBadge": "Nuevo",
       "modelFiles": "Archivos del modelo",
       "fileName": "Nombre del archivo",
+      "fileNameRequired": "El nombre del archivo es obligatorio.",
       "addFiles": "Añadir archivos",
       "update": "Actualizar",
       "confirmDiscard": "¿Descartar todos los cambios no guardados de este modelo?",
