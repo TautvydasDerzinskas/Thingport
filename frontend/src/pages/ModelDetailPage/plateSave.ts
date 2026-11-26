@@ -76,8 +76,13 @@ export async function savePlateChanges(
   const reportProgress = () =>
     onProgress({ print: latest, items: stagedItems, removedPlateIds: new Set(pendingRemovals) });
 
-  if (stagedItems.some((item) => item.kind === "new" && item.uploadAttempted)) {
+  const hasAttemptedUploads = stagedItems.some((item) => item.kind === "new" && item.uploadAttempted);
+  // The server may have applied a removal whose response never reached the modal.
+  if (hasAttemptedUploads || pendingRemovals.size) {
     latest = await api.get(print.id);
+    if (!hasAttemptedUploads) reportProgress();
+  }
+  if (hasAttemptedUploads) {
     try {
       const hasUnknownOutcome = stagedItems.some(
         (item) => item.kind === "new" && item.uploadAttempted && item.uploadOutcomeUnknown !== false,

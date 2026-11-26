@@ -700,12 +700,14 @@ model Plate {
 }
 
 model PlateUploadAttempt {
-  id             String  @id @default(cuid())
+  id             String    @id @default(cuid())
   printId        String
-  print          Print   @relation(fields: [printId], references: [id], onDelete: Cascade)
+  print          Print     @relation(fields: [printId], references: [id], onDelete: Cascade)
   clientUploadId String
-  status         String  @default("pending")
+  status         String    @default("pending")
   plateId        String?
+  claimToken     String?
+  leaseExpiresAt DateTime?
 
   @@unique([printId, clientUploadId])
 }

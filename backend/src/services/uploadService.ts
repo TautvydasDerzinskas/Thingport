@@ -175,11 +175,13 @@ async function addFilesTo(
 export async function addUploadedPreviewImages(
   printId: string,
   buffers: Iterable<Buffer> | AsyncIterable<Buffer>,
+  onImageResult?: (imageId: string | null) => void,
 ): Promise<string[]> {
   const firstPlate = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
   const added: string[] = [];
   for await (const buffer of buffers) {
     const image = await addPreviewImage(printId, buffer, { keepExif: true });
+    onImageResult?.(image?.id ?? null);
     if (!image) continue;
     if (!added.length) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
     added.push(image.id);

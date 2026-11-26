@@ -306,24 +306,34 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       for (const id of removedImageIds) {
         const res = await printsApi.deletePreviewImage(print.id, id);
         latest = res.print ?? latest;
+        setRemovedImageIds((pending) => new Set([...pending].filter((imageId) => imageId !== id)));
       }
       const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
-      let newImageIdsInOrder: string[] = [];
+      let stagedImages = images;
       if (newImageFiles.length) {
         const beforeIds = new Set(latest.preview_images.map((img) => img.id));
         const uploadRes = await printsApi.addPreviewImages(print.id, newImageFiles);
         latest = uploadRes.print;
-        newImageIdsInOrder = latest.preview_images
-          .filter((img) => !beforeIds.has(img.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((img) => img.id);
-      }
-      if (images.length) {
+        const newImageIdsInOrder =
+          uploadRes.added_image_ids ??
+          latest.preview_images
+            .filter((img) => !beforeIds.has(img.id))
+            .toSorted((a, b) => a.position - b.position)
+            .map((img) => img.id);
+        const storedImages = new Map(latest.preview_images.map((img) => [img.id, img.url]));
         let nextNew = 0;
+        stagedImages = images.map((img) => {
+          if (img.kind === "existing") return img;
+          const id = newImageIdsInOrder[nextNew++];
+          return id ? { kind: "existing", id, url: storedImages.get(id) ?? img.previewUrl } : img;
+        });
+        setImages(stagedImages);
+      }
+      if (stagedImages.length) {
         // Our own render gives way to the first picture uploaded, so it may be gone by now.
         const present = new Set(latest.preview_images.map((img) => img.id));
-        const known = images
-          .map((img) => (img.kind === "existing" ? img.id : newImageIdsInOrder[nextNew++]))
+        const known = stagedImages
+          .flatMap((img) => (img.kind === "existing" ? [img.id] : []))
           .filter((id) => present.has(id));
         // Reorder needs an exhaustive id list; images this modal never saw go after, in their order.
         const knownIds = new Set(known);

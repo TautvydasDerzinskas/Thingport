@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
+import { setInterval as intervals, setTimeout as delay } from "node:timers/promises";
 import { prisma } from "../db";
 import { removeModel } from "../modelFiles/removeModel";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
@@ -203,11 +205,13 @@ export async function refreshAutoPreparedMetadata(printId: string): Promise<void
 }
 
 type CreatedPlate = { record: Plate; effectivePath: string | null };
+type PlateUploadClaim = { printId: string; clientUploadId: string; claimToken: string };
 
 async function createPlateAtPosition(
   print: Pick<Print, "id" | "name" | "creator" | "tags" | "categoryId" | "userId" | "authorId" | "sourceProvider">,
   input: NewPlateInput,
   position: number,
+  claim?: PlateUploadClaim,
 ): Promise<CreatedPlate> {
   const sanitized = normalizeFileName(input.filename);
   const folder = normalizeFolder(input.folder);
@@ -220,22 +224,27 @@ async function createPlateAtPosition(
 
   let record: Plate;
   try {
-    record = await prisma.plate.create({
-      data: {
-        printId: print.id,
-        position,
-        filename: desiredFilename,
-        folder,
-        mime,
-        size,
-        storagePath,
-        sourcePath: input.sourcePath ?? null,
-        sourceInstanceId: input.sourceInstanceId ?? null,
-        profile: input.profile == null ? undefined : (input.profile as Prisma.InputJsonValue),
-        contentSha256,
-        ...marker,
-      },
-    });
+    const data: Prisma.PlateUncheckedCreateInput = {
+      printId: print.id,
+      position,
+      filename: desiredFilename,
+      folder,
+      mime,
+      size,
+      storagePath,
+      sourcePath: input.sourcePath ?? null,
+      sourceInstanceId: input.sourceInstanceId ?? null,
+      profile: input.profile == null ? undefined : (input.profile as Prisma.InputJsonValue),
+      contentSha256,
+      ...marker,
+    };
+    record = claim
+      ? await prisma.$transaction(async (tx) => {
+          const plate = await tx.plate.create({ data });
+          await completePlateUpload(tx, claim, plate.id);
+          return plate;
+        })
+      : await prisma.plate.create({ data });
   } catch (err) {
     // e.g. a concurrent import of the same profile won; don't orphan the placed file.
     if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
@@ -433,7 +442,7 @@ export async function addPlatesToPrint(
   const created: Plate[] = [];
   for (const input of plateInputs) {
     const record = input.clientUploadId
-      ? await createPlateIdempotently(print, input, nextPosition)
+      ? await createPlateIdempotently(print, input, nextPosition, input.clientUploadId)
       : (await createPlateAtPosition(print, input, nextPosition)).record;
     created.push(record);
     nextPosition += 1;
@@ -443,6 +452,8 @@ export async function addPlatesToPrint(
 
 const UPLOAD_ATTEMPT_POLL_MS = 100;
 const UPLOAD_ATTEMPT_MAX_POLLS = 300;
+const UPLOAD_LEASE_SECONDS = 30;
+const UPLOAD_HEARTBEAT_MS = 5_000;
 
 function uploadMarker(clientUploadId: string): string {
   return `thingport-upload-${clientUploadId}-`;
@@ -463,31 +474,80 @@ function plateUploadOutcomeRecordingError(uploadError: unknown, attemptError: un
   });
 }
 
+async function claimPlateUpload({ printId, clientUploadId, claimToken }: PlateUploadClaim): Promise<boolean> {
+  const count = await prisma.$executeRaw`
+    INSERT INTO "PlateUploadAttempt" ("id", "printId", "clientUploadId", "status", "claimToken", "leaseExpiresAt")
+    VALUES (${claimToken}, ${printId}, ${clientUploadId}, 'pending', ${claimToken},
+            (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + make_interval(secs => ${UPLOAD_LEASE_SECONDS}::int))
+    ON CONFLICT ("printId", "clientUploadId") DO UPDATE
+      SET "status" = 'pending', "plateId" = NULL, "claimToken" = EXCLUDED."claimToken",
+          "leaseExpiresAt" = EXCLUDED."leaseExpiresAt"
+      WHERE "PlateUploadAttempt"."status" = 'failed'
+         OR ("PlateUploadAttempt"."status" = 'pending'
+             AND ("PlateUploadAttempt"."leaseExpiresAt" IS NULL
+                  OR "PlateUploadAttempt"."leaseExpiresAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')))
+  `;
+  return count === 1;
+}
+
+async function renewPlateUploadClaim(claim: PlateUploadClaim, signal: AbortSignal): Promise<void> {
+  try {
+    for await (const _ of intervals(UPLOAD_HEARTBEAT_MS, undefined, { signal, ref: false })) {
+      try {
+        const count = await prisma.$executeRaw`
+          UPDATE "PlateUploadAttempt"
+          SET "leaseExpiresAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + make_interval(secs => ${UPLOAD_LEASE_SECONDS}::int)
+          WHERE "printId" = ${claim.printId} AND "clientUploadId" = ${claim.clientUploadId}
+            AND "claimToken" = ${claim.claimToken} AND "status" = 'pending'
+        `;
+        if (count === 0) return;
+      } catch (error) {
+        console.warn("Couldn't renew the plate upload claim:", error);
+      }
+    }
+  } catch (error) {
+    if (!signal.aborted) throw error;
+  }
+}
+
+async function completePlateUpload(db: Prisma.TransactionClient, claim: PlateUploadClaim, plateId: string) {
+  const completed = await db.plateUploadAttempt.updateMany({
+    where: { ...claim, status: "pending" },
+    data: { status: "complete", plateId, claimToken: null, leaseExpiresAt: null },
+  });
+  // A worker whose lease was reclaimed must roll back its plate insert.
+  if (completed.count !== 1) throw new HttpError(409, "The plate upload claim was lost; try again");
+}
+
 async function createClaimedPlateUpload(
   print: Parameters<typeof createPlateAtPosition>[0],
   input: NewPlateInput,
   position: number,
+  claim: PlateUploadClaim,
 ): Promise<Plate> {
-  const clientUploadId = input.clientUploadId!;
-  const where = { printId_clientUploadId: { printId: print.id, clientUploadId } };
+  const controller = new AbortController();
+  const heartbeat = renewPlateUploadClaim(claim, controller.signal);
   try {
-    const { record } = await createPlateAtPosition(print, input, position);
-    await prisma.plateUploadAttempt.update({
-      where,
-      data: { status: "complete", plateId: record.id },
-    });
-    return record;
+    // Older servers could store the plate before recording that the attempt completed.
+    const existing = await findPlateForUpload(print.id, claim.clientUploadId);
+    if (existing) {
+      await completePlateUpload(prisma, claim, existing.id);
+      return existing;
+    }
+    return (await createPlateAtPosition(print, input, position, claim)).record;
   } catch (error) {
     try {
-      const existing = await findPlateForUpload(print.id, clientUploadId);
-      await prisma.plateUploadAttempt.update({
-        where,
-        data: { status: existing ? "complete" : "failed", plateId: existing?.id ?? null },
+      await prisma.plateUploadAttempt.updateMany({
+        where: { ...claim, status: "pending" },
+        data: { status: "failed", plateId: null, claimToken: null, leaseExpiresAt: null },
       });
     } catch (attemptError) {
       throw plateUploadOutcomeRecordingError(error, attemptError);
     }
     throw error;
+  } finally {
+    controller.abort();
+    await heartbeat;
   }
 }
 
@@ -495,41 +555,14 @@ async function createPlateIdempotently(
   print: Parameters<typeof createPlateAtPosition>[0],
   input: NewPlateInput,
   position: number,
+  clientUploadId: string,
 ): Promise<Plate> {
-  const clientUploadId = input.clientUploadId!;
   const where = { printId_clientUploadId: { printId: print.id, clientUploadId } };
-  const existing = await findPlateForUpload(print.id, clientUploadId);
-  if (existing) {
-    const recorded = await prisma.plateUploadAttempt.createMany({
-      data: [{ printId: print.id, clientUploadId, status: "complete", plateId: existing.id }],
-      skipDuplicates: true,
-    });
-    if (recorded.count === 1) return existing;
-  }
-
-  const claimed = await prisma.plateUploadAttempt.createMany({
-    data: [{ printId: print.id, clientUploadId, status: "pending" }],
-    skipDuplicates: true,
-  });
-  if (claimed.count === 1) return createClaimedPlateUpload(print, input, position);
+  const claim = { ...where.printId_clientUploadId, claimToken: randomUUID() };
 
   for (let poll = 0; poll < UPLOAD_ATTEMPT_MAX_POLLS; poll += 1) {
     const attempt = await prisma.plateUploadAttempt.findUnique({ where });
-    if (!attempt) {
-      await new Promise((resolve) => setTimeout(resolve, UPLOAD_ATTEMPT_POLL_MS));
-      continue;
-    }
-
-    const existingPlate = await findPlateForUpload(print.id, clientUploadId);
-    if (existingPlate) {
-      await prisma.plateUploadAttempt.update({
-        where,
-        data: { status: "complete", plateId: existingPlate.id },
-      });
-      return existingPlate;
-    }
-
-    if (attempt.status === "complete") {
+    if (attempt?.status === "complete") {
       const completedPlate = attempt.plateId
         ? await prisma.plate.findFirst({ where: { id: attempt.plateId, printId: print.id } })
         : null;
@@ -537,17 +570,12 @@ async function createPlateIdempotently(
       return completedPlate;
     }
 
-    if (attempt.status === "failed") {
-      const retryClaim = await prisma.plateUploadAttempt.updateMany({
-        where: { ...where.printId_clientUploadId, status: "failed" },
-        data: { status: "pending", plateId: null },
-      });
-      if (retryClaim.count === 1) return createClaimedPlateUpload(print, input, position);
-    } else if (attempt.status !== "pending") {
+    if (attempt && attempt.status !== "pending" && attempt.status !== "failed") {
       throw new HttpError(409, "The plate upload attempt has an invalid status");
     }
 
-    await new Promise((resolve) => setTimeout(resolve, UPLOAD_ATTEMPT_POLL_MS));
+    if (await claimPlateUpload(claim)) return createClaimedPlateUpload(print, input, position, claim);
+    await delay(UPLOAD_ATTEMPT_POLL_MS);
   }
 
   throw new HttpError(409, "The matching plate upload is still processing");

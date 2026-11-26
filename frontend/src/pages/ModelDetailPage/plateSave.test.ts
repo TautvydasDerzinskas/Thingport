@@ -293,4 +293,40 @@ describe("savePlateChanges", () => {
     expect(api.reorderPlates).toHaveBeenCalledTimes(2);
     expect(api.renamePlate).toHaveBeenCalledWith("model", "uploaded", "part.3mf");
   });
+
+  it("skips a completed deletion whose response was lost", async () => {
+    const original = plate("original", "base.3mf", 0);
+    const removed = plate("removed", "extra.3mf", 1);
+    const initial = print(original, removed);
+    const afterDelete = print(original);
+    const get = vi.fn<PlateSaveApi["get"]>().mockResolvedValueOnce(initial).mockResolvedValueOnce(afterDelete);
+    const api: PlateSaveApi = {
+      get,
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>().mockRejectedValueOnce(new Error("response lost")),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: afterDelete }),
+    };
+    const items: PlateItem[] = [
+      { kind: "existing", id: original.id, filename: original.filename, filenameEdited: false, folder: null },
+    ];
+    let progress: PlateSaveProgress = { print: initial, items, removedPlateIds: new Set([removed.id]) };
+    const onProgress = (next: PlateSaveProgress) => {
+      progress = next;
+    };
+
+    await expect(savePlateChanges(initial, items, progress.removedPlateIds, api, onProgress)).rejects.toThrow(
+      "response lost",
+    );
+    expect(progress.removedPlateIds).toEqual(new Set([removed.id]));
+
+    await expect(savePlateChanges(initial, items, progress.removedPlateIds, api, onProgress)).resolves.toEqual(
+      afterDelete,
+    );
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(api.deletePlate).toHaveBeenCalledExactlyOnceWith("model", removed.id);
+    expect(api.reorderPlates).toHaveBeenCalledExactlyOnceWith("model", [original.id]);
+    expect(progress.removedPlateIds.size).toBe(0);
+  });
 });

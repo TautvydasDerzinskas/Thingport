@@ -941,7 +941,10 @@ export const printsApi = {
     return res.json();
   },
 
-  addPreviewImages: async (id: string, files: File[]): Promise<{ print: Print }> => {
+  addPreviewImages: async (
+    id: string,
+    files: File[],
+  ): Promise<{ print: Print; added_image_ids?: (string | null)[] }> => {
     const fd = new FormData();
     for (const file of files) fd.append("files", file);
     const res = await fetch(`${apiBase()}/print/${id}/preview-images`, {

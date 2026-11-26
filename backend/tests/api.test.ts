@@ -1,11 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import sharp from "sharp";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
+import { pauseAt, track } from "./harness/lifecycle";
 
 const app = createApp();
 
@@ -320,6 +323,127 @@ describe("plate add/remove/reorder/rename", () => {
       fs.rmSync(firstFile, { force: true });
       fs.rmSync(secondFile, { force: true });
     }
+  });
+
+  it.each([
+    { status: "pending", claimToken: randomUUID(), leaseExpiresAt: new Date(0) },
+    { status: "pending", claimToken: null, leaseExpiresAt: null },
+    { status: "failed", claimToken: null, leaseExpiresAt: null },
+  ])("reclaims a $status upload without a live lease ($leaseExpiresAt)", async (previousAttempt) => {
+    const clientUploadId = randomUUID();
+    const filename = `thingport-upload-${clientUploadId}-recover.stl`;
+    await prisma.plateUploadAttempt.create({ data: { printId, clientUploadId, ...previousAttempt } });
+
+    const upload = () =>
+      auth(request(app).post(`/api/print/${printId}/plates`)).attach(
+        "files",
+        Buffer.from("solid recovered endsolid"),
+        filename,
+      );
+    const res = await upload();
+    expect(res.status).toBe(200);
+    expect(res.body.added_plate_ids).toHaveLength(1);
+    expect(
+      await prisma.plateUploadAttempt.findUnique({ where: { printId_clientUploadId: { printId, clientUploadId } } }),
+    ).toMatchObject({
+      status: "complete",
+      plateId: res.body.added_plate_ids[0],
+      claimToken: null,
+      leaseExpiresAt: null,
+    });
+    const retry = await upload();
+    expect(retry.status).toBe(200);
+    expect(retry.body.added_plate_ids).toEqual(res.body.added_plate_ids);
+  });
+
+  it("rolls back a plate when its worker resumes after losing its lease", async () => {
+    const clientUploadId = randomUUID();
+    const filename = `thingport-upload-${clientUploadId}-suspended.stl`;
+    const where = { printId_clientUploadId: { printId, clientUploadId } };
+    const upload = async () =>
+      await auth(request(app).post(`/api/print/${printId}/plates`)).attach(
+        "files",
+        Buffer.from("solid resumed endsolid"),
+        filename,
+      );
+    const firstPlacement = pauseAt("fileState:path.taken");
+    const replacementPlacement = pauseAt("fileState:path.taken", 2);
+    const first = track(upload());
+    try {
+      await firstPlacement.reachedBy(first);
+      await prisma.plateUploadAttempt.update({ where, data: { leaseExpiresAt: new Date(0) } });
+      const replacement = track(upload());
+      await replacementPlacement.reachedBy(replacement);
+      const claim = await prisma.plateUploadAttempt.findUniqueOrThrow({ where });
+
+      firstPlacement.release();
+      const lost = await first;
+      expect(lost.status).toBe(409);
+      expect(lost.body.detail).toBe("The plate upload claim was lost; try again");
+      expect(await prisma.plate.count({ where: { printId, filename } })).toBe(0);
+      expect(await prisma.plateUploadAttempt.findUnique({ where })).toMatchObject({
+        status: "pending",
+        claimToken: claim.claimToken,
+      });
+
+      replacementPlacement.release();
+      const saved = await replacement;
+      expect(saved.status).toBe(200);
+      expect(await prisma.plateUploadAttempt.findUnique({ where })).toMatchObject({
+        status: "complete",
+        plateId: saved.body.added_plate_ids[0],
+      });
+    } finally {
+      firstPlacement.release();
+      replacementPlacement.release();
+    }
+  });
+
+  it("uses the completed plate's id even when another plate has its original upload name", async () => {
+    const clientUploadId = randomUUID();
+    const filename = `thingport-upload-${clientUploadId}-part.stl`;
+    const upload = () =>
+      auth(request(app).post(`/api/print/${printId}/plates`)).attach(
+        "files",
+        Buffer.from("solid original endsolid"),
+        filename,
+      );
+    const first = await upload();
+    expect(first.status).toBe(200);
+    const [uploadedId] = first.body.added_plate_ids;
+    const otherPlate = first.body.print.plates.find((plate: { id: string }) => plate.id !== uploadedId);
+    const rename = (id: string, newFilename: string) =>
+      auth(request(app).post(`/api/print/${printId}/plate/${id}/rename`)).send({ filename: newFilename });
+    expect((await rename(uploadedId, "uploaded-part.stl")).status).toBe(200);
+    expect((await rename(otherPlate.id, filename)).status).toBe(200);
+
+    const retry = await upload();
+    expect(retry.status).toBe(200);
+    expect(retry.body.added_plate_ids).toEqual([uploadedId]);
+    expect(retry.body.print.plates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: uploadedId, filename: "uploaded-part.stl" }),
+        expect.objectContaining({ id: otherPlate.id, filename }),
+      ]),
+    );
+
+    expect((await auth(request(app).delete(`/api/print/${printId}/plates/${uploadedId}`))).status).toBe(200);
+    expect((await upload()).status).toBe(409);
+  });
+
+  it("returns preview image ids aligned with the files, including a skipped image", async () => {
+    const image = await sharp({ create: { width: 8, height: 8, channels: 3, background: "#3366cc" } })
+      .png()
+      .toBuffer();
+    const res = await auth(request(app).post(`/api/print/${printId}/preview-images`))
+      .attach("files", image, "first.png")
+      .attach("files", Buffer.from("invalid"), "invalid.png")
+      .attach("files", image, "third.png");
+    expect(res.status).toBe(200);
+    expect(res.body.added_image_ids).toEqual([expect.any(String), null, expect.any(String)]);
+    expect(res.body.print.preview_images.map((preview: { id: string }) => preview.id)).toEqual(
+      res.body.added_image_ids.filter(Boolean),
+    );
   });
 });
 

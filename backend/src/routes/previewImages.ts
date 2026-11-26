@@ -22,11 +22,13 @@ router.post(
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
     // As with an import's gallery, the first image becomes the cover and card thumbnail in place of our render.
+    const addedImageIds: (string | null)[] = [];
     await addUploadedPreviewImages(
       print.id,
       files.map((f) => f.buffer),
+      (imageId) => addedImageIds.push(imageId),
     );
-    res.json({ print: await printOutById(req.userId!, print.id) });
+    res.json({ print: await printOutById(req.userId!, print.id), added_image_ids: addedImageIds });
   }),
 );
 
