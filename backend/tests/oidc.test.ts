@@ -306,9 +306,14 @@ describe("OIDC providers (admin)", () => {
       select: { id: true },
     });
     const target = await register(`OIDC admin ${stamp}`, `admin-path-${stamp}@example.com`);
+    const adminActor = await prisma.user.findUniqueOrThrow({
+      where: { email: `oidc-admin-${stamp}@example.com` },
+      select: { id: true, isOwner: true },
+    });
     let providerId: string | undefined;
     let identityId: string | undefined;
     try {
+      await prisma.user.update({ where: { id: adminActor.id }, data: { isOwner: true } });
       for (const { id } of previouslyEnabledProviders) {
         await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
       }
@@ -350,6 +355,7 @@ describe("OIDC providers (admin)", () => {
       for (const { id } of previouslyEnabledProviders) {
         await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
       }
+      await prisma.user.update({ where: { id: adminActor.id }, data: { isOwner: adminActor.isOwner } });
     }
   });
 
