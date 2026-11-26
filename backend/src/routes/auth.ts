@@ -146,9 +146,15 @@ router.post(
     if (smtpConfigured && verification) {
       try {
         await sendVerificationEmail(user.email, user.displayName, verification.token);
-      } catch {
-        // Verified meanwhile by a resend, it may have shared something already: told as any account deleted is.
-        await deleteAccountRow(user.id);
+      } catch (err) {
+        console.error("[auth] Failed to send verification email:", err);
+        const deleted = await deleteAccountRow(user.id);
+        if (!deleted) {
+          throw new HttpError(
+            500,
+            "Failed to send verification email. The administrator account was kept to preserve its sign-in path.",
+          );
+        }
         throw new HttpError(500, "Failed to send verification email. Please try again.");
       }
       res.json({ email_verification_required: true, email: user.email });
@@ -358,7 +364,7 @@ router.post(
 
 const updateProfileSchema = z
   .object({
-    // Not for someone without a password: a recent sign-in stands in for it.
+    // Not used when password sign-in is disabled or the account has no password.
     current_password: z.string().optional(),
     email: z.string().trim().email("Enter a valid email address").optional(),
     new_password: z.string().min(8, "Password must be at least 8 characters").optional(),
@@ -371,7 +377,8 @@ router.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     const body = parseBody(updateProfileSchema, req.body);
-    if (body.new_password !== undefined && !(await getEmailPasswordEnabled())) {
+    const emailPasswordEnabled = await getEmailPasswordEnabled();
+    if (body.new_password !== undefined && !emailPasswordEnabled) {
       throw new HttpError(403, "Email and password sign-in is disabled");
     }
     // Before the password check, so each guess at the current password costs a solved captcha.
@@ -381,9 +388,9 @@ router.patch(
     await checkCaptcha(req, captchaPlaces);
     const user = await prisma.user.findUnique({ where: { id: req.userId! } });
     if (!user) throw new HttpError(401, "Invalid or expired token");
-    if (!user.passwordHash) {
-      // Without a password to ask for, a session someone walked up to mustn't be able to add one (or move the
-      // account to their email): only a sign-in from the last few minutes counts.
+    if (!emailPasswordEnabled || !user.passwordHash) {
+      // When password sign-in is disabled or the account has no password, only a recent sign-in can move the
+      // account to another email.
       if (!signedInRecently(req)) {
         throw new HttpError(
           403,

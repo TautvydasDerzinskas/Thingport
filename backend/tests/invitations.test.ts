@@ -16,8 +16,10 @@ import { prisma } from "../src/db";
 import { sendInvitationEmail, sendVerificationEmail } from "../src/services/mailer";
 import {
   getAllowRegistrations,
+  getEmailPasswordEnabled,
   getSmtpSettings,
   setAllowRegistrations,
+  setEmailPasswordEnabled,
   setSmtpSettings,
 } from "../src/services/settingsService";
 
@@ -29,6 +31,7 @@ let memberToken: string;
 // The database is shared across files, so restore the instance-wide settings afterwards.
 let previousSmtpHost: string | null;
 let previousAllowRegistrations: boolean;
+let previousEmailPasswordEnabled: boolean;
 
 const stamp = Date.now();
 const email = (name: string) => `${name}-${stamp}@example.com`;
@@ -47,7 +50,9 @@ async function closeRegistrationsWithSmtp() {
 beforeAll(async () => {
   previousSmtpHost = (await getSmtpSettings()).host;
   previousAllowRegistrations = await getAllowRegistrations(true);
+  previousEmailPasswordEnabled = await getEmailPasswordEnabled();
   await setAllowRegistrations(true);
+  await setEmailPasswordEnabled(true);
   await setSmtpSettings({ host: null });
 
   const adminRegister = await request(app)
@@ -68,6 +73,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await setAllowRegistrations(previousAllowRegistrations);
+  await setEmailPasswordEnabled(previousEmailPasswordEnabled);
   await setSmtpSettings({ host: previousSmtpHost });
 });
 
@@ -75,6 +81,7 @@ beforeEach(async () => {
   sendInvitation.mockClear();
   sendVerification.mockClear();
   await setAllowRegistrations(true);
+  await setEmailPasswordEnabled(true);
   await setSmtpSettings({ host: null });
 });
 
@@ -192,6 +199,80 @@ describe("inviting", () => {
     const res = await request(app).post("/api/admin/invitations").set(auth(adminToken)).send({ email: invitee });
     expect(res.status).toBe(500);
     expect(await prisma.invitation.findUnique({ where: { email: invitee } })).toBeNull();
+  });
+});
+
+describe("registration verification email", () => {
+  it("removes an unverified member when email delivery fails", async () => {
+    await setSmtpSettings({ host: "smtp.example.test" });
+    const address = email("registration-send-fails");
+    sendVerification.mockImplementationOnce(async () => {
+      await setEmailPasswordEnabled(false);
+      throw new Error("SMTP down");
+    });
+    try {
+      const res = await request(app)
+        .post("/api/register")
+        .send({ displayName: "Unverified member", email: address, password: "password123" });
+      expect(res.status).toBe(500);
+      expect(await prisma.user.findUnique({ where: { email: address } })).toBeNull();
+    } finally {
+      await setEmailPasswordEnabled(true);
+    }
+  });
+
+  it("keeps an unverified admin when cleanup would remove the last OIDC sign-in path", async () => {
+    await setEmailPasswordEnabled(true);
+    await setSmtpSettings({ host: "smtp.example.test" });
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    const address = email("registration-admin-send-fails");
+    let userId: string | undefined;
+    let providerId: string | undefined;
+
+    try {
+      await prisma.oidcProvider.updateMany({ where: { enabled: true }, data: { enabled: false } });
+      sendVerification.mockImplementationOnce(async () => {
+        const user = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+        userId = user.id;
+        const provider = await prisma.oidcProvider.create({
+          data: {
+            slug: `register-cleanup-${stamp}`,
+            name: `Registration cleanup ${stamp}`,
+            issuerUrl: "https://issuer.example.test",
+            clientId: "registration-cleanup",
+            enabled: true,
+            linkByEmail: false,
+          },
+        });
+        providerId = provider.id;
+        await prisma.user.update({ where: { id: user.id }, data: { role: "ADMIN" } });
+        await prisma.userIdentity.create({
+          data: { userId: user.id, providerId: provider.id, subject: `registration-${stamp}` },
+        });
+        await setEmailPasswordEnabled(false);
+        throw new Error("SMTP down");
+      });
+
+      const res = await request(app)
+        .post("/api/register")
+        .send({ displayName: "Unverified admin", email: address, password: "password123" });
+      expect(res.status).toBe(500);
+      expect(res.body.detail).toMatch(/kept to preserve its sign-in path/);
+      const retained = await prisma.user.findUniqueOrThrow({ where: { email: address } });
+      expect(retained).toMatchObject({ role: "ADMIN", emailVerified: false });
+      expect(await prisma.userIdentity.count({ where: { userId: retained.id } })).toBe(1);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      if (providerId) await prisma.oidcProvider.deleteMany({ where: { id: providerId } });
+      if (userId) await prisma.user.deleteMany({ where: { id: userId } });
+      await prisma.oidcProvider.updateMany({
+        where: { id: { in: previouslyEnabledProviders.map(({ id }) => id) } },
+        data: { enabled: true },
+      });
+    }
   });
 });
 

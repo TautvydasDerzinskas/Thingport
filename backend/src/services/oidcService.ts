@@ -438,10 +438,10 @@ export async function otherWaysIn(
   return (emailPasswordEnabled && user?.passwordHash ? 1 : 0) + others;
 }
 
-export async function requireAdminOidcSignInPath(
+export async function hasAdminOidcSignInPath(
   db: Pick<Prisma.TransactionClient, "oidcProvider" | "userIdentity">,
   excludingUserId?: string,
-): Promise<void> {
+): Promise<boolean> {
   const adminIdentity = await db.userIdentity.findFirst({
     where: {
       user: { role: "ADMIN", ...(excludingUserId ? { id: { not: excludingUserId } } : {}) },
@@ -449,18 +449,24 @@ export async function requireAdminOidcSignInPath(
     },
     select: { id: true },
   });
-  if (adminIdentity) return;
+  if (adminIdentity) return true;
 
   const providerWithEmailLinking = await db.oidcProvider.findFirst({
     where: { enabled: true, linkByEmail: true },
     select: { id: true },
   });
-  if (!providerWithEmailLinking) {
-    throw new HttpError(
-      409,
-      "Keep an administrator sign-in path through an enabled OIDC provider before disabling password sign-in or changing providers",
-    );
-  }
+  return Boolean(providerWithEmailLinking);
+}
+
+export async function requireAdminOidcSignInPath(
+  db: Pick<Prisma.TransactionClient, "oidcProvider" | "userIdentity">,
+  excludingUserId?: string,
+): Promise<void> {
+  if (await hasAdminOidcSignInPath(db, excludingUserId)) return;
+  throw new HttpError(
+    409,
+    "Keep an administrator sign-in path through an enabled OIDC provider before disabling password sign-in or changing providers",
+  );
 }
 
 /** A short-lived, single-use code the browser trades for a session, so the session never sits in a URL. */

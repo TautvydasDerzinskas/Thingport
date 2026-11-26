@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import {
   BrowserRouter,
   Navigate,
@@ -507,6 +509,8 @@ export default function App() {
   // Bumped when a refused request was rescued by renewing the token, so the pages load again with it.
   const [sessionKey, setSessionKey] = React.useState(0);
   const [health, setHealth] = React.useState<HealthInfo | null>(null);
+  const [healthLoading, setHealthLoading] = React.useState(true);
+  const healthRequestId = React.useRef(0);
   const [showExpiredToast, setShowExpiredToast] = React.useState(false);
   // A ref so concurrent 401s see the guard synchronously and only one alert shows.
   const sessionExpiredRef = React.useRef(false);
@@ -525,17 +529,23 @@ export default function App() {
     });
   }, [muiTheme]);
   const isAdmin = user?.role === "ADMIN";
+  const loadHealth = React.useCallback(() => {
+    const requestId = ++healthRequestId.current;
+    setHealth(null);
+    setHealthLoading(true);
+    healthApi.get().then((currentHealth) => {
+      if (requestId !== healthRequestId.current) return;
+      setHealth(currentHealth);
+      setHealthLoading(false);
+    });
+  }, []);
   React.useEffect(() => {
     if (signedIn) return;
-    let active = true;
-    (async () => {
-      const currentHealth = await healthApi.get();
-      if (active) setHealth(currentHealth);
-    })();
+    loadHealth();
     return () => {
-      active = false;
+      healthRequestId.current += 1;
     };
-  }, [signedIn]);
+  }, [signedIn, loadHealth]);
   React.useEffect(() => {
     if (!token) return;
     (async () => {
@@ -810,6 +820,7 @@ export default function App() {
     const invite = inviteParams?.get("invite")
       ? { token: inviteParams.get("invite")!, email: inviteParams.get("email") ?? "" }
       : null;
+    const healthUnavailable = !isOidcCallbackPath && !isVerifyEmailPath && !isResetPasswordPath && health === null;
     return (
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
@@ -829,6 +840,21 @@ export default function App() {
             <VerifyEmailPage onSuccess={handleLogin} />
           ) : isResetPasswordPath ? (
             <ResetPasswordPage onSuccess={handleLogin} />
+          ) : healthUnavailable ? (
+            healthLoading ? (
+              <CircularProgress aria-label={t("common:loading")} />
+            ) : (
+              <Alert
+                severity="error"
+                action={
+                  <Button color="inherit" size="small" onClick={loadHealth}>
+                    {t("common:retry")}
+                  </Button>
+                }
+              >
+                {t("auth.apiOffline")}
+              </Alert>
+            )
           ) : (
             <AuthPage
               onSuccess={handleLogin}

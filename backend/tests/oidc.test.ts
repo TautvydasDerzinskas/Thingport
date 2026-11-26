@@ -11,8 +11,10 @@ import { prisma } from "../src/db";
 import {
   getEmailPasswordEnabled,
   getPublicUrl,
+  getSmtpSettings,
   setEmailPasswordEnabled,
   setPublicUrl,
+  setSmtpSettings,
 } from "../src/services/settingsService";
 
 const app = createApp();
@@ -742,6 +744,79 @@ async function ssoUser(slug: string, sub: string, email: string): Promise<{ toke
 }
 
 describe("connecting providers from the profile", () => {
+  it("uses recent OIDC confirmation to change email when password sign-in is disabled", async () => {
+    await setEmailPasswordEnabled(true);
+    const previousSmtpSettings = await getSmtpSettings();
+    const address = `email-change-${stamp}@example.com`;
+    let personId: string | undefined;
+    let providerId: string | undefined;
+
+    try {
+      await setSmtpSettings({ host: null });
+      const provider = await addProvider({ link_by_email: true });
+      providerId = provider.id;
+      const person = await register("Email change", address);
+      personId = person.id;
+      const as = { Authorization: `Bearer ${person.token}` };
+      const connected = await request(app).post(`/api/profile/sign-in/${provider.slug}/connect`).set(as);
+      expect(connected.status).toBe(200);
+      const landed = await roundTrip(connected.body.url, cookieOf(connected), {
+        sub: `email-change-${stamp}`,
+        email: address,
+        email_verified: true,
+      });
+      expect(fragmentOf(landed).get("sso_connected")).toBe(provider.name);
+
+      const stillRequiresPassword = await request(app)
+        .patch("/api/profile")
+        .set(as)
+        .send({ email: `before-disable-${stamp}@example.com` });
+      expect(stillRequiresPassword.status).toBe(400);
+
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+
+      const longAgo = Math.floor(Date.now() / 1000) - 60 * 60;
+      const stale = jwt.sign(
+        { sub: person.id, role: "MEMBER", sat: longAgo },
+        process.env.AUTH_SECRET || "changeme-secret",
+        { algorithm: "HS256", expiresIn: 600 },
+      );
+      const refused = await request(app)
+        .patch("/api/profile")
+        .set({ Authorization: `Bearer ${stale}` })
+        .send({ email: `stale-change-${stamp}@example.com` });
+      expect(refused.status).toBe(403);
+      expect(refused.body.code).toBe("REAUTH_REQUIRED");
+
+      const confirmation = await request(app)
+        .post(`/api/profile/sign-in/${provider.slug}/confirm`)
+        .set({ Authorization: `Bearer ${stale}` })
+        .send({ next: "/profile" });
+      expect(confirmation.status).toBe(200);
+      const confirmedPage = await roundTrip(confirmation.body.url, cookieOf(confirmation), {
+        sub: `email-change-${stamp}`,
+      });
+      const fresh = await exchange(fragmentOf(confirmedPage));
+      expect(fresh.status).toBe(200);
+
+      const changed = await request(app)
+        .patch("/api/profile")
+        .set({ Authorization: `Bearer ${fresh.body.token}` })
+        .send({ email: `after-confirmation-${stamp}@example.com` });
+      expect(changed.status).toBe(200);
+      expect(changed.body.user.email).toBe(`after-confirmation-${stamp}@example.com`);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      await setSmtpSettings(previousSmtpSettings);
+      if (personId) await prisma.user.deleteMany({ where: { id: personId } });
+      if (providerId) await prisma.oidcProvider.deleteMany({ where: { id: providerId } });
+    }
+  });
+
   it("lists the password and providers, and connects one to a password account", async () => {
     const provider = await addProvider({ name: `Connect ${stamp}` });
     const person = await register("Connector", `connector-${stamp}@example.com`);
