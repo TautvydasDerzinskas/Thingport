@@ -6777,6 +6777,7 @@
       "modelFiles": "Archivos del modelo",
       "fileName": "Nombre del archivo",
       "fileNameRequired": "El nombre del archivo es obligatorio.",
+      "uploadConfirmationFailed": "No se pudo confirmar qué archivos del modelo se guardaron. Inténtalo de nuevo.",
       "addFiles": "Añadir archivos",
       "update": "Actualizar",
       "confirmDiscard": "¿Descartar todos los cambios no guardados de este modelo?",

@@ -6535,6 +6535,7 @@
       "modelFiles": "Model files",
       "fileName": "File name",
       "fileNameRequired": "File name is required.",
+      "uploadConfirmationFailed": "Could not confirm which model files were saved. Please try again.",
       "addFiles": "Add files",
       "update": "Update",
       "confirmDiscard": "Discard all unsaved changes to this model?",

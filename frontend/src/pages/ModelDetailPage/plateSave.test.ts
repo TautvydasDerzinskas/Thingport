@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Plate, Print } from "../../api/prints";
-import { savePlateChanges, type PlateItem, type PlateSaveApi, type PlateSaveProgress } from "./plateSave";
+import {
+  PlateUploadConfirmationError,
+  savePlateChanges,
+  type PlateItem,
+  type PlateSaveApi,
+  type PlateSaveProgress,
+} from "./plateSave";
 
 const plate = (id: string, filename: string, position: number): Plate => ({
   id,
@@ -25,6 +31,61 @@ const print = (...plates: Plate[]): Print => ({
 });
 
 describe("savePlateChanges", () => {
+  it("reconciles successful files from a partially failed batch before retrying", async () => {
+    const original = plate("original", "base.3mf", 0);
+    const firstMarker = "thingport-upload-first-one.3mf";
+    const secondMarker = "thingport-upload-second-two.3mf";
+    const afterPartialUpload = print(original, plate("uploaded-one", firstMarker, 1));
+    const afterUpload = print(original, plate("uploaded-one", firstMarker, 1), plate("uploaded-two", secondMarker, 2));
+    const afterRename = print(original, plate("uploaded-one", "one.3mf", 1), plate("uploaded-two", "two.3mf", 2));
+    const afterReorder = print(plate("uploaded-one", "one.3mf", 0), plate("uploaded-two", "two.3mf", 1), original);
+    let uploadAttempts = 0;
+    let reconciliationAttempts = 0;
+    const uploadedFileNames: string[][] = [];
+    const api: PlateSaveApi = {
+      get: vi.fn<PlateSaveApi["get"]>(async () => {
+        if (reconciliationAttempts++ === 0) throw new Error("temporary lookup failure");
+        return afterPartialUpload;
+      }),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(async (_printId, files) => {
+        uploadedFileNames.push(files.map((file) => file.name));
+        if (uploadAttempts++ === 0) {
+          throw new Error("batch upload failed");
+        }
+        return { print: afterUpload, added_plate_ids: ["uploaded-two"] };
+      }),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async () => ({ print: afterRename })),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async (_printId, plateIds) => {
+        expect(plateIds).toEqual(["uploaded-one", "uploaded-two", "original"]);
+        return { print: afterReorder };
+      }),
+    };
+    const items: PlateItem[] = [
+      { kind: "new", localId: "first", file: new File(["one"], "one.3mf"), filename: "one.3mf" },
+      { kind: "new", localId: "second", file: new File(["two"], "two.3mf"), filename: "two.3mf" },
+    ];
+    let progress: PlateSaveProgress = { print: print(original), items, removedPlateIds: new Set() };
+    const onProgress = (next: PlateSaveProgress) => {
+      progress = next;
+    };
+
+    await expect(
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
+    ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+
+    expect(progress.items).toEqual([
+      { kind: "new", localId: "first", file: expect.any(File), filename: "one.3mf", uploadAttempted: true },
+      { kind: "new", localId: "second", file: expect.any(File), filename: "two.3mf", uploadAttempted: true },
+    ]);
+
+    await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
+
+    expect(api.addPlates).toHaveBeenCalledTimes(2);
+    expect(uploadedFileNames).toEqual([[firstMarker, secondMarker], [secondMarker]]);
+    expect(api.get).toHaveBeenCalledTimes(2);
+  });
+
   it("tracks legacy upload responses by request-specific filename when a concurrent plate is present", async () => {
     const original = plate("original", "base.3mf", 0);
     const concurrent = plate("concurrent", "parallel.3mf", 1);
@@ -36,6 +97,7 @@ describe("savePlateChanges", () => {
     const afterReorder = print(plate("uploaded", "part.3mf", 0), original, concurrent);
     let reorderAttempts = 0;
     const api: PlateSaveApi = {
+      get: vi.fn<PlateSaveApi["get"]>(async () => initial),
       addPlates: vi.fn<PlateSaveApi["addPlates"]>(async (_printId, files) => {
         expect(files.map((file) => file.name)).toEqual([uploadName]);
         return { print: afterUpload };
@@ -82,6 +144,7 @@ describe("savePlateChanges", () => {
     const afterReorder = print(plate("uploaded", "part.3mf", 0), plate("concurrent", "parallel.3mf", 1));
     let reorderAttempts = 0;
     const api: PlateSaveApi = {
+      get: vi.fn<PlateSaveApi["get"]>(async () => initial),
       addPlates: vi.fn<PlateSaveApi["addPlates"]>(async (_printId, _files) => ({
         print: afterUpload,
         added_plate_ids: ["uploaded"],

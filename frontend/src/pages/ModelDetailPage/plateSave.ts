@@ -1,8 +1,9 @@
-import { printsApi, type Print } from "../../api/prints";
+import { printsApi, type Plate, type Print } from "../../api/prints";
+import { UnauthorizedError } from "../../api/client";
 
 export type PlateItem =
   | { kind: "existing"; id: string; filename: string; filenameEdited: boolean; folder: string | null }
-  | { kind: "new"; localId: string; file: File; filename: string };
+  | { kind: "new"; localId: string; file: File; filename: string; uploadAttempted?: boolean };
 
 export type PlateSaveProgress = {
   print: Print;
@@ -10,7 +11,47 @@ export type PlateSaveProgress = {
   removedPlateIds: Set<string>;
 };
 
-export type PlateSaveApi = Pick<typeof printsApi, "addPlates" | "deletePlate" | "renamePlate" | "reorderPlates">;
+export type PlateSaveApi = Pick<
+  typeof printsApi,
+  "get" | "addPlates" | "deletePlate" | "renamePlate" | "reorderPlates"
+>;
+
+export class PlateUploadConfirmationError extends Error {
+  constructor(readonly causes: unknown[] = []) {
+    super("PLATE_UPLOAD_CONFIRMATION_FAILED");
+    this.name = "PlateUploadConfirmationError";
+  }
+}
+
+type NewPlateItem = Extract<PlateItem, { kind: "new" }>;
+
+function uploadMarker(item: NewPlateItem): string {
+  return `thingport-upload-${item.localId}-`;
+}
+
+function storedUpload(print: Print, marker: string): Plate | undefined {
+  const matches = print.plates.filter((plate) => plate.filename.startsWith(marker));
+  if (matches.length > 1) throw new PlateUploadConfirmationError();
+  return matches[0];
+}
+
+function asExisting(item: NewPlateItem, plate: Plate): PlateItem {
+  return {
+    kind: "existing",
+    id: plate.id,
+    filename: item.filename,
+    filenameEdited: plate.filename !== item.filename,
+    folder: plate.folder ?? null,
+  };
+}
+
+function reconcileAttemptedUploads(print: Print, items: PlateItem[]): PlateItem[] {
+  return items.map((item) => {
+    if (item.kind !== "new" || !item.uploadAttempted) return item;
+    const uploaded = storedUpload(print, uploadMarker(item));
+    return uploaded ? asExisting(item, uploaded) : { ...item, uploadAttempted: false };
+  });
+}
 
 export async function savePlateChanges(
   print: Print,
@@ -25,11 +66,22 @@ export async function savePlateChanges(
   const reportProgress = () =>
     onProgress({ print: latest, items: stagedItems, removedPlateIds: new Set(pendingRemovals) });
 
-  const newItems = stagedItems.filter((item): item is Extract<PlateItem, { kind: "new" }> => item.kind === "new");
+  if (stagedItems.some((item) => item.kind === "new" && item.uploadAttempted)) {
+    latest = await api.get(print.id);
+    try {
+      stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+    } catch (error) {
+      reportProgress();
+      throw error;
+    }
+    reportProgress();
+  }
+
+  const newItems = stagedItems.filter((item): item is NewPlateItem => item.kind === "new");
   if (newItems.length) {
     const uploads = newItems.map((item) => ({
       item,
-      marker: `thingport-upload-${item.localId}-`,
+      marker: uploadMarker(item),
     }));
     const uploadFiles = uploads.map(
       ({ item, marker }) =>
@@ -38,35 +90,66 @@ export async function savePlateChanges(
           lastModified: item.file.lastModified,
         }),
     );
-    const uploadRes = await api.addPlates(print.id, uploadFiles);
-    latest = uploadRes.print;
-    let uploadedIds: string[];
-    if (uploadRes.added_plate_ids !== undefined) {
-      if (uploadRes.added_plate_ids.length !== newItems.length) {
-        throw new Error("The server did not confirm every uploaded model file.");
+    stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadAttempted: true } : item));
+    reportProgress();
+
+    let uploadRes: Awaited<ReturnType<PlateSaveApi["addPlates"]>>;
+    try {
+      uploadRes = await api.addPlates(print.id, uploadFiles);
+    } catch (uploadError) {
+      if (uploadError instanceof UnauthorizedError) {
+        stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadAttempted: false } : item));
+        reportProgress();
+        throw uploadError;
       }
-      uploadedIds = uploadRes.added_plate_ids;
-    } else {
-      uploadedIds = uploads.map(({ marker }) => {
-        const matches = latest.plates.filter((plate) => plate.filename.startsWith(marker));
-        if (matches.length !== 1) throw new Error("The server did not confirm every uploaded model file.");
-        return matches[0].id;
-      });
+
+      try {
+        latest = await api.get(print.id);
+        stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+      } catch (reconciliationError) {
+        reportProgress();
+        if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
+        throw new PlateUploadConfirmationError([uploadError, reconciliationError]);
+      }
+      reportProgress();
+      throw uploadError;
     }
-    let nextUploaded = 0;
-    stagedItems = stagedItems.map((item) => {
-      if (item.kind === "existing") return item;
-      const uploadedId = uploadedIds[nextUploaded++];
-      if (!uploadedId) throw new Error("The server did not confirm every uploaded model file.");
-      const uploaded = latest.plates.find((plate) => plate.id === uploadedId);
-      return {
-        kind: "existing",
-        id: uploadedId,
-        filename: item.filename,
-        filenameEdited: !uploaded || uploaded.filename !== item.filename,
-        folder: uploaded?.folder ?? null,
-      };
-    });
+
+    latest = uploadRes.print;
+    try {
+      const responseIds = uploadRes.added_plate_ids;
+      const idsAreRequestSpecific =
+        Array.isArray(responseIds) &&
+        responseIds.length === uploads.length &&
+        new Set(responseIds).size === uploads.length &&
+        responseIds.every((id) => latest.plates.some((plate) => plate.id === id));
+      const uploadedIds = idsAreRequestSpecific
+        ? responseIds
+        : uploads.map(({ marker }) => {
+            const uploaded = storedUpload(latest, marker);
+            if (!uploaded) throw new PlateUploadConfirmationError();
+            return uploaded.id;
+          });
+      let nextUploaded = 0;
+      stagedItems = stagedItems.map((item) => {
+        if (item.kind === "existing") return item;
+        const uploadedId = uploadedIds[nextUploaded++];
+        const uploaded = uploadedId && latest.plates.find((plate) => plate.id === uploadedId);
+        if (!uploaded) throw new PlateUploadConfirmationError();
+        return asExisting(item, uploaded);
+      });
+    } catch (confirmationError) {
+      try {
+        latest = await api.get(print.id);
+        stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+      } catch (reconciliationError) {
+        reportProgress();
+        if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
+        throw new PlateUploadConfirmationError([confirmationError, reconciliationError]);
+      }
+      reportProgress();
+      throw confirmationError;
+    }
     reportProgress();
   }
 

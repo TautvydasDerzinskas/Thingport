@@ -6295,6 +6295,7 @@
       "modelFiles": "模型文件",
       "fileName": "文件名",
       "fileNameRequired": "文件名为必填项。",
+      "uploadConfirmationFailed": "无法确认哪些模型文件已保存。请重试。",
       "addFiles": "添加文件",
       "update": "更新",
       "confirmDiscard": "放弃对此模型的所有未保存更改？",

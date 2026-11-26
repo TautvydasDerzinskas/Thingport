@@ -48,7 +48,7 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
-import { savePlateChanges, type PlateItem } from "./plateSave";
+import { PlateUploadConfirmationError, savePlateChanges, type PlateItem } from "./plateSave";
 
 type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
@@ -351,7 +351,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         return;
       }
       console.error(err);
-      setError(err instanceof Error ? err.message : t("models:edit.updateFailed"));
+      setError(
+        err instanceof PlateUploadConfirmationError
+          ? t("models:edit.uploadConfirmationFailed")
+          : err instanceof Error
+            ? err.message
+            : t("models:edit.updateFailed"),
+      );
     } finally {
       setSaving(false);
     }

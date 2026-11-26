@@ -6790,6 +6790,7 @@
       "modelFiles": "Fichiers du modèle",
       "fileName": "Nom du fichier",
       "fileNameRequired": "Le nom du fichier est obligatoire.",
+      "uploadConfirmationFailed": "Impossible de confirmer quels fichiers du modèle ont été enregistrés. Veuillez réessayer.",
       "addFiles": "Ajouter des fichiers",
       "update": "Mettre à jour",
       "confirmDiscard": "Abandonner toutes les modifications non enregistrées de ce modèle ?",

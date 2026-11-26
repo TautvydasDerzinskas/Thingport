@@ -6541,6 +6541,7 @@
       "modelFiles": "Modelldateien",
       "fileName": "Dateiname",
       "fileNameRequired": "Dateiname erforderlich.",
+      "uploadConfirmationFailed": "Es konnte nicht bestätigt werden, welche Modelldateien gespeichert wurden. Bitte versuchen Sie es erneut.",
       "addFiles": "Dateien hinzufügen",
       "update": "Aktualisieren",
       "confirmDiscard": "Alle ungespeicherten Änderungen an diesem Modell verwerfen?",
