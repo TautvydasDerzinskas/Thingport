@@ -58,7 +58,9 @@ xattr -d com.apple.quarantine ~/Downloads/thingport-bridge-macos # downloaded fi
 ```
 
 This copies itself into `~/Applications/Thingport Bridge.app` (a background, Dock-less agent)
-and registers the `thingport://` scheme with Launch Services. If macOS still refuses to run it,
+and registers the `thingport://` scheme with Launch Services. The app bundle is re-signed with
+`com.thingport.bridge` as its identifier so macOS associates Local Network permission correctly.
+If macOS still refuses to run it,
 open System Settings -> Privacy & Security and allow it there instead of using `xattr`.
 
 If the terminal instead prints `Killed: 9` (or `[1] ... killed`) the moment you run it, that's a
