@@ -139,9 +139,9 @@ const inMemoryImportWork = () =>
 export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise<DatabaseInfo> {
   const url = buildCandidateUrl(creds);
   if (!url) throw new Error("DATABASE_URL is not set for this instance -- nothing to switch relative to.");
-  return withSignInMethodsLock(async () => {
-    if (!beginDatabaseSwitch()) throw new Error("Another database switch is under way.");
-    try {
+  if (!beginDatabaseSwitch()) throw new Error("Another database switch is under way.");
+  try {
+    return await withSignInMethodsLock(async () => {
       const candidate = await connectCandidate(url);
       await pollSettled();
       const rows = await runningRows();
@@ -159,8 +159,8 @@ export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise
       forgetJobsOfLastDatabase();
       await recoverAfterDatabaseSwitch();
       return getDatabaseInfo();
-    } finally {
-      endDatabaseSwitch();
-    }
-  });
+    });
+  } finally {
+    endDatabaseSwitch();
+  }
 }
