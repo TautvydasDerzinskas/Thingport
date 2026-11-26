@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Plate, Print } from "../../api/prints";
+import { PlateUploadOutcomeUnknownError, type Plate, type Print } from "../../api/prints";
 import {
   PlateUploadConfirmationError,
   savePlateChanges,
@@ -75,8 +75,22 @@ describe("savePlateChanges", () => {
     ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
 
     expect(progress.items).toEqual([
-      { kind: "new", localId: "first", file: expect.any(File), filename: "one.3mf", uploadAttempted: true },
-      { kind: "new", localId: "second", file: expect.any(File), filename: "two.3mf", uploadAttempted: true },
+      {
+        kind: "new",
+        localId: "first",
+        file: expect.any(File),
+        filename: "one.3mf",
+        uploadAttempted: true,
+        uploadOutcomeUnknown: false,
+      },
+      {
+        kind: "new",
+        localId: "second",
+        file: expect.any(File),
+        filename: "two.3mf",
+        uploadAttempted: true,
+        uploadOutcomeUnknown: false,
+      },
     ]);
 
     await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
@@ -84,6 +98,51 @@ describe("savePlateChanges", () => {
     expect(api.addPlates).toHaveBeenCalledTimes(2);
     expect(uploadedFileNames).toEqual([[firstMarker, secondMarker], [secondMarker]]);
     expect(api.get).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps an uncertain upload pending until its marker appears", async () => {
+    const original = plate("original", "base.3mf", 0);
+    const uploadName = "thingport-upload-pending-upload-part.3mf";
+    const initial = print(original);
+    const afterUpload = print(original, plate("uploaded", uploadName, 1));
+    const afterRename = print(original, plate("uploaded", "part.3mf", 1));
+    const afterReorder = print(original, plate("uploaded", "part.3mf", 1));
+    let lookupAttempts = 0;
+    const api: PlateSaveApi = {
+      get: vi.fn<PlateSaveApi["get"]>(async () => {
+        if (lookupAttempts++ === 0) throw new Error("temporary lookup failure");
+        return lookupAttempts === 2 ? initial : afterUpload;
+      }),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(async () => {
+        throw new PlateUploadOutcomeUnknownError(new Error("network lost"));
+      }),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async () => ({ print: afterRename })),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async () => ({ print: afterReorder })),
+    };
+    const items: PlateItem[] = [
+      { kind: "new", localId: "pending-upload", file: new File(["model"], "part.3mf"), filename: "part.3mf" },
+    ];
+    let progress: PlateSaveProgress = { print: initial, items, removedPlateIds: new Set() };
+    const onProgress = (next: PlateSaveProgress) => {
+      progress = next;
+    };
+
+    await expect(
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
+    ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+
+    await expect(
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
+    ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+    expect(api.addPlates).toHaveBeenCalledTimes(1);
+
+    await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
+
+    expect(api.addPlates).toHaveBeenCalledTimes(1);
+    expect(progress.items).toEqual([
+      { kind: "existing", id: "uploaded", filename: "part.3mf", filenameEdited: false, folder: null },
+    ]);
   });
 
   it("tracks legacy upload responses by request-specific filename when a concurrent plate is present", async () => {

@@ -1,9 +1,16 @@
-import { printsApi, type Plate, type Print } from "../../api/prints";
+import { PlateUploadOutcomeUnknownError, printsApi, type Plate, type Print } from "../../api/prints";
 import { UnauthorizedError } from "../../api/client";
 
 export type PlateItem =
   | { kind: "existing"; id: string; filename: string; filenameEdited: boolean; folder: string | null }
-  | { kind: "new"; localId: string; file: File; filename: string; uploadAttempted?: boolean };
+  | {
+      kind: "new";
+      localId: string;
+      file: File;
+      filename: string;
+      uploadAttempted?: boolean;
+      uploadOutcomeUnknown?: boolean;
+    };
 
 export type PlateSaveProgress = {
   print: Print;
@@ -49,7 +56,8 @@ function reconcileAttemptedUploads(print: Print, items: PlateItem[]): PlateItem[
   return items.map((item) => {
     if (item.kind !== "new" || !item.uploadAttempted) return item;
     const uploaded = storedUpload(print, uploadMarker(item));
-    return uploaded ? asExisting(item, uploaded) : { ...item, uploadAttempted: false };
+    if (uploaded) return asExisting(item, uploaded);
+    return item.uploadOutcomeUnknown === false ? { ...item, uploadAttempted: false } : item;
   });
 }
 
@@ -75,6 +83,9 @@ export async function savePlateChanges(
       throw error;
     }
     reportProgress();
+    if (stagedItems.some((item) => item.kind === "new" && item.uploadAttempted)) {
+      throw new PlateUploadConfirmationError();
+    }
   }
 
   const newItems = stagedItems.filter((item): item is NewPlateItem => item.kind === "new");
@@ -90,7 +101,9 @@ export async function savePlateChanges(
           lastModified: item.file.lastModified,
         }),
     );
-    stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadAttempted: true } : item));
+    stagedItems = stagedItems.map((item) =>
+      item.kind === "new" ? { ...item, uploadAttempted: true, uploadOutcomeUnknown: true } : item,
+    );
     reportProgress();
 
     let uploadRes: Awaited<ReturnType<PlateSaveApi["addPlates"]>>;
@@ -98,11 +111,17 @@ export async function savePlateChanges(
       uploadRes = await api.addPlates(print.id, uploadFiles);
     } catch (uploadError) {
       if (uploadError instanceof UnauthorizedError) {
-        stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadAttempted: false } : item));
+        stagedItems = stagedItems.map((item) =>
+          item.kind === "new" ? { ...item, uploadAttempted: false, uploadOutcomeUnknown: false } : item,
+        );
         reportProgress();
         throw uploadError;
       }
 
+      const requestOutcomeUnknown = uploadError instanceof PlateUploadOutcomeUnknownError;
+      stagedItems = stagedItems.map((item) =>
+        item.kind === "new" ? { ...item, uploadOutcomeUnknown: requestOutcomeUnknown } : item,
+      );
       try {
         latest = await api.get(print.id);
         stagedItems = reconcileAttemptedUploads(latest, stagedItems);
@@ -112,6 +131,9 @@ export async function savePlateChanges(
         throw new PlateUploadConfirmationError([uploadError, reconciliationError]);
       }
       reportProgress();
+      if (stagedItems.some((item) => item.kind === "new" && item.uploadAttempted)) {
+        throw new PlateUploadConfirmationError([uploadError]);
+      }
       throw uploadError;
     }
 
@@ -139,6 +161,7 @@ export async function savePlateChanges(
         return asExisting(item, uploaded);
       });
     } catch (confirmationError) {
+      stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadOutcomeUnknown: false } : item));
       try {
         latest = await api.get(print.id);
         stagedItems = reconcileAttemptedUploads(latest, stagedItems);

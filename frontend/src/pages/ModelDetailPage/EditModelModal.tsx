@@ -33,7 +33,13 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { type LicenseFamily, type LicenseOption, type Print, printsApi } from "../../api/prints";
+import {
+  PlateUploadOutcomeUnknownError,
+  type LicenseFamily,
+  type LicenseOption,
+  type Print,
+  printsApi,
+} from "../../api/prints";
 import { printProviderInfo } from "../../constants/importProviders";
 import LicenseMarks from "../../components/license/LicenseMarks";
 import { categoriesApi, type Category } from "../../api/categories";
@@ -239,6 +245,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const removePlateItem = (key: string) => {
     if (plateItems.length <= 1) return;
     const target = plateItems.find((item) => plateKey(item) === key);
+    if (target?.kind === "new" && target.uploadAttempted) return;
     if (target?.kind === "existing") {
       setRemovedPlateIds((prev) => new Set(prev).add(target.id));
     }
@@ -352,7 +359,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       console.error(err);
       setError(
-        err instanceof PlateUploadConfirmationError
+        err instanceof PlateUploadConfirmationError || err instanceof PlateUploadOutcomeUnknownError
           ? t("models:edit.uploadConfirmationFailed")
           : err instanceof Error
             ? err.message
@@ -689,6 +696,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {plateItems.map((p, idx) => {
                 const key = plateKey(p);
                 const folder = p.kind === "existing" ? p.folder : null;
+                const uploadPending = p.kind === "new" && p.uploadAttempted === true;
                 return (
                   <Stack
                     key={key}
@@ -737,13 +745,17 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     >
                       <ArrowDownwardIcon fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      disabled={saving || plateItems.length <= 1}
-                      onClick={() => removePlateItem(key)}
-                    >
-                      <DeleteIcon fontSize="small" color="error" />
-                    </IconButton>
+                    <Tooltip title={uploadPending ? t("models:edit.uploadPending") : undefined}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={saving || plateItems.length <= 1 || uploadPending}
+                          onClick={() => removePlateItem(key)}
+                        >
+                          <DeleteIcon fontSize="small" color="error" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Stack>
                 );
               })}

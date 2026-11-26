@@ -6542,6 +6542,7 @@
       "fileName": "Dateiname",
       "fileNameRequired": "Dateiname erforderlich.",
       "uploadConfirmationFailed": "Es konnte nicht bestätigt werden, welche Modelldateien gespeichert wurden. Bitte versuchen Sie es erneut.",
+      "uploadPending": "Der Uploadstatus wird noch bestätigt. Versuchen Sie erneut, das Modell zu aktualisieren, bevor Sie diese Datei entfernen.",
       "addFiles": "Dateien hinzufügen",
       "update": "Aktualisieren",
       "confirmDiscard": "Alle ungespeicherten Änderungen an diesem Modell verwerfen?",

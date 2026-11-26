@@ -167,6 +167,13 @@ export class ZipTooLargeError extends Error {
   }
 }
 
+export class PlateUploadOutcomeUnknownError extends Error {
+  constructor(readonly originalError: unknown) {
+    super(originalError instanceof Error ? originalError.message : "Plate upload outcome unknown");
+    this.name = "PlateUploadOutcomeUnknownError";
+  }
+}
+
 export type Print = {
   id: string;
   /** Set on a model a tool brought: it can be opened, downloaded and printed, not edited or deleted. */
@@ -586,11 +593,16 @@ export const printsApi = {
     for (const file of files) {
       fd.append("files", file);
     }
-    const res = await fetch(`${apiBase()}/print/${printId}/plates`, {
-      method: "POST",
-      body: fd,
-      headers: authHeaders(),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plates`, {
+        method: "POST",
+        body: fd,
+        headers: authHeaders(),
+      });
+    } catch (error) {
+      throw new PlateUploadOutcomeUnknownError(error);
+    }
     if (res.status === 401) {
       throw new UnauthorizedError();
     }

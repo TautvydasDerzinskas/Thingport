@@ -6536,6 +6536,7 @@
       "fileName": "File name",
       "fileNameRequired": "File name is required.",
       "uploadConfirmationFailed": "Could not confirm which model files were saved. Please try again.",
+      "uploadPending": "Upload status is still being confirmed. Try Update again before removing this file.",
       "addFiles": "Add files",
       "update": "Update",
       "confirmDiscard": "Discard all unsaved changes to this model?",

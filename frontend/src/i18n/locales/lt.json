@@ -6911,6 +6911,7 @@
       "fileName": "Failo pavadinimas",
       "fileNameRequired": "Failo pavadinimas privalomas.",
       "uploadConfirmationFailed": "Nepavyko patvirtinti, kurie modelio failai buvo išsaugoti. Bandykite dar kartą.",
+      "uploadPending": "Įkėlimo būsena dar tikrinama. Prieš pašalindami šį failą, dar kartą pabandykite atnaujinti.",
       "addFiles": "Pridėti failų",
       "update": "Atnaujinti",
       "confirmDiscard": "Atmesti visus neišsaugotus šio modelio pakeitimus?",
