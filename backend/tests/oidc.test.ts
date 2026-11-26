@@ -165,7 +165,7 @@ it("keeps sign-in method changes waiting during long account cleanup", async () 
   const mutation = withSignInMethodsTransaction(async () => {
     mutationRan = true;
   });
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 5_100));
   const wasBlocked = !mutationRan;
   finishCleanup();
   await Promise.all([deletion, mutation]);

@@ -1,7 +1,9 @@
 import { PrismaClient, type AiProviderKind, type Prisma } from "@prisma/client";
 import { getActiveDatabaseUrl, prisma } from "../db";
 import { FLARESOLVERR_REQUIRE_HTTPS, FLARESOLVERR_URL, PUBLIC_URL } from "../config";
+import { createLogger } from "../logger";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
+import { HttpError } from "../utils/fileUtils";
 
 type SettingClient = Pick<Prisma.TransactionClient, "setting">;
 
@@ -170,10 +172,14 @@ export async function setAllowRegistrations(value: boolean): Promise<void> {
 
 const EMAIL_PASSWORD_ENABLED_KEY = "email_password_enabled";
 const SIGN_IN_METHODS_LOCK = 74_210_305;
+const SIGN_IN_METHODS_LOCK_WAIT_MS = 60_000;
+const SIGN_IN_METHODS_LOCK_POLL_MS = 100;
+const log = createLogger("settings");
 
 // Serialize setting and provider changes that could remove the last usable sign-in method.
 // The session lock lets long user cleanup hold the same lock without keeping a transaction open.
 export async function withSignInMethodsLock<T>(operation: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + SIGN_IN_METHODS_LOCK_WAIT_MS;
   while (true) {
     const databaseUrl = getActiveDatabaseUrl();
     const lockUrl = new URL(databaseUrl);
@@ -183,15 +189,30 @@ export async function withSignInMethodsLock<T>(operation: () => Promise<T>): Pro
     let locked = false;
     try {
       await client.$connect();
-      await client.$executeRaw`SELECT pg_advisory_lock(${SIGN_IN_METHODS_LOCK})`;
-      locked = true;
+      while (!locked) {
+        const [result] = await client.$queryRaw<{ locked: boolean }[]>`
+          SELECT pg_try_advisory_lock(${SIGN_IN_METHODS_LOCK}) AS locked`;
+        locked = result?.locked === true;
+        if (locked) break;
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+          throw new HttpError(409, "Sign-in method settings are busy. Try again shortly.", "sign_in_methods_busy");
+        }
+        await new Promise((resolve) => setTimeout(resolve, Math.min(SIGN_IN_METHODS_LOCK_POLL_MS, remaining)));
+      }
       if (databaseUrl !== getActiveDatabaseUrl()) continue;
       return await operation();
     } finally {
       try {
         if (locked) await client.$executeRaw`SELECT pg_advisory_unlock(${SIGN_IN_METHODS_LOCK})`;
+      } catch (error) {
+        log.warn("couldn't unlock sign-in methods advisory lock", { error });
       } finally {
-        await client.$disconnect();
+        try {
+          await client.$disconnect();
+        } catch (error) {
+          log.warn("couldn't disconnect sign-in methods lock client", { error });
+        }
       }
     }
   }
@@ -201,10 +222,7 @@ export async function withSignInMethodsTransaction<T>(
   operation: (tx: Prisma.TransactionClient) => Promise<T>,
   options: { timeout?: number } = {},
 ): Promise<T> {
-  return prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SIGN_IN_METHODS_LOCK})`;
-    return operation(tx);
-  }, options);
+  return withSignInMethodsLock(() => prisma.$transaction(operation, options));
 }
 
 export async function getEmailPasswordEnabled(db: SettingClient = prisma): Promise<boolean> {
