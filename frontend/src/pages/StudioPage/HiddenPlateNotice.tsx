@@ -4,11 +4,17 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import type { StudioPlate } from "../../studio/document";
-import { plateLabel } from "./labels";
 
 /** Over the bed while the plate in view is hidden: nothing of it is drawn, as with a hidden body. */
-export default function HiddenPlateNotice({ plate, onShow }: { plate: StudioPlate; onShow: () => void }) {
+export default function HiddenPlateNotice({
+  name,
+  kind,
+  onShow,
+}: {
+  name: string;
+  kind: "plates" | "profiles";
+  onShow: () => void;
+}) {
   const { t } = useTranslation("app");
   return (
     // The view underneath still turns and pans around the card.
@@ -35,13 +41,13 @@ export default function HiddenPlateNotice({ plate, onShow }: { plate: StudioPlat
       >
         <VisibilityOffOutlinedIcon sx={{ fontSize: 28, color: "text.secondary" }} />
         <Typography variant="subtitle2" sx={{ wordBreak: "break-word" }}>
-          {t("studio.plates.hiddenTitle", { name: plateLabel(plate, t) })}
+          {t(`studio.${kind}.hiddenTitle`, { name })}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {t("studio.plates.hiddenHint")}
+          {t(`studio.${kind}.hiddenHint`)}
         </Typography>
         <Button size="small" onClick={onShow} sx={{ mt: 0.5 }}>
-          {t("studio.plates.show")}
+          {t(`studio.${kind}.show`)}
         </Button>
       </Paper>
     </Box>

@@ -40,7 +40,8 @@ import {
 } from "./printProfileUi";
 import type { RunCommand } from "./useStudioDesign";
 import PlatePictureTiles from "./PlatePictureTiles";
-import { picturablePlates, studioPlates } from "../../studio/document";
+import { exportableProfiles, picturablePlates, profileSettings, studioPlates } from "../../studio/document";
+import { profileLabel } from "./labels";
 
 // Save to Thingport: the design as a new model, or as one more print profile of a model the person already has, with
 // its print profile settled first: chosen by the person, suggested by Studio's assistant, or left out.
@@ -78,7 +79,7 @@ type Props = {
   /** The plate in view, which a new model is pictured by unless another is chosen, and a picture of it as shown. */
   activePlate: string;
   snapshot: () => Promise<Blob | null>;
-  onEditProfile: (draft: StudioSaveDraft) => void;
+  onEditProfile: (draft: StudioSaveDraft, profileId?: string) => void;
   onSave: (request: StudioSaveRequest) => void;
   onClose: () => void;
   onUnauthorized?: () => void;
@@ -104,7 +105,9 @@ export default function StudioSaveDialog({
   const { t } = useTranslation(["app", "common"]);
   const settings = useSlicerSettings();
   const { printers } = useUserPrinters();
-  const profile = design.document.print_profile;
+  const groups = exportableProfiles(design.document);
+  const namedProfiles = Boolean(design.document.profiles);
+  const profile = namedProfiles ? undefined : design.document.print_profile;
   const [mode, setMode] = useState<Mode>(draft?.mode ?? "new");
   const [name, setName] = useState(draft?.name ?? design.name);
   const [model, setModel] = useState<Print | null>(draft?.model ?? null);
@@ -139,9 +142,16 @@ export default function StudioSaveDialog({
   };
   const profilesOf = (entry: Print) => entry.plates.filter((plate) => plate.profile_id).length;
   const ready =
-    mode === "new"
-      ? Boolean(name.trim()) && (Boolean(profile) || choice === "without")
-      : Boolean(model && profile && profileName.trim());
+    groups.length > 0 &&
+    (namedProfiles
+      ? mode === "new"
+        ? Boolean(name.trim())
+        : Boolean(model)
+      : mode === "new"
+        ? Boolean(name.trim()) && (Boolean(profile) || choice === "without")
+        : Boolean(model && profile && profileName.trim()));
+  const editProfile = (profileId?: string) =>
+    onEditProfile({ mode, name, model, choice, profileName, nameTouched, picturePlate: chosenPicture }, profileId);
 
   const save = () => {
     if (!ready) return;
@@ -152,7 +162,7 @@ export default function StudioSaveDialog({
             ...(profile ? { profileName: profileName.trim() || undefined } : {}),
             ...(picturePlate ? { picturePlate } : {}),
           }
-        : { modelId: model!.id, profileName: profileName.trim() },
+        : { modelId: model!.id, ...(profile ? { profileName: profileName.trim() } : {}) },
     );
   };
 
@@ -273,6 +283,7 @@ export default function StudioSaveDialog({
             designId={design.id}
             version={design.version}
             plates={picturePlates}
+            profiles={groups}
             activePlate={activePlate}
             snapshot={snapshot}
             value={picturePlate}
@@ -286,9 +297,38 @@ export default function StudioSaveDialog({
             component="h3"
             sx={{ display: "block", mb: 1, fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}
           >
-            {t("studio.printProfile.title")}
+            {t(namedProfiles ? "studio.profiles.title" : "studio.printProfile.title")}
           </Typography>
-          {profile ? (
+          {!groups.length ? (
+            <Typography variant="body2" color="text.secondary">
+              {t("studio.design.nothingToExport")}
+            </Typography>
+          ) : namedProfiles ? (
+            <Stack spacing={0.75}>
+              {groups.map((group) => {
+                const profileConfig = profileSettings(design.document, group.id).print_profile;
+                return (
+                  <Stack key={group.id} direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" noWrap>
+                        {profileLabel(group, t)}
+                      </Typography>
+                      {profileConfig && (
+                        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                          {[slicerName(profileConfig.slicer), profileLine(t, profileConfig)]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button size="small" onClick={() => editProfile(group.id)}>
+                      {t("studio.profiles.settings")}
+                    </Button>
+                  </Stack>
+                );
+              })}
+            </Stack>
+          ) : profile ? (
             <Stack spacing={1.5}>
               <Box
                 sx={{
@@ -331,12 +371,7 @@ export default function StudioSaveDialog({
                     {[slicerName(profile.slicer), profileLine(t, profile)].filter(Boolean).join(" · ")}
                   </Typography>
                 </Box>
-                <Button
-                  size="small"
-                  onClick={() =>
-                    onEditProfile({ mode, name, model, choice, profileName, nameTouched, picturePlate: chosenPicture })
-                  }
-                >
+                <Button size="small" onClick={() => editProfile()}>
                   {t("studio.save.editProfile")}
                 </Button>
               </Box>
@@ -424,16 +459,16 @@ export default function StudioSaveDialog({
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        {mode === "add" && model && (
+        {mode === "add" && model && groups.length > 0 && (
           <Typography variant="caption" color="text.secondary" sx={{ mr: "auto" }}>
-            {t("studio.save.willHave", { name: model.title || model.name, count: profilesOf(model) + 1 })}
+            {t("studio.save.willHave", { name: model.title || model.name, count: profilesOf(model) + groups.length })}
           </Typography>
         )}
         <Button disabled={saving} onClick={onClose}>
           {t("common:cancel")}
         </Button>
         <Button variant="contained" disabled={!ready || saving} onClick={save}>
-          {mode === "add" ? t("studio.save.addProfile") : t("common:save")}
+          {mode === "add" ? t(groups.length === 1 ? "studio.save.addProfile" : "common:add") : t("common:save")}
         </Button>
       </DialogActions>
     </Dialog>

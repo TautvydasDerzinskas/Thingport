@@ -11,6 +11,7 @@ import {
   sketchMatrix,
   hiddenPlates,
   plateOf,
+  profileOfPlate,
   topLevel,
   transformMatrix,
   type BodyFeature,
@@ -741,6 +742,7 @@ export function checkDesign(
     const hidden = hiddenPlates(doc);
     for (const feature of topLevel(doc)) {
       if (!isBody(feature) || !feature.visible || hidden.has(plateOf(feature))) continue;
+      if (options.profileId && profileOfPlate(doc, plateOf(feature)) !== options.profileId) continue;
       try {
         if (made.openOf(feature)) open.push(feature.id);
         else

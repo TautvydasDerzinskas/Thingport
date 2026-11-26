@@ -1,7 +1,20 @@
 import { STUDIO_UNITS, type StudioUnits } from "../services/studioSettingsService";
 import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
-import { isBody, plateOf, studioPlates, topLevel, type Feature, type Vec3 } from "../studio/document.generated";
+import {
+  DEFAULT_PROFILE_ID,
+  exportableProfiles,
+  isBody,
+  plateOf,
+  profileOf,
+  profileSettings,
+  studioPlates,
+  studioProfileName,
+  studioProfiles,
+  topLevel,
+  type Feature,
+  type Vec3,
+} from "../studio/document.generated";
 import { traceSummary } from "../studio/trace.generated";
 import { DEFAULT_PRINT_BED } from "../studio/printLayout.generated";
 import { checkProfile } from "../studio/printProfile.generated";
@@ -139,7 +152,9 @@ const getDesign: McpToolDefinition = {
       print_profile: profile ?? null,
       // What to tell the person about the profile before they print (a material that doesn't suit it, settings their
       // slicer won't take from the file).
-      profile_checks: profile ? checkProfile(design.document, profile).map((check) => check.text) : [],
+      profile_checks: profile
+        ? checkProfile(design.document, profile, DEFAULT_PROFILE_ID).map((check) => check.text)
+        : [],
       // The library models its imported meshes came from: their descriptions say what the design is for.
       made_from: await sourceModels(ctx.userId, design.document.features),
       locked_layout: design.document.locked_layout ?? [],
@@ -148,8 +163,23 @@ const getDesign: McpToolDefinition = {
       parameters: (design.document.parameters ?? []).map((parameter) => ({ unit: "mm", ...parameter })),
       features: briefFeatures(design.document.features),
       top_level: roots.map((feature) => feature.id),
+      profiles: studioProfiles(design.document).map((group) => {
+        const settings = profileSettings(design.document, group.id);
+        return {
+          id: group.id,
+          name: studioProfileName(group),
+          hidden: group.hidden,
+          print_setup: settings.print_setup ?? null,
+          print_profile: settings.print_profile ?? null,
+          filament_slots: settings.filament_slots ?? [],
+          profile_checks: settings.print_profile
+            ? checkProfile(design.document, settings.print_profile, group.id).map((check) => check.text)
+            : [],
+        };
+      }),
       plates: studioPlates(design.document).map((plate) => ({
         id: plate.id,
+        ...(design.document.profiles ? { profile_id: profileOf(plate) } : {}),
         name: plate.name,
         pending_import: plate.source ? true : undefined,
         // Left out of whole-design saves, exports and the print check.
@@ -353,6 +383,11 @@ const checkPrintTool: McpToolDefinition = {
   group: "studio",
   inputSchema: {
     design_id: designId,
+    profile_id: z
+      .string()
+      .regex(/^profile-[1-9]\d*$/)
+      .optional()
+      .describe("Use the saved setup and visible plates of this profile."),
     bed: z
       .tuple([z.number().positive().max(2000), z.number().positive().max(2000), z.number().positive().max(2000)])
       .optional()
@@ -374,31 +409,44 @@ const checkPrintTool: McpToolDefinition = {
   },
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
-    const setup = design.document.print_setup;
-    const outcome = await checkStudioPrint(
-      `${design.id}:${design.version}`,
-      design.document,
-      studioAssetDir(ctx.userId, design.id),
-      {
-        bed: (args.bed as Vec3 | undefined) ?? setup?.bed ?? DEFAULT_PRINT_BED,
-        outline: args.bed ? undefined : setup?.outline,
-        overhang: (args.overhang as number | undefined) ?? setup?.overhang ?? 45,
-        minWall: (args.min_wall as number | undefined) ?? setup?.minWall ?? 0.8,
-      },
-    );
-    if (outcome.status === "too-complex")
-      throw new HttpError(422, `The design is too heavy to check here (about ${outcome.triangles} triangles).`);
-    if (outcome.status === "refused") throw new HttpError(422, outcome.reason);
-    if (outcome.status !== "checked") throw new Error(`studio_check_print failed: ${JSON.stringify(outcome)}`);
-    const { problems, bodies, overlaps } = outcome.check;
-    const plates = new Map(design.document.features.map((feature) => [feature.id, plateOf(feature)]));
+    const { document } = design;
+    const profileId = args.profile_id as string | undefined;
+    if (profileId && !studioProfiles(document).some((profile) => profile.id === profileId))
+      throw new HttpError(400, "That profile doesn't belong to this design.");
+    const targets = profileId || !document.profiles ? [profileId] : exportableProfiles(document).map(({ id }) => id);
+    const checks = [];
+    const printers = new Set<string | null>();
+    for (const target of targets) {
+      const setup = profileSettings(document, target).print_setup;
+      const outcome = await checkStudioPrint(
+        `${design.id}:${design.version}`,
+        document,
+        studioAssetDir(ctx.userId, design.id),
+        {
+          profileId: target,
+          bed: (args.bed as Vec3 | undefined) ?? setup?.bed ?? DEFAULT_PRINT_BED,
+          outline: args.bed ? undefined : setup?.outline,
+          overhang: (args.overhang as number | undefined) ?? setup?.overhang ?? 45,
+          minWall: (args.min_wall as number | undefined) ?? setup?.minWall ?? 0.8,
+        },
+      );
+      if (outcome.status === "too-complex")
+        throw new HttpError(422, `The design is too heavy to check here (about ${outcome.triangles} triangles).`);
+      if (outcome.status === "refused") throw new HttpError(422, outcome.reason);
+      if (outcome.status !== "checked") throw new Error(`studio_check_print failed: ${JSON.stringify(outcome)}`);
+      checks.push(outcome.check);
+      printers.add(setup?.printer ?? null);
+    }
+    const bodies = checks.flatMap((check) => check.bodies);
+    const problems = checks.flatMap((check) => check.problems);
+    const plates = new Map(document.features.map((feature) => [feature.id, plateOf(feature)]));
     return {
       ...brief(ctx, design),
-      printer: setup?.printer ?? null,
+      printer: printers.size === 1 ? printers.values().next().value : null,
       ready: bodies.length > 0 && problems.length === 0,
       problems,
       bodies: bodies.map((body) => Object.assign({}, body, { plate_id: plates.get(body.id) })),
-      overlaps,
+      overlaps: checks.flatMap((check) => check.overlaps),
     };
   },
 };
@@ -444,12 +492,12 @@ const saveToLibrary: McpToolDefinition = {
   name: "studio_save_to_library",
   title: "Save a Studio design to the library",
   description:
-    "Saves the design to the user's Thingport library: its visible bodies as one 3MF project with its plates, colors " +
-    "and print profile (studio_set_print_profile), made for the profile's slicer and printer. By default it's a new " +
+    "Saves the design to the user's Thingport library. Each visible profile with printable bodies becomes a separate " +
+    "3MF with its own plates, colors and settings (studio_set_print_profile). By default it's a new " +
     "model, with a picture of the design and the requests the user made to Studio's assistant about it as its " +
-    "description. With model_id (a model from search_models or list_models) it's added to that model as one more " +
-    "print profile instead, shown on the model's page beside its other profiles; that needs the design to have a " +
-    "print profile. Each save is a copy of the design as it is now. Save when the user asks to; returns the model's " +
+    "description. With model_id (a model from search_models or list_models) the profiles are added to that model. " +
+    "A legacy design with no named profiles needs saved print settings to be added to an existing model. " +
+    "Each save is a snapshot. Save when the user asks to; returns the model's " +
     "id and link.",
   readOnly: false,
   group: "studio",
@@ -462,14 +510,14 @@ const saveToLibrary: McpToolDefinition = {
       .min(1)
       .max(64)
       .optional()
-      .describe("A model of the user's to add the design to as one more print profile, instead of a new model."),
+      .describe("A model of the user's to add profiles to instead of making a new model."),
     profile_name: z
       .string()
       .trim()
       .min(1)
       .max(120)
       .optional()
-      .describe("The print profile's name on the model's page. Default: its own name, else its preset and material."),
+      .describe("The name on the model's page when saving one profile. Multiple profiles keep their own names."),
     picture_plate_id: z
       .string()
       .regex(/^plate-[1-9]\d*$/)
@@ -489,7 +537,7 @@ const saveToLibrary: McpToolDefinition = {
     });
     return {
       done: modelId
-        ? `Added the design to “${model.title || model.name}” as a print profile`
+        ? `Added the Studio profiles to “${model.title || model.name}”`
         : `Saved the design to the library as “${model.title || model.name}”`,
       model_id: model.id,
       name: model.title || model.name,

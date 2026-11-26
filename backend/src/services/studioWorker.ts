@@ -4,6 +4,7 @@ import { parentPort, workerData } from "node:worker_threads";
 import JSZip from "jszip";
 import sharp from "sharp";
 import type { ManifoldToplevel } from "manifold-3d";
+import { extractBambuSettings, firstValue } from "../adapter/settings";
 import { normalizeFileName } from "../files/names";
 import {
   LIMITS,
@@ -13,6 +14,8 @@ import {
   hiddenPlates,
   isBody,
   plateOf,
+  profileOf,
+  profileSettings,
   studioPlates,
   topLevel,
   type MeshData,
@@ -38,8 +41,15 @@ import {
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
 import type { PrintCheck, PrintCheckOptions } from "../studio/printCheck.generated";
 import { boundsOnBed, footprintOnBed } from "../studio/printLayout.generated";
+import {
+  PROFILE_SETTINGS,
+  settingValueError,
+  type ProfileSettings,
+  type StudioPrintProfile,
+} from "../studio/printProfile.generated";
 import { binaryStl } from "../studio/stl.generated";
 import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
+import { readZipEntry } from "../utils/zipReader";
 import { loadStudioThreeMf, readThreeMfBuildPlates, type ThreeMfBuildPlate } from "./modelPreviewRender";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 import { loadFontsFor } from "./studioFonts";
@@ -82,7 +92,7 @@ export type StudioWorkerInput =
     }
   | { kind: "import"; srcPath: string; ext: string; destPath: string }
   | { kind: "import-3mf"; srcPath: string; destDir: string; plate?: { index: number | null } }
-  | { kind: "list-3mf-plates"; srcPath: string }
+  | { kind: "list-3mf-plates"; srcPath: string; includePrintSettings: boolean }
   | { kind: "trace"; picturePath: string; settings: TraceSettings }
   | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string }
   | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string }
@@ -93,6 +103,8 @@ export type StudioWorkerInput =
       name: string;
       format: StudioExportFormat;
       plate?: string;
+      plateIds?: readonly string[];
+      profileId?: string;
       target?: StudioExportTarget;
       /** The plate whose picture is the 3MF's own thumbnail; the first one exported when absent or left out. */
       thumbnailPlate?: string;
@@ -124,7 +136,7 @@ export type StudioWorkerResult =
     }
   | { status: "imported"; solid: boolean; triangles: number; size: Vec3; parts: number }
   | { status: "project"; plates: { name: string | null; bodies: StudioImportedBody[] }[]; mixedColors: boolean }
-  | { status: "source-plates"; plates: ThreeMfBuildPlate[] }
+  | { status: "source-plates"; plates: ThreeMfBuildPlate[]; printProfile?: StudioPrintProfile }
   | { status: "described"; body: BodyDescription }
   | { status: "measured"; parts: PartMeasure[] }
   | { status: "bounds"; bounds: Record<string, { min: Vec3; max: Vec3 }> }
@@ -344,7 +356,42 @@ async function importThreeMf(input: Extract<StudioWorkerInput, { kind: "import-3
   return { status: "project", plates, mixedColors: project.mixedColors };
 }
 
-async function sourcePlates(srcPath: string): Promise<StudioWorkerResult> {
+/** Bring across the process settings Studio can represent. Other slicer metadata stays in the source snapshot. */
+async function readSourcePrintProfile(srcPath: string): Promise<StudioPrintProfile | undefined> {
+  const bytes = await readZipEntry(srcPath, "Metadata/project_settings.config", 8 * 1024 * 1024).catch(() => null);
+  if (!bytes) return undefined;
+  let config: unknown;
+  try {
+    config = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    return undefined;
+  }
+  const source = extractBambuSettings(config);
+  const settings: ProfileSettings = {};
+  for (const setting of PROFILE_SETTINGS) {
+    const raw = firstValue(source[setting.key]);
+    if (typeof raw !== "string" && typeof raw !== "number" && typeof raw !== "boolean") continue;
+    const text = String(raw).trim();
+    if (!text) continue;
+    const value =
+      setting.kind === "number"
+        ? Number(setting.unit === "%" ? text.replace(/%$/, "") : text)
+        : setting.kind === "switch"
+          ? text === "1" || text === "true"
+            ? true
+            : text === "0" || text === "false"
+              ? false
+              : text
+          : text;
+    if (!settingValueError(setting.key, value)) settings[setting.key] = value;
+  }
+  if (Object.keys(settings).length) return { preset: null, settings };
+}
+
+async function sourcePlates({
+  srcPath,
+  includePrintSettings,
+}: Extract<StudioWorkerInput, { kind: "list-3mf-plates" }>): Promise<StudioWorkerResult> {
   const plates = await readThreeMfBuildPlates(srcPath, true);
   if (typeof plates === "string")
     return {
@@ -353,18 +400,23 @@ async function sourcePlates(srcPath: string): Promise<StudioWorkerResult> {
         plates === "too-complex" ? "The 3MF archive is too large to read" : "The 3MF has no readable build plates",
       code: plates === "too-complex" ? "studio_import_archive_limit" : "studio_import_no_plates",
     };
-  return { status: "source-plates", plates };
+  const printProfile = includePrintSettings ? await readSourcePrintProfile(srcPath) : undefined;
+  return { status: "source-plates", plates, printProfile };
 }
 
 /** Whether the design will print as it's placed, for studio_check_print. */
 async function check(input: Extract<StudioWorkerInput, { kind: "check" }>): Promise<StudioWorkerResult> {
-  const unloaded = studioPlates(input.document).find((plate) => plate.source && !plate.hidden);
+  const hidden = hiddenPlates(input.document);
+  const plates = studioPlates(input.document).filter(
+    (plate) => !hidden.has(plate.id) && (!input.options.profileId || profileOf(plate) === input.options.profileId),
+  );
+  const unloaded = plates.find((plate) => plate.source);
   if (unloaded)
     return { status: "refused", reason: `Open ${unloaded.name} before checking the whole design for printing.` };
   // Only what the check makes counts: the visible bodies on shown plates.
-  const hidden = hiddenPlates(input.document);
+  const plateIds = new Set(plates.map((plate) => plate.id));
   const checked = topLevel(input.document).filter(
-    (feature) => isBody(feature) && feature.visible && !hidden.has(plateOf(feature)),
+    (feature) => isBody(feature) && feature.visible && plateIds.has(plateOf(feature)),
   );
   const estimate = estimateTriangles(input.document, new Set(checked.map((feature) => feature.id)));
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
@@ -419,9 +471,9 @@ function bodyFitsPrinterBed(body: EvaluatedBody, bed: Vec3, outline?: StudioPrin
 }
 
 async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }>): Promise<StudioWorkerResult> {
-  // One plate asked for by name goes out even when hidden; the whole design leaves hidden plates out.
+  const hidden = hiddenPlates(input.document);
   const platesInDesign = studioPlates(input.document).filter((plate) =>
-    input.plate ? plate.id === input.plate : !plate.hidden,
+    input.plateIds ? input.plateIds.includes(plate.id) : input.plate ? plate.id === input.plate : !hidden.has(plate.id),
   );
   const exported = new Set(platesInDesign.map((plate) => plate.id));
   const visible = topLevel(input.document).filter(
@@ -476,9 +528,10 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
       status: "refused",
       reason: `${tooDetailed.name} exceeds Studio's limit of ${maxBodyTriangles.toLocaleString("en")} triangles per 3MF body. Simplify or split it before exporting.`,
     };
+  const settings = profileSettings(input.document, input.profileId);
   const recipe = input.target?.printer?.recipe;
   if (recipe) {
-    const { size, outline } = studioThreeMfBed(input.target, input.document.print_setup);
+    const { size, outline } = studioThreeMfBed(input.target, settings.print_setup);
     const bad = parts.find(({ body }) => !bodyFitsPrinterBed(body, size, outline));
     if (bad) return { status: "refused", reason: `${bad.name} is outside the build volume for ${recipe.preset}.` };
   }
@@ -494,9 +547,10 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     parts,
     plates,
     input.target,
-    input.document.print_setup,
-    input.document.print_profile,
+    settings.print_setup,
+    settings.print_profile,
     input.thumbnailPlate,
+    settings.filament_slots,
   );
   if (!bytes)
     return {
@@ -560,7 +614,7 @@ if (parentPort) {
       : input.kind === "import-3mf"
         ? importThreeMf(input)
         : input.kind === "list-3mf-plates"
-          ? sourcePlates(input.srcPath)
+          ? sourcePlates(input)
           : input.kind === "trace"
             ? trace(input)
             : made(input);

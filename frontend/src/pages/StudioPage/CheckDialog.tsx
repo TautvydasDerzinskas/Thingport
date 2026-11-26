@@ -21,8 +21,12 @@ import HelpTip from "../../components/HelpTip";
 import {
   featureById,
   isBody,
+  hiddenPlates,
   studioPlates,
+  studioProfiles,
   plateOf,
+  profileOf,
+  profileSettings,
   topLevel,
   type StudioDocument,
   type StudioPrintSetup,
@@ -34,7 +38,7 @@ import type { BodyCheck, PrintCheckOptions } from "../../studio/printCheck";
 import { centeredPrinterOutline } from "../../studio/printLayout";
 import { NumberField } from "./fields";
 import { checkInWorker, measureBetweenInWorker } from "./geometryClient";
-import { featureLabel, plateLabel } from "./labels";
+import { featureLabel, plateLabel, profileLabel } from "./labels";
 import type { UnitFormat } from "./units";
 import type { RunCommand } from "./useStudioDesign";
 
@@ -74,6 +78,7 @@ type Props = {
   open: boolean;
   designId: string | null;
   doc: StudioDocument | null;
+  profileId: string;
   /** Bodies selected on the page: two of them are what's measured first. */
   selected: string[];
   run: RunCommand;
@@ -81,10 +86,21 @@ type Props = {
   onLocate: (id: string, highlights?: BodyCheck["highlights"], layFlat?: boolean) => void;
 };
 
-export default function CheckDialog({ format, open, designId, doc, selected, run, onClose, onLocate }: Props) {
+export default function CheckDialog({
+  format,
+  open,
+  designId,
+  doc,
+  profileId,
+  selected,
+  run,
+  onClose,
+  onLocate,
+}: Props) {
   const { t } = useTranslation("app");
   const { printers } = useUserPrinters();
-  const setup = doc?.print_setup;
+  const setup = doc && profileSettings(doc, profileId).print_setup;
+  const group = doc?.profiles && studioProfiles(doc).find((profile) => profile.id === profileId);
   const [options, setOptions] = useState(storedOptions);
   const [savingSetup, setSavingSetup] = useState(false);
   const setupSave = useRef(false);
@@ -93,7 +109,7 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
     setupSave.current = true;
     setSavingSetup(true);
     try {
-      await run("set_print_setup", { setup: next }, { waitForSave: true });
+      await run("set_print_setup", { profile_id: profileId, setup: next }, { waitForSave: true });
     } finally {
       setupSave.current = false;
       setSavingSetup(false);
@@ -133,8 +149,9 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
         ? { bed: setup.bed, outline: setup.outline, minWall: setup.minWall, overhang: setup.overhang ?? 45 }
         : {}),
       highlight: true,
+      profileId,
     }),
-    [options, setup],
+    [options, setup, profileId],
   );
 
   const [report, setReport] = useState<{
@@ -143,7 +160,10 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
     check: ReturnType<typeof checkDesign>;
   } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const unloaded = doc ? studioPlates(doc).find((plate) => plate.source && !plate.hidden) : undefined;
+  const hidden = doc && hiddenPlates(doc);
+  const unloaded = doc
+    ? studioPlates(doc).find((plate) => plate.source && !hidden?.has(plate.id) && profileOf(plate) === profileId)
+    : undefined;
   useEffect(() => {
     if (!open || !doc || !designId || unloaded) return;
     let cancelled = false;
@@ -238,6 +258,11 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
         <HelpTip text={t("studio.check.help")} />
       </DialogTitle>
       <DialogContent>
+        {group && (
+          <Typography color="text.secondary" sx={{ mb: 1 }}>
+            {profileLabel(group, t)}
+          </Typography>
+        )}
         <TextField
           select
           size="small"

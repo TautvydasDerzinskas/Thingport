@@ -135,6 +135,7 @@ export type StudioExport = {
   slicer?: string;
   printer?: { id: string; nozzle: string };
   plate?: string;
+  profile?: string;
 };
 
 export function studioExportPath(id: string, filename: string, options?: StudioExport): string {
@@ -144,6 +145,7 @@ export function studioExportPath(id: string, filename: string, options?: StudioE
     options?.printer?.id ?? "-",
     options?.printer?.nozzle ?? "-",
     options?.plate ?? "-",
+    ...(options?.profile ? [options.profile] : []),
     filename,
   ];
   return `${design(id)}/export/${parts.map(encodeURIComponent).join("/")}`;
@@ -219,7 +221,7 @@ export const studioApi = {
     }
     return res.json();
   },
-  /** Saves the design to the library as a new model, or with `model_id` as one more print profile of that model.
+  /** Saves the visible, populated profiles as a new model, or adds them to the model given by `model_id`.
    *  `picture_id` is a picture to show a new model by; `picture_plate_id` the plate to picture it by without one, and
    *  the 3MF's thumbnail. */
   saveToLibrary: async (

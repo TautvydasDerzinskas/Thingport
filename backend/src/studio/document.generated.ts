@@ -262,15 +262,20 @@ export type FeatureType = Feature["type"];
 /** A named number formulas use: its value in its own unit (mm when it has none set, from before parameters had one). */
 export type Parameter = { name: string; value: number; unit?: ParameterUnit };
 
-export type StudioDocument = {
+type StudioProfileSettings = {
+  print_setup?: StudioPrintSetup;
+  print_profile?: StudioPrintProfile;
+  filament_slots?: StudioFilamentSlot[];
+};
+
+// The first profile keeps its settings here for compatibility with existing designs and revisions.
+export type StudioDocument = StudioProfileSettings & {
   version: typeof DOCUMENT_VERSION;
+  profiles?: StudioProfile[];
+  next_profile_id?: number;
   plates?: StudioPlate[];
   next_plate_id?: number;
-  print_setup?: StudioPrintSetup;
-  /** The slicer settings it's meant to print with (printProfile.ts); absent until one is set. */
-  print_profile?: StudioPrintProfile;
   locked_layout?: string[];
-  filament_slots?: StudioFilamentSlot[];
   /** The units the design is shown and typed in, as a CAD document's are; mm when absent. Only how sizes read: every
    *  size in the document, and in every command, is in mm. */
   units?: LengthUnit;
@@ -305,17 +310,53 @@ export type StudioPlateSource = {
 export type StudioPlate = {
   id: string;
   name: string;
+  profile_id?: string;
   /** The ordinal for a generated label, translated by the viewer until the plate is named. */
   default_name?: number;
   source?: StudioPlateSource;
   /** Not drawn, and left out of the whole design's saves, exports and print check; absent when shown. */
   hidden?: true;
 };
+export type StudioProfile = StudioProfileSettings & {
+  id: string;
+  /** Absent while Studio uses the translated generated name. */
+  name?: string;
+  hidden?: true;
+};
+
+export const DEFAULT_PROFILE_ID = "profile-1";
 export const DEFAULT_PLATE_ID = "plate-1";
 export const MAX_PLATES = 32;
+export const MAX_PROFILES = MAX_PLATES;
+
+export function studioProfiles(doc: StudioDocument): readonly StudioProfile[] {
+  return doc.profiles ?? [{ id: DEFAULT_PROFILE_ID }];
+}
+
+export function profileOf(plate?: StudioPlate): string {
+  return plate?.profile_id ?? DEFAULT_PROFILE_ID;
+}
+
+export function profileNumber(profile: StudioProfile): number {
+  return Number(profile.id.slice("profile-".length));
+}
+
+export function studioProfileName(profile: StudioProfile): string {
+  return profile.name ?? `Profile ${profileNumber(profile)}`;
+}
+
+export function profileOfPlate(doc: StudioDocument, plateId: string): string {
+  return profileOf(doc.plates?.find((plate) => plate.id === plateId));
+}
+
+export function profileSettings(doc: StudioDocument, id = DEFAULT_PROFILE_ID): StudioProfileSettings {
+  return id === DEFAULT_PROFILE_ID ? doc : (doc.profiles?.find((profile) => profile.id === id) ?? {});
+}
 
 export function studioPlates(doc: StudioDocument): readonly StudioPlate[] {
-  return doc.plates ?? [{ id: DEFAULT_PLATE_ID, name: "Plate 1" }];
+  const plates = doc.plates ?? [{ id: DEFAULT_PLATE_ID, name: "Plate 1" }];
+  if (!doc.profiles) return plates;
+  return doc.profiles.flatMap((profile) => plates.filter((plate) => profileOf(plate) === profile.id));
 }
 
 export function plateOf(feature: Feature): string {
@@ -324,30 +365,50 @@ export function plateOf(feature: Feature): string {
 
 /** The plates a whole-design save, export or print check leaves out. */
 export function hiddenPlates(doc: StudioDocument): Set<string> {
-  return new Set(studioPlates(doc).flatMap((plate) => (plate.hidden ? [plate.id] : [])));
+  const hiddenProfiles = new Set(
+    studioProfiles(doc)
+      .filter((profile) => profile.hidden)
+      .map((profile) => profile.id),
+  );
+  return new Set(
+    studioPlates(doc)
+      .filter((plate) => plate.hidden || hiddenProfiles.has(profileOf(plate)))
+      .map((plate) => plate.id),
+  );
 }
 
 /** The plates a design saved to the library can be pictured by: shown, loaded and with a visible body, in the
  *  plates' order. */
 export function picturablePlates(doc: StudioDocument): string[] {
+  const hidden = hiddenPlates(doc);
   const withBodies = new Set(
     topLevel(doc)
       .filter((feature) => isBody(feature) && feature.visible)
       .map(plateOf),
   );
   return studioPlates(doc)
-    .filter((plate) => !plate.hidden && !plate.source && withBodies.has(plate.id))
+    .filter((plate) => !hidden.has(plate.id) && !plate.source && withBodies.has(plate.id))
     .map((plate) => plate.id);
 }
 
-/** Whether saving or exporting the whole design has anything to write: a visible body or an unopened source plate,
- *  on a shown plate. */
-export function exportsSomething(doc: StudioDocument): boolean {
+/** Visible plates with printable bodies or an unopened source, in profile and plate order. */
+export function exportablePlates(doc: StudioDocument): StudioPlate[] {
   const hidden = hiddenPlates(doc);
-  return (
-    studioPlates(doc).some((plate) => plate.source && !plate.hidden) ||
-    topLevel(doc).some((feature) => isBody(feature) && feature.visible && !hidden.has(plateOf(feature)))
+  const occupied = new Set(
+    topLevel(doc)
+      .filter((feature) => isBody(feature) && feature.visible)
+      .map(plateOf),
   );
+  return studioPlates(doc).filter((plate) => !hidden.has(plate.id) && (plate.source || occupied.has(plate.id)));
+}
+
+export function exportableProfiles(doc: StudioDocument): StudioProfile[] {
+  const occupied = new Set(exportablePlates(doc).map(profileOf));
+  return studioProfiles(doc).filter((profile) => occupied.has(profile.id));
+}
+
+export function exportsSomething(doc: StudioDocument): boolean {
+  return exportablePlates(doc).length > 0;
 }
 
 // What one design may hold. A server evaluates designs for assistants, so these keep that bounded.

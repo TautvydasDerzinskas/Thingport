@@ -36,14 +36,16 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   every size in the document and in every command stays in mm.
 - **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
   fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
-- **Plates** are listed in `doc.plates` in the order they're shown, saved and exported (`move_plate`); a body
-  without a `plate_id` is on `plate-1`, wherever that sits. A plate marked `hidden` (`set_plate_visibility`) isn't
-  drawn, and every whole-design output leaves it out (`hiddenPlates`): the 3MF and STL ZIP, Save to Thingport, a
-  slicer's file and the print check. Exporting that one plate by its id still works.
+- **Profiles and plates.** A design starts with `profile-1`. Each plate belongs to a profile, and each profile
+  has its own print settings. `move_profile` sets the profile order and `move_plate` can change a plate's position
+  and profile together. A body without a `plate_id` stays on `plate-1`. Hidden profiles are skipped by the
+  viewport, print check, saves and exports. Hiding a plate also excludes it from whole-design output. A plate on
+  a shown profile can still be exported individually.
 - **Deferred 3MF imports** keep an archive snapshot alongside the mesh assets. A plate holds a source reference until
   `load_source_plate` prepares its bodies and records the result as a revision. The same command serves Studio, Ask AI
   and MCP. Exports can prepare pending plates with temporary mesh assets. The viewport evaluates the active plate's
-  bodies and any features they depend on.
+  bodies and any features they depend on. `import_model` with `all_files` opens the model's importable files as separate
+  profiles in one revision. Each 3MF keeps its build plates and any compatible process settings.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly in a web worker
   (`StudioPage/geometry.worker.ts`) and the backend from its package (`services/studioWorker.ts`, in a worker thread
   with a timeout). Each body is made once per evaluation, failures included. `prepareMesh` turns an imported file's
@@ -88,16 +90,16 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   sample of triangles). A threaded body's overhangs and walls are judged on a copy with its threads as plain cylinders
   (`plainThreads` in `geometry.ts`), as CAD analyses cosmetic threads. `measureBetween` in `geometry.ts` is
   `studio_measure`.
-- **`printProfile.ts`** — a design's print profile (`print_profile`, set by `set_print_profile`): presets, and the
+- **`printProfile.ts`** — each profile's slicer settings (`print_profile`, set by `set_print_profile`): presets, and the
   settings changed on them, under Bambu Studio's key names and in its categories (a per-nozzle setting, such as a
   speed, is written as a list), each saying which kinds of slicer it reaches through the
   slicer adapter (a test checks that against `backend/src/adapter/settings.ts`) and what each kind calls it.
   `studioThreeMf.ts` writes the settings into the 3MF's `project_settings.config` and lists their keys in
   `different_settings_to_system`, so Bambu Studio's family keeps them over its process preset and the adapter carries
-  them into a copy for the person's printer, or into PrusaSlicer's and Cura's settings. Saved to the library, the
-  3MF's plate is a print profile (`Plate.sourceInstanceId` `studio-…`, `Plate.profile.studio` for its name, reason and
-  maker), read on the model's page like an imported one; `studio_save_to_library` with `model_id` adds it to a model
-  the person already has. `checkProfile` says what to warn about, and `suggestPresets` picks presets from a description
+  them into a copy for the person's printer, or into PrusaSlicer's and Cura's settings. Downloads package multiple
+  3MFs into a ZIP. The library stores each included 3MF as a file on the same model (`Plate.sourceInstanceId`
+  `studio-…`, `Plate.profile.studio` for its name, reason and maker). Use `studio_save_to_library` with `model_id`
+  to add the files to an existing model. `checkProfile` reports warnings, and `suggestPresets` picks presets from a description
   without an AI.
 - **`shapes2d.ts`** and **`vec.ts`** — outlines (rounded corners, insets that keep their shape) and vector maths.
 

@@ -86,8 +86,9 @@ const COMPACT: Record<string, { description: string; args: string[]; shape?: z.Z
     description:
       "Sets the print profile: a preset (standard, fine, draft, strong, outdoor, water, toy, flexible, heat, vase, " +
       "smooth), the material, a reason for the person, and a few settings.",
-    args: ["profile"],
+    args: ["profile_id", "profile"],
     shape: {
+      profile_id: z.string().optional().describe("Profile ID from studio_get_design."),
       profile: z.object({
         preset: z.enum(PRINT_PRESET_IDS).optional(),
         material: z.enum(STUDIO_FILAMENT_MATERIALS).optional(),
@@ -103,7 +104,7 @@ const COMPACT: Record<string, { description: string; args: string[]; shape?: z.Z
       }),
     },
   },
-  studio_create_plate: { description: "Creates a named build plate and returns its id.", args: ["name"] },
+  studio_create_plate: { description: "Creates a named build plate and returns its id.", args: ["name", "profile_id"] },
   studio_move_to_plate: { description: "Moves bodies to a plate.", args: ["plate_id", "feature_ids"] },
   studio_set_body_color: {
     description: "Sets a body's #RRGGBB color (null clears it).",
@@ -280,6 +281,7 @@ function compactState(state: string): string {
     return JSON.stringify(
       {
         display_units: read.display_units,
+        profiles: read.profiles,
         plates: read.plates,
         top_level: read.top_level,
         features: read.features,

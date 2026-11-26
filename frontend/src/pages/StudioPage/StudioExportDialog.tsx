@@ -8,7 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Segmented from "../../components/controls/Segmented";
-import { exportsSomething, type StudioDocument } from "../../studio/document";
+import { exportableProfiles, type StudioDocument } from "../../studio/document";
 
 type Format = "3mf" | "stl-zip";
 
@@ -22,7 +22,8 @@ type Props = {
 export default function StudioExportDialog({ document, downloading, onDownload, onClose }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const [format, setFormat] = useState<Format>("3mf");
-  const canExport = exportsSomething(document);
+  const profiles = exportableProfiles(document);
+  const canExport = profiles.length > 0;
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
@@ -34,7 +35,7 @@ export default function StudioExportDialog({ document, downloading, onDownload, 
             label={t("studio.design.export.format")}
             value={format}
             options={[
-              { value: "3mf", label: "3MF" },
+              { value: "3mf", label: profiles.length > 1 ? "3MF ZIP" : "3MF" },
               { value: "stl-zip", label: "STL" },
             ]}
             disabled={downloading}
@@ -44,7 +45,9 @@ export default function StudioExportDialog({ document, downloading, onDownload, 
             {!canExport
               ? t("studio.design.nothingToExport")
               : format === "3mf"
-                ? t("studio.design.export.threeMf")
+                ? profiles.length > 1
+                  ? t("studio.profiles.downloadZip")
+                  : t("studio.design.export.threeMf")
                 : t("studio.design.export.stlZip")}
           </Typography>
         </Stack>

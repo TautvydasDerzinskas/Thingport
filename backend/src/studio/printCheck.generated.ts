@@ -19,6 +19,7 @@ export type PrintCheckOptions = {
   minWall: number;
   outline?: StudioPrintSetup["outline"];
   highlight?: boolean;
+  profileId?: string;
 };
 
 export type BodyCheck = {
