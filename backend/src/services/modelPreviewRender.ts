@@ -729,6 +729,7 @@ async function readThreeMfStructure(srcPath: string, forStudio: boolean, include
   const entries = (await listZipEntries(srcPath)).filter((entry) => !entry.isDirectory);
   const names = entries.map((entry) => entry.name);
   const entryNamed = partNames(names);
+  const projectSettingsName = entryNamed("Metadata/project_settings.config");
   const relsName = entryNamed("_rels/.rels");
   const rels = relsName ? await readZipEntry(srcPath, relsName, MAX_RELS_BYTES).catch(() => null) : null;
   const mainModelPath = findStartPart(names, rels?.toString("utf-8") ?? null);
@@ -749,7 +750,7 @@ async function readThreeMfStructure(srcPath: string, forStudio: boolean, include
     srcPath,
     (entry) => {
       if (entry.name === "Metadata/model_settings.config") return true;
-      if (entry.name === "Metadata/project_settings.config") return true;
+      if (entry.name === projectSettingsName) return true;
       if (entry.name === mainModelPath) return true;
       if (/^Metadata\/plate_\d+\.json$/.test(entry.name)) return true;
       if (includeThumbnails && /^Metadata\/(plate|top)_\d+\.png$/.test(entry.name)) return true;
@@ -761,7 +762,7 @@ async function readThreeMfStructure(srcPath: string, forStudio: boolean, include
       const buf = Buffer.concat(chunks);
 
       if (entry.name === "Metadata/model_settings.config") modelSettingsText = buf.toString("utf-8");
-      else if (entry.name === "Metadata/project_settings.config") projectSettingsText = buf.toString("utf-8");
+      else if (entry.name === projectSettingsName) projectSettingsText = buf.toString("utf-8");
       else if (entry.name === mainModelPath) mainModelText = buf.toString("utf-8");
       else {
         const plateMatch = entry.name.match(/^Metadata\/plate_(\d+)\.json$/);

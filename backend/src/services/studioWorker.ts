@@ -360,7 +360,9 @@ async function importThreeMf(input: Extract<StudioWorkerInput, { kind: "import-3
 
 /** Bring across the process settings Studio can represent. Other slicer metadata stays in the source snapshot. */
 async function readSourcePrintProfile(srcPath: string): Promise<StudioPrintProfile | undefined> {
-  const bytes = await readZipEntry(srcPath, "Metadata/project_settings.config", 8 * 1024 * 1024).catch(() => null);
+  const bytes = await readZipEntry(srcPath, "Metadata/project_settings.config", 8 * 1024 * 1024, {
+    ignoreCase: true,
+  }).catch(() => null);
   if (!bytes) return undefined;
   let config: unknown;
   try {

@@ -1345,7 +1345,7 @@ describe("Studio", () => {
     });
 
     it("imports all model files as ordered profiles with their source plates and print settings", async () => {
-      const project = async (plates: number[], walls: number) => {
+      const project = async (plates: number[], walls: number, settingsEntry = "Metadata/project_settings.config") => {
         const zip = new JSZip();
         zip.file(
           "3D/3dmodel.model",
@@ -1356,10 +1356,7 @@ describe("Studio", () => {
             ${plates.map((id) => `<item objectid="1" plate_id="${id}"/>`).join("")}
           </build></model>`,
         );
-        zip.file(
-          "Metadata/project_settings.config",
-          JSON.stringify({ wall_loops: String(walls), sparse_infill_density: "20%" }),
-        );
+        zip.file(settingsEntry, JSON.stringify({ wall_loops: String(walls), sparse_infill_density: "20%" }));
         return zip.generateAsync({ type: "nodebuffer" });
       };
       const uploadResult = await request(app)
@@ -1368,7 +1365,7 @@ describe("Studio", () => {
         .field("mode", "multiplate")
         .attach("files", await project([1, 2], 3), "Brackets.3mf")
         .attach("files", Buffer.from(boxStl(10, 12, 5)), "Base.stl")
-        .attach("files", await project([1], 6), "Alternative.3mf")
+        .attach("files", await project([1], 6, "metadata/Project_Settings.config"), "Alternative.3mf")
         .attach("files", Buffer.from("assembly instructions"), "Readme.txt");
       expect(uploadResult.status).toBe(200);
       const model = uploadResult.body.prints[0];

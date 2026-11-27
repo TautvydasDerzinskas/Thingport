@@ -601,7 +601,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           return [
             {
               id: feature.id,
-              visible: feature.visible,
+              visible: body.group.visible,
               bounds: { min: box.min.toArray(), max: box.max.toArray() },
               volume: body.volume * Math.abs(body.group.matrixWorld.determinant()),
             },

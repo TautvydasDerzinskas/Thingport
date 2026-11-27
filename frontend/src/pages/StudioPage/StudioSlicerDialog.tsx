@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -63,12 +63,17 @@ export default function StudioSlicerDialog({
   const [chosenPlate, setChosenPlate] = useState(activePlate);
   const [chosenGroup, setChosenGroup] = useState(() => profileOfPlate(design.document, activePlate));
   const [downloading, setDownloading] = useState(false);
-  const [slotDraft, setSlotDraft] = useState<StudioFilamentSlot[] | null>(null);
+  const [draft, setDraft] = useState<{ profileId: string; slots: StudioFilamentSlot[] } | null>(null);
   const [savingSlots, setSavingSlots] = useState(false);
 
   const groups = exportableProfiles(design.document);
   const group = groups.find((entry) => entry.id === chosenGroup) ?? groups[0];
-  const print = profileSettings(design.document, group?.id);
+  const groupId = group?.id;
+  const slotDraft = draft?.profileId === groupId ? draft : null;
+  useEffect(() => {
+    setDraft((current) => (current?.profileId === groupId ? current : null));
+  }, [groupId]);
+  const print = profileSettings(design.document, groupId);
   const supported = SLICER_OPTIONS.filter((option) => slicerProfile(option.id));
   const installed = supported.filter((option) => settings.slicers.includes(option.id));
   const options = installed.length ? installed : supported;
@@ -120,19 +125,26 @@ export default function StudioSlicerDialog({
   }
   const savedSlots = print.filament_slots ?? [];
   const tooManyColors = canAssignSlots && colorsByPlate.size > STUDIO_FILAMENT_SLOT_LIMIT;
-  const slots = slotDraft ?? savedSlots;
+  const slots = slotDraft?.slots ?? savedSlots;
   const missing = [...colorsByPlate.keys()].filter((color) => !slots.some((assignment) => assignment.color === color));
   const setSlot = (color: string, slot: number, material: StudioFilamentSlot["material"]) => {
+    if (!groupId) return;
     const other = slots.filter((assignment) => assignment.color !== color && (!slot || assignment.slot !== slot));
-    setSlotDraft(slot ? [...other, { color, slot, material }] : other);
+    setDraft({ profileId: groupId, slots: slot ? [...other, { color, slot, material }] : other });
   };
   const saveSlots = async () => {
     const submitted = slotDraft;
-    if (!group || !submitted) return;
+    if (!submitted) return;
     setSavingSlots(true);
     try {
-      if (await run("set_filament_slots", { profile_id: group.id, slots: submitted }, { waitForSave: true }))
-        setSlotDraft((latest) => (latest === submitted ? null : latest));
+      if (
+        await run(
+          "set_filament_slots",
+          { profile_id: submitted.profileId, slots: submitted.slots },
+          { waitForSave: true },
+        )
+      )
+        setDraft((latest) => (latest === submitted ? null : latest));
     } finally {
       setSavingSlots(false);
     }
@@ -182,7 +194,7 @@ export default function StudioSlicerDialog({
                 setChosenGroup(event.target.value);
                 setChosenPrinter(null);
                 setChosenSlicer("");
-                setSlotDraft(null);
+                setDraft(null);
               }}
             >
               {groups.map((entry) => (

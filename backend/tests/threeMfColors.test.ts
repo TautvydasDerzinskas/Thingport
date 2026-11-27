@@ -350,6 +350,21 @@ describe("a coloured 3MF as a preview", () => {
     ]);
   });
 
+  it("reads project filament colors from a mixed-case metadata entry", async () => {
+    const zip = new JSZip();
+    zip.file("3D/3dmodel.model", PAINTED_XML);
+    zip.file("metadata/Project_Settings.config", PROJECT_SETTINGS);
+    const file = path.join(dir, "mixed-case-settings.3mf");
+    await fs.writeFile(file, await zip.generateAsync({ type: "nodebuffer" }));
+
+    const group = await loadThreeMfGroup(file);
+    if (typeof group === "string") throw new Error(group);
+    expect(meshColors(group)).toEqual([
+      { color: "0000ff", triangles: 1 },
+      { color: "ff0000", triangles: 1 },
+    ]);
+  });
+
   it("reads a file's own colour group even where a slicer listed filaments beside it", async () => {
     // The two are different palettes: a painted triangle names a filament, an indexed one an entry in the
     // group. Reading only the filaments loses the indexed faces and leaves the model in one colour.
