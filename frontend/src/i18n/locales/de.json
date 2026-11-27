@@ -6543,6 +6543,7 @@
       "fileExtensionRequired": "Behalten Sie die ursprüngliche Dateiendung bei.",
       "fileSwapUnsupported": "Dieser Server unterstützt den sicheren Tausch von Dateinamen nicht.",
       "fileNameRequired": "Dateiname erforderlich.",
+      "uploadReceiptLookupFailed": "Es konnte nicht geprüft werden, welche Dateien gespeichert wurden. Klicken Sie erneut auf „Aktualisieren“.",
       "uploadCapabilityCheckFailed": "Es konnte nicht geprüft werden, ob der Upload sicher wiederholt werden kann. Bitte versuchen Sie es erneut.",
       "previewUploadSkipped": "Einige Bilder wurden nicht gespeichert. Entfernen Sie sie oder versuchen Sie den Upload erneut.",
       "previewUploadPending": "Der Bildupload konnte nicht bestätigt werden. Klicken Sie erneut auf „Aktualisieren“, um zu prüfen, welche Bilder gespeichert wurden.",

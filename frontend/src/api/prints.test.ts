@@ -5,6 +5,7 @@ import {
   PlateUploadCapabilityError,
   PlateUploadOutcomeUnknownError,
   printsApi,
+  UploadReceiptLookupError,
   ZipTooLargeError,
 } from "./prints";
 
@@ -85,6 +86,29 @@ describe("printsApi.downloadZip", () => {
   });
 });
 
+const uploadPrint = {
+  id: "print",
+  name: "Example",
+  tags: [],
+  preview_images: [],
+  created_at: "2026-01-01T00:00:00.000Z",
+  supporting_file_count: 0,
+  view_count: 0,
+  print_count: 0,
+  is_favorite: false,
+  plates: [
+    {
+      id: "plate",
+      print_id: "print",
+      filename: "file.stl",
+      position: 0,
+      url: "/file.stl",
+      mime: "model/stl",
+      size: 1,
+    },
+  ],
+};
+
 describe("plate uploads", () => {
   beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
 
@@ -124,31 +148,16 @@ describe("plate uploads", () => {
     await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
   });
 
+  it("keeps an upload unresolved if a returned plate has no file URL", async () => {
+    const [plate] = uploadPrint.plates;
+    const print = { ...uploadPrint, plates: [{ ...plate, url: undefined }] };
+    respond(200, JSON.stringify({ print, added_plate_ids: [plate.id] }));
+    await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
+  });
+
   it("accepts a valid legacy upload response without added_plate_ids", async () => {
-    const print = {
-      id: "print",
-      name: "Example",
-      tags: [],
-      preview_images: [],
-      created_at: "2026-01-01T00:00:00.000Z",
-      supporting_file_count: 0,
-      view_count: 0,
-      print_count: 0,
-      is_favorite: false,
-      plates: [
-        {
-          id: "plate",
-          print_id: "print",
-          filename: "file.stl",
-          position: 0,
-          url: "/file.stl",
-          mime: "model/stl",
-          size: 1,
-        },
-      ],
-    };
-    respond(200, JSON.stringify({ print }));
-    await expect(printsApi.addPlates("print", [])).resolves.toStrictEqual({ print });
+    respond(200, JSON.stringify({ print: uploadPrint }));
+    await expect(printsApi.addPlates("print", [])).resolves.toStrictEqual({ print: uploadPrint });
   });
 
   it("treats a validation error as a definite rejection", async () => {
@@ -174,5 +183,62 @@ describe("plate uploads", () => {
     await expect(printsApi.supportsIdempotentPlateUploads("print")).resolves.toBe(true);
     respond(401, "Unauthorized");
     await expect(printsApi.supportsIdempotentPlateUploads("print")).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+});
+
+describe.each([
+  { resource: "plate", resultId: "plate_id", lookup: printsApi.getPlateUploadResults },
+  { resource: "preview", resultId: "image_id", lookup: printsApi.getPreviewUploadResults },
+])("$resource upload receipts", ({ lookup, resultId }) => {
+  beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  const respond = (status: number, body: string) =>
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(body, { status })));
+
+  it("returns completed receipts even when the uploaded file has since been removed", async () => {
+    const body = {
+      print: uploadPrint,
+      upload_results: [
+        { upload_id: "first", [resultId]: "removed" },
+        { upload_id: "second", [resultId]: null },
+      ],
+    };
+    respond(200, JSON.stringify(body));
+    await expect(lookup("print", ["first", "second", "pending"])).resolves.toEqual(body);
+  });
+
+  it.each([
+    { print: {}, upload_results: [] },
+    { print: { ...uploadPrint, id: "different" }, upload_results: [] },
+    { print: uploadPrint, upload_results: {} },
+    { print: uploadPrint, upload_results: [{ upload_id: "first" }] },
+    { print: uploadPrint, upload_results: [{ upload_id: "other", plate_id: null, image_id: null }] },
+    {
+      print: uploadPrint,
+      upload_results: [
+        { upload_id: "first", plate_id: null, image_id: null },
+        { upload_id: "first", plate_id: null, image_id: null },
+      ],
+    },
+  ])("rejects an incomplete or inconsistent receipt response (%j)", async (body) => {
+    respond(200, JSON.stringify(body));
+    await expect(lookup("print", ["first"])).rejects.toBeInstanceOf(UploadReceiptLookupError);
+  });
+
+  it.each([
+    [200, "Invalid JSON"],
+    [502, "Bad gateway"],
+  ])("returns a typed lookup error for HTTP %i with %s", async (status, body) => {
+    respond(status, body);
+    await expect(lookup("print", [])).rejects.toBeInstanceOf(UploadReceiptLookupError);
+  });
+
+  it("detects older servers and preserves authentication errors", async () => {
+    respond(404, "Not found");
+    await expect(lookup("print", [])).resolves.toBeNull();
+    respond(401, "Unauthorized");
+    await expect(lookup("print", [])).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });

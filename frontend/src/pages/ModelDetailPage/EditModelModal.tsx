@@ -36,6 +36,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import {
   PlateUploadCapabilityError,
   PlateUploadOutcomeUnknownError,
+  UploadReceiptLookupError,
   type LicenseFamily,
   type LicenseOption,
   type Print,
@@ -394,6 +395,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         return;
       }
       console.error(err);
+      if (err instanceof UploadReceiptLookupError) {
+        setError(t("models:edit.uploadReceiptLookupFailed"));
+        return;
+      }
       if (err instanceof PlateUploadCapabilityError) {
         setError(t("models:edit.uploadCapabilityCheckFailed"));
         return;

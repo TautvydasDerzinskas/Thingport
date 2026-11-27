@@ -6912,6 +6912,7 @@
       "fileExtensionRequired": "Palikite pradinį failo plėtinį.",
       "fileSwapUnsupported": "Šis serveris nepalaiko saugaus failų vardų sukeitimo.",
       "fileNameRequired": "Failo pavadinimas privalomas.",
+      "uploadReceiptLookupFailed": "Nepavyko patikrinti, kurie failai išsaugoti. Dar kartą pasirinkite „Atnaujinti“.",
       "uploadCapabilityCheckFailed": "Nepavyko patikrinti, ar galima saugiai pakartoti įkėlimą. Bandykite dar kartą.",
       "previewUploadSkipped": "Nepavyko išsaugoti kai kurių vaizdų. Pašalinkite juos arba bandykite įkelti dar kartą.",
       "previewUploadPending": "Nepavyko patvirtinti vaizdų įkėlimo. Dar kartą pasirinkite „Atnaujinti“, kad patikrintumėte, kurie vaizdai išsaugoti.",

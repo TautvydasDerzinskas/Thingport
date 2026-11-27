@@ -6297,6 +6297,7 @@
       "fileExtensionRequired": "请保留文件原有的扩展名。",
       "fileSwapUnsupported": "此服务器不支持安全地交换文件名。",
       "fileNameRequired": "文件名为必填项。",
+      "uploadReceiptLookupFailed": "无法确认哪些文件已保存。请再次选择“更新”。",
       "uploadCapabilityCheckFailed": "无法确认能否安全地重试上传。请重试。",
       "previewUploadSkipped": "部分图片未能保存。请移除这些图片或重新上传。",
       "previewUploadPending": "无法确认图片是否已上传。请再次选择“更新”，查看已保存的图片。",

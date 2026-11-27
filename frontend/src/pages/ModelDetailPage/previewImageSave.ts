@@ -58,6 +58,14 @@ function applyImageResult(image: NewImageItem, id: string | null, storedImages: 
     : { kind: "existing", id, url };
 }
 
+function hasImageUploadSlots(ids: (string | null)[] | undefined, count: number): ids is (string | null)[] {
+  if (!Array.isArray(ids) || ids.length !== count) return false;
+  const storedIds = ids.filter((id) => id !== null);
+  return (
+    storedIds.every((id) => typeof id === "string" && id.length > 0) && new Set(storedIds).size === storedIds.length
+  );
+}
+
 export function reconcilePreviewUploads(
   items: ImageItem[],
   currentImages: PreviewImage[],
@@ -65,15 +73,12 @@ export function reconcilePreviewUploads(
 ): ImageItem[] {
   const storedImages = new Map(currentImages.map((image) => [image.id, image.url]));
   // On an older server the gallery snapshot alone cannot attribute any image to this upload.
-  const ids = addedIds ?? [];
-  const storedIds = ids.filter((id) => id !== null);
-  const canMatch =
-    ids.length === items.filter((image) => image.kind === "new").length && new Set(storedIds).size === storedIds.length;
+  const canMatch = hasImageUploadSlots(addedIds, items.filter((image) => image.kind === "new").length);
 
   let index = 0;
   return items.map((image) => {
     if (image.kind !== "new") return image;
-    return canMatch ? applyImageResult(image, ids[index++], storedImages) : unconfirmedImage(image);
+    return canMatch ? applyImageResult(image, addedIds[index++], storedImages) : unconfirmedImage(image);
   });
 }
 
@@ -140,6 +145,14 @@ export async function savePreviewUploads(
       submitted.map((image) => image.file),
       hasReceipts ? submitted.filter(isPendingPreviewImage).map((image) => image.pendingUploadId) : undefined,
     );
+    const ids = result.added_image_ids;
+    if (
+      hasReceipts &&
+      (!hasImageUploadSlots(ids, submitted.length) ||
+        ids.some((id) => id !== null && !result.print.preview_images.some((image) => image.id === id)))
+    ) {
+      throw new Error("Could not match the confirmed preview uploads");
+    }
     report({
       print: result.print,
       items: reconcilePreviewUploads(latest.items, result.print.preview_images, result.added_image_ids),

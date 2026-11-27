@@ -144,6 +144,39 @@ describe("savePreviewUploads", () => {
     expect(api.addPreviewImages).toHaveBeenLastCalledWith("model", [expect.any(File)], originalIds);
   });
 
+  it.each([
+    { case: "missing slots", ids: undefined },
+    { case: "the wrong slot count", ids: [] },
+    { case: "an empty image ID", ids: [""] },
+    { case: "a missing image", ids: ["different-image"] },
+  ])("recovers the original key after a keyed upload returns $case", async ({ ids }) => {
+    const { api, save, progress } = previewSaveFixture(pendingImage("first"));
+    const initial = printWithImages();
+    const updated = printWithImages(storedImage("first-saved", 0));
+    api.getPreviewUploadResults
+      .mockResolvedValueOnce({ print: initial, upload_results: [] })
+      .mockResolvedValueOnce(null);
+    api.addPreviewImages.mockResolvedValueOnce({ print: updated, added_image_ids: ids });
+
+    await expect(save()).rejects.toMatchObject({ reason: "pending" });
+
+    const uploadIds = api.addPreviewImages.mock.calls[0][2];
+    expect(uploadIds).toEqual([expect.any(String)]);
+    const [uploadId] = uploadIds ?? [];
+    expect(api.getPreviewUploadResults).toHaveBeenLastCalledWith("model", uploadIds);
+    expect(progress().items).toEqual([expect.objectContaining({ kind: "new", pendingUploadId: uploadId })]);
+
+    api.getPreviewUploadResults.mockResolvedValueOnce({
+      print: updated,
+      upload_results: [{ upload_id: uploadId, image_id: "first-saved" }],
+    });
+    await expect(save()).resolves.toEqual({
+      print: updated,
+      items: [{ kind: "existing", id: "first-saved", url: "/first-saved.jpg" }],
+    });
+    expect(api.addPreviewImages).toHaveBeenCalledTimes(1);
+  });
+
   it("retries pending keyed files when an earlier confirmed image has been deleted", async () => {
     const first = { ...pendingImage("first"), pendingUploadId: "first-key" };
     const second = { ...pendingImage("second"), pendingUploadId: "second-key" };

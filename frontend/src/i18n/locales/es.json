@@ -6779,6 +6779,7 @@
       "fileExtensionRequired": "Conserva la extensión original del archivo.",
       "fileSwapUnsupported": "Este servidor no permite intercambiar nombres de archivo de forma segura.",
       "fileNameRequired": "El nombre del archivo es obligatorio.",
+      "uploadReceiptLookupFailed": "No se pudo comprobar qué archivos se guardaron. Selecciona Actualizar de nuevo.",
       "uploadCapabilityCheckFailed": "No se pudo comprobar si la carga se puede repetir de forma segura. Inténtalo de nuevo.",
       "previewUploadSkipped": "No se pudieron guardar algunas imágenes. Elimínalas o vuelve a intentar subirlas.",
       "previewUploadPending": "No se pudo confirmar la carga de las imágenes. Selecciona Actualizar de nuevo para comprobar cuáles se guardaron.",

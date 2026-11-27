@@ -6792,6 +6792,7 @@
       "fileExtensionRequired": "Conservez l’extension d’origine du fichier.",
       "fileSwapUnsupported": "Ce serveur ne permet pas de permuter les noms de fichiers en toute sécurité.",
       "fileNameRequired": "Le nom du fichier est obligatoire.",
+      "uploadReceiptLookupFailed": "Impossible de vérifier quels fichiers ont été enregistrés. Sélectionnez de nouveau Mettre à jour.",
       "uploadCapabilityCheckFailed": "Impossible de vérifier si l’envoi peut être relancé sans risque. Veuillez réessayer.",
       "previewUploadSkipped": "Certaines images n’ont pas été enregistrées. Retirez-les ou réessayez de les envoyer.",
       "previewUploadPending": "Impossible de confirmer l’envoi des images. Sélectionnez de nouveau Mettre à jour pour vérifier lesquelles ont été enregistrées.",

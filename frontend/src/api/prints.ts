@@ -189,6 +189,13 @@ export class PlateUploadCapabilityError extends Error {
   }
 }
 
+export class UploadReceiptLookupError extends Error {
+  constructor(cause: unknown) {
+    super("Could not check upload receipts", { cause });
+    this.name = "UploadReceiptLookupError";
+  }
+}
+
 export type Print = {
   id: string;
   /** Set on a model a tool brought: it can be opened, downloaded and printed, not edited or deleted. */
@@ -299,41 +306,86 @@ export type License = Omit<LicenseOption, "id" | "family"> & {
   provider: string | null;
 };
 
-function isPlateUploadPrint(value: unknown, printId: string): value is Print {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isUploadId(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function isUploadPrint(value: unknown, printId: string): value is Print {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "id" in value &&
+    isRecord(value) &&
     value.id === printId &&
-    "name" in value &&
     typeof value.name === "string" &&
-    "tags" in value &&
+    typeof value.created_at === "string" &&
+    Number.isFinite(value.supporting_file_count) &&
+    Number.isFinite(value.view_count) &&
+    Number.isFinite(value.print_count) &&
+    typeof value.is_favorite === "boolean" &&
     Array.isArray(value.tags) &&
     value.tags.every((tag) => typeof tag === "string") &&
-    "preview_images" in value &&
     Array.isArray(value.preview_images) &&
     value.preview_images.every(
       (image: unknown) =>
-        typeof image === "object" &&
-        image !== null &&
-        "id" in image &&
-        typeof image.id === "string" &&
-        "url" in image &&
-        typeof image.url === "string",
+        isRecord(image) && isUploadId(image.id) && Number.isFinite(image.position) && typeof image.url === "string",
     ) &&
-    "plates" in value &&
     Array.isArray(value.plates) &&
     value.plates.length > 0 &&
     value.plates.every(
       (plate: unknown) =>
-        typeof plate === "object" &&
-        plate !== null &&
-        "id" in plate &&
-        typeof plate.id === "string" &&
-        "filename" in plate &&
-        typeof plate.filename === "string",
+        isRecord(plate) &&
+        isUploadId(plate.id) &&
+        plate.print_id === printId &&
+        Number.isFinite(plate.position) &&
+        typeof plate.filename === "string" &&
+        typeof plate.mime === "string" &&
+        Number.isFinite(plate.size) &&
+        typeof plate.url === "string",
     )
   );
+}
+
+type UploadResultId = "plate_id" | "image_id";
+type UploadReceipt<K extends UploadResultId> = { upload_id: string } & Record<K, string | null>;
+
+async function getUploadResults<K extends UploadResultId>(
+  printId: string,
+  uploadIds: string[],
+  resource: "plates" | "preview-images",
+  resultId: K,
+): Promise<{ print: Print; upload_results: UploadReceipt<K>[] } | null> {
+  try {
+    const res = await fetch(`${apiBase()}/print/${printId}/${resource}/upload-results`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ upload_ids: uploadIds }),
+    });
+    if (res.status === 404) return null;
+    await assertOkWithMessage(res, "Could not check upload results");
+    const body: unknown = await res.json();
+    if (!isRecord(body) || !isUploadPrint(body.print, printId) || !Array.isArray(body.upload_results)) {
+      throw new Error("The server returned an invalid upload receipt response");
+    }
+    const remaining = new Set(uploadIds);
+    const receipts = body.upload_results;
+    if (
+      !receipts.every(
+        (receipt: unknown): receipt is UploadReceipt<K> =>
+          isRecord(receipt) &&
+          isUploadId(receipt.upload_id) &&
+          remaining.delete(receipt.upload_id) &&
+          (receipt[resultId] === null || isUploadId(receipt[resultId])),
+      )
+    ) {
+      throw new Error("The server returned invalid upload receipts");
+    }
+    return { print: body.print, upload_results: receipts };
+  } catch (error) {
+    if (error instanceof UnauthorizedError) throw error;
+    throw new UploadReceiptLookupError(error);
+  }
 }
 
 export type PrintLicense = { license: License | null; pending: boolean; filling: boolean; failed: boolean };
@@ -669,11 +721,11 @@ export const printsApi = {
     }
     try {
       const body: unknown = await res.json();
-      if (typeof body !== "object" || body === null || !("print" in body) || !isPlateUploadPrint(body.print, printId)) {
+      if (!isRecord(body) || !isUploadPrint(body.print, printId)) {
         throw new Error("The server returned an invalid print after the plate upload");
       }
-      const ids = "added_plate_ids" in body ? body.added_plate_ids : undefined;
-      if (ids !== undefined && (!Array.isArray(ids) || !ids.every((id) => typeof id === "string"))) {
+      const ids = body.added_plate_ids;
+      if (ids !== undefined && (!Array.isArray(ids) || !ids.every(isUploadId))) {
         throw new Error("The server returned invalid plate upload IDs");
       }
       return ids === undefined ? { print: body.print } : { print: body.print, added_plate_ids: ids };
@@ -699,19 +751,8 @@ export const printsApi = {
     }
   },
 
-  getPlateUploadResults: async (
-    printId: string,
-    uploadIds: string[],
-  ): Promise<{ print: Print; upload_results: { upload_id: string; plate_id: string | null }[] } | null> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plates/upload-results`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ upload_ids: uploadIds }),
-    });
-    if (res.status === 404) return null;
-    await assertOkWithMessage(res, "Could not check plate upload results");
-    return res.json();
-  },
+  getPlateUploadResults: (printId: string, uploadIds: string[]) =>
+    getUploadResults(printId, uploadIds, "plates", "plate_id"),
 
   deletePlate: async (printId: string, plateId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/plates/${plateId}`, {
@@ -1056,22 +1097,18 @@ export const printsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new PrintApiError(await readErrorMessage(res, "Failed to add preview image"), res.status, null);
-    return res.json();
+    const body: unknown = await res.json();
+    if (!isRecord(body) || !isUploadPrint(body.print, id)) {
+      throw new Error("The server returned an invalid print after the preview upload");
+    }
+    const ids = body.added_image_ids;
+    return Array.isArray(ids) && ids.every((imageId: unknown) => imageId === null || isUploadId(imageId))
+      ? { print: body.print, added_image_ids: ids }
+      : { print: body.print };
   },
 
-  getPreviewUploadResults: async (
-    id: string,
-    uploadIds: string[],
-  ): Promise<{ print: Print; upload_results: { upload_id: string; image_id: string | null }[] } | null> => {
-    const res = await fetch(`${apiBase()}/print/${id}/preview-images/upload-results`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ upload_ids: uploadIds }),
-    });
-    if (res.status === 404) return null;
-    await assertOkWithMessage(res, "Could not check preview upload results");
-    return res.json();
-  },
+  getPreviewUploadResults: (printId: string, uploadIds: string[]) =>
+    getUploadResults(printId, uploadIds, "preview-images", "image_id"),
 
   deletePreviewImage: async (printId: string, imageId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/preview-images/${imageId}`, {

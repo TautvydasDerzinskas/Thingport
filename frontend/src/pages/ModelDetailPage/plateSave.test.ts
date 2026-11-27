@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { PlateUploadCapabilityError, PlateUploadOutcomeUnknownError, type Plate, type Print } from "../../api/prints";
+import {
+  PlateUploadCapabilityError,
+  PlateUploadOutcomeUnknownError,
+  UploadReceiptLookupError,
+  type Plate,
+  type Print,
+} from "../../api/prints";
 import { normalizeFileName } from "../../utils/fileNames.generated";
 import {
   plateFilenameError,
@@ -277,38 +283,116 @@ describe("savePlateChanges", () => {
     expect(result.plates.map((candidate) => candidate.id)).toEqual(["original", "second-plate"]);
   });
 
-  it("continues the same update when a lost response is fully confirmed by its receipt", async () => {
-    const original = plate("original", "base.3mf", 0);
-    const uploaded = plate("uploaded", "thingport-upload-new-part.3mf", 1);
-    const initial = print(original);
-    const afterUpload = print(original, uploaded);
-    const afterDelete = print(uploaded);
-    const afterRename = print({ ...uploaded, filename: "part.3mf", position: 0 });
+  it.each(["a lost response", "an acknowledgement without the uploaded plate"])(
+    "continues the same update when a receipt confirms the upload after %s",
+    async (outcome) => {
+      const original = plate("original", "base.3mf", 0);
+      const uploaded = plate("uploaded", "thingport-upload-new-part.3mf", 1);
+      const initial = print(original);
+      const afterUpload = print(original, uploaded);
+      const afterDelete = print(uploaded);
+      const afterRename = print({ ...uploaded, filename: "part.3mf", position: 0 });
+      const api = {
+        get: vi.fn<PlateSaveApi["get"]>().mockResolvedValue(initial),
+        getPlateUploadResults: vi.fn<NonNullable<PlateSaveApi["getPlateUploadResults"]>>().mockResolvedValue({
+          print: afterUpload,
+          upload_results: [{ upload_id: "new", plate_id: "uploaded" }],
+        }),
+        addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+        supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+        deletePlate: vi.fn<PlateSaveApi["deletePlate"]>().mockResolvedValue({ print: afterDelete }),
+        renamePlate: vi.fn<PlateSaveApi["renamePlate"]>().mockResolvedValue({ print: afterRename }),
+        reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: afterRename }),
+      };
+      if (outcome === "a lost response") {
+        api.addPlates.mockRejectedValue(new PlateUploadOutcomeUnknownError("response lost"));
+      } else {
+        api.addPlates.mockResolvedValue({ print: initial, added_plate_ids: ["uploaded"] });
+      }
+      const items: PlateItem[] = [
+        { kind: "new", localId: "new", file: new File(["mesh"], "part.3mf"), filename: "part.3mf" },
+      ];
+
+      await expect(savePlateChanges(initial, items, new Set(["original"]), api, () => {})).resolves.toEqual(
+        afterRename,
+      );
+
+      expect(api.addPlates).toHaveBeenCalledTimes(1);
+      expect(api.getPlateUploadResults).toHaveBeenCalledExactlyOnceWith("model", ["new"]);
+      expect(api.deletePlate).toHaveBeenCalledExactlyOnceWith("model", "original");
+      expect(api.renamePlate).toHaveBeenCalledExactlyOnceWith("model", "uploaded", "part.3mf");
+      expect(api.reorderPlates).toHaveBeenCalledExactlyOnceWith("model", ["uploaded"]);
+    },
+  );
+
+  it.each([
+    { case: "a legacy acknowledgement with no upload marker", ids: undefined },
+    { case: "an acknowledgement whose plate is absent", ids: ["uploaded"] },
+  ])("keeps an upload pending after $case when safe retries are unsupported", async ({ ids }) => {
+    const initial = print(plate("original", "base.3mf", 0));
     const api = {
       get: vi.fn<PlateSaveApi["get"]>().mockResolvedValue(initial),
-      getPlateUploadResults: vi.fn<NonNullable<PlateSaveApi["getPlateUploadResults"]>>().mockResolvedValue({
-        print: afterUpload,
-        upload_results: [{ upload_id: "new", plate_id: "uploaded" }],
-      }),
-      addPlates: vi
-        .fn<PlateSaveApi["addPlates"]>()
-        .mockRejectedValue(new PlateUploadOutcomeUnknownError("response lost")),
-      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
-      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>().mockResolvedValue({ print: afterDelete }),
-      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>().mockResolvedValue({ print: afterRename }),
-      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: afterRename }),
+      getPlateUploadResults: vi.fn<NonNullable<PlateSaveApi["getPlateUploadResults"]>>().mockResolvedValue(null),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>().mockResolvedValue({ print: initial, added_plate_ids: ids }),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>().mockResolvedValue(false),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(),
     };
-    const items: PlateItem[] = [
-      { kind: "new", localId: "new", file: new File(["mesh"], "part.3mf"), filename: "part.3mf" },
-    ];
+    const item = {
+      kind: "new",
+      localId: "new",
+      file: new File(["mesh"], "part.3mf"),
+      filename: "part.3mf",
+    } as const;
+    let progress: PlateSaveProgress = { print: initial, items: [item], removedPlateIds: new Set() };
+    const attempt = () =>
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, (next) => {
+        progress = next;
+      });
 
-    await expect(savePlateChanges(initial, items, new Set(["original"]), api, () => {})).resolves.toEqual(afterRename);
+    await expect(attempt()).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+    expect(progress.items).toEqual([{ ...item, uploadAttempted: true, uploadOutcomeUnknown: true }]);
 
+    await expect(attempt()).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+    expect(progress.items).toEqual([{ ...item, uploadAttempted: true, uploadOutcomeUnknown: true }]);
     expect(api.addPlates).toHaveBeenCalledTimes(1);
-    expect(api.getPlateUploadResults).toHaveBeenCalledExactlyOnceWith("model", ["new"]);
-    expect(api.deletePlate).toHaveBeenCalledExactlyOnceWith("model", "original");
-    expect(api.renamePlate).toHaveBeenCalledExactlyOnceWith("model", "uploaded", "part.3mf");
-    expect(api.reorderPlates).toHaveBeenCalledExactlyOnceWith("model", ["uploaded"]);
+    expect(api.reorderPlates).not.toHaveBeenCalled();
+  });
+
+  it("reports the last usable print and keeps the upload pending when receipt validation fails", async () => {
+    const initial = print(plate("original", "base.3mf", 0));
+    const error = new UploadReceiptLookupError(new Error("Invalid receipt response"));
+    const api = {
+      get: vi.fn<PlateSaveApi["get"]>(),
+      getPlateUploadResults: vi.fn<NonNullable<PlateSaveApi["getPlateUploadResults"]>>().mockRejectedValue(error),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(),
+    };
+    const progress = {
+      print: initial,
+      items: [
+        {
+          kind: "new",
+          localId: "pending",
+          file: new File(["mesh"], "part.3mf"),
+          filename: "part.3mf",
+          uploadAttempted: true,
+          uploadOutcomeUnknown: true,
+        },
+      ],
+      removedPlateIds: new Set<string>(),
+    } satisfies PlateSaveProgress;
+    const onProgress = vi.fn<(progress: PlateSaveProgress) => void>();
+
+    await expect(savePlateChanges(initial, progress.items, progress.removedPlateIds, api, onProgress)).rejects.toBe(
+      error,
+    );
+    expect(onProgress).toHaveBeenCalledExactlyOnceWith(progress);
+    expect(api.addPlates).not.toHaveBeenCalled();
   });
 
   it("tracks legacy upload responses by request-specific filename when a concurrent plate is present", async () => {
