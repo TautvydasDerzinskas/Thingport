@@ -7,12 +7,29 @@ const FILL = 0.95;
 /** Points enough to find a model's edges; a big mesh is thinned to about this many. */
 const OUTLINE_POINTS = 20_000;
 
-/** Points spread over the meshes under `root`, in world space, to frame them by. */
-export function outlinePoints(root: THREE.Object3D): THREE.Vector3[] {
+function meshesUnder(root: THREE.Object3D): THREE.Mesh[] {
   const meshes: THREE.Mesh[] = [];
   root.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh);
   });
+  return meshes;
+}
+
+/** Whether `test` holds for every vertex of the meshes under `root`, in world space. */
+function everyVertex(root: THREE.Object3D, test: (vertex: THREE.Vector3) => boolean): boolean {
+  const vertex = new THREE.Vector3();
+  return meshesUnder(root).every((mesh) => {
+    const position = mesh.geometry.attributes.position;
+    if (!position) return true;
+    for (let i = 0; i < position.count; i++)
+      if (!test(vertex.fromBufferAttribute(position, i).applyMatrix4(mesh.matrixWorld))) return false;
+    return true;
+  });
+}
+
+/** Points spread over the meshes under `root`, in world space, to frame them by. */
+export function outlinePoints(root: THREE.Object3D): THREE.Vector3[] {
+  const meshes = meshesUnder(root);
   const total = meshes.reduce((sum, mesh) => sum + (mesh.geometry.attributes.position?.count ?? 0), 0);
   const stride = Math.max(1, Math.ceil(total / OUTLINE_POINTS));
   const points: THREE.Vector3[] = [];
@@ -30,24 +47,27 @@ export function outlinePoints(root: THREE.Object3D): THREE.Vector3[] {
  *  The camera's aspect must already be the picture's. Returns the point it looks at. */
 export function placeCamera(
   camera: THREE.PerspectiveCamera,
-  model: Pick<SceneModel, "radius" | "height" | "outline">,
+  model: Pick<SceneModel, "root" | "radius" | "height" | "outline">,
   angle: AngleDef,
 ): THREE.Vector3 {
   const az = THREE.MathUtils.degToRad(angle.azimuth);
   const el = THREE.MathUtils.degToRad(angle.elevation);
   const direction = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
   const target = new THREE.Vector3(0, model.height / 2, 0);
-  const point = new THREE.Vector3();
-  let distance = model.radius * angle.distance;
-  for (let step = 0; step < 80; step++, distance *= 1.05) {
+  const place = (distance: number) => {
     camera.position.copy(direction).multiplyScalar(distance);
     camera.lookAt(target);
     camera.updateMatrixWorld();
-    const inFrame = model.outline.every((each) => {
-      point.copy(each).project(camera);
-      return Math.abs(point.x) <= FILL && Math.abs(point.y) <= FILL;
-    });
-    if (inFrame) break;
-  }
+  };
+  const point = new THREE.Vector3();
+  const inFrame = (each: THREE.Vector3) => {
+    point.copy(each).project(camera);
+    return Math.abs(point.x) <= FILL && Math.abs(point.y) <= FILL;
+  };
+  let distance = model.radius * angle.distance;
+  place(distance);
+  // The thinned points find the distance quickly; every vertex is then checked there, as thinning can miss a spike's tip.
+  for (let step = 0; step < 80 && !model.outline.every(inFrame); step++) place((distance *= 1.05));
+  for (let step = 0; step < 80 && !everyVertex(model.root, inFrame); step++) place((distance *= 1.05));
   return target;
 }

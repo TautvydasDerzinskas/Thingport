@@ -3,21 +3,23 @@ import { describe, expect, it } from "vitest";
 import { outlinePoints, placeCamera } from "./frame";
 import { ANGLES } from "./scenes";
 
+type Framed = { root: THREE.Object3D; radius: number; height: number; outline: THREE.Vector3[] };
+
 /** A box model as `loadSceneModel` gives it: standing on y = 0, centred, `x` × `y` × `z` mm. */
-function box(x: number, y: number, z: number) {
+function box(x: number, y: number, z: number): Framed {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(x, y, z));
   mesh.position.y = y / 2;
   mesh.updateMatrixWorld();
-  return { radius: Math.hypot(x, y, z) / 2, height: y, outline: outlinePoints(mesh) };
+  return { root: mesh, radius: Math.hypot(x, y, z) / 2, height: y, outline: outlinePoints(mesh) };
 }
 
 /** Each angle whose picture of `model` at 4:3 leaves part of it outside the frame. */
-function cutOff(model: ReturnType<typeof box>): string[] {
+function cutOff(model: Framed): string[] {
   return ANGLES.filter((angle) => {
     const camera = new THREE.PerspectiveCamera(30, 4 / 3, 0.1, 100_000);
     placeCamera(camera, model, angle);
-    return model.outline.some((point) => {
-      const p = point.clone().project(camera);
+    return outlinePoints(model.root).some((point) => {
+      const p = point.project(camera);
       return Math.abs(p.x) > 1 || Math.abs(p.y) > 1;
     });
   }).map((angle) => angle.id);
@@ -35,12 +37,35 @@ describe("framing a model", () => {
     const keyring = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 5, 48).scale(20, 1, 12.5));
     keyring.position.y = 2.5;
     keyring.updateMatrixWorld();
-    const model = { radius: Math.hypot(40, 5, 25) / 2, height: 5, outline: outlinePoints(keyring) };
+    const model = { root: keyring, radius: Math.hypot(40, 5, 25) / 2, height: 5, outline: outlinePoints(keyring) };
     for (const angle of ANGLES) {
       const camera = new THREE.PerspectiveCamera(30, 4 / 3, 0.1, 100_000);
       placeCamera(camera, model, angle);
       expect(camera.position.length()).toBeCloseTo(model.radius * angle.distance, 6);
     }
+  });
+
+  it("keeps a point in the picture that the thinned points missed", () => {
+    // A 60 mm plate with a wire reaching 150 mm out of it, and only the plate's points to search with.
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(60, 2, 60));
+    plate.position.y = 1;
+    const wire = new THREE.Mesh(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(),
+        new THREE.Vector3(0, 1, 150),
+        new THREE.Vector3(1),
+      ]),
+    );
+    const root = new THREE.Group().add(plate, wire);
+    root.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(root);
+    const model = {
+      root,
+      radius: bounds.getBoundingSphere(new THREE.Sphere()).radius,
+      height: bounds.max.y,
+      outline: outlinePoints(plate),
+    };
+    expect(cutOff(model)).toEqual([]);
   });
 
   it("thins a big mesh's points but keeps them spread over all of it", () => {

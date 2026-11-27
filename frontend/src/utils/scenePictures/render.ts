@@ -65,6 +65,7 @@ export async function loadSceneModel(url: string, filename: string, plate: numbe
   const center = box.getCenter(new THREE.Vector3());
   root.position.sub(new THREE.Vector3(center.x, box.min.y, center.z));
   wrapper.updateMatrixWorld(true);
+  const textures = new Set<THREE.Texture>();
   wrapper.traverse((child) => {
     const mesh = child as THREE.Mesh;
     if (!mesh.isMesh) return;
@@ -77,12 +78,15 @@ export async function loadSceneModel(url: string, filename: string, plate: numbe
         color: (m as THREE.MeshStandardMaterial).color?.clone() ?? new THREE.Color("#dddddd"),
         map: (m as THREE.MeshStandardMaterial).map ?? null,
         vertexColors: Boolean((m as THREE.MeshStandardMaterial).vertexColors),
+        // A sheet seen from behind would vanish if a double-sided surface became one-sided.
+        side: m.side,
         roughness: 0.38,
         metalness: 0,
       });
       copy.userData.ownColor = copy.color.clone();
       copy.userData.ownMap = copy.map;
       copy.userData.ownVertexColors = copy.vertexColors;
+      if (copy.map) textures.add(copy.map);
       return copy;
     });
     if (mesh.material.length === 1) mesh.material = mesh.material[0];
@@ -98,7 +102,11 @@ export async function loadSceneModel(url: string, filename: string, plate: numbe
     hasColour,
     plates,
     plate: chosen,
-    dispose: () => disposeObject3D(wrapper),
+    dispose: () => {
+      disposeObject3D(wrapper);
+      // Freeing a material leaves its texture, which a filament colour may have taken off it anyway.
+      for (const texture of textures) texture.dispose();
+    },
   };
 }
 
