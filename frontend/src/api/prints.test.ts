@@ -242,3 +242,36 @@ describe.each([
     await expect(lookup("print", [])).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });
+
+describe("printsApi.renamePlates", () => {
+  beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  const respond = (status: number, body: unknown) =>
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status })));
+  const rename = () => printsApi.renamePlates("print", [{ plate_id: "plate", filename: "other.stl" }]);
+
+  it("takes an older server's catch-all 404 for a server that can't swap names", async () => {
+    respond(404, { detail: "Not found" });
+    await expect(rename()).resolves.toBeNull();
+  });
+
+  it.each([
+    ["plate_not_found", "Plate not found"],
+    ["print_not_found", "Print not found"],
+  ])("fails with the server's message when it answers %s", async (code, detail) => {
+    respond(404, { detail, code });
+    await expect(rename()).rejects.toThrow(detail);
+  });
+
+  it.each([{}, { print: { id: "print" } }])("rejects a renamed model it can't read (%j)", async (body) => {
+    respond(200, body);
+    await expect(rename()).rejects.toThrow("invalid print");
+  });
+
+  it("returns the renamed model", async () => {
+    respond(200, { print: uploadPrint });
+    await expect(rename()).resolves.toEqual({ print: uploadPrint });
+  });
+});

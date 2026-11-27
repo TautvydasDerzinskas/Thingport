@@ -663,7 +663,7 @@ async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Pl
       const byId = new Map(plates.map((plate) => [plate.id, plate]));
       const planned = edits.map(({ plate_id, filename }) => {
         const plate = byId.get(plate_id);
-        if (!plate) throw new HttpError(404, "Plate not found");
+        if (!plate) throw new HttpError(404, "Plate not found", "plate_not_found");
         if (!preservesFileExtension(plate.filename, filename)) {
           throw new HttpError(400, "Keep the file's original extension");
         }

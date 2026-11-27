@@ -806,9 +806,18 @@ export const printsApi = {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ renames }),
     });
-    if (res.status === 404) return null;
+    // Only an older server's catch-all 404 comes without a code; a gone plate or model has one.
+    if (res.status === 404) {
+      const { message, code } = await readCodedError(res, "Could not rename the model files");
+      if (!code) return null;
+      throw new Error(message);
+    }
     await assertOkWithMessage(res, "Could not rename the model files");
-    return res.json();
+    const body: unknown = await res.json();
+    if (!isRecord(body) || !isUploadPrint(body.print, printId)) {
+      throw new Error("The server returned an invalid print after the rename");
+    }
+    return { print: body.print };
   },
 
   setTags: async (id: string, tags: string[]) => {

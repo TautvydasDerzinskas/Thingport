@@ -162,7 +162,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const { renames } = parseBody(renameBatchSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!print) throw new HttpError(404, "Print not found");
+    // Coded, so the app can tell these 404s from an older server's catch-all for a route it doesn't have.
+    if (!print) throw new HttpError(404, "Print not found", "print_not_found");
     await renamePlates(print, renames);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),

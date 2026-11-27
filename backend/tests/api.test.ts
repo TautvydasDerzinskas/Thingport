@@ -328,6 +328,11 @@ describe("plate add/remove/reorder/rename", () => {
       filename: "swap-a",
     });
     expect(badName.status).toBe(400);
+    const gone = await auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+      renames: [{ plate_id: "no-such-plate", filename: "swap-c.stl" }],
+    });
+    expect(gone.status).toBe(404);
+    expect(gone.body.code).toBe("plate_not_found");
 
     const swap = () =>
       auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
