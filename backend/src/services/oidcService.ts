@@ -508,12 +508,11 @@ export function clearFlowCookie(): string {
   return `${FLOW_COOKIE}=; Path=${FLOW_COOKIE_PATH}; Max-Age=0; HttpOnly; SameSite=Lax`;
 }
 
-export async function enabledProvidersForSignIn(): Promise<Array<{ slug: string; name: string }>> {
-  if (!(await getPublicUrl())) return [];
-  const providers = await prisma.oidcProvider.findMany({
+export async function enabledProvidersForSignIn(db: Pick<Prisma.TransactionClient, "setting" | "oidcProvider">) {
+  if (!(await getPublicUrl(db))) return [];
+  return db.oidcProvider.findMany({
     where: { enabled: true },
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     select: { slug: true, name: true },
   });
-  return providers;
 }

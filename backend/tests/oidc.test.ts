@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import * as dbModule from "../src/db";
 import { prisma } from "../src/db";
+import * as settingsModule from "../src/services/settingsService";
 import {
   getEmailPasswordEnabled,
   getPublicUrl,
@@ -171,12 +172,19 @@ it("keeps sign-in method changes waiting during long account cleanup", async () 
   const mutation = withSignInMethodsTransaction(async () => {
     mutationRan = true;
   });
-  await new Promise((resolve) => setTimeout(resolve, 5_100));
-  const wasBlocked = !mutationRan;
-  finishCleanup();
-  await Promise.all([deletion, mutation]);
-
-  expect(wasBlocked).toBe(true);
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 5_100));
+    expect(mutationRan).toBe(false);
+    const [sessions] = await prisma.$queryRaw<{ count: number }[]>`
+      SELECT count(*)::int AS count FROM pg_stat_activity
+      WHERE datname = current_database() AND pid <> pg_backend_pid()
+        AND query LIKE '%SELECT pg_try_advisory_lock(%'
+    `;
+    expect(sessions.count).toBe(1);
+  } finally {
+    finishCleanup();
+    await Promise.all([deletion, mutation]);
+  }
   expect(mutationRan).toBe(true);
 });
 
@@ -714,6 +722,50 @@ describe("signing in through a provider", () => {
     expect(slugs).not.toContain(off.slug);
     const fragment = await signIn(off.slug, { sub: "x" });
     expect(fragment.get("error")).toMatch(/isn't available/);
+  });
+
+  it("reads the password setting and providers from the same snapshot", async () => {
+    const provider = await addProvider();
+    await setEmailPasswordEnabled(false);
+    const readEmailPasswordEnabled = settingsModule.getEmailPasswordEnabled;
+    let passwordSettingRead = false;
+    let resumeDiscovery!: () => void;
+    const paused = new Promise<void>((resolve) => {
+      resumeDiscovery = resolve;
+    });
+    const readSetting = vi.spyOn(settingsModule, "getEmailPasswordEnabled").mockImplementationOnce(async (db) => {
+      const enabled = await readEmailPasswordEnabled(db);
+      passwordSettingRead = true;
+      await paused;
+      return enabled;
+    });
+    const pending = request(app)
+      .get("/api/health")
+      .then((res) => res);
+    try {
+      try {
+        await vi.waitFor(() => expect(passwordSettingRead).toBe(true));
+        await setEmailPasswordEnabled(true);
+        await prisma.oidcProvider.update({ where: { id: provider.id }, data: { enabled: false } });
+      } finally {
+        resumeDiscovery();
+      }
+      const before = await pending;
+      expect(before.status).toBe(200);
+      expect(before.body).toMatchObject({
+        email_password_enabled: false,
+        oidc_providers: expect.arrayContaining([expect.objectContaining({ slug: provider.slug })]),
+      });
+      const after = await request(app).get("/api/health");
+      expect(after.status).toBe(200);
+      expect(after.body.email_password_enabled).toBe(true);
+      expect(after.body.oidc_providers).not.toContainEqual(expect.objectContaining({ slug: provider.slug }));
+    } finally {
+      await pending;
+      readSetting.mockRestore();
+      await setEmailPasswordEnabled(true);
+      await prisma.oidcProvider.delete({ where: { id: provider.id } });
+    }
   });
 
   it("refuses someone unknown unless the provider may create accounts", async () => {
