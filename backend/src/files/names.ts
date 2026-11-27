@@ -43,13 +43,35 @@ const bytes = (text: string) => utf8.encode(text).length;
 const graphemes =
   typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : undefined;
 
+/** Without Intl.Segmenter (an older browser), the clusters a name holds, so its cut lands where the server's does: a
+ *  character with the marks, joiners and modifiers that attach to it, emoji joined by zero-width joiners, a flag's two
+ *  letters, Indic conjuncts, and CR LF. Names are NFC by then, so Hangul comes as syllables. Built only here, so a
+ *  browser without one of these properties falls back to code points rather than failing to load. */
+function fallbackClusters(text: string): Iterable<string> {
+  try {
+    // Thai and Lao AM are letters that Unicode attaches like spacing marks.
+    const extend = String.raw`[\p{Grapheme_Extend}\p{Emoji_Modifier}\p{Mc}\u200D\u0E33\u0EB3]`;
+    // A virama between two consonants of these six scripts joins them into one conjunct (Unicode's InCB).
+    const consonant = String.raw`[\u0915-\u0939\u0958-\u095F\u0978-\u097F\u0995-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09DC\u09DD\u09DF\u09F0\u09F1\u0A95-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0AF9\u0B15-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B5C\u0B5D\u0B5F\u0B71\u0C15-\u0C28\u0C2A-\u0C39\u0C58-\u0C5A\u0D15-\u0D3A]`;
+    const virama = String.raw`[\u094D\u09CD\u0ACD\u0B4D\u0C4D\u0D4D]`;
+    const joins = String.raw`[\p{Grapheme_Extend}\p{Emoji_Modifier}\u200D]`;
+    const conjunct = String.raw`${consonant}(?:${joins}*${virama}${joins}*${consonant})*`;
+    const pictograph = String.raw`\p{Extended_Pictographic}`;
+    // Pictographs joined by one zero-width joiner each, with marks or skin tones before it.
+    const emoji = String.raw`${pictograph}(?:[\p{Grapheme_Extend}\p{Emoji_Modifier}]*\u200D${pictograph})+`;
+    const cluster = new RegExp(String.raw`\r\n|(?:${emoji}|\p{Regional_Indicator}{2}|${conjunct}|[^])${extend}*`, "gu");
+    return text.match(cluster) ?? [];
+  } catch {
+    return text;
+  }
+}
+
 /** `text` cut to at most `maxBytes` UTF-8 bytes and `maxLength` UTF-16 units, between characters as people see
  *  them. */
 function cut(text: string, maxBytes: number, maxLength = Infinity): string {
   if (bytes(text) <= maxBytes && text.length <= maxLength) return text;
   let out = "";
-  // Older browsers can still plan a rename at code point boundaries; the server normalizes the input.
-  for (const part of graphemes?.segment(text) ?? text) {
+  for (const part of graphemes?.segment(text) ?? fallbackClusters(text)) {
     const segment = typeof part === "string" ? part : part.segment;
     if (bytes(out + segment) > maxBytes || out.length + segment.length > maxLength) break;
     out += segment;

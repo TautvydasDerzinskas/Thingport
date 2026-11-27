@@ -665,6 +665,11 @@ async function createPlateIdempotently(
 
 /** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
 export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
+  // A rename moves its files after its names commit: held off until the file this row names is the one removed.
+  await withPlateRenameLock(print.id, () => removePlateUnlocked(print, plateId));
+}
+
+async function removePlateUnlocked(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
   // The removal and the renumbering commit together, so a failure leaves the plates as they were.
   const target = await prisma.$transaction(async (tx) => {
     await lockPlateList(tx, print.id);
@@ -691,13 +696,11 @@ export async function reorderPlates(printId: string, plateIds: string[]): Promis
   return prisma.$transaction(async (tx) => {
     await lockPlateList(tx, printId);
     const plates = await tx.plate.findMany({ where: { printId }, orderBy: { position: "asc" }, select: { id: true } });
+    if (new Set(plateIds).size !== plateIds.length) throw new HttpError(400, "plate_ids lists a plate twice");
     const known = new Set(plates.map((plate) => plate.id));
-    if (
-      plateIds.length !== plates.length ||
-      new Set(plateIds).size !== plateIds.length ||
-      plateIds.some((id) => !known.has(id))
-    ) {
-      throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids");
+    // Coded, so the app can tell another editor's added or removed plate from a list it got wrong.
+    if (plateIds.length !== plates.length || plateIds.some((id) => !known.has(id))) {
+      throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids", "plate_set_changed");
     }
     await renumberPlates(tx, plateIds);
     return plates[0]?.id !== plateIds[0];

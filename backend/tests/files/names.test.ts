@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   isJunk,
   NAME_MAX_BYTES,
@@ -153,5 +153,66 @@ describe("nameKey", () => {
 describe("isJunk", () => {
   it.each(vectors.junk)("%j: %s", (entryPath, junk) => {
     expect(isJunk(entryPath as string)).toBe(junk);
+  });
+});
+
+describe("a name cut without Intl.Segmenter", () => {
+  // As an older browser plans a rename: its cut must land where the server's does, or the extension it predicts differs.
+  async function withoutSegmenter(): Promise<typeof normalizeFileName> {
+    vi.resetModules();
+    vi.stubGlobal("Intl", Object.create(Intl, { Segmenter: { value: undefined } }));
+    try {
+      return (await import("../../src/files/names")).normalizeFileName;
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }
+  const tricky = [
+    ..."aeb.界 _-0",
+    "\u0301",
+    "\u0338",
+    "\u200D",
+    "\uFE0F",
+    "👨",
+    "👧",
+    "🏽",
+    "🇱",
+    "🇹",
+    "☺",
+    "क",
+    "्",
+    "ष",
+    "ি",
+    "ক",
+    "্",
+    "ত",
+    "ก",
+    "ำ",
+    "้",
+    "ம",
+    "ி",
+    "ຳ",
+    "가",
+    "ٌ",
+    "ద",
+    "్",
+    "ര",
+    "്",
+  ];
+
+  it("keeps a combining mark with its letter", async () => {
+    const name = "界".repeat(76) + "aa.gcode\u0338x.3mf";
+    expect((await withoutSegmenter())(name)).toBe(normalizeFileName(name));
+  });
+
+  it("cuts between the same clusters as the server", async () => {
+    const fallback = await withoutSegmenter();
+    fc.assert(
+      fc.property(fc.array(fc.constantFrom(...tricky), { minLength: 1, maxLength: 40 }), (parts) => {
+        const name = `${"界".repeat(70)}${parts.join("")}.3mf`;
+        expect(fallback(name)).toBe(normalizeFileName(name));
+      }),
+      { numRuns: 500 },
+    );
   });
 });

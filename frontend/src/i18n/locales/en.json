@@ -6580,6 +6580,8 @@
       "fileSwapUnsupported": "This server does not support safely swapping file names.",
       "renameUnconfirmed": "Could not confirm the new file names. Save again to finish renaming.",
       "renameTargetGone": "A file you renamed, or its model, was removed in the meantime. Reload the model to see its files.",
+      "renameNumbered": "Another file is already named {{requested}}, so this one was saved as {{saved}}.",
+      "plateSetChanged": "Someone else added or removed files while this saved. Save again to apply your order.",
       "fileNameRequired": "File name is required.",
       "uploadReceiptLookupFailed": "Could not check which files were saved. Select Update again.",
       "uploadCapabilityCheckFailed": "Could not check whether the upload can be safely retried. Please try again.",

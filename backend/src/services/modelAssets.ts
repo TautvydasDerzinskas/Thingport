@@ -143,17 +143,23 @@ export function assetExists(home: AssetHome, file: AssetFile): boolean {
   return fsSync.existsSync(assetPath(home, file));
 }
 
-/** Whether the picture is there, in the model's folder or the old shared one, for a caller that records or removes
- *  something on the answer: only ENOENT and ENOTDIR mean it isn't, a folder isn't one, and any other error is thrown. */
-export async function assetIsThere(home: AssetHome, file: AssetFile): Promise<boolean> {
+/** Where the picture is as a file, the model's folder first and then the old shared one, for a caller that records or
+ *  removes something on the answer, or reads it: only ENOENT and ENOTDIR mean it isn't there, a folder isn't one, and
+ *  any other error is thrown. Null when it's in neither. */
+export async function findAsset(home: AssetHome, file: AssetFile): Promise<string | null> {
   for (const place of home ? [assetTarget(home, file), legacyAssetPath(file)] : [legacyAssetPath(file)]) {
     try {
-      if ((await fs.stat(place)).isFile()) return true;
+      if ((await fs.stat(place)).isFile()) return place;
     } catch (error) {
       if (!isMissingError(error)) throw error;
     }
   }
-  return false;
+  return null;
+}
+
+/** Whether findAsset finds the picture. */
+export async function assetIsThere(home: AssetHome, file: AssetFile): Promise<boolean> {
+  return (await findAsset(home, file)) !== null;
 }
 
 export async function printAssetHome(printId: string): Promise<AssetHome> {

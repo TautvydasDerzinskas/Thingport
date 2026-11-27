@@ -39,6 +39,7 @@ import {
   PlateUploadOutcomeUnknownError,
   PlateRenameResponseError,
   PlateRenameTargetGoneError,
+  PlateSetChangedError,
   UploadReceiptLookupError,
   type LicenseFamily,
   type LicenseOption,
@@ -63,6 +64,7 @@ import GeneratePicturesDialog from "../../components/media/GeneratePicturesDialo
 import { canPicture } from "../../utils/scenePictures/scenes";
 import {
   plateFilenameError,
+  PlateRenameNumberedError,
   PlateRenameSwapUnsupportedError,
   PlateUploadConfirmationError,
   savePlateChanges,
@@ -412,6 +414,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         setError(t("models:edit.fileSwapUnsupported"));
         return;
       }
+      if (err instanceof PlateRenameNumberedError) {
+        setError(t("models:edit.renameNumbered", { requested: err.requested, saved: err.saved }));
+        return;
+      }
       if (err instanceof PreviewUploadError) {
         setError(t(err.reason === "skipped" ? "models:edit.previewUploadSkipped" : "models:edit.previewUploadPending"));
         return;
@@ -423,6 +429,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       if (err instanceof PlateRenameTargetGoneError) {
         setError(t("models:edit.renameTargetGone"));
+        return;
+      }
+      if (err instanceof PlateSetChangedError) {
+        setError(t("models:edit.plateSetChanged"));
         return;
       }
       if (err instanceof UploadReceiptLookupError) {

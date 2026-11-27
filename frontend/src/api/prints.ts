@@ -427,6 +427,14 @@ export class PlateRenameResponseError extends Error {
   }
 }
 
+/** A reorder refused because another editor added or removed a plate since the list was read. Nothing moved. */
+export class PlateSetChangedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlateSetChangedError";
+  }
+}
+
 /** A batch rename refused because a plate it names, or their model, was removed meanwhile. Nothing was renamed. */
 export class PlateRenameTargetGoneError extends Error {
   constructor(message: string) {
@@ -796,7 +804,8 @@ export const printsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to reorder plates"));
+      const { message, code } = await readCodedError(res, "Failed to reorder plates");
+      throw code === "plate_set_changed" ? new PlateSetChangedError(message) : new Error(message);
     }
     return res.json();
   },
@@ -835,8 +844,10 @@ export const printsApi = {
       if (!code) return null;
       throw new PlateRenameTargetGoneError(message);
     }
-    if (res.status >= 500)
+    // A timeout at a proxy, or a server failure, may come after the names were saved.
+    if (res.status === 408 || res.status >= 500) {
       throw new PlateRenameResponseError(new Error(await readErrorMessage(res, `HTTP ${res.status}`)));
+    }
     if (!res.ok) {
       // Empty only when the answer couldn't be read at all.
       const message = await readErrorMessage(res, "");

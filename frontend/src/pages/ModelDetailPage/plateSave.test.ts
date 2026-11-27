@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  PlateSetChangedError,
   PlateUploadCapabilityError,
   PlateUploadOutcomeUnknownError,
   UploadReceiptLookupError,
@@ -9,6 +10,7 @@ import {
 import { normalizeFileName } from "../../utils/fileNames.generated";
 import {
   plateFilenameError,
+  PlateRenameNumberedError,
   PlateUploadConfirmationError,
   savePlateChanges,
   type PlateItem,
@@ -632,6 +634,113 @@ describe("dependent plate renames", () => {
       { plate_id: "b", filename: "a.gcode.3mf" },
     ]);
     expect(result.plates.map((candidate) => candidate.filename)).toEqual(["b.gcode.3mf", "a.gcode.3mf"]);
+  });
+});
+
+describe("renames another editor's changes get in the way of", () => {
+  // A server that numbers a name another plate in the folder holds, as availablePlateFilename does.
+  function numberingServer(plates: Plate[]) {
+    let current = print(...plates);
+    const numbered = (name: string) => name.replace(/(\.[^.]+)$/, " (2)$1");
+    const api = {
+      get: vi.fn<PlateSaveApi["get"]>(async () => current),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async (_printId, id, filename) => {
+        const name = normalizeFileName(filename);
+        const held = current.plates.some(
+          (other) => other.id !== id && other.filename.toLowerCase() === name.toLowerCase(),
+        );
+        current = print(
+          ...current.plates.map((candidate) =>
+            candidate.id === id ? { ...candidate, filename: held ? numbered(name) : name } : candidate,
+          ),
+        );
+        return { print: current };
+      }),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async () => ({ print: current })),
+    };
+    return {
+      api,
+      set: (next: Print) => {
+        current = next;
+      },
+    };
+  }
+  const edited = (id: string, filename: string): PlateItem => ({
+    kind: "existing",
+    id,
+    filename,
+    filenameEdited: true,
+    folder: null,
+  });
+
+  it("asks for a name again once the plate that took it meanwhile has moved away", async () => {
+    // Another editor named b "c.stl" after this dialog's snapshot was read.
+    const { api } = numberingServer([plate("a", "a.stl", 0), plate("b", "c.stl", 1)]);
+    const stale = print(plate("a", "a.stl", 0), plate("b", "b.stl", 1));
+
+    const result = await savePlateChanges(
+      stale,
+      [edited("a", "c.stl"), edited("b", "d.stl")],
+      new Set(),
+      api,
+      () => {},
+    );
+
+    expect(api.renamePlate.mock.calls.map(([, id, name]) => [id, name])).toEqual([
+      ["a", "c.stl"],
+      ["b", "d.stl"],
+      ["a", "c.stl"],
+    ]);
+    expect(result.plates.map((candidate) => candidate.filename)).toEqual(["c.stl", "d.stl"]);
+  });
+
+  it("reports a numbered name once the rest is saved, when a file outside the save keeps the name", async () => {
+    const { api } = numberingServer([plate("a", "a.stl", 0), plate("x", "c.stl", 1)]);
+    const initial = print(plate("a", "a.stl", 0), plate("x", "c.stl", 1));
+    let progress: PlateSaveProgress | undefined;
+
+    const save = savePlateChanges(initial, [edited("a", "c.stl")], new Set(), api, (updated) => {
+      progress = updated;
+    });
+
+    await expect(save).rejects.toBeInstanceOf(PlateRenameNumberedError);
+    await expect(save).rejects.toMatchObject({ requested: "c.stl", saved: "c (2).stl" });
+    expect(api.renamePlate).toHaveBeenCalledOnce();
+    expect(api.reorderPlates).toHaveBeenCalledOnce();
+    expect(progress?.print.plates.map((candidate) => candidate.filename)).toEqual(["c (2).stl", "c.stl"]);
+  });
+
+  it("puts the draft's order onto the plates there are now when another editor added one", async () => {
+    const { api, set } = numberingServer([plate("a", "a.stl", 0), plate("b", "b.stl", 1)]);
+    const initial = print(plate("a", "a.stl", 0), plate("b", "b.stl", 1));
+    const items: PlateItem[] = [
+      { kind: "existing", id: "b", filename: "b.stl", filenameEdited: false, folder: null },
+      { kind: "existing", id: "a", filename: "a.stl", filenameEdited: false, folder: null },
+    ];
+    api.reorderPlates.mockImplementationOnce(async () => {
+      set(print(plate("a", "a.stl", 0), plate("b", "b.stl", 1), plate("c", "c.stl", 2)));
+      throw new PlateSetChangedError("plate_ids must contain exactly the print's current plate ids");
+    });
+
+    await savePlateChanges(initial, items, new Set(), api, () => {});
+
+    expect(api.reorderPlates.mock.calls.map(([, ids]) => ids)).toEqual([
+      ["b", "a"],
+      ["b", "a", "c"],
+    ]);
+  });
+
+  it("gives up on the order after a few changes in a row", async () => {
+    const { api } = numberingServer([plate("a", "a.stl", 0)]);
+    api.reorderPlates.mockRejectedValue(new PlateSetChangedError("changed"));
+
+    await expect(savePlateChanges(print(plate("a", "a.stl", 0)), [], new Set(), api, () => {})).rejects.toBeInstanceOf(
+      PlateSetChangedError,
+    );
+    expect(api.reorderPlates).toHaveBeenCalledTimes(3);
   });
 });
 

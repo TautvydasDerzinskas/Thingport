@@ -6586,6 +6586,8 @@
       "fileSwapUnsupported": "Dieser Server unterstützt den sicheren Tausch von Dateinamen nicht.",
       "renameUnconfirmed": "Die neuen Dateinamen konnten nicht bestätigt werden. Speichern Sie erneut, um das Umbenennen abzuschließen.",
       "renameTargetGone": "Eine umbenannte Datei oder ihr Modell wurde in der Zwischenzeit entfernt. Laden Sie das Modell neu, um seine Dateien zu sehen.",
+      "renameNumbered": "Eine andere Datei heißt bereits {{requested}}, daher wurde diese als {{saved}} gespeichert.",
+      "plateSetChanged": "Jemand anderes hat beim Speichern Dateien hinzugefügt oder entfernt. Speichern Sie erneut, um Ihre Reihenfolge zu übernehmen.",
       "fileNameRequired": "Dateiname erforderlich.",
       "uploadReceiptLookupFailed": "Es konnte nicht geprüft werden, welche Dateien gespeichert wurden. Klicken Sie erneut auf „Aktualisieren“.",
       "uploadCapabilityCheckFailed": "Es konnte nicht geprüft werden, ob der Upload sicher wiederholt werden kann. Bitte versuchen Sie es erneut.",

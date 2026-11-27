@@ -11,6 +11,7 @@ import {
   assetIsThere,
   assetPath,
   assetTarget,
+  findAsset,
   galleryImageFile,
   galleryThumbFile,
   legacyAssetPath,
@@ -323,10 +324,14 @@ export async function removeGeneratedPreviewImages(printId: string): Promise<voi
   for (const id of generated) await removeGalleryFiles(home, id);
 }
 
-/** The first of `images` whose file is there, by a look that throws on any error but a missing file. */
-async function firstImageThere<T extends { id: string }>(images: T[], home: AssetHome): Promise<T | undefined> {
+/** The first of `images` whose file is there, and that file, by a look that throws on any error but a missing file. */
+async function firstImageThere<T extends { id: string }>(
+  images: T[],
+  home: AssetHome,
+): Promise<{ image: T; file: string } | undefined> {
   for (const image of images) {
-    if (await assetIsThere(home, galleryImageFile(image.id))) return image;
+    const file = await findAsset(home, galleryImageFile(image.id));
+    if (file) return { image, file };
   }
   return undefined;
 }
@@ -343,12 +348,12 @@ export async function resumePreviewUploadCover(printId: string): Promise<void> {
     const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
     const home = (await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } }))?.assetsPath;
     // A look that fails throws, so the pending work stays for when the disk answers again.
-    const cover = await firstImageThere(
+    const found = await firstImageThere(
       images.filter((image) => !image.generated),
       home,
     );
-    const receipt = receipts.find((upload) => upload.imageId === cover?.id);
-    if (!home || !cover || !receipt) {
+    const receipt = receipts.find((upload) => upload.imageId === found?.image.id);
+    if (!home || !found || !receipt) {
       await tx.previewImageUpload.updateMany({ where: pending, data: { coverPending: false } });
       return null;
     }
@@ -356,7 +361,8 @@ export async function resumePreviewUploadCover(printId: string): Promise<void> {
     const plate = await tx.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
     let thumbnailReady = true;
     if (plate && (plate.thumbGenerated || !(await assetIsThere(home, plateThumbFile(plate.id))))) {
-      const jpeg = await fs.readFile(previewImagePath(cover.id, home));
+      // The file the look found, which a folder at the model's own path can't stand in for.
+      const jpeg = await fs.readFile(found.file);
       thumbnailReady = await saveThumbFromBytes(plate.id, jpeg, true, { home, db: tx });
     }
     const generated = await removeGeneratedRows(tx, images);
@@ -442,7 +448,7 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
     ) {
       throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
     }
-    const cover = await firstImageThere(images, print?.assetsPath);
+    const cover = (await firstImageThere(images, print?.assetsPath))?.image;
     await renumberPreviewImages(tx, [...ids, ...unseen]);
     if (cover?.id !== ids[0]) {
       await tx.previewImageUpload.updateMany({ where: { printId, coverPending: true }, data: { coverPending: false } });

@@ -5,6 +5,7 @@ import {
   PlateUploadCapabilityError,
   PlateRenameResponseError,
   PlateRenameTargetGoneError,
+  PlateSetChangedError,
   PlateUploadOutcomeUnknownError,
   printsApi,
   UploadReceiptLookupError,
@@ -277,6 +278,8 @@ describe("printsApi.renamePlates", () => {
   it("can't confirm a rename the server failed partway, or that got no readable answer", async () => {
     respond(500, { detail: "Internal server error" });
     await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+    respond(408, { detail: "Request timed out" });
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
     await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("not json", { status: 200 })));
@@ -286,5 +289,24 @@ describe("printsApi.renamePlates", () => {
   it("returns the renamed model", async () => {
     respond(200, { print: uploadPrint });
     await expect(rename()).resolves.toEqual({ print: uploadPrint });
+  });
+});
+
+describe("printsApi.reorderPlates", () => {
+  beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  const respond = (status: number, body: unknown) =>
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status })));
+
+  it("tells another editor's added or removed plate from a list it got wrong", async () => {
+    const detail = "plate_ids must contain exactly the print's current plate ids";
+    respond(400, { detail, code: "plate_set_changed" });
+    await expect(printsApi.reorderPlates("print", ["plate"])).rejects.toBeInstanceOf(PlateSetChangedError);
+    respond(400, { detail: "plate_ids lists a plate twice" });
+    const wrong = printsApi.reorderPlates("print", ["plate", "plate"]);
+    await expect(wrong).rejects.toThrow("plate_ids lists a plate twice");
+    await expect(wrong).rejects.not.toBeInstanceOf(PlateSetChangedError);
   });
 });

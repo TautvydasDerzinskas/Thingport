@@ -26,6 +26,7 @@ import {
   assetTarget,
   galleryImageFile,
   galleryThumbFile,
+  legacyAssetPath,
   plateAssetHome,
   printAssetHome,
 } from "../src/services/modelAssets";
@@ -220,6 +221,24 @@ describe("recoverable preview uploads", () => {
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
   });
 
+  it("reads the cover from the file it found, past a folder at the model's own path", async () => {
+    const { print, imageId, lookup, where, thumb } = await interruptedCover();
+    const file = galleryImageFile(imageId);
+    const own = previewImagePath(imageId, await printAssetHome(print.id));
+    const legacy = legacyAssetPath(file);
+    await fs.mkdir(path.dirname(legacy), { recursive: true });
+    await fs.rename(own, legacy);
+    await fs.mkdir(own);
+    try {
+      await lookup();
+      expect(await redOf(thumb)).toBeGreaterThan(180);
+      expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
+    } finally {
+      await fs.rm(own, { recursive: true, force: true });
+      await fs.rm(legacy, { force: true });
+    }
+  });
+
   it("keeps the cover work pending while the pictures can't be looked at", async () => {
     const { print, generated, imageId, uploadId, lookup, where, thumb } = await interruptedCover();
     const home = await printAssetHome(print.id);
@@ -268,7 +287,24 @@ describe("recoverable preview uploads", () => {
       ),
     );
     try {
-      const pid = await holding;
+      // A holder that ends before it has the lock fails the test with its own error, instead of leaving it waiting.
+      let hasLock = false;
+      const pid = await Promise.race([
+        holding.then((session) => {
+          hasLock = true;
+          return session;
+        }),
+        holder.then(
+          () => {
+            if (!hasLock) throw new Error("The holder ended before it took the gallery lock");
+            return -1;
+          },
+          (error: unknown) => {
+            if (!hasLock) throw error;
+            return -1;
+          },
+        ),
+      ]);
       const recover = track(Promise.resolve(lookup()));
       await blockedBy(pid);
       const render = track(

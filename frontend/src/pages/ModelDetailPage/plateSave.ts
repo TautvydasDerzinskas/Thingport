@@ -1,4 +1,10 @@
-import { PlateUploadOutcomeUnknownError, printsApi, type Plate, type Print } from "../../api/prints";
+import {
+  PlateSetChangedError,
+  PlateUploadOutcomeUnknownError,
+  printsApi,
+  type Plate,
+  type Print,
+} from "../../api/prints";
 import { UnauthorizedError } from "../../api/client";
 import { normalizeFileName, preservesFileExtension } from "../../utils/fileNames.generated";
 
@@ -33,6 +39,20 @@ export class PlateUploadConfirmationError extends Error {
 }
 
 export class PlateRenameSwapUnsupportedError extends Error {}
+
+/** A file saved under a numbered name, as one this save doesn't rename keeps the name asked for. Everything else in
+ *  the save went through. */
+export class PlateRenameNumberedError extends Error {
+  constructor(
+    readonly requested: string,
+    readonly saved: string,
+  ) {
+    super(`Saved as ${saved}: another file is named ${requested}`);
+    this.name = "PlateRenameNumberedError";
+  }
+}
+
+const MAX_REORDER_ATTEMPTS = 3;
 
 export function plateFilenameError(filename: string, original: string): "required" | "extension" | undefined {
   if (!filename.trim()) return "required";
@@ -239,6 +259,24 @@ export async function savePlateChanges(
         : [],
     ),
   );
+  const numbered: { requested: string; saved: string }[] = [];
+  // Asked again once, after the plate that held its name has moved away.
+  const askedAgain = new Set<string>();
+  /** The other plate in `plate`'s folder holding `name`, which the server numbered `plate`'s name apart from. */
+  const holderOf = (plate: Plate, name: string) =>
+    plateNameKey(plate.folder, plate.filename) === plateNameKey(plate.folder, name)
+      ? undefined
+      : latest.plates.find(
+          (other) =>
+            other.id !== plate.id && plateNameKey(other.folder, other.filename) === plateNameKey(plate.folder, name),
+        );
+  const movesAway = (holder: Plate) => {
+    const target = renameTargets.get(holder.id);
+    return (
+      target !== undefined &&
+      plateNameKey(holder.folder, target.normalized) !== plateNameKey(holder.folder, holder.filename)
+    );
+  };
   while (renameTargets.size) {
     const currentPlates = new Map(latest.plates.map((current) => [current.id, current]));
     const pending = [...renameTargets].flatMap(([id, target]) => {
@@ -265,6 +303,13 @@ export async function savePlateChanges(
       const result = await api.renamePlates?.(print.id, renames);
       if (!result) throw new PlateRenameSwapUnsupportedError();
       latest = result.print;
+      // Every plate of the batch moved together, so a name still held is held by a file outside this save.
+      for (const edit of pending) {
+        const renamed = latest.plates.find((current) => current.id === edit.plate.id);
+        if (renamed && holderOf(renamed, edit.normalized)) {
+          numbered.push({ requested: edit.normalized, saved: renamed.filename });
+        }
+      }
       stagedItems = stagedItems.map((staged) => {
         if (staged.kind !== "existing" || !renameTargets.has(staged.id)) return staged;
         const renamed = latest.plates.find((current) => current.id === staged.id);
@@ -277,6 +322,15 @@ export async function savePlateChanges(
     const res = await api.renamePlate(print.id, plate.id, filename);
     latest = res.print;
     const renamed = latest.plates.find((current) => current.id === plate.id);
+    const holder = renamed && holderOf(renamed, normalized);
+    // Numbered because a plate this save renames away still had the name, as another editor gave it since this
+    // snapshot: asked again once that one has moved.
+    if (holder && movesAway(holder) && !askedAgain.has(plate.id)) {
+      askedAgain.add(plate.id);
+      reportProgress();
+      continue;
+    }
+    if (renamed && holder) numbered.push({ requested: normalized, saved: renamed.filename });
     stagedItems = stagedItems.map((staged) =>
       staged.kind === "existing" && staged.id === plate.id
         ? { ...staged, filename: renamed?.filename ?? filename, filenameEdited: false }
@@ -286,22 +340,36 @@ export async function savePlateChanges(
     reportProgress();
   }
 
-  const currentPlateIds = new Set(latest.plates.map((plate) => plate.id));
-  const finalOrder: string[] = [];
-  const includedPlateIds = new Set<string>();
-  for (const item of stagedItems) {
-    if (item.kind !== "existing" || !currentPlateIds.has(item.id) || includedPlateIds.has(item.id)) continue;
-    finalOrder.push(item.id);
-    includedPlateIds.add(item.id);
+  const orderOf = (current: Print) => {
+    const currentPlateIds = new Set(current.plates.map((plate) => plate.id));
+    const finalOrder: string[] = [];
+    const includedPlateIds = new Set<string>();
+    for (const item of stagedItems) {
+      if (item.kind !== "existing" || !currentPlateIds.has(item.id) || includedPlateIds.has(item.id)) continue;
+      finalOrder.push(item.id);
+      includedPlateIds.add(item.id);
+    }
+    // Concurrent plates absent from the staged list keep their current relative order at the end.
+    for (const plate of current.plates) {
+      if (includedPlateIds.has(plate.id)) continue;
+      finalOrder.push(plate.id);
+      includedPlateIds.add(plate.id);
+    }
+    return finalOrder;
+  };
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const reorderRes = await api.reorderPlates(print.id, orderOf(latest));
+      latest = reorderRes.print ?? latest;
+      break;
+    } catch (error) {
+      // Another editor added or removed a plate since: the draft's order goes onto the plates there are now.
+      if (!(error instanceof PlateSetChangedError) || attempt >= MAX_REORDER_ATTEMPTS) throw error;
+      latest = await api.get(print.id);
+      reportProgress();
+    }
   }
-  // Concurrent plates absent from the staged list keep their current relative order at the end.
-  for (const plate of latest.plates) {
-    if (includedPlateIds.has(plate.id)) continue;
-    finalOrder.push(plate.id);
-    includedPlateIds.add(plate.id);
-  }
-  const reorderRes = await api.reorderPlates(print.id, finalOrder);
-  latest = reorderRes.print ?? latest;
   reportProgress();
+  if (numbered.length) throw new PlateRenameNumberedError(numbered[0].requested, numbered[0].saved);
   return latest;
 }

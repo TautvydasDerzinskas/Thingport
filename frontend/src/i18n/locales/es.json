@@ -6825,6 +6825,8 @@
       "fileSwapUnsupported": "Este servidor no permite intercambiar nombres de archivo de forma segura.",
       "renameUnconfirmed": "No se pudieron confirmar los nuevos nombres de archivo. Guarda de nuevo para terminar de renombrarlos.",
       "renameTargetGone": "Un archivo que renombraste, o su modelo, se eliminó mientras tanto. Vuelve a cargar el modelo para ver sus archivos.",
+      "renameNumbered": "Otro archivo ya se llama {{requested}}, así que este se guardó como {{saved}}.",
+      "plateSetChanged": "Otra persona añadió o eliminó archivos mientras se guardaba. Guarda de nuevo para aplicar tu orden.",
       "fileNameRequired": "El nombre del archivo es obligatorio.",
       "uploadReceiptLookupFailed": "No se pudo comprobar qué archivos se guardaron. Selecciona Actualizar de nuevo.",
       "uploadCapabilityCheckFailed": "No se pudo comprobar si la carga se puede repetir de forma segura. Inténtalo de nuevo.",

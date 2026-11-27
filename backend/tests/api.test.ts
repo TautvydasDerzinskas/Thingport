@@ -403,6 +403,42 @@ describe("plate add/remove/reorder/rename", () => {
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
+  it("removes a plate only once a rename has moved its file", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid move a endsolid"), "move-a.stl")
+      .attach("files", Buffer.from("solid move b endsolid"), "move-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [moving] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+
+    const move = pauseAt("fileState:move.source");
+    const rename = track(
+      Promise.resolve(
+        auth(request(app).post(`/api/print/${modelId}/plate/${moving.id}/rename`)).send({ filename: "moved-a.stl" }),
+      ),
+    );
+    await move.reachedBy(rename);
+    let removed = false;
+    const removal = track(Promise.resolve(auth(request(app).delete(`/api/print/${modelId}/plates/${moving.id}`))));
+    removal.then(
+      () => (removed = true),
+      () => (removed = true),
+    );
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Held off while the rename, its names committed, still moves the file.
+      expect(removed).toBe(false);
+    } finally {
+      move.release();
+    }
+
+    expect((await rename).status).toBe(200);
+    expect((await removal).status).toBe(200);
+    expect(await prisma.plate.findUnique({ where: { id: moving.id } })).toBeNull();
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
   it("appends after a plate removed while the new file was being placed", async () => {
     const uploaded = await auth(request(app).post("/api/upload"))
       .field("mode", "multiplate")
