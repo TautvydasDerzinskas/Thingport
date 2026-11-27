@@ -138,6 +138,8 @@ describe("a copy's settings", () => {
   it("names the printer's presets and keeps the designer's list of changes, but not for their printer", () => {
     expect(settings.printer_settings_id).toBe("Bambu Lab P1S 0.4 nozzle");
     expect(settings.printer_model).toBe("Bambu Lab P1S");
+    // MakerWorld refuses a print profile whose 3MF doesn't say this.
+    expect(settings.printer_variant).toBe("0.4");
     expect(process).toBe("0.20mm Standard @BBL X1C");
     expect(settings.print_settings_id).toBe(process);
     // The printer has no PA6-CF preset, so that filament keeps the designer's.
