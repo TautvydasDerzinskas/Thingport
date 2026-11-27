@@ -190,7 +190,7 @@ export async function addUploadedPreviewImages(
   for await (const buffer of buffers) {
     const uploadId = uploadIds?.[nextUpload++];
     const imageId = uploadId
-      ? await addPreviewImageForUpload(printId, uploadId, buffer, added.length === 0)
+      ? await addPreviewImageForUpload(printId, uploadId, buffer)
       : ((await addPreviewImage(printId, buffer, { keepExif: true }))?.id ?? null);
     onImageResult?.(imageId);
     if (!imageId) continue;

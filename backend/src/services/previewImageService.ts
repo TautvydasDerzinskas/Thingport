@@ -218,12 +218,12 @@ export async function saveGeneratedPlateThumbnail(
 }
 
 /** Publishes the stored image and receipt together. Each worker writes under its own image id so a concurrent
- *  loser can discard its file without touching the winner. */
+ *  loser can discard its file without touching the winner. Every published image may take over as the cover:
+ *  resumePreviewUploadCover acts only for the first current manual one, which needn't be its batch's first. */
 export async function addPreviewImageForUpload(
   printId: string,
   uploadId: string,
   buffer: Buffer,
-  chooseCover: boolean,
 ): Promise<string | null> {
   const where = { printId_uploadId: { printId, uploadId } };
   const previous = await prisma.previewImageUpload.findUnique({ where });
@@ -248,7 +248,7 @@ export async function addPreviewImageForUpload(
         }
         const published = saved ? id : null;
         await tx.previewImageUpload.create({
-          data: { printId, uploadId, imageId: published, coverPending: Boolean(saved && chooseCover) },
+          data: { printId, uploadId, imageId: published, coverPending: Boolean(saved) },
         });
         readyToCommit = true;
         return published;

@@ -145,14 +145,14 @@ describe("recoverable preview uploads", () => {
       return rename(from, to);
     });
     try {
-      await expect(addPreviewImageForUpload(print.id, uploadId, bytes, true)).rejects.toThrow("Disk is full");
+      await expect(addPreviewImageForUpload(print.id, uploadId, bytes)).rejects.toThrow("Disk is full");
     } finally {
       stalled.mockRestore();
     }
 
     expect(await prisma.previewImageUpload.findUnique({ where })).toBeNull();
     expect(await fs.readdir(gallery)).toEqual([]);
-    await expect(addPreviewImageForUpload(print.id, uploadId, bytes, true)).resolves.toEqual(expect.any(String));
+    await expect(addPreviewImageForUpload(print.id, uploadId, bytes)).resolves.toEqual(expect.any(String));
   });
 
   it("discards a JPEG when its database publication rolls back", async () => {
@@ -164,7 +164,7 @@ describe("recoverable preview uploads", () => {
       if (path.dirname(String(to)) === gallery) await prisma.print.delete({ where: { id: print.id } });
     });
     try {
-      await expect(addPreviewImageForUpload(print.id, uploadId, bytes, true)).rejects.toMatchObject({ code: "P2003" });
+      await expect(addPreviewImageForUpload(print.id, uploadId, bytes)).rejects.toMatchObject({ code: "P2003" });
     } finally {
       removed.mockRestore();
     }
@@ -183,7 +183,7 @@ describe("recoverable preview uploads", () => {
       .expect(200);
     const generated = await prisma.previewImage.findFirstOrThrow({ where: { printId: print.id, generated: true } });
     const uploadId = randomUUID();
-    const imageId = await addPreviewImageForUpload(print.id, uploadId, await png(205), true);
+    const imageId = await addPreviewImageForUpload(print.id, uploadId, await png(205));
     if (!imageId) throw new Error("Expected a stored preview image");
     const lookup = () =>
       request(app)
@@ -193,7 +193,19 @@ describe("recoverable preview uploads", () => {
         .expect(200);
     const where = { printId_uploadId: { printId: print.id, uploadId } };
     const thumb = plateThumbPath(plate.id, await plateAssetHome(plate.id));
-    return { print, plate, generated, imageId, lookup, where, thumb };
+    return { print, plate, generated, imageId, uploadId, lookup, where, thumb };
+  }
+
+  // The interrupted batch sent again whole, as a client does when its receipt lookup failed too.
+  async function retryBatch(printId: string, uploadId: string) {
+    const res = await request(app)
+      .post(`/api/print/${printId}/preview-images/idempotent`)
+      .set(auth())
+      .field("upload_ids", [uploadId, randomUUID()])
+      .attach("files", await png(205), "a.png")
+      .attach("files", await png(120), "b.png")
+      .expect(200);
+    return { images: res.body.print.preview_images as { id: string }[], added: res.body.added_image_ids as string[] };
   }
 
   it("resumes the first manual image's cover work from a receipt lookup", async () => {
@@ -271,6 +283,29 @@ describe("recoverable preview uploads", () => {
     expect(images.map((image) => image.id)).toEqual(order);
     expect(await redOf(thumb)).toBeLessThan(30);
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
+  });
+
+  it("covers the model with the batch's first picture on a retry", async () => {
+    const { print, generated, imageId, uploadId, thumb } = await interruptedCover();
+
+    const { images, added } = await retryBatch(print.id, uploadId);
+
+    expect(images.map((image) => image.id)).toEqual([imageId, added[1]]);
+    expect(await prisma.previewImage.findUnique({ where: { id: generated.id } })).toBeNull();
+    expect(await redOf(thumb)).toBeGreaterThan(180);
+  });
+
+  it("covers the model with the retried batch's next picture when the first was removed meanwhile", async () => {
+    const { print, generated, imageId, uploadId, thumb } = await interruptedCover();
+    await request(app).delete(`/api/print/${print.id}/preview-images/${imageId}`).set(auth()).expect(200);
+
+    const { images, added } = await retryBatch(print.id, uploadId);
+
+    // The removed picture's receipt still names it, but doesn't bring it back.
+    expect(added[0]).toBe(imageId);
+    expect(images.map((image) => image.id)).toEqual([added[1]]);
+    expect(await prisma.previewImage.findUnique({ where: { id: generated.id } })).toBeNull();
+    expect(await redOf(thumb)).toBeGreaterThan(100);
   });
 });
 
