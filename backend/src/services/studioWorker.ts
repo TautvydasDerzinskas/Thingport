@@ -247,8 +247,10 @@ async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): 
         return feature?.visible && plateOf(feature) === plate.id;
       });
     const plates = studioPlates(input.document);
+    const hidden = hiddenPlates(input.document);
     const renderPlate =
-      input.render.plate ?? (plates.find((plate) => !plate.hidden && hasBodies(plate)) ?? plates.find(hasBodies))?.id;
+      requestedPlate ??
+      (plates.find((plate) => !hidden.has(plate.id) && hasBodies(plate)) ?? plates.find(hasBodies))?.id;
     const parts = bodies.flatMap((body) => {
       const feature = featureById(input.document, body.id);
       if (!feature?.visible || !isBody(feature) || plateOf(feature) !== renderPlate) return [];

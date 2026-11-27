@@ -4,6 +4,7 @@ import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
 import {
   DEFAULT_PROFILE_ID,
   exportableProfiles,
+  hiddenPlates,
   isBody,
   plateOf,
   profileOf,
@@ -17,6 +18,7 @@ import {
 } from "../studio/document.generated";
 import { traceSummary } from "../studio/trace.generated";
 import { DEFAULT_PRINT_BED } from "../studio/printLayout.generated";
+import { comparePrintProblems } from "../studio/printCheck.generated";
 import { checkProfile } from "../studio/printProfile.generated";
 import { prisma } from "../db";
 import {
@@ -254,8 +256,9 @@ const viewDesign: McpToolDefinition = {
             .map(plateOf)
         : [],
     );
+    const hidden = hiddenPlates(design.document);
     const defaultPlate =
-      plates.find((entry) => !entry.hidden && visiblePlates.has(entry.id)) ??
+      plates.find((entry) => !hidden.has(entry.id) && visiblePlates.has(entry.id)) ??
       plates.find((entry) => visiblePlates.has(entry.id));
     const pending = selected ?? (defaultPlate ? undefined : firstUnopened);
     if (pending?.source) throw new HttpError(422, `Call studio_load_source_plate on ${pending.id} before viewing it.`);
@@ -438,7 +441,10 @@ const checkPrintTool: McpToolDefinition = {
       printers.add(setup?.printer ?? null);
     }
     const bodies = checks.flatMap((check) => check.bodies);
-    const problems = checks.flatMap((check) => check.problems);
+    const problems = checks
+      .flatMap((check) => check.rankedProblems)
+      .toSorted(comparePrintProblems)
+      .map((problem) => problem.text);
     const plates = new Map(document.features.map((feature) => [feature.id, plateOf(feature)]));
     return {
       ...brief(ctx, design),

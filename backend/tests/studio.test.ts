@@ -663,7 +663,7 @@ describe("Studio", () => {
     const hiddenPlate = (await run("create_plate", { profile_id: hidden, name: "Private plate" })).created[0];
     await run("add_box", { ...box, plate_id: finePlate });
     const movedBody = (await run("add_box", { ...box, plate_id: movedPlate, color: "#ff0000" })).created[0];
-    await run("add_box", { ...box, plate_id: hiddenPlate });
+    await run("add_box", { ...box, plate_id: hiddenPlate, color: "#00ff00" });
     await run("move_plate", { plate_id: movedPlate, profile_id: fine, position: 1 });
     await run("move_profile", { profile_id: fine, position: 1 });
     await run("set_print_profile", { profile_id: fine, profile: { settings: { wall_loops: 6 } } });
@@ -732,7 +732,38 @@ describe("Studio", () => {
     await run("set_profile_visibility", { profile_id: fine, visible: false });
     expect((await download("auto")).headers["content-type"]).toBe("model/3mf");
     expect((await save({ picture_plate_id: finePlate })).body.code).toBe("studio_picture_plate_invalid");
+
+    await run("move_profile", { profile_id: hidden, position: 1 });
+    const view = (plate_id?: string) =>
+      callTool(token, "studio_view_design", { design_id: design.id, plate_id, size: 128 });
+    const image = (result: Awaited<ReturnType<typeof view>>) => result.content.find((entry) => entry.type === "image");
+    const shown = image(await view("plate-1"));
+    expect(shown).toBeDefined();
+    expect(image(await view())).toEqual(shown);
+    expect(image(await view(hiddenPlate))).not.toEqual(shown);
   }, 60_000);
+
+  it("ranks MCP print problems across profiles by severity and weight", async () => {
+    const token = await mcpToken(alice);
+    const { data: design } = await callTool(token, "studio_create_design");
+    const tool = (name: string, args: Record<string, unknown> = {}) =>
+      callTool(token, `studio_${name}`, { design_id: design.design_id, ...args });
+    const box = { width: 4, depth: 4, height: 4 };
+    const low = (await tool("add_box", { ...box, position: [0, 0, 2] })).data.created[0];
+    const profile = (await tool("create_profile", { name: "Second profile" })).data.created[0];
+    const plate = (await tool("create_plate", { profile_id: profile, name: "Second plate" })).data.created[0];
+    const wide = (await tool("add_box", { ...box, width: 30, plate_id: plate })).data.created[0];
+    const high = (await tool("add_box", { ...box, position: [0, 6, 5], plate_id: plate })).data.created[0];
+    const bed = [24, 24, 100];
+
+    const expected = [
+      expect.stringContaining(`${wide} doesn't fit`),
+      expect.stringContaining(`${high} is floating 5 mm`),
+      expect.stringContaining(`${low} is floating 2 mm`),
+    ];
+    expect((await tool("check_print", { bed })).data.problems).toEqual(expected);
+    expect((await tool("check_print", { bed, profile_id: profile })).data.problems).toEqual(expected.slice(0, 2));
+  });
 
   it("saves a design to the library: its 3MF, its picture, and what was asked as its description", async () => {
     const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Tag" });
@@ -1518,6 +1549,25 @@ describe("Studio", () => {
       });
       expect(viewed.data.bodies).toBe(1);
       expect(viewed.content.some((entry) => entry.type === "image")).toBe(true);
+
+      const profile = await command(alice, design.id, "create_profile", { name: "Shown" });
+      expect(profile.status).toBe(200);
+      const moved = await command(alice, design.id, "move_plate", {
+        plate_id: "plate-2",
+        profile_id: profile.body.created[0],
+        position: 1,
+      });
+      expect(moved.status).toBe(200);
+      const hidden = await command(alice, design.id, "set_profile_visibility", {
+        profile_id: "profile-1",
+        visible: false,
+      });
+      expect(hidden.status).toBe(200);
+      expect(
+        (await command(alice, design.id, "add_box", { width: 4, depth: 4, height: 4, plate_id: "plate-2" })).status,
+      ).toBe(200);
+      const shown = await callTool(token, "studio_view_design", { design_id: design.id, size: 128 });
+      expect(shown.data.bodies).toBe(2);
     }, 60_000);
 
     it.each([

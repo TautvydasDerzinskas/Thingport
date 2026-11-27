@@ -45,6 +45,8 @@ export type PrintCheck = {
   overlaps: { a: string; b: string; volume: number }[];
   /** Plain-English lines saying what to fix, the worst first, each naming the body; empty when it's all fine. */
   problems: string[];
+  /** Retains severity so reports from different print profiles can be combined. */
+  rankedProblems: PrintProblem[];
 };
 
 /** mm: within this of a limit meets it, so rounding never makes a problem of a body that's exactly right. */
@@ -261,8 +263,9 @@ const listed = (items: string[]) =>
 const AXES = ["x", "y", "z"];
 const EXTENTS = ["wide", "deep", "tall"];
 
-/** What to fix, worst first: what can't print at all, then what prints wrong, then what may print poorly. */
-const RANK = {
+/** Report order. Build failures lead, solid checks are ranked by severity, and open meshes come last. */
+export const PRINT_PROBLEM_RANK = {
+  invalid: -1,
   empty: 0,
   tooBig: 1,
   offBed: 2,
@@ -272,10 +275,15 @@ const RANK = {
   pieces: 6,
   overhang: 7,
   thin: 8,
+  open: 9,
 } as const;
 
 /** `weight` is how bad it is beside others of its rank: how far, how much or how many. */
-type Problem = { rank: number; weight: number; text: string };
+type PrintProblem = { rank: number; weight: number; text: string };
+
+export function comparePrintProblems(a: PrintProblem, b: PrintProblem): number {
+  return a.rank - b.rank || b.weight - a.weight;
+}
 
 /**
  * Checks bodies (each a closed solid where it is in the world) for printing on the bed `options` describes: whether
@@ -293,12 +301,12 @@ export function checkPrint(
 ): PrintCheck {
   const { bed } = options;
   const bedText = `${bed.map(figure).join(" × ")} mm`;
-  const problems: Problem[] = [];
+  const problems: PrintProblem[] = [];
   const say = (rank: number, weight: number, text: string) => problems.push({ rank, weight, text });
 
   const checks = bodies.map(({ id, solid, plain }): BodyCheck => {
     if (solid.isEmpty()) {
-      say(RANK.empty, 0, `${id} is empty: there's nothing to print.`);
+      say(PRINT_PROBLEM_RANK.empty, 0, `${id} is empty: there's nothing to print.`);
       return {
         id,
         size: [0, 0, 0],
@@ -350,7 +358,7 @@ export function checkPrint(
           : "Scale it down or split it.";
       const extents = tooBig.map((axis) => `${figure(size[axis])} mm ${EXTENTS[axis]}`);
       say(
-        RANK.tooBig,
+        PRINT_PROBLEM_RANK.tooBig,
         Math.max(...tooBig.map((axis) => size[axis] - bed[axis])),
         `${id} doesn't fit the ${bedText} bed: it's ${listed(extents)}. ${hint}`,
       );
@@ -359,32 +367,37 @@ export function checkPrint(
       const amounts = offAxes.map((axis) => `${figure(off[axis])} mm in ${AXES[axis]}`);
       const fields = listed(offAxes.map((axis) => AXES[axis]));
       say(
-        RANK.offBed,
+        PRINT_PROBLEM_RANK.offBed,
         Math.max(...offAxes.map((axis) => off[axis])),
         `${id} runs off the bed by ${listed(amounts)}: move it (position ${fields}) back onto the ` +
           `${figure(bed[0])} × ${figure(bed[1])} mm bed, which is centred on x = y = 0.`,
       );
     }
     if (outsideOutline && !offAxes.length && !tooBig.length)
-      say(RANK.offBed, 0, `${id} extends outside the printer's bed outline: move it inward.`);
+      say(PRINT_PROBLEM_RANK.offBed, 0, `${id} extends outside the printer's bed outline: move it inward.`);
     if (!tooBig.includes(2) && max[2] > bed[2] + SLACK)
-      say(RANK.offBed, max[2] - bed[2], `${id} is above the printer's build height: move it down or reorient it.`);
+      say(
+        PRINT_PROBLEM_RANK.offBed,
+        max[2] - bed[2],
+        `${id} is above the printer's build height: move it down or reorient it.`,
+      );
     if (aboveBed)
       say(
-        RANK.floating,
+        PRINT_PROBLEM_RANK.floating,
         aboveBed,
         `${id} is floating ${figure(aboveBed)} mm above the bed: move it down (position z) so it rests on it.`,
       );
     if (belowBed)
       say(
-        RANK.sunk,
+        PRINT_PROBLEM_RANK.sunk,
         belowBed,
         `${id} is sunk ${figure(belowBed)} mm into the bed, so its bottom won't print: ` +
           "move it up (position z) so it rests on it.",
       );
 
     const pieces = Math.max(1, solid.decompose().filter((piece) => own(piece).volume() > NOISE_VOLUME).length);
-    if (pieces > 1) say(RANK.pieces, pieces, `${id} is in ${pieces} loose pieces: join them if it's meant to be one.`);
+    if (pieces > 1)
+      say(PRINT_PROBLEM_RANK.pieces, pieces, `${id} is in ${pieces} loose pieces: join them if it's meant to be one.`);
 
     // Sunk, the bed cuts it; floating, it's measured as it will be once moved down.
     const floor = Math.max(0, min[2]) + BED_HOLDS;
@@ -399,7 +412,7 @@ export function checkPrint(
     );
     if (overhang)
       say(
-        RANK.overhang,
+        PRINT_PROBLEM_RANK.overhang,
         overhang.area,
         `${id} has ${figure(overhang.area)} mm² of overhang steeper than ${figure(options.overhang)}°, lowest at ` +
           `z = ${figure(overhang.lowest)} mm: it needs support there, or turning so it faces up.`,
@@ -407,7 +420,7 @@ export function checkPrint(
     const thinWalls = thinWallsOf(judged, triangles, options.minWall, highlights?.thinWalls);
     if (thinWalls)
       say(
-        RANK.thin,
+        PRINT_PROBLEM_RANK.thin,
         thinWalls.area,
         `${id} has walls down to ${figure(thinWalls.thinnest)} mm, thinner than ${figure(options.minWall)} mm ` +
           `(${figure(thinWalls.area)} mm² of them): they may not print.`,
@@ -438,13 +451,19 @@ export function checkPrint(
       if (volume < NOISE_VOLUME) continue;
       const [a, b] = [bodies[i].id, bodies[j].id];
       overlaps.push({ a, b, volume: round3(volume) });
-      say(RANK.overlap, volume, `${a} and ${b} overlap by ${figure(volume)} mm³ without being joined: union them.`);
+      say(
+        PRINT_PROBLEM_RANK.overlap,
+        volume,
+        `${a} and ${b} overlap by ${figure(volume)} mm³ without being joined: union them.`,
+      );
     }
   }
 
+  const rankedProblems = problems.toSorted(comparePrintProblems);
   return {
     bodies: checks,
     overlaps,
-    problems: problems.toSorted((x, y) => x.rank - y.rank || y.weight - x.weight).map((problem) => problem.text),
+    problems: rankedProblems.map((problem) => problem.text),
+    rankedProblems,
   };
 }

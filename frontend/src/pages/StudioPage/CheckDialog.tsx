@@ -86,6 +86,10 @@ type Props = {
   onLocate: (id: string, highlights?: BodyCheck["highlights"], layFlat?: boolean) => void;
 };
 
+type CheckResult = { designId: string; doc: StudioDocument; options: PrintCheckOptions } & (
+  { check: ReturnType<typeof checkDesign>; failure?: never } | { check?: never; failure: string }
+);
+
 export default function CheckDialog({
   format,
   open,
@@ -154,12 +158,7 @@ export default function CheckDialog({
     [options, setup, profileId],
   );
 
-  const [report, setReport] = useState<{
-    doc: StudioDocument;
-    options: PrintCheckOptions;
-    check: ReturnType<typeof checkDesign>;
-  } | null>(null);
-  const [failure, setFailure] = useState<string | null>(null);
+  const [result, setResult] = useState<CheckResult | null>(null);
   const hidden = doc && hiddenPlates(doc);
   const unloaded = doc
     ? studioPlates(doc).find((plate) => plate.source && !hidden?.has(plate.id) && profileOf(plate) === profileId)
@@ -167,14 +166,15 @@ export default function CheckDialog({
   useEffect(() => {
     if (!open || !doc || !designId || unloaded) return;
     let cancelled = false;
+    const request = { designId, doc, options: effective };
     const timer = window.setTimeout(() => {
       checkInWorker(designId, doc, effective).then(
         (check) => {
-          if (cancelled) return;
-          setReport({ doc, options: effective, check });
-          setFailure(null);
+          if (!cancelled) setResult({ ...request, check });
         },
-        (error: unknown) => !cancelled && setFailure(error instanceof Error ? error.message : String(error)),
+        (error: unknown) => {
+          if (!cancelled) setResult({ ...request, failure: error instanceof Error ? error.message : String(error) });
+        },
       );
     }, SETTLE);
     return () => {
@@ -182,7 +182,11 @@ export default function CheckDialog({
       window.clearTimeout(timer);
     };
   }, [open, doc, designId, effective, unloaded]);
-  const checking = !unloaded && !failure && (report?.doc !== doc || report?.options !== effective);
+  const current =
+    result && result.designId === designId && result.doc === doc && result.options === effective ? result : null;
+  const report = current?.check;
+  const failure = current?.failure;
+  const checking = !unloaded && !current;
 
   const bodies = useMemo(
     () => (doc ? topLevel(doc).filter((feature) => isBody(feature) && feature.visible) : []),
@@ -225,8 +229,7 @@ export default function CheckDialog({
   }, [open, doc, designId, pair]);
 
   /** What's wrong with a body, in the page's words: each a chip. */
-  const issues = (body: BodyCheck): string[] => {
-    const check = report!.check;
+  const issues = (body: BodyCheck, overlaps: ReturnType<typeof checkDesign>["overlaps"]): string[] => {
     if (!body.pieces) return [t("studio.check.empty")];
     const found: string[] = [];
     if (body.size.some((side, axis) => side > effective.bed[axis] + 0.01)) found.push(t("studio.check.tooBig"));
@@ -236,7 +239,7 @@ export default function CheckDialog({
     if (body.pieces > 1) found.push(t("studio.check.pieces", { count: body.pieces }));
     if (body.overhang) found.push(t("studio.check.overhang", { value: format.area(body.overhang.area) }));
     if (body.thinWalls) found.push(t("studio.check.thin", { value: format.length(body.thinWalls.thinnest) }));
-    for (const overlap of check.overlaps)
+    for (const overlap of overlaps)
       if (overlap.a === body.id || overlap.b === body.id)
         found.push(t("studio.check.overlaps", { name: name(overlap.a === body.id ? overlap.b : overlap.a) }));
     return found;
@@ -244,9 +247,9 @@ export default function CheckDialog({
 
   const rows = report
     ? [
-        ...report.check.bodies.map((body) => ({ id: body.id, body, issues: issues(body) })),
-        ...report.check.open.map((id) => ({ id, body: null, issues: [t("studio.check.open")] })),
-        ...(report.check.invalid ?? []).map(({ id, message }) => ({ id, body: null, issues: [message] })),
+        ...report.bodies.map((body) => ({ id: body.id, body, issues: issues(body, report.overlaps) })),
+        ...report.open.map((id) => ({ id, body: null, issues: [t("studio.check.open")] })),
+        ...(report.invalid ?? []).map(({ id, message }) => ({ id, body: null, issues: [message] })),
       ]
     : [];
   const clear = rows.length > 0 && rows.every((row) => !row.issues.length);
@@ -326,7 +329,7 @@ export default function CheckDialog({
         <Box sx={{ mt: 2 }} aria-live="polite" aria-busy={checking}>
           {unloaded ? (
             <Alert severity="info">{t("studio.importModel.checkUnloaded", { name: plateLabel(unloaded, t) })}</Alert>
-          ) : failure ? (
+          ) : failure !== undefined ? (
             <Alert severity="error">{failure}</Alert>
           ) : !report ? (
             <Stack spacing={1}>
@@ -339,7 +342,7 @@ export default function CheckDialog({
               {t("studio.check.nothing")}
             </Typography>
           ) : (
-            <Stack spacing={1} sx={{ opacity: checking ? 0.6 : 1, transition: "opacity 150ms" }}>
+            <Stack spacing={1}>
               {clear && (
                 <Alert severity="success" icon={<CheckCircleOutlineIcon fontSize="inherit" />}>
                   {t("studio.check.ready")}
@@ -389,7 +392,6 @@ export default function CheckDialog({
                             variant="outlined"
                             color="warning"
                             label={issue}
-                            disabled={checking}
                             onClick={() => onLocate(row.id, row.body?.highlights)}
                           />
                         ))}
@@ -402,7 +404,6 @@ export default function CheckDialog({
                       size="small"
                       startIcon={<VerticalAlignBottomIcon />}
                       aria-label={t("studio.check.toBedOf", { name: name(row.id) })}
-                      disabled={checking}
                       onClick={() => void run("align", { feature_id: row.id, z: "start" })}
                       sx={{ flexShrink: 0 }}
                     >
@@ -411,7 +412,6 @@ export default function CheckDialog({
                   )}
                   {row.body?.overhang && (
                     <Button
-                      disabled={checking}
                       size="small"
                       sx={{ flexShrink: 0 }}
                       onClick={() => onLocate(row.id, row.body?.highlights, true)}
