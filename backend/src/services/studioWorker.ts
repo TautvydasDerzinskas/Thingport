@@ -14,6 +14,7 @@ import {
   hiddenPlates,
   isBody,
   plateOf,
+  printCheckBodies,
   profileOf,
   profileSettings,
   studioPlates,
@@ -131,6 +132,7 @@ export type StudioWorkerResult =
       status: "ok";
       bodies: StudioBodyStats[];
       errors: { id: string; message: string }[];
+      renderedPlateId: string | null;
       /** Base64 PNGs, one per view asked for. */
       images: { view: StudioView; png: string }[];
     }
@@ -240,6 +242,7 @@ async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): 
   const wasm = await manifold();
   const { bodies, errors } = evaluateDesign(wasm, input.document, ids, meshesIn(input.assetDir));
   const images: { view: StudioView; png: string }[] = [];
+  let renderedPlateId: string | null = null;
   if (input.render) {
     const hasBodies = (plate: StudioPlate) =>
       bodies.some((body) => {
@@ -248,12 +251,13 @@ async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): 
       });
     const plates = studioPlates(input.document);
     const hidden = hiddenPlates(input.document);
-    const renderPlate =
+    renderedPlateId =
       requestedPlate ??
-      (plates.find((plate) => !hidden.has(plate.id) && hasBodies(plate)) ?? plates.find(hasBodies))?.id;
+      (plates.find((plate) => !hidden.has(plate.id) && hasBodies(plate)) ?? plates.find(hasBodies))?.id ??
+      null;
     const parts = bodies.flatMap((body) => {
       const feature = featureById(input.document, body.id);
-      if (!feature?.visible || !isBody(feature) || plateOf(feature) !== renderPlate) return [];
+      if (!feature?.visible || !isBody(feature) || plateOf(feature) !== renderedPlateId) return [];
       return [{ body, color: feature.color }];
     });
     const { size, color } = input.render;
@@ -267,6 +271,7 @@ async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): 
     status: "ok",
     bodies: bodies.map(({ id, bounds, volume, triangles }) => ({ id, bounds, volume, triangles })),
     errors,
+    renderedPlateId,
     images,
   };
 }
@@ -418,10 +423,7 @@ async function check(input: Extract<StudioWorkerInput, { kind: "check" }>): Prom
   if (unloaded)
     return { status: "refused", reason: `Open ${unloaded.name} before checking the whole design for printing.` };
   // Only what the check makes counts: the visible bodies on shown plates.
-  const plateIds = new Set(plates.map((plate) => plate.id));
-  const checked = topLevel(input.document).filter(
-    (feature) => isBody(feature) && feature.visible && plateIds.has(plateOf(feature)),
-  );
+  const checked = printCheckBodies(input.document, input.options.profileId);
   const estimate = estimateTriangles(input.document, new Set(checked.map((feature) => feature.id)));
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
   return {

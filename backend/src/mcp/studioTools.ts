@@ -282,7 +282,7 @@ const viewDesign: McpToolDefinition = {
       {
         ...brief(ctx, design),
         views,
-        plate_id: plate ?? null,
+        plate_id: inspected.renderedPlateId,
         bodies: inspected.bodies.length,
         problems: inspected.errors,
       },

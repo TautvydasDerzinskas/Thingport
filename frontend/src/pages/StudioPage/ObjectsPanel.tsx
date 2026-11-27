@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DndContext,
@@ -7,7 +7,9 @@ import {
   PointerSensor,
   closestCenter,
   pointerWithin,
+  type ClientRect,
   type CollisionDetection,
+  type KeyboardCoordinateGetter,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -110,13 +112,53 @@ function Icon({ feature }: { feature: Feature }) {
 
 type BranchKind = "profiles" | "plates";
 
-const branchCollisions: CollisionDetection = (args) => {
-  const candidates = args.droppableContainers.filter((entry) =>
-    args.active.data.current?.kind === "profiles" ? entry.data.current?.kind === "profiles" : true,
-  );
-  const visible = { ...args, droppableContainers: candidates };
-  return args.pointerCoordinates ? pointerWithin(visible) : closestCenter(visible);
+const branchKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
+  const { active, collisionRect, droppableContainers, droppableRects, over } = args.context;
+  if (active?.data.current?.kind !== "profiles") return sortableKeyboardCoordinates(event, args);
+  if (event.code !== "ArrowUp" && event.code !== "ArrowDown") return;
+  event.preventDefault();
+  const current = droppableRects.get(over?.id ?? active.id) ?? collisionRect;
+  if (!current) return;
+  const direction = event.code === "ArrowDown" ? 1 : -1;
+  let target: ClientRect | undefined;
+  let distance = Infinity;
+  for (const entry of droppableContainers.getEnabled()) {
+    if (entry.data.current?.kind !== "profiles") continue;
+    const rect = droppableRects.get(entry.id);
+    if (!rect) continue;
+    const step = direction * (rect.top - current.top);
+    if (step > 0 && step < distance) {
+      distance = step;
+      target = rect;
+    }
+  }
+  if (target) return { x: target.left, y: target.top };
 };
+
+function branchCollisions(args: Parameters<CollisionDetection>[0], tree: HTMLDivElement | null) {
+  const kind = args.active.data.current?.kind;
+  const candidates = args.droppableContainers.filter((entry) =>
+    kind === "profiles" ? entry.data.current?.kind === "profiles" : true,
+  );
+  const rows = { ...args, droppableContainers: candidates };
+  if (!args.pointerCoordinates) return closestCenter(rows);
+  const { x, y } = args.pointerCoordinates;
+  const bounds = tree?.getBoundingClientRect();
+  if (!bounds || x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) return [];
+  const hits = pointerWithin(rows);
+  if (hits.length) return hits;
+
+  // The insertion line sits at the edge of the whole branch, including its expanded children.
+  const branchRects: typeof args.droppableRects = new Map();
+  for (const entry of candidates) {
+    if (entry.data.current?.kind !== kind) continue;
+    const rect = entry.data.current?.branchRef?.current?.getBoundingClientRect();
+    if (!rect) continue;
+    const { top, bottom, left, right, width, height } = rect;
+    branchRects.set(entry.id, { top: top - 1, bottom: bottom + 1, left, right, width, height: height + 2 });
+  }
+  return pointerWithin({ ...rows, droppableRects: branchRects });
+}
 
 /** Where the plate being dragged would land, drawn as a line across the tree. */
 function DropLine({ at }: { at: "before" | "after" }) {
@@ -190,14 +232,17 @@ function BranchItem({
   children,
 }: BranchItemProps) {
   const { t } = useTranslation(["app", "common"]);
+  const branchRef = useRef<HTMLDivElement>(null);
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useSortable({
     id,
-    data: { kind },
+    data: { kind, branchRef },
     disabled: !canEdit,
   });
   const BranchIcon = kind === "profiles" ? FolderOutlinedIcon : LayersOutlinedIcon;
+  const expandLabel = `${t(expanded ? "studio.tree.collapse" : "studio.tree.expand")} ${name}`;
   return (
     <Box
+      ref={branchRef}
       role="treeitem"
       aria-label={name}
       aria-expanded={expanded}
@@ -271,17 +316,19 @@ function BranchItem({
             </Box>
           </Tooltip>
         )}
-        <IconButton
-          size="small"
-          aria-label={`${t(expanded ? "studio.tree.collapse" : "studio.tree.expand")} ${name}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onExpand(!expanded);
-          }}
-          sx={{ p: 0, color: "text.secondary" }}
-        >
-          <ChevronRightIcon sx={{ fontSize: 18, transform: expanded ? "rotate(90deg)" : "none" }} />
-        </IconButton>
+        <Tooltip title={expandLabel}>
+          <IconButton
+            size="small"
+            aria-label={expandLabel}
+            onClick={(event) => {
+              event.stopPropagation();
+              onExpand(!expanded);
+            }}
+            sx={{ p: 0, color: "text.secondary" }}
+          >
+            <ChevronRightIcon sx={{ fontSize: 18, transform: expanded ? "rotate(90deg)" : "none" }} />
+          </IconButton>
+        </Tooltip>
         <Box
           sx={{
             width: 22,
@@ -396,10 +443,11 @@ export default function ObjectsPanel({
   const { t } = useTranslation("app");
   const confirm = useConfirm();
   const title = t("studio.profiles.title");
+  const treeRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)", { noSsr: true });
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: branchKeyboardCoordinates }),
   );
   const [drag, setDrag] = useState<{ id: string; over: string | null } | null>(null);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -408,10 +456,19 @@ export default function ObjectsPanel({
   const [plateDialog, setPlateDialog] = useState<{ kind: "create" | "rename"; id: string } | null>(null);
   const [profileDialog, setProfileDialog] = useState<{ id?: string } | null>(null);
   const [profileMenu, setProfileMenu] = useState<{ id: string; anchor: MenuAnchor } | null>(null);
+  const [emptySelection, setEmptySelection] = useState<{ profileId: string; activePlate: string } | null>(null);
   const plates = document ? studioPlates(document) : [];
   const profiles = document ? studioProfiles(document) : [];
   const platesOf = (id: string) => plates.filter((plate) => profileOf(plate) === id);
   const activeProfile = profileOf(plates.find((plate) => plate.id === activePlate));
+  const emptyProfile =
+    emptySelection?.activePlate === activePlate &&
+    profiles.some((profile) => profile.id === emptySelection.profileId) &&
+    !platesOf(emptySelection.profileId).length
+      ? emptySelection.profileId
+      : null;
+  if (emptySelection && !emptyProfile) setEmptySelection(null);
+  const selectedProfile = emptyProfile ?? activeProfile;
   const rootsByPlate = new Map<string, Feature[]>();
   if (document) {
     for (const feature of topLevel(document)) {
@@ -492,6 +549,7 @@ export default function ObjectsPanel({
     setBranchExpansion((prev) => ({ ...prev, [id]: expanded }));
   };
   const activatePlate = (id: string, profileId: string) => {
+    setEmptySelection(null);
     expandBranch(profileId, true);
     expandBranch(id, true);
     onChangePlate(id);
@@ -529,8 +587,10 @@ export default function ObjectsPanel({
           selected={chosen}
           tabIndex={editing || children.length ? 0 : -1}
           onClick={(event) => {
-            if (editing) onSelect(plateId, feature.id, event.shiftKey || event.metaKey || event.ctrlKey);
-            else if (children.length) toggle(feature.id);
+            if (editing) {
+              setEmptySelection(null);
+              onSelect(plateId, feature.id, event.shiftKey || event.metaKey || event.ctrlKey);
+            } else if (children.length) toggle(feature.id);
           }}
           onContextMenu={
             editing
@@ -660,7 +720,7 @@ export default function ObjectsPanel({
                   size="small"
                   disabled={plates.length >= MAX_PLATES}
                   aria-label={t("studio.plates.add")}
-                  onClick={() => setPlateDialog({ kind: "create", id: activeProfile })}
+                  onClick={() => setPlateDialog({ kind: "create", id: selectedProfile })}
                   sx={{ p: 0.25 }}
                 >
                   <AddIcon fontSize="small" />
@@ -685,6 +745,7 @@ export default function ObjectsPanel({
       }
     >
       <Box
+        ref={treeRef}
         role="tree"
         aria-label={title}
         aria-multiselectable={editing || undefined}
@@ -692,7 +753,7 @@ export default function ObjectsPanel({
       >
         <DndContext
           sensors={sensors}
-          collisionDetection={branchCollisions}
+          collisionDetection={(args) => branchCollisions(args, treeRef.current)}
           onDragStart={({ active }) => setDrag({ id: String(active.id), over: null })}
           onDragOver={({ active, over }) => setDrag({ id: String(active.id), over: over ? String(over.id) : null })}
           onDragEnd={dropBranch}
@@ -712,7 +773,7 @@ export default function ObjectsPanel({
                   kind="profiles"
                   name={profileLabel(profile, t)}
                   hidden={profile.hidden}
-                  active={active}
+                  active={profile.id === selectedProfile}
                   expanded={branchExpansion[profile.id] ?? (active || !children.length)}
                   canEdit={canEditPlates}
                   hasActions={canEditPlates}
@@ -721,7 +782,9 @@ export default function ObjectsPanel({
                   count={children.length}
                   onActivate={() => {
                     expandBranch(profile.id, true);
-                    if (children.length && !active) {
+                    if (!children.length) setEmptySelection({ profileId: profile.id, activePlate });
+                    else if (active) setEmptySelection(null);
+                    else {
                       const first = children.find((plate) => !plate.hidden) ?? children[0];
                       activatePlate(first.id, profile.id);
                     }
@@ -1025,8 +1088,10 @@ export default function ObjectsPanel({
             </ListItemIcon>
             <ListItemText>{t(menuProfile.hidden ? "studio.profiles.show" : "studio.profiles.hide")}</ListItemText>
           </MenuItem>
-          {menuProfile.id !== DEFAULT_PROFILE_ID && (
+          {menuProfile.id !== DEFAULT_PROFILE_ID && [
+            <Divider key="delete-divider" />,
             <MenuItem
+              key="delete"
               disabled={platesOf(menuProfile.id).length > 0}
               onClick={() => {
                 void run("delete_profile", { profile_id: menuProfile.id });
@@ -1038,8 +1103,8 @@ export default function ObjectsPanel({
                 <DeleteOutlineIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>{t("studio.profiles.delete")}</ListItemText>
-            </MenuItem>
-          )}
+            </MenuItem>,
+          ]}
         </Menu>
       )}
       {canEditPlates && (

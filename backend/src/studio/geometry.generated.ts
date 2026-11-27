@@ -11,9 +11,8 @@ import {
   shapeFill,
   sketchFrame,
   sketchMatrix,
-  hiddenPlates,
   plateOf,
-  profileOfPlate,
+  printCheckBodies,
   topLevel,
   transformMatrix,
   type BodyFeature,
@@ -750,10 +749,7 @@ export function checkDesign(
     const bodies: { id: string; plate: string; solid: Manifold; plain?: Manifold }[] = [];
     const open: string[] = [];
     const invalid: { id: string; message: string }[] = [];
-    const hidden = hiddenPlates(doc);
-    for (const feature of topLevel(doc)) {
-      if (!isBody(feature) || !feature.visible || hidden.has(plateOf(feature))) continue;
-      if (options.profileId && profileOfPlate(doc, plateOf(feature)) !== options.profileId) continue;
+    for (const feature of printCheckBodies(doc, options.profileId)) {
       try {
         if (made.openOf(feature)) open.push(feature.id);
         else

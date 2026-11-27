@@ -4468,6 +4468,7 @@
           "title": "Exportieren",
           "format": "Dateiformat",
           "threeMf": "Eine 3MF-Datei mit allen belegten Druckplatten und ihren Farben herunterladen.",
+          "threeMfZipLabel": "3MF-ZIP",
           "stlZip": "Eine ZIP-Datei mit einer STL-Datei pro belegter Druckplatte herunterladen."
         },
         "delete": "Design löschen",

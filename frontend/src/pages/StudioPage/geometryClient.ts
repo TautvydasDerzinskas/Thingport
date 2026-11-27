@@ -1,5 +1,11 @@
 import i18next from "i18next";
-import type { MeshData, PartMeasure, StudioDocument, Vec3 } from "../../studio/document";
+import {
+  printCheckBodies,
+  type MeshData,
+  type PartMeasure,
+  type StudioDocument,
+  type Vec3,
+} from "../../studio/document";
 import type { Bounds } from "../../studio/commands";
 import type { EvaluatedBody, checkDesign, measureBetween } from "../../studio/geometry";
 import type { PrintCheckOptions } from "../../studio/printCheck";
@@ -120,7 +126,8 @@ async function ask(
   document: StudioDocument,
   question: Pick<GeometryQuestion, "ids" | "detailedIds" | "parts" | "bounds" | "check" | "between">,
 ): Promise<GeometryAnswer> {
-  const ids = question.ids ?? question.bounds ?? question.between ?? (question.parts ? [question.parts] : undefined);
+  const checked = question.check && printCheckBodies(document, question.check.profileId).map((body) => body.id);
+  const ids = question.ids ?? question.bounds ?? question.between ?? (question.parts ? [question.parts] : checked);
   const meshes = await designMeshes(designId, document, ids);
   const assets: Record<string, MeshData> = {};
   for (const [assetId, mesh] of meshes) {

@@ -377,6 +377,20 @@ export function hiddenPlates(doc: StudioDocument): Set<string> {
   );
 }
 
+/** Visible top-level bodies on shown plates, optionally limited to one print profile. */
+export function printCheckBodies(doc: StudioDocument, profileId?: string): BodyFeature[] {
+  const hidden = hiddenPlates(doc);
+  return topLevel(doc).filter((feature): feature is BodyFeature => {
+    const plateId = plateOf(feature);
+    return (
+      isBody(feature) &&
+      feature.visible &&
+      !hidden.has(plateId) &&
+      (!profileId || profileOfPlate(doc, plateId) === profileId)
+    );
+  });
+}
+
 /** The plates a design saved to the library can be pictured by: shown, loaded and with a visible body, in the
  *  plates' order. */
 export function picturablePlates(doc: StudioDocument): string[] {

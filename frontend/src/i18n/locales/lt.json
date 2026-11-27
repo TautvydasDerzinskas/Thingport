@@ -4770,6 +4770,7 @@
           "title": "Eksportuoti",
           "format": "Failo formatas",
           "threeMf": "Atsisiųskite vieną 3MF failą su visomis užpildytomis plokštėmis ir jų spalvomis.",
+          "threeMfZipLabel": "3MF ZIP",
           "stlZip": "Atsisiųskite ZIP archyvą su vienu STL failu kiekvienai užpildytai plokštei."
         },
         "delete": "Ištrinti projektą",

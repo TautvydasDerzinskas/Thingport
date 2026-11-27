@@ -4656,6 +4656,7 @@
           "title": "Exportar",
           "format": "Formato de archivo",
           "threeMf": "Descarga un archivo 3MF con todas las placas ocupadas y sus colores.",
+          "threeMfZipLabel": "ZIP de 3MF",
           "stlZip": "Descarga un ZIP con un archivo STL por cada placa ocupada."
         },
         "delete": "Eliminar diseño",

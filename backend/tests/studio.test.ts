@@ -740,7 +740,9 @@ describe("Studio", () => {
     const shown = image(await view("plate-1"));
     expect(shown).toBeDefined();
     expect(image(await view())).toEqual(shown);
-    expect(image(await view(hiddenPlate))).not.toEqual(shown);
+    const hiddenImage = image(await view(hiddenPlate));
+    expect(hiddenImage).toBeDefined();
+    expect(hiddenImage).not.toEqual(shown);
   }, 60_000);
 
   it("ranks MCP print problems across profiles by severity and weight", async () => {
@@ -1564,7 +1566,15 @@ describe("Studio", () => {
         (await command(alice, design.id, "add_box", { width: 4, depth: 4, height: 4, plate_id: "plate-2" })).status,
       ).toBe(200);
       const shown = await callTool(token, "studio_view_design", { design_id: design.id, size: 128 });
-      expect(shown.data.bodies).toBe(2);
+      expect(shown.data).toMatchObject({ plate_id: "plate-2", bodies: 2 });
+      const shownImage = shown.content.find((entry) => entry.type === "image");
+      expect(shownImage).toBeDefined();
+      const explicit = await callTool(token, "studio_view_design", {
+        design_id: design.id,
+        plate_id: "plate-2",
+        size: 128,
+      });
+      expect(explicit.content.find((entry) => entry.type === "image")).toEqual(shownImage);
     }, 60_000);
 
     it.each([

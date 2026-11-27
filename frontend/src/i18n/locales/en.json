@@ -4465,6 +4465,7 @@
           "title": "Export",
           "format": "File format",
           "threeMf": "Download one 3MF with all populated plates and their colors.",
+          "threeMfZipLabel": "3MF ZIP",
           "stlZip": "Download a ZIP with one STL per populated plate."
         },
         "delete": "Delete design",

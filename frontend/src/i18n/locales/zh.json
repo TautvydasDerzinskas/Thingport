@@ -4277,6 +4277,7 @@
           "title": "导出",
           "format": "文件格式",
           "threeMf": "下载一个 3MF 文件，其中包含所有有模型的打印板及其颜色。",
+          "threeMfZipLabel": "3MF ZIP 压缩包",
           "stlZip": "下载一个 ZIP 压缩包，每个有模型的打印板对应一个 STL 文件。"
         },
         "delete": "删除设计",

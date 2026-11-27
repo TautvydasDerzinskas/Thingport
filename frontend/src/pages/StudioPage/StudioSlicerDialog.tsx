@@ -78,8 +78,9 @@ export default function StudioSlicerDialog({
   const installed = supported.filter((option) => settings.slicers.includes(option.id));
   const options = installed.length ? installed : supported;
   const slicer =
-    options.find((option) => option.id === (chosenSlicer || print.print_profile?.slicer || settings.slicer))?.id ??
-    options[0].id;
+    [chosenSlicer, print.print_profile?.slicer, settings.slicer].find((id) =>
+      options.some((option) => option.id === id),
+    ) ?? options[0].id;
   const profile = slicerProfile(slicer);
   const compatible = profile?.targetsPrinter ? printers.filter((entry) => entry.presets[slicer]) : [];
   const savedPrinter =

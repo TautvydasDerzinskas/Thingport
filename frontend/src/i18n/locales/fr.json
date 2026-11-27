@@ -4669,6 +4669,7 @@
           "title": "Exporter",
           "format": "Format de fichier",
           "threeMf": "Téléchargez un fichier 3MF avec tous les plateaux occupés et leurs couleurs.",
+          "threeMfZipLabel": "ZIP de 3MF",
           "stlZip": "Téléchargez une archive ZIP avec un fichier STL par plateau occupé."
         },
         "delete": "Supprimer la conception",

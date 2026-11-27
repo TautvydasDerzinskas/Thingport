@@ -35,7 +35,7 @@ export default function StudioExportDialog({ document, downloading, onDownload, 
             label={t("studio.design.export.format")}
             value={format}
             options={[
-              { value: "3mf", label: profiles.length > 1 ? "3MF ZIP" : "3MF" },
+              { value: "3mf", label: profiles.length > 1 ? t("studio.design.export.threeMfZipLabel") : "3MF" },
               { value: "stl-zip", label: "STL" },
             ]}
             disabled={downloading}
