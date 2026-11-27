@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { PlateUploadOutcomeUnknownError, type Plate, type Print } from "../../api/prints";
+import { normalizeFileName } from "../../utils/fileNames.generated";
 import {
   PlateUploadConfirmationError,
   savePlateChanges,
@@ -328,5 +329,90 @@ describe("savePlateChanges", () => {
     expect(api.deletePlate).toHaveBeenCalledExactlyOnceWith("model", removed.id);
     expect(api.reorderPlates).toHaveBeenCalledExactlyOnceWith("model", [original.id]);
     expect(progress.removedPlateIds.size).toBe(0);
+  });
+});
+
+describe("dependent plate renames", () => {
+  function renameFixture(plates: Plate[]) {
+    let current = print(...plates);
+    const api = {
+      get: vi.fn<PlateSaveApi["get"]>(),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(async (_printId, id, filename) => {
+        const target = current.plates.find((candidate) => candidate.id === id);
+        const normalized = normalizeFileName(filename);
+        // The server would number a target still held by a sibling.
+        expect(
+          current.plates.some(
+            (candidate) =>
+              candidate.id !== id &&
+              candidate.folder === target?.folder &&
+              candidate.filename.toLowerCase() === normalized.toLowerCase(),
+          ),
+        ).toBe(false);
+        current = print(
+          ...current.plates.map((candidate) =>
+            candidate.id === id ? { ...candidate, filename: normalized } : candidate,
+          ),
+        );
+        return { print: current };
+      }),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async () => ({ print: current })),
+    };
+    return { api, initial: current };
+  }
+
+  const edited = (id: string, filename: string): PlateItem => ({
+    kind: "existing",
+    id,
+    filename,
+    filenameEdited: true,
+    folder: null,
+  });
+
+  it("frees an edited target before requesting it, using the server's filename rules", async () => {
+    const { api, initial } = renameFixture([plate("a", "part.stl", 0), plate("b", "con_.stl", 1)]);
+    const items = [edited("a", "  CON.stl... "), edited("b", "new.stl")];
+
+    const result = await savePlateChanges(initial, items, new Set(), api, () => {});
+
+    expect(api.renamePlate.mock.calls).toEqual([
+      ["model", "b", "new.stl"],
+      ["model", "a", "  CON.stl... "],
+    ]);
+    expect(result.plates.map((candidate) => candidate.filename)).toEqual(["CON_.stl", "new.stl"]);
+  });
+
+  it("resumes a filename swap after moving a plate aside and a later request fails", async () => {
+    const { api, initial } = renameFixture([plate("a", "a.gcode.3mf", 0), plate("b", "b.gcode.3mf", 1)]);
+    let progress: PlateSaveProgress = {
+      print: initial,
+      items: [edited("a", "b.gcode.3mf"), edited("b", "a.gcode.3mf")],
+      removedPlateIds: new Set(),
+    };
+    const save = () =>
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, (updated) => {
+        progress = updated;
+      });
+    const rename = api.renamePlate.getMockImplementation();
+    expect(rename).toBeDefined();
+    if (!rename) throw new Error("Missing rename fixture");
+    api.renamePlate.mockImplementationOnce(rename).mockRejectedValueOnce(new Error("temporary failure"));
+
+    await expect(save()).rejects.toThrow("temporary failure");
+    expect(progress.items.every((item) => item.kind === "existing" && item.filenameEdited)).toBe(true);
+    expect(progress.print.plates[1].filename).toMatch(/^thingport-rename-.*\.gcode\.3mf$/);
+    expect(api.reorderPlates).not.toHaveBeenCalled();
+
+    const result = await save();
+
+    expect(api.renamePlate.mock.calls.slice(1)).toEqual([
+      ["model", "a", "b.gcode.3mf"],
+      ["model", "a", "b.gcode.3mf"],
+      ["model", "b", "a.gcode.3mf"],
+    ]);
+    expect(result.plates.map((candidate) => candidate.filename)).toEqual(["b.gcode.3mf", "a.gcode.3mf"]);
   });
 });

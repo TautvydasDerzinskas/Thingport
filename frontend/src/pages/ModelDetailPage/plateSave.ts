@@ -1,5 +1,7 @@
 import { PlateUploadOutcomeUnknownError, printsApi, type Plate, type Print } from "../../api/prints";
 import { UnauthorizedError } from "../../api/client";
+import { normalizeFileName, splitName } from "../../utils/fileNames.generated";
+import { newLocalId } from "../../utils/localId";
 
 export type PlateItem =
   | { kind: "existing"; id: string; filename: string; filenameEdited: boolean; folder: string | null }
@@ -61,6 +63,10 @@ function reconcileAttemptedUploads(print: Print, items: PlateItem[], retryUnknow
       ? { ...item, uploadAttempted: false, uploadOutcomeUnknown: false }
       : item;
   });
+}
+
+function plateNameKey(folder: string | null | undefined, filename: string): string {
+  return JSON.stringify([folder ?? null, filename.toLowerCase()]);
 }
 
 export async function savePlateChanges(
@@ -199,27 +205,54 @@ export async function savePlateChanges(
     reportProgress();
   }
 
-  for (const item of stagedItems) {
-    if (item.kind !== "existing" || !item.filenameEdited) continue;
-    const current = latest.plates.find((plate) => plate.id === item.id);
-    if (!current) continue;
-    if (current.filename === item.filename) {
-      stagedItems = stagedItems.map((staged) =>
-        staged.kind === "existing" && staged.id === item.id
-          ? { ...staged, filename: current.filename, filenameEdited: false }
-          : staged,
-      );
+  const renameTargets = new Map(
+    stagedItems.flatMap((item) =>
+      item.kind === "existing" && item.filenameEdited
+        ? [[item.id, { filename: item.filename, normalized: normalizeFileName(item.filename) }] as const]
+        : [],
+    ),
+  );
+  while (renameTargets.size) {
+    const currentPlates = new Map(latest.plates.map((current) => [current.id, current]));
+    const pending = [...renameTargets].flatMap(([id, target]) => {
+      const current = currentPlates.get(id);
+      return current ? [{ plate: current, ...target }] : [];
+    });
+    if (!pending.length) break;
+
+    // Only wait for a plate that will actually vacate its name. The server still numbers duplicates.
+    const blockers = new Map(
+      pending.flatMap((edit) => {
+        const currentName = plateNameKey(edit.plate.folder, edit.plate.filename);
+        return currentName === plateNameKey(edit.plate.folder, edit.normalized)
+          ? []
+          : [[currentName, edit.plate] as const];
+      }),
+    );
+    const next = pending.find((edit) => !blockers.has(plateNameKey(edit.plate.folder, edit.normalized))) ?? pending[0];
+    const { plate, filename, normalized } = next;
+    const blocker = blockers.get(plateNameKey(plate.folder, normalized));
+    if (blocker) {
+      // A swap has no free target. Move its blocker aside and keep the final name staged for a retry.
+      const { ext } = splitName(blocker.filename);
+      const temporaryName = `thingport-rename-${newLocalId()}${ext}`;
+      const res = await api.renamePlate(print.id, blocker.id, temporaryName);
+      latest = res.print;
       reportProgress();
       continue;
     }
-    const res = await api.renamePlate(print.id, item.id, item.filename);
-    latest = res.print;
-    const renamed = latest.plates.find((plate) => plate.id === item.id);
+
+    if (plate.filename !== normalized || typeof Intl.Segmenter !== "function") {
+      const res = await api.renamePlate(print.id, plate.id, filename);
+      latest = res.print;
+    }
+    const renamed = latest.plates.find((current) => current.id === plate.id);
     stagedItems = stagedItems.map((staged) =>
-      staged.kind === "existing" && staged.id === item.id
-        ? { ...staged, filename: renamed?.filename ?? item.filename, filenameEdited: false }
+      staged.kind === "existing" && staged.id === plate.id
+        ? { ...staged, filename: renamed?.filename ?? filename, filenameEdited: false }
         : staged,
     );
+    renameTargets.delete(plate.id);
     reportProgress();
   }
 

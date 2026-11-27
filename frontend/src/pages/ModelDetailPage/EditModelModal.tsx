@@ -56,9 +56,7 @@ import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
 import { PlateUploadConfirmationError, savePlateChanges, type PlateItem } from "./plateSave";
-
-type ImageItem =
-  { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
+import { reconcilePreviewUploads, type ImageItem } from "./previewImageSave";
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -143,6 +141,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasUnconfirmedImages = images.some((image) => image.kind === "unconfirmed");
 
   const createdUrlsRef = useRef<string[]>([]);
   const addImageInputRef = useRef<HTMLInputElement>(null);
@@ -198,7 +197,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
   const removeImage = (key: string) => {
     const target = images.find((img) => imageKey(img) === key);
-    if (target?.kind === "existing") {
+    if (!target || target.kind === "unconfirmed") return;
+    if (target.kind === "existing") {
       setRemovedImageIds((ids) => new Set(ids).add(target.id));
     }
     setImages((prev) => prev.filter((img) => imageKey(img) !== key));
@@ -278,6 +278,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
+    if (hasUnconfirmedImages) return;
     if (hasInvalidPlateFilename(plateItems)) {
       setError(t("models:edit.fileNameRequired"));
       return;
@@ -312,23 +313,21 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
       let stagedImages = images;
       if (newImageFiles.length) {
-        const beforeIds = new Set(latest.preview_images.map((img) => img.id));
+        const previousImages = latest.preview_images;
         const uploadRes = await printsApi.addPreviewImages(print.id, newImageFiles);
         latest = uploadRes.print;
-        const newImageIdsInOrder =
-          uploadRes.added_image_ids ??
-          latest.preview_images
-            .filter((img) => !beforeIds.has(img.id))
-            .toSorted((a, b) => a.position - b.position)
-            .map((img) => img.id);
-        const storedImages = new Map(latest.preview_images.map((img) => [img.id, img.url]));
-        let nextNew = 0;
-        stagedImages = images.map((img) => {
-          if (img.kind === "existing") return img;
-          const id = newImageIdsInOrder[nextNew++];
-          return id ? { kind: "existing", id, url: storedImages.get(id) ?? img.previewUrl } : img;
-        });
+        stagedImages = reconcilePreviewUploads(
+          images,
+          previousImages,
+          latest.preview_images,
+          uploadRes.added_image_ids,
+        );
         setImages(stagedImages);
+        if (stagedImages.some((image) => image.kind === "unconfirmed")) {
+          latestPrint.current = latest;
+          onUpdated(latest);
+          return;
+        }
       }
       if (stagedImages.length) {
         // Our own render gives way to the first picture uploaded, so it may be gone by now.
@@ -390,6 +389,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       <DialogTitle>{t("models:edit.title")}</DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 0.5 }}>
+          {hasUnconfirmedImages && <Alert severity="warning">{t("models:edit.previewUploadUnconfirmed")}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
 
           <TextField
@@ -608,7 +608,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     )}
                     <IconButton
                       size="small"
-                      disabled={saving}
+                      disabled={saving || img.kind === "unconfirmed"}
                       aria-label={t("models:edit.removeImage")}
                       onClick={() => removeImage(key)}
                       sx={{ ...overImageButtonSx, position: "absolute", top: 2, right: 2 }}
@@ -805,7 +805,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving || hasInvalidPlateFilename(plateItems)}
+          disabled={saving || hasUnconfirmedImages || hasInvalidPlateFilename(plateItems)}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

@@ -38,15 +38,19 @@ const SYSTEM_FILES = new Set(["thumbs.db", "desktop.ini"]);
 /** What a name may not end in: the dots and spaces Windows drops, and any other whitespace. */
 const TRAILING = /[.\s]+$/;
 
-const bytes = (text: string) => Buffer.byteLength(text, "utf8");
-const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const utf8 = new TextEncoder();
+const bytes = (text: string) => utf8.encode(text).length;
+const graphemes =
+  typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : undefined;
 
 /** `text` cut to at most `maxBytes` UTF-8 bytes and `maxLength` UTF-16 units, between characters as people see
  *  them. */
 function cut(text: string, maxBytes: number, maxLength = Infinity): string {
   if (bytes(text) <= maxBytes && text.length <= maxLength) return text;
   let out = "";
-  for (const { segment } of graphemes.segment(text)) {
+  // Older browsers can still plan a rename at code point boundaries; the server normalizes the input.
+  for (const part of graphemes?.segment(text) ?? text) {
+    const segment = typeof part === "string" ? part : part.segment;
     if (bytes(out + segment) > maxBytes || out.length + segment.length > maxLength) break;
     out += segment;
   }
