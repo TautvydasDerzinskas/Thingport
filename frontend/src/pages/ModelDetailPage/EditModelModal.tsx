@@ -34,6 +34,7 @@ import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
+  PlateUploadCapabilityError,
   PlateUploadOutcomeUnknownError,
   type LicenseFamily,
   type LicenseOption,
@@ -368,6 +369,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         return;
       }
       console.error(err);
+      if (err instanceof PlateUploadCapabilityError) {
+        setError(t("models:edit.uploadCapabilityCheckFailed"));
+        return;
+      }
       setError(
         err instanceof PlateUploadConfirmationError || err instanceof PlateUploadOutcomeUnknownError
           ? t("models:edit.uploadConfirmationFailed")

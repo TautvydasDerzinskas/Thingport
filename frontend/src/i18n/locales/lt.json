@@ -6910,6 +6910,7 @@
       "modelFiles": "Modelio failai",
       "fileName": "Failo pavadinimas",
       "fileNameRequired": "Failo pavadinimas privalomas.",
+      "uploadCapabilityCheckFailed": "Nepavyko patikrinti, ar galima saugiai pakartoti įkėlimą. Bandykite dar kartą.",
       "uploadConfirmationFailed": "Nepavyko patvirtinti, kurie modelio failai buvo išsaugoti. Bandykite dar kartą.",
       "uploadPending": "Įkėlimo būsena dar tikrinama. Prieš pašalindami šį failą, dar kartą pabandykite atnaujinti.",
       "removeFile": "Pašalinti modelio failą",

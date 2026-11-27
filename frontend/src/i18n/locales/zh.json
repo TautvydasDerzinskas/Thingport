@@ -6295,6 +6295,7 @@
       "modelFiles": "模型文件",
       "fileName": "文件名",
       "fileNameRequired": "文件名为必填项。",
+      "uploadCapabilityCheckFailed": "无法确认能否安全地重试上传。请重试。",
       "uploadConfirmationFailed": "无法确认哪些模型文件已保存。请重试。",
       "uploadPending": "上传状态仍在确认中。请再次更新后再删除此文件。",
       "removeFile": "移除模型文件",

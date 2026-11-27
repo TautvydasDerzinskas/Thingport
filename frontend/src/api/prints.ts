@@ -2,7 +2,15 @@ import type { ThreeMfFormat } from "../adapter/format.generated";
 import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import type { SortDirection } from "../utils/sortDirection";
-import { apiBase, assertOk, readCodedError, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
+import {
+  apiBase,
+  assertOk,
+  assertOkWithMessage,
+  readCodedError,
+  readErrorMessage,
+  LastPlateError,
+  UnauthorizedError,
+} from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
 
 /** What a file is, by the server's kind table (backend/src/files/kinds.ts). */
@@ -171,6 +179,13 @@ export class PlateUploadOutcomeUnknownError extends Error {
   constructor(readonly originalError: unknown) {
     super(originalError instanceof Error ? originalError.message : "Plate upload outcome unknown");
     this.name = "PlateUploadOutcomeUnknownError";
+  }
+}
+
+export class PlateUploadCapabilityError extends Error {
+  constructor(cause: unknown) {
+    super("Could not check plate upload retry support", { cause });
+    this.name = "PlateUploadCapabilityError";
   }
 }
 
@@ -608,24 +623,33 @@ export const printsApi = {
     }
     if (!res.ok) {
       const message = await readErrorMessage(res, "Failed to add plate");
-      throw new Error(message);
+      const error = new Error(message);
+      // A timeout or server-side failure can come back after the backend starts saving files.
+      if (res.status === 408 || res.status >= 500) throw new PlateUploadOutcomeUnknownError(error);
+      throw error;
     }
-    return res.json();
+    try {
+      return await res.json();
+    } catch (error) {
+      throw new PlateUploadOutcomeUnknownError(error);
+    }
   },
 
   supportsIdempotentPlateUploads: async (printId: string): Promise<boolean> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plates/upload-idempotency`, {
-      headers: authHeaders(),
-      cache: "no-store",
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (res.status === 404) return false;
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Could not check plate upload retry support"));
-    const body: unknown = await res.json();
-    if (typeof body !== "object" || body === null || !("supported" in body) || body.supported !== true) {
+    try {
+      const res = await fetch(`${apiBase()}/print/${printId}/plates/upload-idempotency`, {
+        headers: authHeaders(),
+        cache: "no-store",
+      });
+      if (res.status === 404) return false;
+      await assertOkWithMessage(res, `HTTP ${res.status}`);
+      const body: unknown = await res.json();
+      if (typeof body === "object" && body !== null && "supported" in body && body.supported === true) return true;
       throw new Error("The server returned an invalid plate upload capability");
+    } catch (error) {
+      if (error instanceof UnauthorizedError) throw error;
+      throw new PlateUploadCapabilityError(error);
     }
-    return true;
   },
 
   deletePlate: async (printId: string, plateId: string): Promise<{ print: Print }> => {

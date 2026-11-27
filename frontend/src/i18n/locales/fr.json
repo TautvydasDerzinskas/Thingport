@@ -6790,6 +6790,7 @@
       "modelFiles": "Fichiers du modèle",
       "fileName": "Nom du fichier",
       "fileNameRequired": "Le nom du fichier est obligatoire.",
+      "uploadCapabilityCheckFailed": "Impossible de vérifier si l’envoi peut être relancé sans risque. Veuillez réessayer.",
       "uploadConfirmationFailed": "Impossible de confirmer quels fichiers du modèle ont été enregistrés. Veuillez réessayer.",
       "uploadPending": "L’état du téléversement est en cours de vérification. Réessayez la mise à jour avant de supprimer ce fichier.",
       "removeFile": "Supprimer le fichier du modèle",

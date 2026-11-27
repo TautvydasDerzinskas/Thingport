@@ -325,6 +325,28 @@ describe("plate add/remove/reorder/rename", () => {
     }
   });
 
+  it("keeps plate positions dense when a batch replays a completed upload", async () => {
+    const firstName = `thingport-upload-${randomUUID()}-first.stl`;
+    const secondName = `thingport-upload-${randomUUID()}-second.stl`;
+    const upload = () =>
+      auth(request(app).post(`/api/print/${printId}/plates`)).attach(
+        "files",
+        Buffer.from("solid first endsolid"),
+        firstName,
+      );
+
+    const first = await upload();
+    expect(first.status).toBe(200);
+    const [firstId] = first.body.added_plate_ids;
+
+    const retry = await upload().attach("files", Buffer.from("solid second endsolid"), secondName);
+    expect(retry.status).toBe(200);
+    expect(retry.body.added_plate_ids).toEqual([firstId, expect.any(String)]);
+    const plates: { position: number }[] = retry.body.print.plates;
+    expect(plates).toHaveLength(first.body.print.plates.length + 1);
+    expect(plates.map((plate) => plate.position)).toEqual(plates.map((_, position) => position));
+  });
+
   it.each([
     { status: "pending", claimToken: randomUUID(), leaseExpiresAt: new Date(0) },
     { status: "pending", claimToken: null, leaseExpiresAt: null },

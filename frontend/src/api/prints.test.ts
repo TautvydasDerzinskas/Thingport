@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UnauthorizedError } from "./client";
-import { BULK_LIMIT, printsApi, ZipTooLargeError } from "./prints";
+import {
+  BULK_LIMIT,
+  PlateUploadCapabilityError,
+  PlateUploadOutcomeUnknownError,
+  printsApi,
+  ZipTooLargeError,
+} from "./prints";
 
 /** Answers each batch in turn; a model in `prints` went through, a status is that batch failing. */
 function answerBatches(...answers: (number | { prints: { id: string }[]; skipped?: number; failed?: number })[]) {
@@ -76,5 +82,49 @@ describe("printsApi.downloadZip", () => {
     // A 413 from something in front of the server, with no code: an ordinary failure.
     answer("Request Entity Too Large", 413);
     await expect(printsApi.downloadZip({ print_ids: ["a"] })).rejects.not.toBeInstanceOf(ZipTooLargeError);
+  });
+});
+
+describe("plate uploads", () => {
+  beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  const respond = (status: number, body: string) =>
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(body, { status })));
+
+  it.each([408, 500, 502, 503, 504])("keeps the upload outcome unknown after HTTP %i", async (status) => {
+    respond(status, "Upstream failure");
+    await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
+  });
+
+  it("keeps the upload outcome unknown when a successful response cannot be decoded", async () => {
+    respond(200, "Invalid JSON");
+    await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
+  });
+
+  it("treats a validation error as a definite rejection", async () => {
+    respond(400, JSON.stringify({ detail: "Invalid plate" }));
+    const upload = printsApi.addPlates("print", []);
+    await expect(upload).rejects.toThrow("Invalid plate");
+    await expect(upload).rejects.not.toBeInstanceOf(PlateUploadOutcomeUnknownError);
+  });
+
+  it.each([
+    [502, "Bad gateway"],
+    [200, "Invalid JSON"],
+    [200, JSON.stringify({ supported: false })],
+  ])("reports a typed capability error for HTTP %i with %s", async (status, body) => {
+    respond(status, body);
+    await expect(printsApi.supportsIdempotentPlateUploads("print")).rejects.toBeInstanceOf(PlateUploadCapabilityError);
+  });
+
+  it("detects older servers and preserves authentication errors", async () => {
+    respond(404, "Not found");
+    await expect(printsApi.supportsIdempotentPlateUploads("print")).resolves.toBe(false);
+    respond(200, JSON.stringify({ supported: true }));
+    await expect(printsApi.supportsIdempotentPlateUploads("print")).resolves.toBe(true);
+    respond(401, "Unauthorized");
+    await expect(printsApi.supportsIdempotentPlateUploads("print")).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });

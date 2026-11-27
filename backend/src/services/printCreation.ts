@@ -445,7 +445,7 @@ export async function addPlatesToPrint(
       ? await createPlateIdempotently(print, input, nextPosition, input.clientUploadId)
       : (await createPlateAtPosition(print, input, nextPosition)).record;
     created.push(record);
-    nextPosition += 1;
+    nextPosition = Math.max(nextPosition, record.position + 1);
   }
   return created;
 }

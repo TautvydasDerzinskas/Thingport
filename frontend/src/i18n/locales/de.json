@@ -6541,6 +6541,7 @@
       "modelFiles": "Modelldateien",
       "fileName": "Dateiname",
       "fileNameRequired": "Dateiname erforderlich.",
+      "uploadCapabilityCheckFailed": "Es konnte nicht geprüft werden, ob der Upload sicher wiederholt werden kann. Bitte versuchen Sie es erneut.",
       "uploadConfirmationFailed": "Es konnte nicht bestätigt werden, welche Modelldateien gespeichert wurden. Bitte versuchen Sie es erneut.",
       "uploadPending": "Der Uploadstatus wird noch bestätigt. Versuchen Sie erneut, das Modell zu aktualisieren, bevor Sie diese Datei entfernen.",
       "removeFile": "Modelldatei entfernen",

@@ -6777,6 +6777,7 @@
       "modelFiles": "Archivos del modelo",
       "fileName": "Nombre del archivo",
       "fileNameRequired": "El nombre del archivo es obligatorio.",
+      "uploadCapabilityCheckFailed": "No se pudo comprobar si la carga se puede repetir de forma segura. Inténtalo de nuevo.",
       "uploadConfirmationFailed": "No se pudo confirmar qué archivos del modelo se guardaron. Inténtalo de nuevo.",
       "uploadPending": "Aún se está confirmando el estado de la carga. Vuelve a actualizar antes de eliminar este archivo.",
       "removeFile": "Quitar archivo del modelo",
