@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { PreviewImage, Print } from "../../api/prints";
 import {
   isPendingPreviewImage,
+  movePreviewImage,
+  previewImageNeighbourIndex,
   reconcilePreviewUploads,
   savePreviewRemovals,
   savePreviewUploads,
@@ -115,6 +117,33 @@ describe("savePreviewUploads", () => {
     expect(resentIds).toEqual([api.addPreviewImages.mock.calls[0][2]?.[1]]);
   });
 
+  it("keeps the original key across a lost response and a temporary receipt outage", async () => {
+    const { api, save, progress } = previewSaveFixture(pendingImage("first"));
+    const initial = printWithImages();
+    const updated = printWithImages(storedImage("first-saved", 0));
+    api.getPreviewUploadResults
+      .mockResolvedValueOnce({ print: initial, upload_results: [] })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ print: initial, upload_results: [] });
+    api.addPreviewImages
+      .mockRejectedValueOnce(new Error("Response lost"))
+      .mockResolvedValueOnce({ print: updated, added_image_ids: ["first-saved"] });
+
+    await expect(save()).rejects.toMatchObject({ reason: "pending" });
+    const originalIds = api.addPreviewImages.mock.calls[0][2];
+    expect(originalIds).toEqual([expect.any(String)]);
+    const [originalKey] = originalIds ?? [];
+    expect(progress().items[0]).toMatchObject({ kind: "new", pendingUploadId: originalKey });
+
+    await expect(save()).rejects.toMatchObject({ reason: "pending" });
+    expect(api.addPreviewImages).toHaveBeenCalledTimes(1);
+    expect(progress().items[0]).toMatchObject({ kind: "new", pendingUploadId: originalKey });
+
+    await expect(save()).resolves.toMatchObject({ print: updated });
+    expect(api.addPreviewImages).toHaveBeenLastCalledWith("model", [expect.any(File)], originalIds);
+  });
+
   it("retries pending keyed files when an earlier confirmed image has been deleted", async () => {
     const first = { ...pendingImage("first"), pendingUploadId: "first-key" };
     const second = { ...pendingImage("second"), pendingUploadId: "second-key" };
@@ -170,6 +199,30 @@ describe("savePreviewUploads", () => {
       items: [{ kind: "unconfirmed", localId: "first", previewUrl: "blob:first" }],
     });
     expect(api.addPreviewImages).toHaveBeenCalledExactlyOnceWith("model", [expect.any(File)], undefined);
+  });
+});
+
+describe("preview image order", () => {
+  it("moves past missing and unconfirmed rows while leaving those rows in place", () => {
+    const first = pendingImage("first");
+    const last = pendingImage("last");
+    const missing: ImageItem = { kind: "missing", previewUrl: "blob:missing", localId: "missing" };
+    const unknown: ImageItem = { kind: "unconfirmed", previewUrl: "blob:unknown", localId: "unknown" };
+    const items = [first, missing, unknown, last];
+    expect(previewImageNeighbourIndex(items, 3, -1)).toBe(0);
+    expect(previewImageNeighbourIndex(items, 0, 1)).toBe(3);
+    expect(movePreviewImage(items, 3, -1)).toEqual([last, missing, unknown, first]);
+    expect(movePreviewImage(items, 0, 1)).toEqual([last, missing, unknown, first]);
+    expect(previewImageNeighbourIndex([missing, first, unknown], 1, -1)).toBe(-1);
+    expect(previewImageNeighbourIndex([missing, first, unknown], 1, 1)).toBe(-1);
+  });
+
+  it("swaps adjacent eligible previews and leaves an edge move unchanged", () => {
+    const first = pendingImage("first");
+    const second = pendingImage("second");
+    const items = [first, second];
+    expect(movePreviewImage(items, 1, -1)).toEqual([second, first]);
+    expect(movePreviewImage(items, 0, -1)).toBe(items);
   });
 });
 

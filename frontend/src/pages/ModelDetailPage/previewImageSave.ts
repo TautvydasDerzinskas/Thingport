@@ -25,6 +25,26 @@ export function isPendingPreviewImage(image: ImageItem): image is PendingImageIt
   return image.kind === "new" && image.pendingUploadId !== undefined;
 }
 
+export function canArrangePreviewImage(image: ImageItem): boolean {
+  return image.kind === "existing" || image.kind === "new";
+}
+
+export function previewImageNeighbourIndex(items: ImageItem[], index: number, direction: -1 | 1): number {
+  if (!items[index] || !canArrangePreviewImage(items[index])) return -1;
+  for (let neighbour = index + direction; neighbour >= 0 && neighbour < items.length; neighbour += direction) {
+    if (canArrangePreviewImage(items[neighbour])) return neighbour;
+  }
+  return -1;
+}
+
+export function movePreviewImage(items: ImageItem[], index: number, direction: -1 | 1): ImageItem[] {
+  const neighbour = previewImageNeighbourIndex(items, index, direction);
+  if (neighbour < 0) return items;
+  const moved = [...items];
+  [moved[index], moved[neighbour]] = [moved[neighbour], moved[index]];
+  return moved;
+}
+
 function unconfirmedImage(image: NewImageItem): ImageItem {
   return { kind: "unconfirmed", localId: image.localId, previewUrl: image.previewUrl };
 }
@@ -89,28 +109,28 @@ export async function savePreviewUploads(
     }
     return true;
   };
-  const lockPending = async () => {
+  const lockUnkeyedUploads = async () => {
     report({
       ...latest,
-      items: latest.items.map((image) => (isPendingPreviewImage(image) ? unconfirmedImage(image) : image)),
+      items: latest.items.map((image) => (image.kind === "new" ? unconfirmedImage(image) : image)),
     });
     report({ ...latest, print: await api.get(print.id) });
   };
 
   const hasReceipts = await reconcile();
   if (!hasReceipts) {
-    if (latest.items.some(isPendingPreviewImage)) {
-      await lockPending();
-      return latest;
-    }
+    if (latest.items.some(isPendingPreviewImage)) throw new PreviewUploadError("pending");
     if (latest.items.some((image) => image.kind === "unconfirmed")) return latest;
   }
 
   const beforeUpload = latest;
-  const uploads = latest.items.map((image) =>
-    image.kind === "new" && !image.pendingUploadId ? { ...image, pendingUploadId: newLocalId() } : image,
-  );
-  const submitted = uploads.filter(isPendingPreviewImage);
+  // Only uploads sent to the keyed endpoint carry pending IDs. A rollback must never send them through legacy.
+  const uploads = hasReceipts
+    ? latest.items.map((image) =>
+        image.kind === "new" && !image.pendingUploadId ? { ...image, pendingUploadId: newLocalId() } : image,
+      )
+    : latest.items;
+  const submitted = uploads.filter((image): image is NewImageItem => image.kind === "new");
   if (!submitted.length) return latest;
   report({ ...latest, items: uploads });
 
@@ -118,7 +138,7 @@ export async function savePreviewUploads(
     const result = await api.addPreviewImages(
       print.id,
       submitted.map((image) => image.file),
-      hasReceipts ? submitted.map((image) => image.pendingUploadId) : undefined,
+      hasReceipts ? submitted.filter(isPendingPreviewImage).map((image) => image.pendingUploadId) : undefined,
     );
     report({
       print: result.print,
@@ -134,7 +154,11 @@ export async function savePreviewUploads(
       throw error;
     }
     try {
-      if (!hasReceipts || !(await reconcile())) await lockPending();
+      if (hasReceipts) {
+        await reconcile();
+      } else {
+        await lockUnkeyedUploads();
+      }
     } catch (lookupError) {
       if (lookupError instanceof UnauthorizedError || latest.items.some((image) => image.kind === "unconfirmed")) {
         throw lookupError;

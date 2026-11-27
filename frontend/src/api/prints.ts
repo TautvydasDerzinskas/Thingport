@@ -299,6 +299,43 @@ export type License = Omit<LicenseOption, "id" | "family"> & {
   provider: string | null;
 };
 
+function isPlateUploadPrint(value: unknown, printId: string): value is Print {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    value.id === printId &&
+    "name" in value &&
+    typeof value.name === "string" &&
+    "tags" in value &&
+    Array.isArray(value.tags) &&
+    value.tags.every((tag) => typeof tag === "string") &&
+    "preview_images" in value &&
+    Array.isArray(value.preview_images) &&
+    value.preview_images.every(
+      (image: unknown) =>
+        typeof image === "object" &&
+        image !== null &&
+        "id" in image &&
+        typeof image.id === "string" &&
+        "url" in image &&
+        typeof image.url === "string",
+    ) &&
+    "plates" in value &&
+    Array.isArray(value.plates) &&
+    value.plates.length > 0 &&
+    value.plates.every(
+      (plate: unknown) =>
+        typeof plate === "object" &&
+        plate !== null &&
+        "id" in plate &&
+        typeof plate.id === "string" &&
+        "filename" in plate &&
+        typeof plate.filename === "string",
+    )
+  );
+}
+
 export type PrintLicense = { license: License | null; pending: boolean; filling: boolean; failed: boolean };
 
 export type ListPrintsResult = {
@@ -631,7 +668,15 @@ export const printsApi = {
       throw error;
     }
     try {
-      return await res.json();
+      const body: unknown = await res.json();
+      if (typeof body !== "object" || body === null || !("print" in body) || !isPlateUploadPrint(body.print, printId)) {
+        throw new Error("The server returned an invalid print after the plate upload");
+      }
+      const ids = "added_plate_ids" in body ? body.added_plate_ids : undefined;
+      if (ids !== undefined && (!Array.isArray(ids) || !ids.every((id) => typeof id === "string"))) {
+        throw new Error("The server returned invalid plate upload IDs");
+      }
+      return ids === undefined ? { print: body.print } : { print: body.print, added_plate_ids: ids };
     } catch (error) {
       throw new PlateUploadOutcomeUnknownError(error);
     }

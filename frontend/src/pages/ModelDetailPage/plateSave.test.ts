@@ -277,6 +277,40 @@ describe("savePlateChanges", () => {
     expect(result.plates.map((candidate) => candidate.id)).toEqual(["original", "second-plate"]);
   });
 
+  it("continues the same update when a lost response is fully confirmed by its receipt", async () => {
+    const original = plate("original", "base.3mf", 0);
+    const uploaded = plate("uploaded", "thingport-upload-new-part.3mf", 1);
+    const initial = print(original);
+    const afterUpload = print(original, uploaded);
+    const afterDelete = print(uploaded);
+    const afterRename = print({ ...uploaded, filename: "part.3mf", position: 0 });
+    const api = {
+      get: vi.fn<PlateSaveApi["get"]>().mockResolvedValue(initial),
+      getPlateUploadResults: vi.fn<NonNullable<PlateSaveApi["getPlateUploadResults"]>>().mockResolvedValue({
+        print: afterUpload,
+        upload_results: [{ upload_id: "new", plate_id: "uploaded" }],
+      }),
+      addPlates: vi
+        .fn<PlateSaveApi["addPlates"]>()
+        .mockRejectedValue(new PlateUploadOutcomeUnknownError("response lost")),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>().mockResolvedValue({ print: afterDelete }),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>().mockResolvedValue({ print: afterRename }),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: afterRename }),
+    };
+    const items: PlateItem[] = [
+      { kind: "new", localId: "new", file: new File(["mesh"], "part.3mf"), filename: "part.3mf" },
+    ];
+
+    await expect(savePlateChanges(initial, items, new Set(["original"]), api, () => {})).resolves.toEqual(afterRename);
+
+    expect(api.addPlates).toHaveBeenCalledTimes(1);
+    expect(api.getPlateUploadResults).toHaveBeenCalledExactlyOnceWith("model", ["new"]);
+    expect(api.deletePlate).toHaveBeenCalledExactlyOnceWith("model", "original");
+    expect(api.renamePlate).toHaveBeenCalledExactlyOnceWith("model", "uploaded", "part.3mf");
+    expect(api.reorderPlates).toHaveBeenCalledExactlyOnceWith("model", ["uploaded"]);
+  });
+
   it("tracks legacy upload responses by request-specific filename when a concurrent plate is present", async () => {
     const original = plate("original", "base.3mf", 0);
     const concurrent = plate("concurrent", "parallel.3mf", 1);

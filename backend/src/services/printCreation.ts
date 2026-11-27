@@ -114,7 +114,6 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
           await fs.copyFile(tempFilePath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
         }
       });
-      await fs.rm(tempFilePath, { force: true });
       return destAbsPath;
     }
     if (input.copyFromPath) {
@@ -139,8 +138,6 @@ async function placePlateFile(
   if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null, marker: {} };
   const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, findStoredCopies);
   if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256, marker: {} };
-  // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
-  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
   return { effectivePath: destAbsPath, contentSha256, marker: await reuseMarker(destAbsPath, true, contentSha256) };
 }
 
@@ -253,6 +250,8 @@ async function createPlateAtPosition(
     throw err;
   }
 
+  // Keep the submitted file until the row commits, so an append collision can be retried under the same claim.
+  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
   await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
   // A print profile's facts are read once its import has settled. Loaded when used: the service reaches this file.
   if (record.sourceInstanceId) {
@@ -438,18 +437,38 @@ export async function addPlatesToPrint(
 ): Promise<Plate[]> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new Error("Print not found");
-  const maxPosition = await prisma.plate.aggregate({ where: { printId }, _max: { position: true } });
-  let nextPosition = (maxPosition._max.position ?? -1) + 1;
 
   const created: Plate[] = [];
   for (const input of plateInputs) {
-    const record = input.clientUploadId
-      ? await createPlateIdempotently(print, input, nextPosition, input.clientUploadId)
-      : (await createPlateAtPosition(print, input, nextPosition)).record;
-    created.push(record);
-    nextPosition = Math.max(nextPosition, record.position + 1);
+    created.push(
+      input.clientUploadId
+        ? await createPlateIdempotently(print, input, input.clientUploadId)
+        : await appendPlate(print, input),
+    );
   }
   return created;
+}
+
+const MAX_PLATE_APPEND_ATTEMPTS = 5;
+
+async function appendPlate(
+  print: Parameters<typeof createPlateAtPosition>[0],
+  input: NewPlateInput,
+  claim?: PlateUploadClaim,
+): Promise<Plate> {
+  for (let attempt = 0; attempt < MAX_PLATE_APPEND_ATTEMPTS; attempt++) {
+    // A replay may have waited for a request that appended other files as well as the one it was waiting for.
+    const maxPosition = await prisma.plate.aggregate({ where: { printId: print.id }, _max: { position: true } });
+    const position = (maxPosition._max.position ?? -1) + 1;
+    try {
+      return (await createPlateAtPosition(print, input, position, claim)).record;
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
+      const target = error.meta?.target;
+      if (!Array.isArray(target) || !target.includes("printId") || !target.includes("position")) throw error;
+    }
+  }
+  throw new HttpError(409, "Another upload took the plate position; try again");
 }
 
 const UPLOAD_ATTEMPT_POLL_MS = 100;
@@ -543,7 +562,6 @@ async function completePlateUpload(db: Prisma.TransactionClient, claim: PlateUpl
 async function createClaimedPlateUpload(
   print: Parameters<typeof createPlateAtPosition>[0],
   input: NewPlateInput,
-  position: number,
   claim: PlateUploadClaim,
 ): Promise<Plate> {
   const controller = new AbortController();
@@ -555,7 +573,7 @@ async function createClaimedPlateUpload(
       await completePlateUpload(prisma, claim, existing.id);
       return existing;
     }
-    return (await createPlateAtPosition(print, input, position, claim)).record;
+    return await appendPlate(print, input, claim);
   } catch (error) {
     try {
       await prisma.plateUploadAttempt.updateMany({
@@ -575,7 +593,6 @@ async function createClaimedPlateUpload(
 async function createPlateIdempotently(
   print: Parameters<typeof createPlateAtPosition>[0],
   input: NewPlateInput,
-  position: number,
   clientUploadId: string,
 ): Promise<Plate> {
   const where = { printId_clientUploadId: { printId: print.id, clientUploadId } };
@@ -595,7 +612,7 @@ async function createPlateIdempotently(
       throw new HttpError(409, "The plate upload attempt has an invalid status");
     }
 
-    if (await claimPlateUpload(claim)) return createClaimedPlateUpload(print, input, position, claim);
+    if (await claimPlateUpload(claim)) return createClaimedPlateUpload(print, input, claim);
     await delay(UPLOAD_ATTEMPT_POLL_MS);
   }
 

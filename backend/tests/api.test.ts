@@ -294,6 +294,7 @@ describe("plate add/remove/reorder/rename", () => {
     });
     try {
       expect((await swap()).status).toBe(500);
+      expect(failMove.mock.calls.some(([from]) => String(from) === firstPath)).toBe(true);
     } finally {
       failMove.mockRestore();
     }
@@ -372,6 +373,43 @@ describe("plate add/remove/reorder/rename", () => {
     } finally {
       fs.rmSync(firstFile, { force: true });
       fs.rmSync(secondFile, { force: true });
+    }
+  });
+
+  it("retries a concurrent append position conflict with the same upload claim and bytes", async () => {
+    const firstId = randomUUID();
+    const secondId = randomUUID();
+    const firstBytes = Buffer.from("solid first concurrent endsolid");
+    const upload = async (uploadId: string, bytes: Buffer) =>
+      await auth(request(app).post(`/api/print/${printId}/plates`)).attach(
+        "files",
+        bytes,
+        `thingport-upload-${uploadId}-concurrent.stl`,
+      );
+    const firstPlacement = pauseAt("fileState:path.taken");
+    const first = track(upload(firstId, firstBytes));
+    try {
+      await firstPlacement.reachedBy(first);
+      const second = await upload(secondId, Buffer.from("solid second concurrent endsolid"));
+      expect(second.status).toBe(200);
+      const secondPlateId: string = second.body.added_plate_ids[0];
+
+      firstPlacement.release();
+      const resumed = await first;
+      expect(resumed.status).toBe(200);
+      const resumedPlateId: string = resumed.body.added_plate_ids[0];
+      const completed = await prisma.plateUploadAttempt.findUniqueOrThrow({
+        where: { printId_clientUploadId: { printId, clientUploadId: firstId } },
+      });
+      expect(completed).toMatchObject({ status: "complete", plateId: resumedPlateId });
+      const saved = await prisma.plate.findUniqueOrThrow({ where: { id: resumedPlateId } });
+      const ahead = await prisma.plate.findUniqueOrThrow({ where: { id: secondPlateId } });
+      expect(saved.position).toBe(ahead.position + 1);
+      const file = resolvePlateFilePath(saved);
+      if (!file) throw new Error("Expected a stored plate after the position retry");
+      expect(fs.readFileSync(file)).toEqual(firstBytes);
+    } finally {
+      firstPlacement.release();
     }
   });
 
@@ -549,13 +587,15 @@ describe("plate add/remove/reorder/rename", () => {
     const image = await sharp({ create: { width: 8, height: 8, channels: 3, background: "#3366cc" } })
       .png()
       .toBuffer();
+    const truncated = image.subarray(0, image.indexOf("IDAT") + 6);
+    await expect(sharp(truncated).metadata()).resolves.toMatchObject({ format: "png" });
     const [uploadId, skippedId, unknownId] = [randomUUID(), randomUUID(), randomUUID()];
     const upload = () =>
       auth(request(app).post(`/api/print/${printId}/preview-images/idempotent`))
         .field("upload_ids", uploadId)
         .field("upload_ids", skippedId)
         .attach("files", image, "picture.png")
-        .attach("files", Buffer.from("invalid"), "invalid.png");
+        .attach("files", truncated, "truncated.png");
     const results = () =>
       auth(request(app).post(`/api/print/${printId}/preview-images/upload-results`)).send({
         upload_ids: [uploadId, skippedId, unknownId],

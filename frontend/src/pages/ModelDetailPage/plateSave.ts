@@ -145,7 +145,7 @@ export async function savePlateChanges(
     );
     reportProgress();
 
-    let uploadRes: Awaited<ReturnType<PlateSaveApi["addPlates"]>>;
+    let uploadRes: Awaited<ReturnType<PlateSaveApi["addPlates"]>> | undefined;
     try {
       uploadRes = await api.addPlates(print.id, uploadFiles);
     } catch (uploadError) {
@@ -176,44 +176,49 @@ export async function savePlateChanges(
       if (stagedItems.some((item) => item.kind === "new" && item.uploadAttempted)) {
         throw new PlateUploadConfirmationError([uploadError]);
       }
-      throw uploadError;
+      // A rejected upload is still a new row even when it no longer needs a receipt lookup.
+      if (stagedItems.some((item) => item.kind === "new")) throw uploadError;
     }
 
-    latest = uploadRes.print;
-    try {
-      const responseIds = uploadRes.added_plate_ids;
-      const idsAreRequestSpecific =
-        Array.isArray(responseIds) &&
-        responseIds.length === uploads.length &&
-        new Set(responseIds).size === uploads.length &&
-        responseIds.every((id) => typeof id === "string" && id.length > 0);
-      const uploadedIds = idsAreRequestSpecific
-        ? responseIds
-        : uploads.map(({ marker }) => {
-            const uploaded = storedUpload(latest, marker);
-            if (!uploaded) throw new PlateUploadConfirmationError();
-            return uploaded.id;
-          });
-      let nextUploaded = 0;
-      stagedItems = stagedItems.flatMap((item) => {
-        if (item.kind === "existing") return [item];
-        const uploadedId = uploadedIds[nextUploaded++];
-        const uploaded = latest.plates.find((plate) => plate.id === uploadedId);
-        return uploaded ? [asExisting(item, uploaded)] : [];
-      });
-    } catch (confirmationError) {
-      stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadOutcomeUnknown: false } : item));
+    if (uploadRes) {
+      latest = uploadRes.print;
       try {
-        await refreshAttemptedUploads();
-      } catch (reconciliationError) {
+        const responseIds = uploadRes.added_plate_ids;
+        const idsAreRequestSpecific =
+          Array.isArray(responseIds) &&
+          responseIds.length === uploads.length &&
+          new Set(responseIds).size === uploads.length &&
+          responseIds.every((id) => typeof id === "string" && id.length > 0);
+        const uploadedIds = idsAreRequestSpecific
+          ? responseIds
+          : uploads.map(({ marker }) => {
+              const uploaded = storedUpload(latest, marker);
+              if (!uploaded) throw new PlateUploadConfirmationError();
+              return uploaded.id;
+            });
+        let nextUploaded = 0;
+        stagedItems = stagedItems.flatMap((item) => {
+          if (item.kind === "existing") return [item];
+          const uploadedId = uploadedIds[nextUploaded++];
+          const uploaded = latest.plates.find((plate) => plate.id === uploadedId);
+          return uploaded ? [asExisting(item, uploaded)] : [];
+        });
+      } catch (confirmationError) {
+        stagedItems = stagedItems.map((item) =>
+          item.kind === "new" ? { ...item, uploadOutcomeUnknown: false } : item,
+        );
+        try {
+          await refreshAttemptedUploads();
+        } catch (reconciliationError) {
+          reportProgress();
+          if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
+          throw new PlateUploadConfirmationError([confirmationError, reconciliationError]);
+        }
         reportProgress();
-        if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
-        throw new PlateUploadConfirmationError([confirmationError, reconciliationError]);
+        if (stagedItems.some((item) => item.kind === "new")) throw confirmationError;
       }
       reportProgress();
-      throw confirmationError;
     }
-    reportProgress();
   }
 
   for (const plateId of pendingRemovals) {

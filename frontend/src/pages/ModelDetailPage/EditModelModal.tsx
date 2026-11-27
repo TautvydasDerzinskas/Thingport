@@ -63,7 +63,10 @@ import {
   type PlateItem,
 } from "./plateSave";
 import {
+  canArrangePreviewImage,
   isPendingPreviewImage,
+  movePreviewImage,
+  previewImageNeighbourIndex,
   PreviewUploadError,
   savePreviewRemovals,
   savePreviewUploads,
@@ -217,13 +220,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const makeThumbnail = (key: string) => {
     setImages((prev) => {
       const target = prev.find((img) => imageKey(img) === key);
-      return target ? [target, ...prev.filter((img) => img !== target)] : prev;
+      return target && canArrangePreviewImage(target) ? [target, ...prev.filter((img) => img !== target)] : prev;
     });
     markDirty();
   };
   const moveImageBy = (key: string, dir: -1 | 1) => {
     setImages((prev) =>
-      moveItem(
+      movePreviewImage(
         prev,
         prev.findIndex((img) => imageKey(img) === key),
         dir,
@@ -560,10 +563,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {images.map((img, idx) => {
                 const key = imageKey(img);
                 const src = img.kind === "existing" ? printsApi.fileUrl(img.url) : img.previewUrl;
-                const canArrange = img.kind !== "missing" && img.kind !== "unconfirmed";
-                const isThumbnail =
-                  canArrange &&
-                  images.findIndex((image) => image.kind !== "missing" && image.kind !== "unconfirmed") === idx;
+                const canArrange = canArrangePreviewImage(img);
+                const isThumbnail = canArrange && images.findIndex(canArrangePreviewImage) === idx;
+                const canMoveLeft = previewImageNeighbourIndex(images, idx, -1) >= 0;
+                const canMoveRight = previewImageNeighbourIndex(images, idx, 1) >= 0;
+                const removeLabel = t("models:edit.removeImage");
+                const moveLeftLabel = t("models:edit.moveImageLeft");
+                const moveRightLabel = t("models:edit.moveImageRight");
                 return (
                   <Box
                     key={key}
@@ -635,36 +641,48 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                         </Tooltip>
                       </Box>
                     )}
-                    <IconButton
-                      size="small"
-                      disabled={saving || img.kind === "unconfirmed" || isPendingPreviewImage(img)}
-                      aria-label={t("models:edit.removeImage")}
-                      onClick={() => removeImage(key)}
-                      sx={{ ...overImageButtonSx, position: "absolute", top: 2, right: 2 }}
-                    >
-                      <CloseIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                    <Stack direction="row" sx={{ position: "absolute", bottom: isThumbnail ? 22 : 2, right: 2 }}>
-                      {!isThumbnail && (
+                    <Tooltip title={removeLabel}>
+                      <Box component="span" sx={{ position: "absolute", top: 2, right: 2, display: "inline-flex" }}>
                         <IconButton
                           size="small"
-                          disabled={saving || !canArrange}
-                          aria-label={t("models:edit.moveImageLeft")}
-                          onClick={() => moveImageBy(key, -1)}
+                          disabled={saving || img.kind === "unconfirmed" || isPendingPreviewImage(img)}
+                          aria-label={removeLabel}
+                          onClick={() => removeImage(key)}
                           sx={overImageButtonSx}
                         >
-                          <ChevronLeftIcon sx={{ fontSize: 14 }} />
+                          <CloseIcon sx={{ fontSize: 14 }} />
                         </IconButton>
+                      </Box>
+                    </Tooltip>
+                    <Stack direction="row" sx={{ position: "absolute", bottom: isThumbnail ? 22 : 2, right: 2 }}>
+                      {!isThumbnail && (
+                        <Tooltip title={moveLeftLabel}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={saving || !canMoveLeft}
+                              aria-label={moveLeftLabel}
+                              onClick={() => moveImageBy(key, -1)}
+                              sx={overImageButtonSx}
+                            >
+                              <ChevronLeftIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                       )}
-                      <IconButton
-                        size="small"
-                        disabled={saving || !canArrange || idx === images.length - 1}
-                        aria-label={t("models:edit.moveImageRight")}
-                        onClick={() => moveImageBy(key, 1)}
-                        sx={overImageButtonSx}
-                      >
-                        <ChevronRightIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
+                      <Tooltip title={moveRightLabel}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={saving || !canMoveRight}
+                            aria-label={moveRightLabel}
+                            onClick={() => moveImageBy(key, 1)}
+                            sx={overImageButtonSx}
+                          >
+                            <ChevronRightIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     </Stack>
                   </Box>
                 );

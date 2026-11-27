@@ -115,6 +115,42 @@ describe("plate uploads", () => {
     await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
   });
 
+  it.each([
+    {},
+    { print: null },
+    { print: { id: "print", name: "Example", tags: [], preview_images: [], plates: [null] } },
+  ])("keeps a plate upload unresolved when its successful JSON has no usable print (%j)", async (body) => {
+    respond(200, JSON.stringify(body));
+    await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
+  });
+
+  it("accepts a valid legacy upload response without added_plate_ids", async () => {
+    const print = {
+      id: "print",
+      name: "Example",
+      tags: [],
+      preview_images: [],
+      created_at: "2026-01-01T00:00:00.000Z",
+      supporting_file_count: 0,
+      view_count: 0,
+      print_count: 0,
+      is_favorite: false,
+      plates: [
+        {
+          id: "plate",
+          print_id: "print",
+          filename: "file.stl",
+          position: 0,
+          url: "/file.stl",
+          mime: "model/stl",
+          size: 1,
+        },
+      ],
+    };
+    respond(200, JSON.stringify({ print }));
+    await expect(printsApi.addPlates("print", [])).resolves.toStrictEqual({ print });
+  });
+
   it("treats a validation error as a definite rejection", async () => {
     respond(400, JSON.stringify({ detail: "Invalid plate" }));
     const upload = printsApi.addPlates("print", []);

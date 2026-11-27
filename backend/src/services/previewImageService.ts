@@ -129,7 +129,9 @@ async function encodePreviewUpload(buffer: Buffer): Promise<Buffer | null> {
     // Sharp reports input rejection through Error messages. A different decoder or encoder failure is retryable.
     const rejected =
       /^(Input buffer (contains unsupported image format|has corrupt header:)|Input image exceeds (pixel|channel) limit|VipsJpeg: premature end of JPEG image)/;
-    if (error instanceof Error && rejected.test(error.message)) return null;
+    if (error instanceof Error && (rejected.test(error.message) || error.message === "vipspng: libpng read error")) {
+      return null;
+    }
     throw error;
   }
 }
