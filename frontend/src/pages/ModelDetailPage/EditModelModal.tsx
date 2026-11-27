@@ -28,6 +28,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
@@ -48,6 +49,8 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
+import GeneratePicturesDialog from "../../components/media/GeneratePicturesDialog";
+import { canPicture } from "../../utils/scenePictures/scenes";
 
 type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
@@ -171,7 +174,17 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     return entries;
   }, [licenses]);
 
-  const onAddImages = (fileList: FileList | null) => {
+  const [generateOpen, setGenerateOpen] = useState(false);
+  // What a picture can be made from: the model's 3D files as they are saved, not ones only staged here.
+  const pictureSources = useMemo(
+    () =>
+      print.plates
+        .filter((p) => canPicture(p.filename))
+        .map((p) => ({ id: p.id, filename: p.filename, url: printsApi.fileUrl(p.url) })),
+    [print.plates],
+  );
+
+  const onAddImages = (fileList: FileList | File[] | null) => {
     if (!fileList?.length) return;
     const newItems: ImageItem[] = Array.from(fileList).map((file) => {
       const previewUrl = URL.createObjectURL(file);
@@ -633,6 +646,38 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                 <AddPhotoAlternateIcon fontSize="small" />
                 <Typography variant="caption">{t("common:add")}</Typography>
               </Box>
+              {pictureSources.length > 0 && (
+                <Tooltip title={t("models:scenePictures.generateTooltip")}>
+                  <Box
+                    component="button"
+                    type="button"
+                    disabled={saving}
+                    onClick={() => setGenerateOpen(true)}
+                    sx={{
+                      flexShrink: 0,
+                      width: 96,
+                      height: 96,
+                      borderRadius: 1,
+                      border: "1px dashed",
+                      borderColor: "divider",
+                      bgcolor: "transparent",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 0.5,
+                      color: "text.secondary",
+                      transition: "border-color 150ms, color 150ms",
+                      "&:hover:not(:disabled), &:focus-visible": { borderColor: "primary.main", color: "primary.main" },
+                      "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+                    }}
+                  >
+                    <AutoAwesomeOutlinedIcon fontSize="small" />
+                    <Typography variant="caption">{t("models:scenePictures.generate")}</Typography>
+                  </Box>
+                </Tooltip>
+              )}
               <input
                 ref={addImageInputRef}
                 type="file"
@@ -767,6 +812,16 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           {t("models:edit.update")}
         </Button>
       </DialogActions>
+      {generateOpen && (
+        <GeneratePicturesDialog
+          open
+          onClose={() => setGenerateOpen(false)}
+          modelName={title || print.name}
+          files={pictureSources}
+          existingCount={images.length}
+          onAdd={onAddImages}
+        />
+      )}
     </Dialog>
   );
 }

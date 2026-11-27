@@ -1036,7 +1036,17 @@
         "willHave_many": "У «{{name}}» буде {{count}} профілів",
         "willHave_other": "У «{{name}}» буде {{count}} профілю",
         "addProfile": "Додати профіль",
-        "addedProfile": "«{{profile}}» додано до «{{name}}»"
+        "addedProfile": "«{{profile}}» додано до «{{name}}»",
+        "pictures": "Зображення",
+        "picturesHelp": "Після збереження додає відображені зображення моделі на справжніх поверхнях — після зображення вище.",
+        "addPictures": "Додати створені зображення",
+        "changePictures": "Змінити",
+        "addingPictures": "Додавання зображень до {{name}}…",
+        "addedPictures_one": "До {{name}} додано {{count}} зображення",
+        "addedPictures_few": "До {{name}} додано {{count}} зображення",
+        "addedPictures_many": "До {{name}} додано {{count}} зображень",
+        "addedPictures_other": "До {{name}} додано {{count}} зображення",
+        "picturesFailed": "Модель збережено, але створити її зображення не вдалося: {{error}}"
       }
     },
     "shell": {
@@ -8058,6 +8068,60 @@
     "pageTitle": "Моделі",
     "grid": {
       "empty": "Моделей ще немає."
+    },
+    "scenePictures": {
+      "generate": "Створити",
+      "generateTooltip": "Створити зображення моделі на справжніх поверхнях",
+      "title": "Створити зображення",
+      "help": "Відображає модель на відсканованих справжніх поверхнях з освітленням реальної кімнати. Кожне зображення має свій ракурс і тло. Вони додаються після зображень моделі, а якщо їх немає — стають першими.",
+      "file": "Файл",
+      "plate": "Пластина",
+      "plateNumber": "Пластина {{number}}",
+      "colour": "Колір",
+      "ownColour": "Власні кольори",
+      "colours": {
+        "white": "Білий",
+        "grey": "Сірий",
+        "black": "Чорний",
+        "red": "Червоний",
+        "orange": "Помаранчевий",
+        "yellow": "Жовтий",
+        "green": "Зелений",
+        "blue": "Синій"
+      },
+      "angle": "Ракурс",
+      "angles": {
+        "hero": "Спереду",
+        "side": "Збоку",
+        "top": "Згори"
+      },
+      "background": "Тло",
+      "scenes": {
+        "white-oak": "Білий дуб",
+        "oak-desk": "Дубовий стіл",
+        "walnut": "Горіх",
+        "plywood": "Фанера",
+        "workbench": "Верстак",
+        "leather": "Шкіряний килимок",
+        "wool": "Вовняний килимок",
+        "studio": "Студія"
+      },
+      "removePicture": "Видалити зображення",
+      "addPicture": "Додати зображення",
+      "addCount_one": "Додати {{count}} зображення",
+      "addCount_few": "Додати {{count}} зображення",
+      "addCount_many": "Додати {{count}} зображень",
+      "addCount_other": "Додати {{count}} зображення",
+      "rendering": "Відображення {{done}} з {{total}}…",
+      "afterExisting_one": "Додадуться після зображення моделі",
+      "afterExisting_few": "Додадуться після зображень моделі ({{count}})",
+      "afterExisting_many": "Додадуться після зображень моделі ({{count}})",
+      "afterExisting_other": "Додадуться після зображень моделі ({{count}})",
+      "firstPictures": "Вони стануть першими зображеннями моделі",
+      "loadFailed": "Не вдалося відкрити {{file}}, щоб створити зображення",
+      "renderFailed": "Не вдалося відобразити зображення. Можливо, ваш браузер не підтримує WebGL.",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "Готово"
     }
   },
   "providers": {

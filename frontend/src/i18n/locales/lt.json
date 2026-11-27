@@ -5519,7 +5519,17 @@
         "willHave_many": "„{{name}}“ turės {{count}} profilio",
         "willHave_other": "„{{name}}“ turės {{count}} profilių",
         "addProfile": "Pridėti profilį",
-        "addedProfile": "„{{profile}}“ pridėtas prie „{{name}}“"
+        "addedProfile": "„{{profile}}“ pridėtas prie „{{name}}“",
+        "pictures": "Nuotraukos",
+        "picturesHelp": "Išsaugojus modelį, pridedamos jo atvaizduotos nuotraukos ant tikrų paviršių – po aukščiau esančios nuotraukos.",
+        "addPictures": "Pridėti sugeneruotas nuotraukas",
+        "changePictures": "Keisti",
+        "addingPictures": "Pridedamos nuotraukos modeliui {{name}}…",
+        "addedPictures_one": "Modeliui {{name}} pridėta {{count}} nuotrauka",
+        "addedPictures_few": "Modeliui {{name}} pridėtos {{count}} nuotraukos",
+        "addedPictures_many": "Modeliui {{name}} pridėta {{count}} nuotraukos",
+        "addedPictures_other": "Modeliui {{name}} pridėta {{count}} nuotraukų",
+        "picturesFailed": "Modelis išsaugotas, bet nepavyko sukurti jo nuotraukų: {{error}}"
       }
     },
     "chats": {
@@ -7935,6 +7945,60 @@
       "showMore_few": "Rodyti dar {{count}}",
       "showMore_other": "Rodyti dar {{count}}",
       "sharedFailed": "Nepavyko įkelti daugiau to, kas bendrinama su jumis. Bandykite dar kartą."
+    },
+    "scenePictures": {
+      "generate": "Sugeneruoti",
+      "generateTooltip": "Sugeneruoti modelio nuotraukas ant tikrų paviršių",
+      "title": "Sugeneruoti nuotraukas",
+      "help": "Atvaizduoja modelį ant nuskenuotų tikrų paviršių, apšviestą kaip tikrame kambaryje. Kiekviena nuotrauka turi savo kampą ir foną. Jos pridedamos po modelio nuotraukų, o jei jų nėra – tampa pirmosiomis.",
+      "file": "Failas",
+      "plate": "Plokštė",
+      "plateNumber": "Plokštė {{number}}",
+      "colour": "Spalva",
+      "ownColour": "Savos spalvos",
+      "colours": {
+        "white": "Balta",
+        "grey": "Pilka",
+        "black": "Juoda",
+        "red": "Raudona",
+        "orange": "Oranžinė",
+        "yellow": "Geltona",
+        "green": "Žalia",
+        "blue": "Mėlyna"
+      },
+      "angle": "Kampas",
+      "angles": {
+        "hero": "Priekis",
+        "side": "Šonas",
+        "top": "Viršus"
+      },
+      "background": "Fonas",
+      "scenes": {
+        "white-oak": "Baltas ąžuolas",
+        "oak-desk": "Ąžuolinis stalas",
+        "walnut": "Riešutmedis",
+        "plywood": "Fanera",
+        "workbench": "Darbastalis",
+        "leather": "Odinis kilimėlis",
+        "wool": "Vilnonis kilimėlis",
+        "studio": "Studija"
+      },
+      "removePicture": "Pašalinti nuotrauką",
+      "addPicture": "Pridėti nuotrauką",
+      "addCount_one": "Pridėti {{count}} nuotrauką",
+      "addCount_few": "Pridėti {{count}} nuotraukas",
+      "addCount_many": "Pridėti {{count}} nuotraukos",
+      "addCount_other": "Pridėti {{count}} nuotraukų",
+      "rendering": "Atvaizduojama {{done}} iš {{total}}…",
+      "afterExisting_one": "Bus pridėtos po esamos nuotraukos",
+      "afterExisting_few": "Bus pridėtos po esamų nuotraukų ({{count}})",
+      "afterExisting_many": "Bus pridėtos po esamų nuotraukų ({{count}})",
+      "afterExisting_other": "Bus pridėtos po esamų nuotraukų ({{count}})",
+      "firstPictures": "Jos taps pirmosiomis modelio nuotraukomis",
+      "loadFailed": "Nepavyko atidaryti {{file}} nuotraukoms",
+      "renderFailed": "Nepavyko atvaizduoti nuotraukų. Jūsų naršyklė gali nepalaikyti WebGL.",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "Atlikta"
     }
   },
   "providers": {

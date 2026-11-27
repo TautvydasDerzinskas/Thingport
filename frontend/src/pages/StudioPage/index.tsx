@@ -69,6 +69,8 @@ import SidePanel from "./SidePanel";
 import ResizeHandle, { useResizableWidth } from "../../components/ResizeHandle";
 import PrintProfilePanel from "./PrintProfilePanel";
 import StudioSaveDialog, { type StudioSaveDraft, type StudioSaveRequest } from "./StudioSaveDialog";
+import { addScenePictures } from "../../utils/scenePictures/addToModel";
+import type { Shot } from "../../utils/scenePictures/scenes";
 import { profileAiPrompt } from "./printProfileUi";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
@@ -808,7 +810,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [saving, setSaving] = useState(false);
   // The view as shown, for the save dialog's picture of the plate in view.
   const snapshotView = useCallback(() => viewport.current?.snapshot() ?? Promise.resolve(null), []);
-  const saveToLibrary = async ({ name, modelId, profileName, picturePlate }: StudioSaveRequest) => {
+  const saveToLibrary = async ({ name, modelId, profileName, picturePlate, pictures }: StudioSaveRequest) => {
     if (!design || saving) return;
     setSaving(true);
     try {
@@ -841,10 +843,30 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         action: { label: t("studio.design.openSaved"), onClick: () => navigate(`/models/${model.id}`) },
         autoHideMs: 8000,
       });
+      // Generated pictures go on after, in the background: the model is saved whether or not they come out.
+      if (pictures?.length && !modelId) void addPicturesToSaved(model.id, model.title || model.name, pictures);
     } catch (error) {
       showError(error);
     } finally {
       setSaving(false);
+    }
+  };
+  const addPicturesToSaved = async (id: string, modelName: string, pictures: Shot[]) => {
+    toast({ message: t("studio.save.addingPictures", { name: modelName }), severity: "info", autoHideMs: 4000 });
+    try {
+      const count = await addScenePictures(id, pictures);
+      if (count)
+        toast({
+          message: t("studio.save.addedPictures", { count, name: modelName }),
+          severity: "success",
+          action: { label: t("studio.design.openSaved"), onClick: () => navigate(`/models/${id}`) },
+          autoHideMs: 8000,
+        });
+    } catch (error) {
+      toast({
+        message: t("studio.save.picturesFailed", { error: error instanceof Error ? error.message : String(error) }),
+        severity: "error",
+      });
     }
   };
 
