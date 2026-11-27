@@ -151,6 +151,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       .catch(() => setLicenses([]));
   }, []);
 
+  // A new picture's preview is let go once its thumbnail is gone, and every one when the dialog closes.
+  useEffect(() => {
+    const shown = new Set(images.flatMap((img) => (img.kind === "new" ? [img.previewUrl] : [])));
+    for (const url of createdUrlsRef.current) if (!shown.has(url)) URL.revokeObjectURL(url);
+    createdUrlsRef.current = createdUrlsRef.current.filter((url) => shown.has(url));
+  }, [images]);
+  useEffect(() => () => createdUrlsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
+
   const markDirty = () => setDirty(true);
 
   // Each kind is ordered on its own, as in its box on the models page; categories come first.

@@ -9,6 +9,7 @@ import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { buildBambuModelGroup } from "../bambuThreeMf";
 import { disposeObject3D, loadBambuThreeMFForViewer, loadObjectFromAsset } from "../modelLoaders";
+import { outlinePoints, placeCamera } from "./frame";
 import {
   angleById,
   lightUrl,
@@ -28,6 +29,8 @@ export type SceneModel = {
   radius: number;
   height: number;
   footprint: { x: number; z: number };
+  /** Points over the model's surface, to keep all of it in the frame. */
+  outline: THREE.Vector3[];
   /** Whether the file gives colours of its own (a 3MF's filaments, a glTF's materials). */
   hasColour: boolean;
   /** A 3MF's plates, to choose which to picture; empty for other files. */
@@ -78,6 +81,7 @@ export async function loadSceneModel(url: string, filename: string, plate: numbe
         metalness: 0,
       });
       copy.userData.ownColor = copy.color.clone();
+      copy.userData.ownMap = copy.map;
       copy.userData.ownVertexColors = copy.vertexColors;
       return copy;
     });
@@ -90,6 +94,7 @@ export async function loadSceneModel(url: string, filename: string, plate: numbe
     radius: Math.max(sized.getBoundingSphere(new THREE.Sphere()).radius, 1),
     height: size.y,
     footprint: { x: size.x, z: size.z },
+    outline: outlinePoints(wrapper),
     hasColour,
     plates,
     plate: chosen,
@@ -107,6 +112,8 @@ export function colourModel(model: SceneModel, choice: ColourChoice): void {
       const material = m as THREE.MeshStandardMaterial;
       if (hex) material.color.set(hex);
       else if (material.userData.ownColor) material.color.copy(material.userData.ownColor);
+      // A texture would tint the filament colour, so it's only shown in the model's own colours.
+      material.map = hex ? null : (material.userData.ownMap ?? null);
       material.vertexColors = !hex && Boolean(material.userData.ownVertexColors);
       material.needsUpdate = true;
     }
@@ -210,6 +217,10 @@ export class ScenePictureRenderer {
     const { radius } = model;
     // The table reaches well past the frame whatever the model's size, so its edge never shows.
     const tableMm = Math.max(2400, radius * 60);
+    const camera = new THREE.PerspectiveCamera(30, width / height, radius * 0.05, tableMm * 3);
+    const target = placeCamera(camera, model, angle);
+    // How much further back than the angle's distance the camera went to fit all of the model in.
+    const pulledBack = camera.position.length() / (radius * angle.distance);
     const room = await this.room(def.light);
     const scene = new THREE.Scene();
     scene.environment = room.env;
@@ -238,7 +249,7 @@ export class ScenePictureRenderer {
     } else {
       const backdrop = new THREE.Color("#e9e9ec");
       scene.background = backdrop;
-      scene.fog = new THREE.Fog(backdrop, radius * 6, radius * 16);
+      scene.fog = new THREE.Fog(backdrop, radius * 6 * pulledBack, radius * 16 * pulledBack);
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(tableMm * 2, tableMm * 2),
         new THREE.MeshStandardMaterial({ color: "#f0f0f2", roughness: 0.9 }),
@@ -266,42 +277,36 @@ export class ScenePictureRenderer {
     extras.push(sun);
     scene.add(model.root, ...extras);
 
-    const camera = new THREE.PerspectiveCamera(30, width / height, radius * 0.05, tableMm * 3);
-    const az = THREE.MathUtils.degToRad(angle.azimuth);
-    const el = THREE.MathUtils.degToRad(angle.elevation);
-    const distance = radius * angle.distance;
-    camera.position.set(
-      Math.sin(az) * Math.cos(el) * distance,
-      Math.sin(el) * distance,
-      Math.cos(az) * Math.cos(el) * distance,
-    );
-    const target = new THREE.Vector3(0, model.height / 2, 0);
-    camera.lookAt(target);
-
-    this.renderer.setSize(width, height, false);
-    const composer = new EffectComposer(this.renderer);
-    composer.setSize(width, height);
-    composer.addPass(new RenderPass(scene, camera));
-    // Tuned on a 40 mm keyring (radius ~25 mm); the blur scales with the model so a big one isn't all smeared.
-    composer.addPass(
+    const passes = [
+      new RenderPass(scene, camera),
+      // Tuned on a 40 mm keyring (radius ~25 mm); the blur scales with the model so a big one isn't all smeared.
       new BokehPass(scene, camera, {
         focus: camera.position.distanceTo(target),
         aperture: 0.00025 * (25 / radius),
         maxblur: 0.008,
       }),
-    );
-    composer.addPass(new OutputPass());
-    composer.render();
-    composer.dispose();
-    scene.remove(model.root);
-    for (const extra of extras) {
-      if (extra instanceof THREE.Mesh) {
-        extra.geometry.dispose();
-        const material = extra.material as THREE.MeshBasicMaterial;
-        if (extra.renderOrder === 1) material.map?.dispose();
-        material.dispose();
+      new OutputPass(),
+    ];
+    const composer = new EffectComposer(this.renderer);
+    try {
+      this.renderer.setSize(width, height, false);
+      composer.setSize(width, height);
+      for (const pass of passes) composer.addPass(pass);
+      composer.render();
+    } finally {
+      // The composer frees only its own targets: each pass frees what it made.
+      for (const pass of passes) pass.dispose();
+      composer.dispose();
+      scene.remove(model.root);
+      for (const extra of extras) {
+        if (extra instanceof THREE.Mesh) {
+          extra.geometry.dispose();
+          const material = extra.material as THREE.MeshBasicMaterial;
+          if (extra.renderOrder === 1) material.map?.dispose();
+          material.dispose();
+        }
+        if (extra instanceof THREE.DirectionalLight) extra.shadow.dispose();
       }
-      if (extra instanceof THREE.DirectionalLight) extra.shadow.dispose();
     }
     return new Promise<Blob>((resolve, reject) =>
       this.renderer.domElement.toBlob(
