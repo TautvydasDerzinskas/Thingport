@@ -1,12 +1,17 @@
 import type { OidcProvider } from "@prisma/client";
 import { type Response, Router } from "express";
 import { z } from "zod";
-import { requireAdmin, requireAuth, signedInRecently } from "../auth";
+import { requireAdmin, requireAuth, requireCurrentAdmin, signedInRecently } from "../auth";
 import { startSession } from "../services/sessionService";
 import { prisma } from "../db";
 import { toUserOut } from "../dto";
 import { createLog } from "../services/auditLog";
-import { getPublicUrl } from "../services/settingsService";
+import {
+  getEmailPasswordEnabled,
+  getPublicUrl,
+  setEmailPasswordEnabled,
+  withSignInMethodsTransaction,
+} from "../services/settingsService";
 import { findValidInvitation } from "../services/invitationService";
 import {
   SLUG_PATTERN,
@@ -24,6 +29,7 @@ import {
   matchOut,
   normalizeIssuerUrl,
   otherWaysIn,
+  requireAdminOidcSignInPath,
   recordTest,
   redeemLoginCode,
   redirectUriFor,
@@ -236,8 +242,10 @@ router.get(
       where: { OR: [{ enabled: true }, { identities: { some: { userId: req.userId! } } }] },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     });
+    const hasPassword = Boolean(user.passwordHash);
     res.json({
-      has_password: Boolean(user.passwordHash),
+      has_password: hasPassword,
+      password_available: hasPassword && (await getEmailPasswordEnabled()),
       signed_in_recently: signedInRecently(req),
       // Connecting needs the provider to send people back here.
       can_connect: Boolean(publicUrlOf(res)),
@@ -296,19 +304,23 @@ router.delete(
   "/profile/sign-in/connections/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const identity = await prisma.userIdentity.findFirst({
-      where: { id: req.params.id, userId: req.userId! },
-      include: { provider: { select: { name: true } } },
+    const identity = await withSignInMethodsTransaction(async (tx) => {
+      const connection = await tx.userIdentity.findFirst({
+        where: { id: req.params.id, userId: req.userId! },
+        include: { provider: { select: { name: true } } },
+      });
+      if (!connection) throw new HttpError(404, "Connection not found");
+      const emailPasswordEnabled = await getEmailPasswordEnabled(tx);
+      if ((await otherWaysIn(req.userId!, connection.id, emailPasswordEnabled, tx)) === 0) {
+        throw new HttpError(
+          409,
+          `${connection.provider.name} is your only way to sign in. Set a password or connect another provider first.`,
+          "LAST_SIGN_IN_METHOD",
+        );
+      }
+      await tx.userIdentity.delete({ where: { id: connection.id } });
+      return connection;
     });
-    if (!identity) throw new HttpError(404, "Connection not found");
-    if ((await otherWaysIn(req.userId!, identity.id)) === 0) {
-      throw new HttpError(
-        409,
-        `${identity.provider.name} is your only way to sign in. Set a password or connect another provider first.`,
-        "LAST_SIGN_IN_METHOD",
-      );
-    }
-    await prisma.userIdentity.delete({ where: { id: identity.id } });
     res.status(204).end();
     void createLog({
       userId: req.userId!,
@@ -342,7 +354,11 @@ async function listOut(publicUrl: string) {
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     include: { _count: { select: { identities: true } } },
   });
-  return { public_url: publicUrl || null, providers: providers.map((provider) => providerOut(provider, publicUrl)) };
+  return {
+    public_url: publicUrl || null,
+    email_password_enabled: await getEmailPasswordEnabled(),
+    providers: providers.map((provider) => providerOut(provider, publicUrl)),
+  };
 }
 
 const providerFields = {
@@ -393,6 +409,26 @@ router.get(
   }),
 );
 
+router.patch(
+  "/settings/auth/oidc",
+  requireAuth,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(z.object({ email_password_enabled: z.boolean() }).strict(), req.body);
+    if (!body.email_password_enabled) {
+      if (!publicUrlOf(res)) {
+        throw new HttpError(409, "Set the public URL before disabling email and password sign-in");
+      }
+    }
+    await withSignInMethodsTransaction(async (tx) => {
+      await requireCurrentAdmin(req.userId!, tx);
+      if (!body.email_password_enabled) await requireAdminOidcSignInPath(tx);
+      await setEmailPasswordEnabled(body.email_password_enabled, tx);
+    });
+    res.json(await listOut(publicUrlOf(res)));
+  }),
+);
+
 router.post(
   "/settings/auth/oidc/check",
   requireAuth,
@@ -439,21 +475,27 @@ router.patch(
   requireAdmin,
   asyncHandler(async (req, res) => {
     const body = parseBody(updateSchema, req.body);
-    const existing = await prisma.oidcProvider.findUnique({ where: { id: req.params.id } });
-    if (!existing) throw new HttpError(404, "Provider not found");
-    const updated = await prisma.oidcProvider.update({
-      where: { id: existing.id },
-      data: {
-        ...(body.name !== undefined ? { name: body.name } : {}),
-        ...(body.issuer_url !== undefined ? { issuerUrl: normalizeIssuerUrl(body.issuer_url) } : {}),
-        ...(body.client_id !== undefined ? { clientId: body.client_id } : {}),
-        ...(body.client_secret !== undefined ? { clientSecret: body.client_secret || null } : {}),
-        ...(body.scopes !== undefined ? { scopes: body.scopes.split(/\s+/).join(" ") } : {}),
-        ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
-        ...(body.create_accounts !== undefined ? { createAccounts: body.create_accounts } : {}),
-        ...(body.link_by_email !== undefined ? { linkByEmail: body.link_by_email } : {}),
-      },
-      include: { _count: { select: { identities: true } } },
+    const updated = await withSignInMethodsTransaction(async (tx) => {
+      await requireCurrentAdmin(req.userId!, tx);
+      const existing = await tx.oidcProvider.findUnique({ where: { id: req.params.id } });
+      if (!existing) throw new HttpError(404, "Provider not found");
+      const emailPasswordEnabled = await getEmailPasswordEnabled(tx);
+      const updatedProvider = await tx.oidcProvider.update({
+        where: { id: existing.id },
+        data: {
+          ...(body.name !== undefined ? { name: body.name } : {}),
+          ...(body.issuer_url !== undefined ? { issuerUrl: normalizeIssuerUrl(body.issuer_url) } : {}),
+          ...(body.client_id !== undefined ? { clientId: body.client_id } : {}),
+          ...(body.client_secret !== undefined ? { clientSecret: body.client_secret || null } : {}),
+          ...(body.scopes !== undefined ? { scopes: body.scopes.split(/\s+/).join(" ") } : {}),
+          ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
+          ...(body.create_accounts !== undefined ? { createAccounts: body.create_accounts } : {}),
+          ...(body.link_by_email !== undefined ? { linkByEmail: body.link_by_email } : {}),
+        },
+        include: { _count: { select: { identities: true } } },
+      });
+      if (!emailPasswordEnabled) await requireAdminOidcSignInPath(tx);
+      return updatedProvider;
     });
     forgetProviderConfig(updated.id);
     res.json(providerOut(updated, publicUrlOf(res)));
@@ -465,8 +507,13 @@ router.delete(
   requireAuth,
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const deleted = await prisma.oidcProvider.deleteMany({ where: { id: req.params.id } });
-    if (!deleted.count) throw new HttpError(404, "Provider not found");
+    await withSignInMethodsTransaction(async (tx) => {
+      await requireCurrentAdmin(req.userId!, tx);
+      const emailPasswordEnabled = await getEmailPasswordEnabled(tx);
+      const deleted = await tx.oidcProvider.deleteMany({ where: { id: req.params.id } });
+      if (!deleted.count) throw new HttpError(404, "Provider not found");
+      if (!emailPasswordEnabled) await requireAdminOidcSignInPath(tx);
+    });
     forgetProviderConfig(req.params.id);
     res.status(204).end();
   }),

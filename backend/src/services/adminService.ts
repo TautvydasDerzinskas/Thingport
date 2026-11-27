@@ -9,7 +9,7 @@ import { MANIFESTS } from "../providers/index.generated";
 import { pruneWhatModelsLeft } from "./printEditService";
 import { removeUserTagMosaics } from "./tagMosaicService";
 import { takeInventory, type StorageInventory, type StorageKindBytes } from "./storageInventory";
-import type { PhotoKeep } from "./settingsService";
+import { getEmailPasswordEnabled, type PhotoKeep } from "./settingsService";
 
 export type UserWithPrintCount = {
   id: string;
@@ -21,34 +21,37 @@ export type UserWithPrintCount = {
   collectionCount: number;
   /** Shown in the admin's users list, from before Configuration → Providers showed every provider's connection. */
   makerworldConnected: boolean;
-  hasPassword: boolean;
+  canSignInWithPassword: boolean;
   /** The single sign-on providers they've connected, by name, and whether each is still on. */
   signInProviders: Array<{ name: string; enabled: boolean }>;
   createdAt: Date;
 };
 
 export async function listUsersWithPrintCounts(): Promise<UserWithPrintCount[]> {
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      email: true,
-      displayName: true,
-      role: true,
-      isOwner: true,
-      createdAt: true,
-      providerConnections: {
-        where: { provider: MANIFESTS.makerworld.id, slot: "default", secret: { not: Prisma.DbNull } },
-        select: { provider: true },
+  const [users, emailPasswordEnabled] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        role: true,
+        isOwner: true,
+        createdAt: true,
+        providerConnections: {
+          where: { provider: MANIFESTS.makerworld.id, slot: "default", secret: { not: Prisma.DbNull } },
+          select: { provider: true },
+        },
+        passwordHash: true,
+        identities: {
+          select: { provider: { select: { name: true, enabled: true, position: true } } },
+        },
+        // As the library lists them, and as deleting a user's models counts them: a tool's own are the tool's.
+        _count: { select: { prints: { where: { toolId: null } }, collections: true } },
       },
-      passwordHash: true,
-      identities: {
-        select: { provider: { select: { name: true, enabled: true, position: true } } },
-      },
-      // As the library lists them, and as deleting a user's models counts them: a tool's own are the tool's.
-      _count: { select: { prints: { where: { toolId: null } }, collections: true } },
-    },
-  });
+    }),
+    getEmailPasswordEnabled(),
+  ]);
   return users.map((u) => ({
     id: u.id,
     email: u.email,
@@ -59,7 +62,7 @@ export async function listUsersWithPrintCounts(): Promise<UserWithPrintCount[]> 
     printCount: u._count.prints,
     collectionCount: u._count.collections,
     makerworldConnected: u.providerConnections.length > 0,
-    hasPassword: Boolean(u.passwordHash),
+    canSignInWithPassword: emailPasswordEnabled && Boolean(u.passwordHash),
     signInProviders: u.identities
       .map((identity) => identity.provider)
       .toSorted((a, b) => a.position - b.position)

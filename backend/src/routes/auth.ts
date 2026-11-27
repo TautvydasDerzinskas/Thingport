@@ -7,7 +7,12 @@ import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
-import { getAllowRegistrations, isSmtpConfigured, type CaptchaPlace } from "../services/settingsService";
+import {
+  getAllowRegistrations,
+  getEmailPasswordEnabled,
+  isSmtpConfigured,
+  type CaptchaPlace,
+} from "../services/settingsService";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../services/mailer";
 import { findValidInvitation } from "../services/invitationService";
 import { checkCaptcha } from "../services/captchaService";
@@ -75,6 +80,9 @@ router.post(
     // The first account becomes admin and may always register, so the instance can be bootstrapped.
     const adminExists = (await prisma.user.count({ where: { role: "ADMIN" } })) > 0;
     const bootstrapping = !adminExists;
+    if (!bootstrapping && !(await getEmailPasswordEnabled())) {
+      throw new HttpError(403, "Email and password sign-in is disabled");
+    }
 
     // The token must match an unexpired invitation for this exact email.
     const invitation = body.invite_token ? await findValidInvitation(body.invite_token) : null;
@@ -138,9 +146,15 @@ router.post(
     if (smtpConfigured && verification) {
       try {
         await sendVerificationEmail(user.email, user.displayName, verification.token);
-      } catch {
-        // Verified meanwhile by a resend, it may have shared something already: told as any account deleted is.
-        await deleteAccountRow(user.id);
+      } catch (err) {
+        console.error("[auth] Failed to send verification email:", err);
+        const deleted = await deleteAccountRow(user.id);
+        if (!deleted) {
+          throw new HttpError(
+            500,
+            "Failed to send verification email. The administrator account was kept to preserve its sign-in path.",
+          );
+        }
         throw new HttpError(500, "Failed to send verification email. Please try again.");
       }
       res.json({ email_verification_required: true, email: user.email });
@@ -155,6 +169,9 @@ router.post(
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
+    if (!(await getEmailPasswordEnabled())) {
+      throw new HttpError(403, "Email and password sign-in is disabled");
+    }
     // Before the password check, so each guess costs a solved captcha.
     await checkCaptcha(req, "login");
     const body = parseBody(loginSchema, req.body);
@@ -220,6 +237,10 @@ router.post(
       });
     }
     // Verifying doubles as signing in.
+    if (!(await getEmailPasswordEnabled())) {
+      res.json({ verified: true });
+      return;
+    }
     const { token, expiresIn } = await startSession(req, res, verified);
     res.json({ token, expires_in: expiresIn, user: toUserOut(verified) });
     void createLog({ userId: verified.id, action: "user_logged_in", details: { email: verified.email } });
@@ -267,6 +288,10 @@ router.post(
   "/forgot-password",
   asyncHandler(async (req, res) => {
     const body = parseBody(forgotPasswordSchema, req.body);
+    if (!(await getEmailPasswordEnabled())) {
+      res.json({ message: "If an account uses that email, we've sent it a link to reset the password." });
+      return;
+    }
     const email = body.email.toLowerCase();
     // Same response in every case, to prevent enumeration.
     const user = await prisma.user.findUnique({ where: { email } });
@@ -297,6 +322,9 @@ router.post(
 router.get(
   "/reset-password/:token",
   asyncHandler(async (req, res) => {
+    if (!(await getEmailPasswordEnabled())) {
+      throw new HttpError(403, "Email and password sign-in is disabled");
+    }
     const user = await findUserByResetToken(req.params.token);
     res.json({ email: user.email });
   }),
@@ -310,6 +338,9 @@ const resetPasswordSchema = z.object({
 router.post(
   "/reset-password",
   asyncHandler(async (req, res) => {
+    if (!(await getEmailPasswordEnabled())) {
+      throw new HttpError(403, "Email and password sign-in is disabled");
+    }
     const body = parseBody(resetPasswordSchema, req.body);
     const user = await findUserByResetToken(body.token);
     const updated = await prisma.user.update({
@@ -333,7 +364,7 @@ router.post(
 
 const updateProfileSchema = z
   .object({
-    // Not for someone without a password: a recent sign-in stands in for it.
+    // Not used when password sign-in is disabled or the account has no password.
     current_password: z.string().optional(),
     email: z.string().trim().email("Enter a valid email address").optional(),
     new_password: z.string().min(8, "Password must be at least 8 characters").optional(),
@@ -346,6 +377,10 @@ router.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     const body = parseBody(updateProfileSchema, req.body);
+    const emailPasswordEnabled = await getEmailPasswordEnabled();
+    if (body.new_password !== undefined && !emailPasswordEnabled) {
+      throw new HttpError(403, "Email and password sign-in is disabled");
+    }
     // Before the password check, so each guess at the current password costs a solved captcha.
     const captchaPlaces: CaptchaPlace[] = [];
     if (body.email !== undefined) captchaPlaces.push("change_email");
@@ -353,9 +388,9 @@ router.patch(
     await checkCaptcha(req, captchaPlaces);
     const user = await prisma.user.findUnique({ where: { id: req.userId! } });
     if (!user) throw new HttpError(401, "Invalid or expired token");
-    if (!user.passwordHash) {
-      // Without a password to ask for, a session someone walked up to mustn't be able to add one (or move the
-      // account to their email): only a sign-in from the last few minutes counts.
+    if (!emailPasswordEnabled || !user.passwordHash) {
+      // When password sign-in is disabled or the account has no password, only a recent sign-in can move the
+      // account to another email.
       if (!signedInRecently(req)) {
         throw new HttpError(
           403,

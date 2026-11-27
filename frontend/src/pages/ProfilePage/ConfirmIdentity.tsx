@@ -15,7 +15,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** For someone without a password whose sign-in wasn't recent: sign in again through a provider to go on. */
+/** Confirm through a provider when a password is unavailable and the session is too old. */
 export default function ConfirmIdentity({ info, page, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [error, setError] = React.useState<string | null>(null);

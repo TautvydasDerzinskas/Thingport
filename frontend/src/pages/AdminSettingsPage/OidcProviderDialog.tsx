@@ -25,7 +25,9 @@ type Props = {
   /** The provider to edit, or null to add one. */
   provider: OidcProvider | null;
   publicUrl: string | null;
+  saveBlocked: boolean;
   onClose: () => void;
+  onSave: (provider: OidcProvider | null, input: OidcProviderInput) => Promise<OidcProvider | null>;
   onSaved: (provider: OidcProvider, added: boolean) => void;
   onUnauthorized?: () => void;
 };
@@ -62,7 +64,15 @@ const draftOf = (provider: OidcProvider | null): Draft => ({
 });
 
 /** Adds or edits one single sign-on provider. */
-export default function OidcProviderDialog({ provider, publicUrl, onClose, onSaved, onUnauthorized }: Props) {
+export default function OidcProviderDialog({
+  provider,
+  publicUrl,
+  saveBlocked,
+  onClose,
+  onSave,
+  onSaved,
+  onUnauthorized,
+}: Props) {
   const { t } = useTranslation(["app", "common"]);
   const [draft, setDraft] = useState<Draft>(() => draftOf(provider));
   // Follows the name until it's edited by hand.
@@ -81,7 +91,13 @@ export default function OidcProviderDialog({ provider, publicUrl, onClose, onSav
   const redirectUri = provider?.redirect_uri ?? (publicUrl ? `${publicUrl}/api/auth/oidc/${slug}/callback` : null);
   const scopesValid = draft.scopes.trim().split(/\s+/).includes("openid");
   const canSave =
-    draft.name.trim() && draft.issuer_url.trim() && draft.client_id.trim() && slugValid && scopesValid && !saving;
+    draft.name.trim() &&
+    draft.issuer_url.trim() &&
+    draft.client_id.trim() &&
+    slugValid &&
+    scopesValid &&
+    !saving &&
+    !saveBlocked;
 
   const checkIssuer = async () => {
     const issuerUrl = draft.issuer_url.trim();
@@ -109,6 +125,7 @@ export default function OidcProviderDialog({ provider, publicUrl, onClose, onSav
   };
 
   const save = async () => {
+    if (saving || saveBlocked) return;
     setSaving(true);
     setError(null);
     const input: OidcProviderInput = {
@@ -124,8 +141,8 @@ export default function OidcProviderDialog({ provider, publicUrl, onClose, onSav
       ...(provider ? {} : { slug }),
     };
     try {
-      const saved = provider ? await oidcApi.update(provider.id, input) : await oidcApi.create(input);
-      onSaved(saved, !provider);
+      const saved = await onSave(provider, input);
+      if (saved) onSaved(saved, !provider);
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : t("adminSettings.signIn.dialog.failed"));

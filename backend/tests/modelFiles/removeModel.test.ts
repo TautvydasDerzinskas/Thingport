@@ -176,6 +176,7 @@ describe("removing a model", () => {
 
   it("takes an author only a deleted account's tool model named, and the tool's file stays", async () => {
     const actor = await kit.user();
+    await prisma.user.update({ where: { id: actor.id }, data: { role: "ADMIN" } });
     const owner = await kit.user();
     const tool = await kit.toolModel(owner);
     const author = await prisma.author.create({

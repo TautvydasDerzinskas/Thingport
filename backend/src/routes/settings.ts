@@ -835,8 +835,9 @@ router.post(
     const body = parseBody(databaseSettingsSchema, req.body);
     let info;
     try {
-      info = await testAndSwitchDatabase(body);
+      info = await testAndSwitchDatabase(req.userId!, body);
     } catch (err) {
+      if (err instanceof HttpError) throw err;
       throw new HttpError(422, err instanceof Error ? err.message : "Failed to connect to that database.");
     }
     res.json(info);

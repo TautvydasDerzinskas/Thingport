@@ -4,11 +4,22 @@ import type { Server } from "node:http";
 import express from "express";
 import jwt from "jsonwebtoken";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../src/app";
+import * as dbModule from "../src/db";
 import { prisma } from "../src/db";
-import { getPublicUrl, setPublicUrl } from "../src/services/settingsService";
+import * as settingsModule from "../src/services/settingsService";
+import {
+  getEmailPasswordEnabled,
+  getPublicUrl,
+  getSmtpSettings,
+  setEmailPasswordEnabled,
+  setPublicUrl,
+  setSmtpSettings,
+  withSignInMethodsLock,
+  withSignInMethodsTransaction,
+} from "../src/services/settingsService";
 
 const app = createApp();
 const stamp = Date.now();
@@ -74,7 +85,9 @@ function startIdp(): Promise<void> {
 }
 
 let admin: string;
+let adminId: string;
 let member: string;
+let previousEmailPasswordEnabled: boolean;
 // The redirect URI and the callback page are built from it; it's one instance-wide row, so it's put back after.
 let previousPublicUrl: string;
 
@@ -100,6 +113,10 @@ async function addProvider(fields: Record<string, unknown> = {}): Promise<{ id: 
     });
   expect(res.status).toBe(201);
   return res.body;
+}
+
+async function connectAdminToProvider(providerId: string) {
+  await prisma.userIdentity.create({ data: { userId: adminId, providerId, subject: `admin-${stamp}` } });
 }
 
 /** Runs a sign-in end to end: where the callback sends the browser, as its #fragment. */
@@ -136,23 +153,270 @@ async function exchange(fragment: URLSearchParams) {
     .send({ code: fragment.get("code") });
 }
 
+it("keeps sign-in method changes waiting during long account cleanup", async () => {
+  let markStarted!: () => void;
+  const started = new Promise<void>((resolve) => {
+    markStarted = resolve;
+  });
+  let finishCleanup!: () => void;
+  const cleanup = new Promise<void>((resolve) => {
+    finishCleanup = resolve;
+  });
+  const deletion = withSignInMethodsLock(async () => {
+    markStarted();
+    await cleanup;
+  });
+  await started;
+
+  let mutationRan = false;
+  const mutation = withSignInMethodsTransaction(async () => {
+    mutationRan = true;
+  });
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 5_100));
+    expect(mutationRan).toBe(false);
+    const [sessions] = await prisma.$queryRaw<{ count: number }[]>`
+      SELECT count(*)::int AS count FROM pg_stat_activity
+      WHERE datname = current_database() AND pid <> pg_backend_pid()
+        AND query LIKE '%SELECT pg_try_advisory_lock(%'
+    `;
+    expect(sessions.count).toBe(1);
+  } finally {
+    finishCleanup();
+    await Promise.all([deletion, mutation]);
+  }
+  expect(mutationRan).toBe(true);
+});
+
+it("rejects sign-in changes when the active database changes while waiting", async () => {
+  const sourceUrl = dbModule.getActiveDatabaseUrl();
+  const changedUrl = new URL(sourceUrl);
+  changedUrl.searchParams.set("active-database-change-test", "true");
+  const getActiveDatabaseUrl = vi.spyOn(dbModule, "getActiveDatabaseUrl");
+  getActiveDatabaseUrl.mockReturnValueOnce(sourceUrl).mockReturnValue(changedUrl.toString());
+  let operationRan = false;
+  try {
+    await expect(
+      withSignInMethodsLock(async () => {
+        operationRan = true;
+      }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "database_changed",
+    });
+    expect(operationRan).toBe(false);
+  } finally {
+    getActiveDatabaseUrl.mockRestore();
+  }
+});
+
 beforeAll(async () => {
+  previousEmailPasswordEnabled = await getEmailPasswordEnabled();
+  await setEmailPasswordEnabled(true);
   previousPublicUrl = await getPublicUrl();
   await setPublicUrl("http://thingport.test");
   await startIdp();
   const owner = await register("OIDC admin", `oidc-admin-${stamp}@example.com`);
   admin = owner.token;
+  adminId = owner.id;
   await prisma.user.update({ where: { id: owner.id }, data: { role: "ADMIN" } });
   member = (await register("OIDC member", `oidc-member-${stamp}@example.com`)).token;
 });
 
 afterAll(async () => {
+  await setEmailPasswordEnabled(previousEmailPasswordEnabled);
   await setPublicUrl(previousPublicUrl || null);
   await prisma.oidcProvider.deleteMany({ where: { name: { contains: String(stamp) } } });
   await new Promise((resolve) => idp.close(resolve));
 });
 
 describe("OIDC providers (admin)", () => {
+  it("won't disable password sign-in without an administrator OIDC sign-in path", async () => {
+    await setEmailPasswordEnabled(true);
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    const testProviderIds: string[] = [];
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+      const provider = await addProvider({ link_by_email: false });
+      testProviderIds.push(provider.id);
+      const unrelatedProvider = await addProvider({ link_by_email: true });
+      testProviderIds.push(unrelatedProvider.id);
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(409);
+      expect(await getEmailPasswordEnabled()).toBe(true);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      await prisma.oidcProvider.deleteMany({ where: { id: { in: testProviderIds } } });
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
+  it("allows disabling password sign-in when an administrator has an enabled OIDC identity", async () => {
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    let providerId: string | undefined;
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+      const provider = await addProvider({ link_by_email: true });
+      providerId = provider.id;
+      const fragment = await signIn(provider.slug, {
+        sub: `admin-${stamp}`,
+        email: `oidc-admin-${stamp}@example.com`,
+        email_verified: true,
+      });
+      const session = await exchange(fragment);
+      expect(session.status).toBe(200);
+      expect(session.body.user.id).toBe(adminId);
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+      expect(disabled.body.email_password_enabled).toBe(false);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      if (providerId) await request(app).delete(`/api/settings/auth/oidc/providers/${providerId}`).set(asAdmin());
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
+  it("preserves an administrator OIDC sign-in path when providers change", async () => {
+    await setEmailPasswordEnabled(true);
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    const testProviderIds: string[] = [];
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+
+      const connectedProvider = await addProvider({ link_by_email: true });
+      testProviderIds.push(connectedProvider.id);
+      await connectAdminToProvider(connectedProvider.id);
+      const unrelatedProvider = await addProvider({ link_by_email: true });
+      testProviderIds.push(unrelatedProvider.id);
+
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+
+      const disallowEmailLinking = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${connectedProvider.id}`)
+        .set(asAdmin())
+        .send({ link_by_email: false });
+      expect(disallowEmailLinking.status).toBe(200);
+
+      const unavailable = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${connectedProvider.id}`)
+        .set(asAdmin())
+        .send({ enabled: false });
+      expect(unavailable.status).toBe(409);
+
+      const deleted = await request(app)
+        .delete(`/api/settings/auth/oidc/providers/${connectedProvider.id}`)
+        .set(asAdmin());
+      expect(deleted.status).toBe(409);
+
+      await connectAdminToProvider(unrelatedProvider.id);
+      const disabledWithOtherPath = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${connectedProvider.id}`)
+        .set(asAdmin())
+        .send({ enabled: false });
+      expect(disabledWithOtherPath.status).toBe(200);
+
+      const deletedWithOtherPath = await request(app)
+        .delete(`/api/settings/auth/oidc/providers/${connectedProvider.id}`)
+        .set(asAdmin());
+      expect(deletedWithOtherPath.status).toBe(204);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      await prisma.oidcProvider.deleteMany({ where: { id: { in: testProviderIds } } });
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
+  it("won't demote or delete the only administrator with an OIDC identity", async () => {
+    await setEmailPasswordEnabled(true);
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    const target = await register(`OIDC admin ${stamp}`, `admin-path-${stamp}@example.com`);
+    const adminActor = await prisma.user.findUniqueOrThrow({
+      where: { email: `oidc-admin-${stamp}@example.com` },
+      select: { id: true, isOwner: true },
+    });
+    let providerId: string | undefined;
+    let identityId: string | undefined;
+    try {
+      await prisma.user.update({ where: { id: adminActor.id }, data: { isOwner: true } });
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+
+      const provider = await addProvider({ link_by_email: true });
+      providerId = provider.id;
+      const promoted = await request(app)
+        .patch(`/api/admin/users/${target.id}/role`)
+        .set(asAdmin())
+        .send({ role: "ADMIN" });
+      expect(promoted.status).toBe(200);
+      const adminIdentity = await prisma.userIdentity.create({
+        data: { userId: target.id, providerId: provider.id, subject: `admin-${stamp}-protected` },
+      });
+      identityId = adminIdentity.id;
+
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+
+      const demoted = await request(app)
+        .patch(`/api/admin/users/${target.id}/role`)
+        .set(asAdmin())
+        .send({ role: "MEMBER" });
+      expect(demoted.status).toBe(409);
+      expect((await prisma.user.findUniqueOrThrow({ where: { id: target.id } })).role).toBe("ADMIN");
+
+      const deleted = await request(app).delete(`/api/admin/users/${target.id}`).set(asAdmin());
+      expect(deleted.status).toBe(409);
+      expect(await prisma.user.findUnique({ where: { id: target.id }, select: { id: true } })).not.toBeNull();
+      expect(await prisma.userIdentity.findUnique({ where: { id: identityId } })).not.toBeNull();
+    } finally {
+      await setEmailPasswordEnabled(true);
+      if (identityId) await prisma.userIdentity.deleteMany({ where: { id: identityId } });
+      if (providerId) await prisma.oidcProvider.deleteMany({ where: { id: providerId } });
+      await prisma.user.deleteMany({ where: { id: target.id } });
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+      await prisma.user.update({ where: { id: adminActor.id }, data: { isOwner: adminActor.isOwner } });
+    }
+  });
+
   it("keeps the client secret write-only and gives the redirect URI to register", async () => {
     const created = await addProvider({ name: `Pocket ID ${stamp}`, slug: undefined });
     const list = await request(app).get("/api/settings/auth/oidc").set(asAdmin());
@@ -187,6 +451,254 @@ describe("OIDC providers (admin)", () => {
       .get("/api/settings/auth/oidc")
       .set({ Authorization: `Bearer ${member}` });
     expect(res.status).toBe(403);
+    const update = await request(app)
+      .patch("/api/settings/auth/oidc")
+      .set({ Authorization: `Bearer ${member}` })
+      .send({ email_password_enabled: false });
+    expect(update.status).toBe(403);
+  });
+
+  it("rejects queued settings and provider changes after the caller is demoted", async () => {
+    const queuedAdmin = await register("Queued administrator", `oidc-queued-admin-${stamp}@example.com`);
+    const provider = await addProvider();
+    const otherProvider = await addProvider();
+    const asQueuedAdmin = { Authorization: `Bearer ${queuedAdmin.token}` };
+    await prisma.user.update({ where: { id: queuedAdmin.id }, data: { role: "ADMIN" } });
+    await connectAdminToProvider(provider.id);
+    const disabled = await request(app)
+      .patch("/api/settings/auth/oidc")
+      .set(asAdmin())
+      .send({ email_password_enabled: false });
+    expect(disabled.status).toBe(200);
+
+    let markLocked!: () => void;
+    const locked = new Promise<void>((resolve) => {
+      markLocked = resolve;
+    });
+    let finishDemotion!: () => void;
+    const demotion = new Promise<void>((resolve) => {
+      finishDemotion = resolve;
+    });
+    const lockHolder = withSignInMethodsLock(async () => {
+      markLocked();
+      await demotion;
+      await prisma.user.update({ where: { id: queuedAdmin.id }, data: { role: "MEMBER" } });
+    });
+    await locked;
+
+    const lockAttempt = vi.spyOn(dbModule, "getActiveDatabaseUrl");
+    const queuedRequests = Promise.all([
+      request(app).patch("/api/settings/auth/oidc").set(asQueuedAdmin).send({ email_password_enabled: true }),
+      request(app)
+        .patch(`/api/settings/auth/oidc/providers/${provider.id}`)
+        .set(asQueuedAdmin)
+        .send({ name: "Renamed" }),
+      request(app).delete(`/api/settings/auth/oidc/providers/${otherProvider.id}`).set(asQueuedAdmin),
+    ]);
+    try {
+      // Entering the lock helper proves the request has already passed the admin middleware.
+      try {
+        await vi.waitFor(() => expect(lockAttempt).toHaveBeenCalledTimes(3));
+      } finally {
+        finishDemotion();
+        await lockHolder;
+      }
+      expect((await queuedRequests).map(({ status }) => status)).toEqual([403, 403, 403]);
+      expect(await getEmailPasswordEnabled()).toBe(false);
+      expect((await prisma.oidcProvider.findUniqueOrThrow({ where: { id: provider.id } })).name).toBe(
+        `Authentik ${stamp}`,
+      );
+      expect(await prisma.oidcProvider.findUnique({ where: { id: otherProvider.id } })).not.toBeNull();
+    } finally {
+      lockAttempt.mockRestore();
+      await queuedRequests;
+      await setEmailPasswordEnabled(true);
+      await prisma.oidcProvider.deleteMany({ where: { id: { in: [provider.id, otherProvider.id] } } });
+    }
+  });
+
+  it("keeps an administrator OIDC sign-in path when password sign-in is disabled", async () => {
+    await setEmailPasswordEnabled(true);
+    const testPublicUrl = await getPublicUrl();
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    let providerId: string | undefined;
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+      const provider = await addProvider({ link_by_email: true });
+      providerId = provider.id;
+      await connectAdminToProvider(provider.id);
+
+      await setPublicUrl(null);
+      const missingPublicUrl = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(missingPublicUrl.status).toBe(409);
+      await setPublicUrl("http://thingport.test");
+
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+      expect(disabled.body.email_password_enabled).toBe(false);
+      expect((await request(app).get("/api/health")).body.email_password_enabled).toBe(false);
+
+      expect(
+        (
+          await request(app)
+            .post("/api/login")
+            .send({ email: `oidc-member-${stamp}@example.com`, password: "password123" })
+        ).status,
+      ).toBe(403);
+      expect(
+        (
+          await request(app)
+            .post("/api/register")
+            .send({ displayName: "Disabled auth", email: `disabled-${stamp}@example.com`, password: "password123" })
+        ).status,
+      ).toBe(403);
+      expect((await request(app).get("/api/reset-password/unused")).status).toBe(403);
+      expect(
+        (
+          await request(app)
+            .post("/api/forgot-password")
+            .send({ email: `oidc-member-${stamp}@example.com` })
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await request(app)
+            .patch("/api/profile")
+            .set({ Authorization: `Bearer ${member}` })
+            .send({ current_password: "password123", new_password: "new-password-123" })
+        ).status,
+      ).toBe(403);
+
+      const verificationToken = `verify-disabled-${stamp}`;
+      const memberUser = await prisma.user.findUniqueOrThrow({ where: { email: `oidc-member-${stamp}@example.com` } });
+      await prisma.user.update({
+        where: { id: memberUser.id },
+        data: {
+          emailVerified: false,
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: new Date(Date.now() + 60_000),
+        },
+      });
+      try {
+        const verified = await request(app).post("/api/verify-email").send({ token: verificationToken });
+        expect(verified.body).toEqual({ verified: true });
+      } finally {
+        await prisma.user.update({
+          where: { id: memberUser.id },
+          data: { emailVerified: true, emailVerificationToken: null, emailVerificationExpires: null },
+        });
+      }
+
+      const disableProvider = await request(app)
+        .patch(`/api/settings/auth/oidc/providers/${provider.id}`)
+        .set(asAdmin())
+        .send({ enabled: false });
+      expect(disableProvider.status).toBe(409);
+      expect((await prisma.oidcProvider.findUniqueOrThrow({ where: { id: provider.id } })).enabled).toBe(true);
+
+      const enabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: true });
+      expect(enabled.status).toBe(200);
+      expect(
+        (
+          await request(app)
+            .post("/api/login")
+            .send({ email: `oidc-member-${stamp}@example.com`, password: "password123" })
+        ).status,
+      ).toBe(200);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      await setPublicUrl(testPublicUrl || null);
+      if (providerId) await prisma.oidcProvider.deleteMany({ where: { id: providerId } });
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
+  it("serializes disabling password sign-in against deleting the last provider", async () => {
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    let providerId: string | undefined;
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+      const provider = await addProvider({ link_by_email: true });
+      providerId = provider.id;
+      await connectAdminToProvider(provider.id);
+      const [passwordDisabled, providerDeleted] = await Promise.all([
+        request(app).patch("/api/settings/auth/oidc").set(asAdmin()).send({ email_password_enabled: false }),
+        request(app).delete(`/api/settings/auth/oidc/providers/${provider.id}`).set(asAdmin()),
+      ]);
+      expect(
+        (passwordDisabled.status === 200 && providerDeleted.status === 409) ||
+          (passwordDisabled.status === 409 && providerDeleted.status === 204),
+      ).toBe(true);
+      const emailPasswordEnabled = await getEmailPasswordEnabled();
+      const adminIdentityCount = await prisma.userIdentity.count({
+        where: { user: { role: "ADMIN" }, provider: { enabled: true } },
+      });
+      expect(emailPasswordEnabled || adminIdentityCount > 0).toBe(true);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      if (providerId) await request(app).delete(`/api/settings/auth/oidc/providers/${providerId}`).set(asAdmin());
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
+  });
+
+  it("serializes concurrent attempts to disable the last OIDC provider", async () => {
+    const previouslyEnabledProviders = await prisma.oidcProvider.findMany({
+      where: { enabled: true },
+      select: { id: true },
+    });
+    const testProviderIds: string[] = [];
+
+    try {
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: false });
+      }
+      const first = await addProvider({ link_by_email: true });
+      const second = await addProvider({ link_by_email: true });
+      testProviderIds.push(first.id, second.id);
+      await connectAdminToProvider(first.id);
+      await connectAdminToProvider(second.id);
+      await setEmailPasswordEnabled(false);
+      const responses = await Promise.all(
+        [first, second].map((provider) =>
+          request(app)
+            .patch(`/api/settings/auth/oidc/providers/${provider.id}`)
+            .set(asAdmin())
+            .send({ enabled: false }),
+        ),
+      );
+      expect(responses.map((response) => response.status).toSorted()).toEqual([200, 409]);
+      expect(await prisma.oidcProvider.count({ where: { enabled: true } })).toBe(1);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      for (const id of testProviderIds)
+        await request(app).delete(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin());
+      for (const { id } of previouslyEnabledProviders) {
+        await request(app).patch(`/api/settings/auth/oidc/providers/${id}`).set(asAdmin()).send({ enabled: true });
+      }
+    }
   });
 
   it("checks an issuer by its discovery document", async () => {
@@ -210,6 +722,50 @@ describe("signing in through a provider", () => {
     expect(slugs).not.toContain(off.slug);
     const fragment = await signIn(off.slug, { sub: "x" });
     expect(fragment.get("error")).toMatch(/isn't available/);
+  });
+
+  it("reads the password setting and providers from the same snapshot", async () => {
+    const provider = await addProvider();
+    await setEmailPasswordEnabled(false);
+    const readEmailPasswordEnabled = settingsModule.getEmailPasswordEnabled;
+    let passwordSettingRead = false;
+    let resumeDiscovery!: () => void;
+    const paused = new Promise<void>((resolve) => {
+      resumeDiscovery = resolve;
+    });
+    const readSetting = vi.spyOn(settingsModule, "getEmailPasswordEnabled").mockImplementationOnce(async (db) => {
+      const enabled = await readEmailPasswordEnabled(db);
+      passwordSettingRead = true;
+      await paused;
+      return enabled;
+    });
+    const pending = request(app)
+      .get("/api/health")
+      .then((res) => res);
+    try {
+      try {
+        await vi.waitFor(() => expect(passwordSettingRead).toBe(true));
+        await setEmailPasswordEnabled(true);
+        await prisma.oidcProvider.update({ where: { id: provider.id }, data: { enabled: false } });
+      } finally {
+        resumeDiscovery();
+      }
+      const before = await pending;
+      expect(before.status).toBe(200);
+      expect(before.body).toMatchObject({
+        email_password_enabled: false,
+        oidc_providers: expect.arrayContaining([expect.objectContaining({ slug: provider.slug })]),
+      });
+      const after = await request(app).get("/api/health");
+      expect(after.status).toBe(200);
+      expect(after.body.email_password_enabled).toBe(true);
+      expect(after.body.oidc_providers).not.toContainEqual(expect.objectContaining({ slug: provider.slug }));
+    } finally {
+      await pending;
+      readSetting.mockRestore();
+      await setEmailPasswordEnabled(true);
+      await prisma.oidcProvider.delete({ where: { id: provider.id } });
+    }
   });
 
   it("refuses someone unknown unless the provider may create accounts", async () => {
@@ -350,6 +906,88 @@ async function ssoUser(slug: string, sub: string, email: string): Promise<{ toke
 }
 
 describe("connecting providers from the profile", () => {
+  it("uses recent OIDC confirmation to change email when password sign-in is disabled", async () => {
+    await setEmailPasswordEnabled(true);
+    const previousSmtpSettings = await getSmtpSettings();
+    const address = `email-change-${stamp}@example.com`;
+    let personId: string | undefined;
+    let providerId: string | undefined;
+
+    try {
+      await setSmtpSettings({ host: null });
+      const provider = await addProvider({ link_by_email: true });
+      providerId = provider.id;
+      await connectAdminToProvider(provider.id);
+      const person = await register("Email change", address);
+      personId = person.id;
+      const as = { Authorization: `Bearer ${person.token}` };
+      const connected = await request(app).post(`/api/profile/sign-in/${provider.slug}/connect`).set(as);
+      expect(connected.status).toBe(200);
+      const landed = await roundTrip(connected.body.url, cookieOf(connected), {
+        sub: `email-change-${stamp}`,
+        email: address,
+        email_verified: true,
+      });
+      expect(fragmentOf(landed).get("sso_connected")).toBe(provider.name);
+
+      const before = await request(app).get("/api/profile/sign-in").set(as);
+      expect(before.body).toMatchObject({ has_password: true, password_available: true });
+      const stillRequiresPassword = await request(app)
+        .patch("/api/profile")
+        .set(as)
+        .send({ email: `before-disable-${stamp}@example.com` });
+      expect(stillRequiresPassword.status).toBe(400);
+
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+
+      const longAgo = Math.floor(Date.now() / 1000) - 60 * 60;
+      const stale = jwt.sign(
+        { sub: person.id, role: "MEMBER", sat: longAgo },
+        process.env.AUTH_SECRET || "changeme-secret",
+        { algorithm: "HS256", expiresIn: 600 },
+      );
+      const asStale = { Authorization: `Bearer ${stale}` };
+      const after = await request(app).get("/api/profile/sign-in").set(asStale);
+      expect(after.body).toMatchObject({ has_password: true, password_available: false, signed_in_recently: false });
+      const refused = await request(app)
+        .patch("/api/profile")
+        .set(asStale)
+        .send({ email: `stale-change-${stamp}@example.com` });
+      expect(refused.status).toBe(403);
+      expect(refused.body.code).toBe("REAUTH_REQUIRED");
+
+      const confirmation = await request(app)
+        .post(`/api/profile/sign-in/${provider.slug}/confirm`)
+        .set(asStale)
+        .send({ next: "/profile/email" });
+      expect(confirmation.status).toBe(200);
+      const confirmedPage = await roundTrip(confirmation.body.url, cookieOf(confirmation), {
+        sub: `email-change-${stamp}`,
+      });
+      const fresh = await exchange(fragmentOf(confirmedPage));
+      expect(fresh.status).toBe(200);
+
+      const asFresh = { Authorization: `Bearer ${fresh.body.token}` };
+      const confirmed = await request(app).get("/api/profile/sign-in").set(asFresh);
+      expect(confirmed.body).toMatchObject({ has_password: true, password_available: false, signed_in_recently: true });
+      const changed = await request(app)
+        .patch("/api/profile")
+        .set(asFresh)
+        .send({ email: `after-confirmation-${stamp}@example.com` });
+      expect(changed.status).toBe(200);
+      expect(changed.body.user.email).toBe(`after-confirmation-${stamp}@example.com`);
+    } finally {
+      await setEmailPasswordEnabled(true);
+      await setSmtpSettings(previousSmtpSettings);
+      if (personId) await prisma.user.deleteMany({ where: { id: personId } });
+      if (providerId) await prisma.oidcProvider.deleteMany({ where: { id: providerId } });
+    }
+  });
+
   it("lists the password and providers, and connects one to a password account", async () => {
     const provider = await addProvider({ name: `Connect ${stamp}` });
     const person = await register("Connector", `connector-${stamp}@example.com`);
@@ -392,7 +1030,7 @@ describe("connecting providers from the profile", () => {
     const person = await ssoUser(provider.slug, `only-${stamp}`, `only-${stamp}@example.com`);
     const as = { Authorization: `Bearer ${person.token}` };
     const methods = await request(app).get("/api/profile/sign-in").set(as);
-    expect(methods.body).toMatchObject({ has_password: false, signed_in_recently: true });
+    expect(methods.body).toMatchObject({ has_password: false, password_available: false, signed_in_recently: true });
     const connection = methods.body.providers.find((p: { slug: string }) => p.slug === provider.slug).connection;
     const refused = await request(app).delete(`/api/profile/sign-in/connections/${connection.id}`).set(as);
     expect(refused.status).toBe(409);
@@ -402,6 +1040,40 @@ describe("connecting providers from the profile", () => {
       200,
     );
     expect((await request(app).delete(`/api/profile/sign-in/connections/${connection.id}`).set(as)).status).toBe(204);
+  });
+
+  it("doesn't count a stored password when password sign-in is disabled", async () => {
+    const provider = await addProvider({ create_accounts: true });
+    const person = await ssoUser(provider.slug, `disabled-password-${stamp}`, `disabled-password-${stamp}@example.com`);
+    const as = { Authorization: `Bearer ${person.token}` };
+    expect((await request(app).patch("/api/profile").set(as).send({ new_password: "new-password-123" })).status).toBe(
+      200,
+    );
+    const methods = await request(app).get("/api/profile/sign-in").set(as);
+    const connection = methods.body.providers.find((p: { slug: string }) => p.slug === provider.slug).connection;
+
+    const adminUser = await prisma.user.findFirstOrThrow({ where: { role: "ADMIN" } });
+    const adminIdentity = await prisma.userIdentity.create({
+      data: { userId: adminUser.id, providerId: provider.id, subject: `admin-${stamp}-disabled-password` },
+    });
+    try {
+      const disabled = await request(app)
+        .patch("/api/settings/auth/oidc")
+        .set(asAdmin())
+        .send({ email_password_enabled: false });
+      expect(disabled.status).toBe(200);
+
+      const users = await request(app).get("/api/admin/users").set(asAdmin());
+      const listedUser = users.body.find((user: { id: string }) => user.id === person.id);
+      expect(listedUser.sign_in.password).toBe(false);
+
+      const refused = await request(app).delete(`/api/profile/sign-in/connections/${connection.id}`).set(as);
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe("LAST_SIGN_IN_METHOD");
+    } finally {
+      await setEmailPasswordEnabled(true);
+      await prisma.userIdentity.deleteMany({ where: { id: adminIdentity.id } });
+    }
   });
 });
 

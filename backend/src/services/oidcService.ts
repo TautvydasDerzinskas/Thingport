@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import * as oidc from "openid-client";
-import type { Invitation, OidcProvider, User } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Invitation, type OidcProvider, type User } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { seedDefaultCategories } from "./categoryService";
@@ -426,12 +425,42 @@ export async function isConnectedIdentity(provider: OidcProvider, claims: Claims
 }
 
 /** Ways the user can still sign in without this connection: their password, and providers still on. */
-export async function otherWaysIn(userId: string, exceptIdentityId: string): Promise<number> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { passwordHash: true } });
-  const others = await prisma.userIdentity.count({
+export async function otherWaysIn(
+  userId: string,
+  exceptIdentityId: string,
+  emailPasswordEnabled: boolean,
+  db: Pick<Prisma.TransactionClient, "user" | "userIdentity"> = prisma,
+): Promise<number> {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { passwordHash: true } });
+  const others = await db.userIdentity.count({
     where: { userId, id: { not: exceptIdentityId }, provider: { enabled: true } },
   });
-  return (user?.passwordHash ? 1 : 0) + others;
+  return (emailPasswordEnabled && user?.passwordHash ? 1 : 0) + others;
+}
+
+export async function hasAdminOidcSignInPath(
+  db: Pick<Prisma.TransactionClient, "userIdentity">,
+  excludingUserId?: string,
+): Promise<boolean> {
+  const adminIdentity = await db.userIdentity.findFirst({
+    where: {
+      user: { role: "ADMIN", ...(excludingUserId ? { id: { not: excludingUserId } } : {}) },
+      provider: { enabled: true },
+    },
+    select: { id: true },
+  });
+  return Boolean(adminIdentity);
+}
+
+export async function requireAdminOidcSignInPath(
+  db: Pick<Prisma.TransactionClient, "userIdentity">,
+  excludingUserId?: string,
+): Promise<void> {
+  if (await hasAdminOidcSignInPath(db, excludingUserId)) return;
+  throw new HttpError(
+    409,
+    "At least one administrator must have an account connected to an enabled OIDC provider while password sign-in is disabled",
+  );
 }
 
 /** A short-lived, single-use code the browser trades for a session, so the session never sits in a URL. */
@@ -479,12 +508,11 @@ export function clearFlowCookie(): string {
   return `${FLOW_COOKIE}=; Path=${FLOW_COOKIE_PATH}; Max-Age=0; HttpOnly; SameSite=Lax`;
 }
 
-export async function enabledProvidersForSignIn(): Promise<Array<{ slug: string; name: string }>> {
-  if (!(await getPublicUrl())) return [];
-  const providers = await prisma.oidcProvider.findMany({
+export async function enabledProvidersForSignIn(db: Pick<Prisma.TransactionClient, "setting" | "oidcProvider">) {
+  if (!(await getPublicUrl(db))) return [];
+  return db.oidcProvider.findMany({
     where: { enabled: true },
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     select: { slug: true, name: true },
   });
-  return providers;
 }
