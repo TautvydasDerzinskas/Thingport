@@ -7,16 +7,18 @@ import { prisma } from "../db";
 import { removeModel } from "../modelFiles/removeModel";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
+import { createKeyedLock } from "../utils/concurrency";
 import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
 import { LEGACY } from "../files/kinds";
-import { nameKey, normalizeFileName } from "../files/names";
+import { nameKey, normalizeFileName, preservesFileExtension } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
-import { fileStateSync, type StorageSite } from "../modelFiles/storageFs";
+import { fileStateSync, isMissingError, type StorageSite } from "../modelFiles/storageFs";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
   availablePlateFilename,
+  freePlateFilename,
   ensureAssetHome,
   ensurePlateThumbnail,
   managedPlatePath,
@@ -31,7 +33,7 @@ import { generateCardRender } from "./previewImageService";
 import { deleteAdapted3mfs } from "./adapted3mfCache";
 import { storePlateFormat } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
-import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
+import { reuseMarker, sha256OfRegularFile, shareStoredCopy, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
@@ -459,11 +461,29 @@ function uploadMarker(clientUploadId: string): string {
   return `thingport-upload-${clientUploadId}-`;
 }
 
-async function findPlateForUpload(printId: string, clientUploadId: string): Promise<Plate | undefined> {
-  const matches = await prisma.plate.findMany({
+async function findPlateForUpload(
+  printId: string,
+  clientUploadId: string,
+  input: NewPlateInput,
+): Promise<Plate | undefined> {
+  const submitted = input.tempFilePath ?? input.copyFromPath ?? input.sourcePath;
+  if (!submitted) return;
+  const candidates = await prisma.plate.findMany({
     where: { printId, filename: { startsWith: uploadMarker(clientUploadId) } },
-    take: 2,
   });
+  if (!candidates.length) return;
+
+  const submittedHash = await sha256OfRegularFile(submitted);
+  const matches: Plate[] = [];
+  for (const candidate of candidates) {
+    const stored = resolvePlateFilePath(candidate);
+    if (!stored) continue;
+    try {
+      if ((await sha256OfRegularFile(stored)) === submittedHash) matches.push(candidate);
+    } catch (error) {
+      if (!isMissingError(error)) throw error;
+    }
+  }
   if (matches.length > 1) throw new HttpError(409, "Multiple plates match this upload attempt");
   return matches[0];
 }
@@ -530,7 +550,7 @@ async function createClaimedPlateUpload(
   const heartbeat = renewPlateUploadClaim(claim, controller.signal);
   try {
     // Older servers could store the plate before recording that the attempt completed.
-    const existing = await findPlateForUpload(print.id, claim.clientUploadId);
+    const existing = await findPlateForUpload(print.id, claim.clientUploadId, input);
     if (existing) {
       await completePlateUpload(prisma, claim, existing.id);
       return existing;
@@ -605,17 +625,66 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
   if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
 }
 
-/** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
+type PlateRename = { plate_id: string; filename: string };
+const withPlateRenameLock = createKeyedLock();
+
+async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Plate[]> {
+  return withPlateRenameLock(print.id, async () => {
+    const renamed = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('plate-names'), hashtext(${print.id}))`;
+      const plates = await tx.plate.findMany({ where: { printId: print.id } });
+      const byId = new Map(plates.map((plate) => [plate.id, plate]));
+      const planned = edits.map(({ plate_id, filename }) => {
+        const plate = byId.get(plate_id);
+        if (!plate) throw new HttpError(404, "Plate not found");
+        if (!preservesFileExtension(plate.filename, filename)) {
+          throw new HttpError(400, "Keep the file's original extension");
+        }
+        return { plate, target: normalizeFileName(filename) };
+      });
+
+      const movingNames = new Set(
+        planned
+          .filter(({ plate, target }) => target.toLowerCase() !== plate.filename.toLowerCase())
+          .map(({ plate }) => plate.id),
+      );
+      const takenByFolder = new Map<string | null, Set<string>>();
+      for (const plate of plates) {
+        if (movingNames.has(plate.id)) continue;
+        const taken = takenByFolder.get(plate.folder) ?? new Set<string>();
+        taken.add(plate.filename.toLowerCase());
+        takenByFolder.set(plate.folder, taken);
+      }
+      const updated: Plate[] = [];
+      for (const { plate, target } of planned) {
+        const taken = takenByFolder.get(plate.folder) ?? new Set<string>();
+        const filename = movingNames.has(plate.id) ? freePlateFilename(target, taken) : target;
+        taken.add(filename.toLowerCase());
+        takenByFolder.set(plate.folder, taken);
+        updated.push(
+          filename === plate.filename ? plate : await tx.plate.update({ where: { id: plate.id }, data: { filename } }),
+        );
+      }
+      return updated;
+    });
+
+    // Commit logical names together. Each storage move can be retried, and a failed move keeps its source readable.
+    // A repeated request still runs relocation in case the names committed before an earlier move failed.
+    await relocatePrint(print, renamed);
+    if (renamed.some((plate) => plate.position === 0)) await refreshAutoPreparedMetadata(print.id);
+    return renamed;
+  });
+}
+
+/** Renames one plate, numbering apart from a sibling already using its target name. */
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
-  const plate = await prisma.plate.findUnique({ where: { id: plateId } });
-  if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-  const nextFilename = await availablePlateFilename(print.id, normalizeFileName(filename), plate.id, plate.folder);
-  if (nextFilename !== plate.filename) {
-    await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
-    await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
-    if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
-  }
-  return nextFilename;
+  const [renamed] = await applyPlateRenames(print, [{ plate_id: plateId, filename }]);
+  return renamed.filename;
+}
+
+/** Commits dependent names together so a swap can be retried, including its storage moves. */
+export async function renamePlates(print: Print, edits: PlateRename[]): Promise<void> {
+  await applyPlateRenames(print, edits);
 }
 
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath" | "sourcePath">): Promise<void> {

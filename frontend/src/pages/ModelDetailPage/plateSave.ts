@@ -1,7 +1,6 @@
 import { PlateUploadOutcomeUnknownError, printsApi, type Plate, type Print } from "../../api/prints";
 import { UnauthorizedError } from "../../api/client";
-import { normalizeFileName, splitName } from "../../utils/fileNames.generated";
-import { newLocalId } from "../../utils/localId";
+import { normalizeFileName, preservesFileExtension } from "../../utils/fileNames.generated";
 
 export type PlateItem =
   | { kind: "existing"; id: string; filename: string; filenameEdited: boolean; folder: string | null }
@@ -23,13 +22,21 @@ export type PlateSaveProgress = {
 export type PlateSaveApi = Pick<
   typeof printsApi,
   "get" | "addPlates" | "supportsIdempotentPlateUploads" | "deletePlate" | "renamePlate" | "reorderPlates"
->;
+> &
+  Partial<Pick<typeof printsApi, "getPlateUploadResults" | "renamePlates">>;
 
 export class PlateUploadConfirmationError extends Error {
   constructor(readonly causes: unknown[] = []) {
     super("PLATE_UPLOAD_CONFIRMATION_FAILED");
     this.name = "PlateUploadConfirmationError";
   }
+}
+
+export class PlateRenameSwapUnsupportedError extends Error {}
+
+export function plateFilenameError(filename: string, original: string): "required" | "extension" | undefined {
+  if (!filename.trim()) return "required";
+  if (!preservesFileExtension(original, filename)) return "extension";
 }
 
 type NewPlateItem = Extract<PlateItem, { kind: "new" }>;
@@ -54,14 +61,22 @@ function asExisting(item: NewPlateItem, plate: Plate): PlateItem {
   };
 }
 
-function reconcileAttemptedUploads(print: Print, items: PlateItem[]): PlateItem[] {
-  return items.map((item) => {
-    if (item.kind !== "new" || !item.uploadAttempted) return item;
-    const uploaded = storedUpload(print, uploadMarker(item));
-    if (uploaded) return asExisting(item, uploaded);
-    return item.uploadOutcomeUnknown === false
-      ? { ...item, uploadAttempted: false, uploadOutcomeUnknown: false }
-      : item;
+function reconcileAttemptedUploads(
+  print: Print,
+  items: PlateItem[],
+  completed?: Map<string, string | null>,
+): PlateItem[] {
+  return items.flatMap((item) => {
+    if (item.kind !== "new" || !item.uploadAttempted) return [item];
+    const recordedId = completed?.get(item.localId);
+    if (recordedId !== undefined) {
+      const plate = print.plates.find((candidate) => candidate.id === recordedId);
+      // A completed upload remains complete when another editor removes its plate.
+      return plate ? [asExisting(item, plate)] : [];
+    }
+    const uploaded = completed ? undefined : storedUpload(print, uploadMarker(item));
+    if (uploaded) return [asExisting(item, uploaded)];
+    return [item.uploadOutcomeUnknown === false ? { ...item, uploadAttempted: false } : item];
   });
 }
 
@@ -82,22 +97,32 @@ export async function savePlateChanges(
   const reportProgress = () =>
     onProgress({ print: latest, items: stagedItems, removedPlateIds: new Set(pendingRemovals) });
 
+  const refreshAttemptedUploads = async (): Promise<boolean> => {
+    const uploadIds = stagedItems.flatMap((item) =>
+      item.kind === "new" && item.uploadAttempted ? [item.localId] : [],
+    );
+    const result = await api.getPlateUploadResults?.(print.id, uploadIds);
+    latest = result?.print ?? (await api.get(print.id));
+    const completed = result && new Map(result.upload_results.map((upload) => [upload.upload_id, upload.plate_id]));
+    stagedItems = reconcileAttemptedUploads(latest, stagedItems, completed ?? undefined);
+    return Boolean(result);
+  };
   const hasAttemptedUploads = stagedItems.some((item) => item.kind === "new" && item.uploadAttempted);
-  // The server may have applied a removal whose response never reached the modal.
-  if (hasAttemptedUploads || pendingRemovals.size) {
-    latest = await api.get(print.id);
-    if (!hasAttemptedUploads) reportProgress();
-  }
   if (hasAttemptedUploads) {
+    let hasReceipts: boolean;
     try {
-      stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+      hasReceipts = await refreshAttemptedUploads();
     } finally {
       reportProgress();
     }
     const hasUnconfirmedUploads = stagedItems.some((item) => item.kind === "new" && item.uploadAttempted);
-    if (hasUnconfirmedUploads && !(await api.supportsIdempotentPlateUploads(print.id))) {
+    if (hasUnconfirmedUploads && !hasReceipts && !(await api.supportsIdempotentPlateUploads(print.id))) {
       throw new PlateUploadConfirmationError();
     }
+  } else if (pendingRemovals.size) {
+    // A previous DELETE may have committed before its response reached the editor.
+    latest = await api.get(print.id);
+    reportProgress();
   }
 
   const newItems = stagedItems.filter((item): item is NewPlateItem => item.kind === "new");
@@ -141,8 +166,7 @@ export async function savePlateChanges(
           : item,
       );
       try {
-        latest = await api.get(print.id);
-        stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+        await refreshAttemptedUploads();
       } catch (reconciliationError) {
         reportProgress();
         if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
@@ -162,7 +186,7 @@ export async function savePlateChanges(
         Array.isArray(responseIds) &&
         responseIds.length === uploads.length &&
         new Set(responseIds).size === uploads.length &&
-        responseIds.every((id) => latest.plates.some((plate) => plate.id === id));
+        responseIds.every((id) => typeof id === "string" && id.length > 0);
       const uploadedIds = idsAreRequestSpecific
         ? responseIds
         : uploads.map(({ marker }) => {
@@ -171,18 +195,16 @@ export async function savePlateChanges(
             return uploaded.id;
           });
       let nextUploaded = 0;
-      stagedItems = stagedItems.map((item) => {
-        if (item.kind === "existing") return item;
+      stagedItems = stagedItems.flatMap((item) => {
+        if (item.kind === "existing") return [item];
         const uploadedId = uploadedIds[nextUploaded++];
-        const uploaded = uploadedId && latest.plates.find((plate) => plate.id === uploadedId);
-        if (!uploaded) throw new PlateUploadConfirmationError();
-        return asExisting(item, uploaded);
+        const uploaded = latest.plates.find((plate) => plate.id === uploadedId);
+        return uploaded ? [asExisting(item, uploaded)] : [];
       });
     } catch (confirmationError) {
       stagedItems = stagedItems.map((item) => (item.kind === "new" ? { ...item, uploadOutcomeUnknown: false } : item));
       try {
-        latest = await api.get(print.id);
-        stagedItems = reconcileAttemptedUploads(latest, stagedItems);
+        await refreshAttemptedUploads();
       } catch (reconciliationError) {
         reportProgress();
         if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
@@ -234,13 +256,18 @@ export async function savePlateChanges(
     const { plate, filename, normalized } = next;
     const blocker = blockers.get(plateNameKey(plate.folder, normalized));
     if (blocker) {
-      // A swap has no free target. Move its blocker aside and keep the final name staged for a retry.
-      const { ext } = splitName(blocker.filename);
-      const temporaryName = `thingport-rename-${newLocalId()}${ext}`;
-      const res = await api.renamePlate(print.id, blocker.id, temporaryName);
-      latest = res.print;
+      // A cycle has no free target. Its final names must be committed together.
+      const renames = pending.map((edit) => ({ plate_id: edit.plate.id, filename: edit.filename }));
+      const result = await api.renamePlates?.(print.id, renames);
+      if (!result) throw new PlateRenameSwapUnsupportedError();
+      latest = result.print;
+      stagedItems = stagedItems.map((staged) => {
+        if (staged.kind !== "existing" || !renameTargets.has(staged.id)) return staged;
+        const renamed = latest.plates.find((current) => current.id === staged.id);
+        return renamed ? { ...staged, filename: renamed.filename, filenameEdited: false } : staged;
+      });
       reportProgress();
-      continue;
+      break;
     }
 
     const res = await api.renamePlate(print.id, plate.id, filename);

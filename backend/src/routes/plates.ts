@@ -14,6 +14,7 @@ import {
   refreshAutoPreparedMetadata,
   removePlate,
   renamePlate,
+  renamePlates,
   resolvePlateFilePath,
   type NewPlateInput,
 } from "../services/printCreation";
@@ -47,6 +48,27 @@ router.get(
     if (!print) throw new HttpError(404, "Print not found");
     res.setHeader("Cache-Control", "no-store");
     res.json({ supported: true });
+  }),
+);
+
+const uploadResultsSchema = z.object({ upload_ids: z.array(z.string().min(1).max(36)) });
+router.post(
+  "/print/:id/plates/upload-results",
+  asyncHandler(async (req, res) => {
+    const { upload_ids } = parseBody(uploadResultsSchema, req.body);
+    const print = await prisma.print.findFirst({
+      where: { id: req.params.id, userId: req.userId },
+      select: { id: true },
+    });
+    if (!print) throw new HttpError(404, "Print not found");
+    const completed = await prisma.plateUploadAttempt.findMany({
+      where: { printId: print.id, status: "complete", clientUploadId: { in: upload_ids } },
+      select: { clientUploadId: true, plateId: true },
+    });
+    res.json({
+      print: await printOutById(req.userId!, print.id),
+      upload_results: completed.map((attempt) => ({ upload_id: attempt.clientUploadId, plate_id: attempt.plateId })),
+    });
   }),
 );
 
@@ -121,7 +143,27 @@ router.post(
   }),
 );
 
-const renameSchema = z.object({ filename: z.string().min(1) });
+const renameSchema = z.object({ filename: z.string().trim().min(1) });
+const renameBatchSchema = z.object({
+  renames: z
+    .array(renameSchema.extend({ plate_id: z.string().min(1) }))
+    .min(1)
+    .refine(
+      (renames) => new Set(renames.map((rename) => rename.plate_id)).size === renames.length,
+      "Duplicate plate IDs",
+    ),
+});
+router.post(
+  "/print/:id/plates/rename",
+  asyncHandler(async (req, res) => {
+    const { renames } = parseBody(renameBatchSchema, req.body);
+    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    if (!print) throw new HttpError(404, "Print not found");
+    await renamePlates(print, renames);
+    res.json({ print: await printOutById(req.userId!, print.id) });
+  }),
+);
+
 router.post(
   "/print/:id/plate/:plateId/rename",
   asyncHandler(async (req, res) => {

@@ -654,6 +654,20 @@ export const printsApi = {
     }
   },
 
+  getPlateUploadResults: async (
+    printId: string,
+    uploadIds: string[],
+  ): Promise<{ print: Print; upload_results: { upload_id: string; plate_id: string | null }[] } | null> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/plates/upload-results`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ upload_ids: uploadIds }),
+    });
+    if (res.status === 404) return null;
+    await assertOkWithMessage(res, "Could not check plate upload results");
+    return res.json();
+  },
+
   deletePlate: async (printId: string, plateId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/plates/${plateId}`, {
       method: "DELETE",
@@ -694,6 +708,20 @@ export const printsApi = {
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, "Rename failed"));
     }
+    return res.json();
+  },
+
+  renamePlates: async (
+    printId: string,
+    renames: { plate_id: string; filename: string }[],
+  ): Promise<{ print: Print } | null> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/plates/rename`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ renames }),
+    });
+    if (res.status === 404) return null;
+    await assertOkWithMessage(res, "Could not rename the model files");
     return res.json();
   },
 

@@ -3,6 +3,7 @@
 //   npm run kinds:sync    rewrite it
 //   npm run kinds:check   fail when it's out of date (CI)
 
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +15,17 @@ const PAGE = "docs/features/file-kinds.md";
 const NAME_RULES = "backend/src/files/names.ts";
 const BROWSER_RULES = "frontend/src/utils/fileNames.generated.ts";
 
-const kinds = JSON.parse(readFileSync(path.join(ROOT, TABLE), "utf8"));
+const stagedAt = process.argv.indexOf("--staged");
+// The hook has already formatted these staged files. An input outside the task comes from the index.
+const formattedFiles = new Set(
+  stagedAt === -1 ? [] : process.argv.slice(stagedAt + 1).map((file) => path.relative(ROOT, path.resolve(file))),
+);
+const readInput = (file) =>
+  stagedAt >= 0 && !formattedFiles.has(file)
+    ? execFileSync("git", ["show", `:${file}`], { cwd: ROOT, encoding: "utf8" })
+    : readFileSync(path.join(ROOT, file), "utf8");
+
+const kinds = JSON.parse(readInput(TABLE));
 const code = (items) => items.map((item) => `\`${item}\``).join(", ");
 
 const rows = kinds.map(({ label, about, extensions, names }) => {
@@ -41,10 +52,7 @@ const compoundKinds = kinds
 const browserRules =
   `// Generated from ${NAME_RULES} by scripts/sync-kinds.mjs.
 ` +
-  readFileSync(path.join(ROOT, NAME_RULES), "utf8").replace(
-    'import kinds from "./kinds.json";',
-    `const kinds = ${JSON.stringify(compoundKinds)};`,
-  );
+  readInput(NAME_RULES).replace('import kinds from "./kinds.json";', `const kinds = ${JSON.stringify(compoundKinds)};`);
 
 const check = process.argv.includes("--check");
 for (const [file, source] of [

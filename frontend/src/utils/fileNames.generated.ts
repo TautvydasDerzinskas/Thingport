@@ -135,6 +135,13 @@ export function numberedFolderName(name: NormalName, n: number, maxLength = Infi
   return `${kept.length < name.length ? kept.replace(TRAILING, "") : kept}${suffix}` as NormalName;
 }
 
+/** A rename keeps the original format, including compound extensions and files without one. */
+export function preservesFileExtension(original: string, renamed: string): boolean {
+  return (
+    splitName(normalizeFileName(original)).ext.toLowerCase() === splitName(normalizeFileName(renamed)).ext.toLowerCase()
+  );
+}
+
 /** What makes two names the same file in one folder of a model: case doesn't count, as on most desktops. */
 export function nameKey(folder: string | null | undefined, name: NormalName): string {
   return `${(folder ?? "").normalize("NFC").toLowerCase()}/${name.toLowerCase()}`;

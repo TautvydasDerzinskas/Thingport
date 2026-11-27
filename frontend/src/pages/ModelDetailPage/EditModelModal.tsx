@@ -55,8 +55,20 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
-import { PlateUploadConfirmationError, savePlateChanges, type PlateItem } from "./plateSave";
-import { isPendingPreviewImage, PreviewUploadError, savePreviewUploads, type ImageItem } from "./previewImageSave";
+import {
+  plateFilenameError,
+  PlateRenameSwapUnsupportedError,
+  PlateUploadConfirmationError,
+  savePlateChanges,
+  type PlateItem,
+} from "./plateSave";
+import {
+  isPendingPreviewImage,
+  PreviewUploadError,
+  savePreviewRemovals,
+  savePreviewUploads,
+  type ImageItem,
+} from "./previewImageSave";
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -64,10 +76,6 @@ function imageKey(img: ImageItem): string {
 
 function plateKey(p: PlateItem): string {
   return p.kind === "existing" ? p.id : p.localId;
-}
-
-function hasInvalidPlateFilename(items: PlateItem[]): boolean {
-  return items.some((item) => !item.filename.trim());
 }
 
 function moveItem<T>(list: T[], index: number, dir: -1 | 1): T[] {
@@ -235,13 +243,24 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     setPlateItems((prev) => [...prev, ...newItems]);
     markDirty();
   };
+  const filenameIssue = (item: PlateItem) => {
+    const original =
+      item.kind === "new"
+        ? item.file.name
+        : (print.plates.find((plate) => plate.id === item.id)?.filename ?? item.filename);
+    return plateFilenameError(item.filename, original);
+  };
+  const filenameMessage = (issue: ReturnType<typeof plateFilenameError>) =>
+    issue && t(issue === "required" ? "models:edit.fileNameRequired" : "models:edit.fileExtensionRequired");
+  const firstFilenameIssue = plateItems.map(filenameIssue).find(Boolean);
+
   const renamePlateItem = (key: string, filename: string) => {
     const updatedItems = plateItems.map((item) => {
       if (plateKey(item) !== key) return item;
       return item.kind === "existing" ? { ...item, filename, filenameEdited: true } : { ...item, filename };
     });
     setPlateItems(updatedItems);
-    setError(hasInvalidPlateFilename(updatedItems) ? t("models:edit.fileNameRequired") : null);
+    setError(filenameMessage(updatedItems.map(filenameIssue).find(Boolean)) ?? null);
     markDirty();
   };
   const removePlateItem = (key: string) => {
@@ -280,8 +299,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
 
   const handleUpdate = async () => {
     if (previewSaveBlocked) return;
-    if (hasInvalidPlateFilename(plateItems)) {
-      setError(t("models:edit.fileNameRequired"));
+    if (firstFilenameIssue) {
+      setError(filenameMessage(firstFilenameIssue) ?? null);
       return;
     }
     setSaving(true);
@@ -306,11 +325,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         latest = authorRes.print ?? latest;
       }
 
-      for (const id of removedImageIds) {
-        const res = await printsApi.deletePreviewImage(print.id, id);
-        latest = res.print ?? latest;
-        setRemovedImageIds((pending) => new Set([...pending].filter((imageId) => imageId !== id)));
-      }
+      latest = await savePreviewRemovals(latest, removedImageIds, printsApi, (updated, remaining) => {
+        latest = updated;
+        latestPrint.current = updated;
+        setRemovedImageIds(remaining);
+      });
       let stagedImages = images;
       if (images.some((image) => image.kind === "new")) {
         const result = await savePreviewUploads(latest, images, printsApi, (progress) => {
@@ -363,6 +382,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         onUnauthorized?.();
         return;
       }
+      if (err instanceof PlateRenameSwapUnsupportedError) {
+        setError(t("models:edit.fileSwapUnsupported"));
+        return;
+      }
       if (err instanceof PreviewUploadError) {
         setError(t(err.reason === "skipped" ? "models:edit.previewUploadSkipped" : "models:edit.previewUploadPending"));
         return;
@@ -389,6 +412,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       <DialogTitle>{t("models:edit.title")}</DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 0.5 }}>
+          {images.some((image) => image.kind === "missing") && (
+            <Alert severity="info">{t("models:edit.previewUploadMissing")}</Alert>
+          )}
           {hasUnconfirmedImages && <Alert severity="warning">{t("models:edit.previewUploadUnconfirmed")}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
 
@@ -534,7 +560,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {images.map((img, idx) => {
                 const key = imageKey(img);
                 const src = img.kind === "existing" ? printsApi.fileUrl(img.url) : img.previewUrl;
-                const isThumbnail = idx === 0;
+                const canArrange = img.kind !== "missing" && img.kind !== "unconfirmed";
+                const isThumbnail =
+                  canArrange &&
+                  images.findIndex((image) => image.kind !== "missing" && image.kind !== "unconfirmed") === idx;
                 return (
                   <Box
                     key={key}
@@ -595,7 +624,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                           <span>
                             <IconButton
                               size="small"
-                              disabled={saving}
+                              disabled={saving || !canArrange}
                               aria-label={t("models:edit.useAsThumbnail")}
                               onClick={() => makeThumbnail(key)}
                               sx={overImageButtonSx}
@@ -619,7 +648,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                       {!isThumbnail && (
                         <IconButton
                           size="small"
-                          disabled={saving}
+                          disabled={saving || !canArrange}
                           aria-label={t("models:edit.moveImageLeft")}
                           onClick={() => moveImageBy(key, -1)}
                           sx={overImageButtonSx}
@@ -629,7 +658,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                       )}
                       <IconButton
                         size="small"
-                        disabled={saving || idx === images.length - 1}
+                        disabled={saving || !canArrange || idx === images.length - 1}
                         aria-label={t("models:edit.moveImageRight")}
                         onClick={() => moveImageBy(key, 1)}
                         sx={overImageButtonSx}
@@ -727,8 +756,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                         fullWidth
                         label={t("models:edit.fileName")}
                         value={p.filename}
-                        error={!p.filename.trim()}
-                        helperText={!p.filename.trim() ? t("models:edit.fileNameRequired") : undefined}
+                        error={Boolean(filenameIssue(p))}
+                        helperText={filenameMessage(filenameIssue(p))}
                         disabled={saving}
                         onChange={(event) => renamePlateItem(key, event.target.value)}
                       />
@@ -805,7 +834,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving || previewSaveBlocked || hasInvalidPlateFilename(plateItems)}
+          disabled={saving || previewSaveBlocked || Boolean(firstFilenameIssue)}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

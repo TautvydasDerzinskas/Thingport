@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { PlateUploadCapabilityError, PlateUploadOutcomeUnknownError, type Plate, type Print } from "../../api/prints";
 import { normalizeFileName } from "../../utils/fileNames.generated";
 import {
+  plateFilenameError,
   PlateUploadConfirmationError,
   savePlateChanges,
   type PlateItem,
@@ -239,6 +240,43 @@ describe("savePlateChanges", () => {
     ]);
   });
 
+  it("retries a live upload after another editor removes the completed plate from its batch", async () => {
+    const initial = print(plate("original", "base.3mf", 0));
+    const uploaded = plate("second-plate", "thingport-upload-second-second.3mf", 1);
+    const afterUpload = print(...initial.plates, uploaded);
+    const afterRename = print(...initial.plates, { ...uploaded, filename: "second.3mf" });
+    const api = {
+      get: vi.fn<PlateSaveApi["get"]>(),
+      getPlateUploadResults: vi.fn<NonNullable<PlateSaveApi["getPlateUploadResults"]>>().mockResolvedValue({
+        print: initial,
+        upload_results: [{ upload_id: "first", plate_id: "removed-plate" }],
+      }),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>().mockResolvedValue({
+        print: afterUpload,
+        added_plate_ids: ["second-plate"],
+      }),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>().mockResolvedValue({ print: afterRename }),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: afterRename }),
+    };
+    const items: PlateItem[] = ["first", "second"].map((localId) => ({
+      kind: "new",
+      localId,
+      file: new File(["mesh"], `${localId}.3mf`),
+      filename: `${localId}.3mf`,
+      uploadAttempted: true,
+      uploadOutcomeUnknown: true,
+    }));
+
+    const result = await savePlateChanges(initial, items, new Set(), api, () => {});
+
+    expect(api.getPlateUploadResults).toHaveBeenCalledExactlyOnceWith("model", ["first", "second"]);
+    expect(api.addPlates).toHaveBeenCalledTimes(1);
+    expect(api.addPlates.mock.calls[0][1].map((file) => file.name)).toEqual(["thingport-upload-second-second.3mf"]);
+    expect(result.plates.map((candidate) => candidate.id)).toEqual(["original", "second-plate"]);
+  });
+
   it("tracks legacy upload responses by request-specific filename when a concurrent plate is present", async () => {
     const original = plate("original", "base.3mf", 0);
     const concurrent = plate("concurrent", "parallel.3mf", 1);
@@ -406,6 +444,16 @@ describe("dependent plate renames", () => {
         );
         return { print: current };
       }),
+      renamePlates: vi.fn<NonNullable<PlateSaveApi["renamePlates"]>>(async (_printId, renames) => {
+        const names = new Map(renames.map(({ plate_id, filename }) => [plate_id, filename]));
+        current = print(
+          ...current.plates.map((candidate) => ({
+            ...candidate,
+            filename: names.get(candidate.id) ?? candidate.filename,
+          })),
+        );
+        return { print: current };
+      }),
       reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(async () => ({ print: current })),
     };
     return { api, initial: current };
@@ -442,34 +490,42 @@ describe("dependent plate renames", () => {
     expect(result.plates[0].filename).toBe("target.stl");
   });
 
-  it("resumes a filename swap after moving a plate aside and a later request fails", async () => {
+  it("retries both names together after a failed swap without staging a temporary filename", async () => {
     const { api, initial } = renameFixture([plate("a", "a.gcode.3mf", 0), plate("b", "b.gcode.3mf", 1)]);
-    let progress: PlateSaveProgress = {
-      print: initial,
-      items: [edited("a", "b.gcode.3mf"), edited("b", "a.gcode.3mf")],
-      removedPlateIds: new Set(),
-    };
+    const items = [edited("a", "b.gcode.3mf"), edited("b", "a.gcode.3mf")];
+    let progress: PlateSaveProgress = { print: initial, items, removedPlateIds: new Set() };
     const save = () =>
       savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, (updated) => {
         progress = updated;
       });
-    const rename = api.renamePlate.getMockImplementation();
-    expect(rename).toBeDefined();
-    if (!rename) throw new Error("Missing rename fixture");
-    api.renamePlate.mockImplementationOnce(rename).mockRejectedValueOnce(new Error("temporary failure"));
+    api.renamePlates.mockRejectedValueOnce(new Error("temporary failure"));
 
     await expect(save()).rejects.toThrow("temporary failure");
-    expect(progress.items.every((item) => item.kind === "existing" && item.filenameEdited)).toBe(true);
-    expect(progress.print.plates[1].filename).toMatch(/^thingport-rename-.*\.gcode\.3mf$/);
+    expect(progress.print).toBe(initial);
+    expect(progress.items).toBe(items);
+    expect(api.renamePlate).not.toHaveBeenCalled();
     expect(api.reorderPlates).not.toHaveBeenCalled();
 
     const result = await save();
 
-    expect(api.renamePlate.mock.calls.slice(1)).toEqual([
-      ["model", "a", "b.gcode.3mf"],
-      ["model", "a", "b.gcode.3mf"],
-      ["model", "b", "a.gcode.3mf"],
+    expect(api.renamePlates).toHaveBeenCalledTimes(2);
+    expect(api.renamePlates).toHaveBeenNthCalledWith(2, "model", [
+      { plate_id: "a", filename: "b.gcode.3mf" },
+      { plate_id: "b", filename: "a.gcode.3mf" },
     ]);
     expect(result.plates.map((candidate) => candidate.filename)).toEqual(["b.gcode.3mf", "a.gcode.3mf"]);
+  });
+});
+
+describe("plateFilenameError", () => {
+  it.each([
+    ["part.3mf", " ", "required"],
+    ["part.3mf", "  part...  ", "extension"],
+    ["part.3mf", "renamed.gcode.3mf", "extension"],
+    ["part.gcode.3mf", "renamed.3mf", "extension"],
+    ["part.gcode.3mf", "  renamed.GCODE.3MF... ", undefined],
+    ["extensionless", "renamed", undefined],
+  ])("validates the normalized extension of %s renamed to %s", (original, filename, expected) => {
+    expect(plateFilenameError(filename, original)).toBe(expected);
   });
 });

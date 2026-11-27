@@ -3,6 +3,7 @@ import type { PreviewImage, Print } from "../../api/prints";
 import {
   isPendingPreviewImage,
   reconcilePreviewUploads,
+  savePreviewRemovals,
   savePreviewUploads,
   type ImageItem,
   type PreviewSaveApi,
@@ -128,7 +129,7 @@ describe("savePreviewUploads", () => {
     await expect(save()).resolves.toEqual({
       print: updated,
       items: [
-        { kind: "unconfirmed", localId: "first", previewUrl: "blob:first" },
+        { kind: "missing", localId: "first", previewUrl: "blob:first" },
         { kind: "existing", id: "second-saved", url: "/second-saved.jpg" },
       ],
     });
@@ -151,7 +152,10 @@ describe("savePreviewUploads", () => {
     await expect(save()).resolves.toMatchObject({ print: bothAdded });
     const [, resentFiles, resentIds] = api.addPreviewImages.mock.calls[1];
     expect(resentFiles.map((file) => file.name)).toEqual(["second.png"]);
-    expect(resentIds).not.toEqual([api.addPreviewImages.mock.calls[0][2]?.[1]]);
+    const firstIds = api.addPreviewImages.mock.calls[0][2];
+    expect(firstIds).toEqual([expect.any(String), expect.any(String)]);
+    expect(resentIds).toEqual([expect.any(String)]);
+    expect(resentIds?.[0]).not.toBe(firstIds?.[1]);
   });
 
   it("refreshes and locks a legacy upload after a lost response", async () => {
@@ -166,5 +170,53 @@ describe("savePreviewUploads", () => {
       items: [{ kind: "unconfirmed", localId: "first", previewUrl: "blob:first" }],
     });
     expect(api.addPreviewImages).toHaveBeenCalledExactlyOnceWith("model", [expect.any(File)], undefined);
+  });
+});
+
+type PreviewRemovalApi = Parameters<typeof savePreviewRemovals>[2];
+
+describe("savePreviewRemovals", () => {
+  it("reconciles a lost deletion and continues with the remaining removal", async () => {
+    const first = storedImage("first", 0);
+    const second = storedImage("second", 1);
+    const api = {
+      get: vi.fn<PreviewRemovalApi["get"]>().mockResolvedValue(printWithImages(second)),
+      deletePreviewImage: vi
+        .fn<PreviewRemovalApi["deletePreviewImage"]>()
+        .mockRejectedValueOnce(new Error("response lost"))
+        .mockResolvedValueOnce({
+          print: printWithImages(),
+        }),
+    };
+    const progress = vi.fn<Parameters<typeof savePreviewRemovals>[3]>();
+
+    const result = await savePreviewRemovals(
+      printWithImages(first, second),
+      new Set(["first", "second"]),
+      api,
+      progress,
+    );
+
+    expect(api.deletePreviewImage.mock.calls).toEqual([
+      ["model", "first"],
+      ["model", "second"],
+    ]);
+    expect(progress).toHaveBeenNthCalledWith(1, printWithImages(second), new Set(["second"]));
+    expect(progress).toHaveBeenLastCalledWith(result, new Set());
+  });
+
+  it("keeps a removal pending if the refreshed gallery still contains it", async () => {
+    const initial = printWithImages(storedImage("first", 0));
+    const api = {
+      get: vi.fn<PreviewRemovalApi["get"]>().mockResolvedValue(initial),
+      deletePreviewImage: vi
+        .fn<PreviewRemovalApi["deletePreviewImage"]>()
+        .mockRejectedValue(new Error("delete failed")),
+    };
+    const progress = vi.fn<Parameters<typeof savePreviewRemovals>[3]>();
+
+    await expect(savePreviewRemovals(initial, new Set(["first"]), api, progress)).rejects.toThrow("delete failed");
+
+    expect(progress).toHaveBeenLastCalledWith(initial, new Set(["first"]));
   });
 });
