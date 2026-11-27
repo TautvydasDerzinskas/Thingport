@@ -517,6 +517,18 @@ async function findPlateForUpload(
   return matches[0];
 }
 
+async function isSameUpload(plate: Plate, input: NewPlateInput): Promise<boolean> {
+  const submitted = input.tempFilePath ?? input.copyFromPath ?? input.sourcePath;
+  const stored = resolvePlateFilePath(plate);
+  if (!submitted || !stored) throw new HttpError(409, "The original plate upload is no longer available");
+  try {
+    return (await sha256OfRegularFile(stored)) === (await sha256OfRegularFile(submitted));
+  } catch (error) {
+    if (isMissingError(error)) throw new HttpError(409, "The original plate upload is no longer available");
+    throw error;
+  }
+}
+
 function plateUploadOutcomeRecordingError(uploadError: unknown, attemptError: unknown): AggregateError {
   return new AggregateError([uploadError, attemptError], "Failed to record the plate upload outcome", {
     cause: uploadError,
@@ -615,6 +627,10 @@ async function createPlateIdempotently(
         ? await prisma.plate.findFirst({ where: { id: attempt.plateId, printId: print.id } })
         : null;
       if (!completedPlate) throw new HttpError(409, "The original plate upload is no longer available");
+      // An upload ID names one file: other bytes under it are another file, which a replay would drop unsaved.
+      if (!(await isSameUpload(completedPlate, input))) {
+        throw new HttpError(409, "This upload ID was already used for a different file");
+      }
       return completedPlate;
     }
 

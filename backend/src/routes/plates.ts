@@ -133,12 +133,11 @@ router.post(
     }
     const previousFirst = plates.toSorted((a, b) => a.position - b.position)[0]?.id;
 
-    await prisma.$transaction(
-      body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: -(idx + 1) } })),
-    );
-    await prisma.$transaction(
-      body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: idx } })),
-    );
+    // One transaction, so an append never sees the temporary negative positions as the model's last.
+    await prisma.$transaction([
+      ...body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: -(idx + 1) } })),
+      ...body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: idx } })),
+    ]);
 
     if (previousFirst !== body.plate_ids[0]) {
       await refreshAutoPreparedMetadata(print.id);

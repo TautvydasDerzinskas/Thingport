@@ -278,15 +278,17 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
   const filenameMessage = (issue: ReturnType<typeof plateFilenameError>) =>
     issue && t(issue === "required" ? "models:edit.fileNameRequired" : "models:edit.fileExtensionRequired");
+  // From the rows as they are, so removing a bad row clears it, apart from a failed save's own error.
   const firstFilenameIssue = plateItems.map(filenameIssue).find(Boolean);
+  const filenameFeedback = filenameMessage(firstFilenameIssue);
 
   const renamePlateItem = (key: string, filename: string) => {
-    const updatedItems = plateItems.map((item) => {
-      if (plateKey(item) !== key) return item;
-      return item.kind === "existing" ? { ...item, filename, filenameEdited: true } : { ...item, filename };
-    });
-    setPlateItems(updatedItems);
-    setError(filenameMessage(updatedItems.map(filenameIssue).find(Boolean)) ?? null);
+    setPlateItems((prev) =>
+      prev.map((item) => {
+        if (plateKey(item) !== key) return item;
+        return item.kind === "existing" ? { ...item, filename, filenameEdited: true } : { ...item, filename };
+      }),
+    );
     markDirty();
   };
   const removePlateItem = (key: string) => {
@@ -324,11 +326,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
-    if (previewSaveBlocked) return;
-    if (firstFilenameIssue) {
-      setError(filenameMessage(firstFilenameIssue) ?? null);
-      return;
-    }
+    if (previewSaveBlocked || firstFilenameIssue) return;
     setSaving(true);
     setError(null);
     let latest: Print = latestPrint.current;
@@ -446,6 +444,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             <Alert severity="info">{t("models:edit.previewUploadMissing")}</Alert>
           )}
           {hasUnconfirmedImages && <Alert severity="warning">{t("models:edit.previewUploadUnconfirmed")}</Alert>}
+          {filenameFeedback && <Alert severity="error">{filenameFeedback}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
 
           <TextField

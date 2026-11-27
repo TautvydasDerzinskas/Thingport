@@ -10,11 +10,13 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
 import { resolvePlateFilePath } from "../src/services/printCreation";
+import { checkLibraryInvariants } from "./harness";
 import { pauseAt, track } from "./harness/lifecycle";
 
 const app = createApp();
 
 let token: string;
+let userId: string;
 const createdPrintIds: string[] = [];
 const createdCategoryIds: string[] = [];
 
@@ -49,6 +51,7 @@ beforeAll(async () => {
     throw new Error(`Failed to authenticate during test setup: ${res.status} ${JSON.stringify(res.body)}`);
   }
   token = res.body.token;
+  userId = res.body.user.id;
 });
 
 afterAll(async () => {
@@ -313,6 +316,7 @@ describe("plate add/remove/reorder/rename", () => {
         where: { printId_clientUploadId: { printId: modelId, clientUploadId: uploadId } },
       }),
     ).toMatchObject({ status: "complete", plateId: appendedId });
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("keeps swapped names and readable bytes after a storage move fails", async () => {
@@ -414,6 +418,8 @@ describe("plate add/remove/reorder/rename", () => {
     const filename = `thingport-upload-${uploadId}-retry.stl`;
     const firstFile = tmpFile(filename, "solid retry endsolid");
     const secondFile = tmpFile(filename, "solid retry endsolid");
+    // Another file under the same upload ID isn't a retry.
+    const otherFile = tmpFile(filename, "solid other endsolid");
     const post = (file: string) => auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", file);
 
     try {
@@ -425,9 +431,14 @@ describe("plate add/remove/reorder/rename", () => {
       expect(
         second.body.print.plates.filter((p: any) => p.filename.startsWith(`thingport-upload-${uploadId}-`)),
       ).toHaveLength(1);
+
+      const other = await post(otherFile);
+      expect(other.status).toBe(409);
+      expect(await prisma.plate.count({ where: { printId } })).toBe(second.body.print.plates.length);
     } finally {
       fs.rmSync(firstFile, { force: true });
       fs.rmSync(secondFile, { force: true });
+      fs.rmSync(otherFile, { force: true });
     }
   });
 
