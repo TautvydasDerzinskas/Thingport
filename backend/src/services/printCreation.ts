@@ -499,6 +499,7 @@ async function renewPlateUploadClaim(claim: PlateUploadClaim, signal: AbortSigna
           SET "leaseExpiresAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + make_interval(secs => ${UPLOAD_LEASE_SECONDS}::int)
           WHERE "printId" = ${claim.printId} AND "clientUploadId" = ${claim.clientUploadId}
             AND "claimToken" = ${claim.claimToken} AND "status" = 'pending'
+            AND "leaseExpiresAt" > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
         `;
         if (count === 0) return;
       } catch (error) {

@@ -7,18 +7,12 @@ export type ImageItem =
 
 export function reconcilePreviewUploads(
   items: ImageItem[],
-  previousImages: PreviewImage[],
   currentImages: PreviewImage[],
   addedIds?: (string | null)[],
 ): ImageItem[] {
-  const previousIds = new Set(previousImages.map((image) => image.id));
   const storedImages = new Map(currentImages.map((image) => [image.id, image.url]));
-  const ids =
-    addedIds ??
-    currentImages
-      .filter((image) => !image.generated && !previousIds.has(image.id))
-      .toSorted((a, b) => a.position - b.position)
-      .map((image) => image.id);
+  // On an older server the gallery snapshot alone cannot attribute any image to this upload.
+  const ids = addedIds ?? [];
   const storedIds = ids.filter((id) => id !== null);
   const canMatch =
     ids.length === items.filter((image) => image.kind === "new").length &&

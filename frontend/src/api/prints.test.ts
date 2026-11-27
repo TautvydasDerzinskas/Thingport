@@ -98,6 +98,18 @@ describe("plate uploads", () => {
     await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
   });
 
+  it.each([
+    "The matching plate upload is still processing",
+    "The plate upload claim was lost; try again",
+    "Multiple plates match this upload attempt",
+    "The original plate upload is no longer available",
+    "The plate upload attempt has an invalid status",
+    "Another file was just saved at the same path; try again",
+  ])("keeps a conflicted upload unresolved when the server reports %s", async (detail) => {
+    respond(409, JSON.stringify({ detail }));
+    await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);
+  });
+
   it("keeps the upload outcome unknown when a successful response cannot be decoded", async () => {
     respond(200, "Invalid JSON");
     await expect(printsApi.addPlates("print", [])).rejects.toBeInstanceOf(PlateUploadOutcomeUnknownError);

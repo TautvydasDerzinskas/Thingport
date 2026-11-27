@@ -624,8 +624,10 @@ export const printsApi = {
     if (!res.ok) {
       const message = await readErrorMessage(res, "Failed to add plate");
       const error = new Error(message);
-      // A timeout or server-side failure can come back after the backend starts saving files.
-      if (res.status === 408 || res.status >= 500) throw new PlateUploadOutcomeUnknownError(error);
+      // The backend may have started saving the batch, or a conflict may refer to an earlier attempt still running.
+      if (res.status === 408 || res.status === 409 || res.status >= 500) {
+        throw new PlateUploadOutcomeUnknownError(error);
+      }
       throw error;
     }
     try {

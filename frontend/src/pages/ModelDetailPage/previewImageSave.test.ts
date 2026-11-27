@@ -9,10 +9,9 @@ const pendingImage = (id: string): ImageItem => ({
   previewUrl: `blob:${id}`,
 });
 
-const storedImage = (id: string, position: number, generated = false): PreviewImage => ({
+const storedImage = (id: string, position: number): PreviewImage => ({
   id,
   position,
-  generated,
   url: `/${id}.jpg`,
 });
 
@@ -25,20 +24,20 @@ describe("reconcilePreviewUploads", () => {
       pendingImage("accepted"),
     ];
 
-    expect(reconcilePreviewUploads(items, [existing], [existing, storedImage("accepted-id", 1)])).toEqual([
+    expect(reconcilePreviewUploads(items, [existing, storedImage("accepted-id", 1)])).toEqual([
       { kind: "unconfirmed", localId: "skipped", previewUrl: "blob:skipped" },
       items[1],
       { kind: "unconfirmed", localId: "accepted", previewUrl: "blob:accepted" },
     ]);
   });
 
-  it("matches a complete legacy response in upload order and ignores generated renders", () => {
-    const items = [pendingImage("first"), pendingImage("second")];
-    const current = [storedImage("second", 2), storedImage("render", 0, true), storedImage("first", 1)];
+  it("leaves legacy rows unconfirmed even when a concurrent upload makes the counts match", () => {
+    const items = [pendingImage("skipped"), pendingImage("accepted")];
+    const current = [storedImage("other-upload", 0), storedImage("accepted-id", 1)];
 
-    expect(reconcilePreviewUploads(items, [], current)).toEqual([
-      { kind: "existing", id: "first", url: "/first.jpg" },
-      { kind: "existing", id: "second", url: "/second.jpg" },
+    expect(reconcilePreviewUploads(items, current)).toEqual([
+      { kind: "unconfirmed", localId: "skipped", previewUrl: "blob:skipped" },
+      { kind: "unconfirmed", localId: "accepted", previewUrl: "blob:accepted" },
     ]);
   });
 
@@ -46,7 +45,7 @@ describe("reconcilePreviewUploads", () => {
     const items = [pendingImage("skipped"), pendingImage("accepted")];
     const current = [storedImage("other-upload", 0), storedImage("accepted-id", 1)];
 
-    expect(reconcilePreviewUploads(items, [], current, [null, "accepted-id"])).toEqual([
+    expect(reconcilePreviewUploads(items, current, [null, "accepted-id"])).toEqual([
       items[0],
       { kind: "existing", id: "accepted-id", url: "/accepted-id.jpg" },
     ]);

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PlateUploadOutcomeUnknownError, type Plate, type Print } from "../../api/prints";
+import { PlateUploadCapabilityError, PlateUploadOutcomeUnknownError, type Plate, type Print } from "../../api/prints";
 import { normalizeFileName } from "../../utils/fileNames.generated";
 import {
   PlateUploadConfirmationError,
@@ -143,12 +143,51 @@ describe("savePlateChanges", () => {
     await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
 
     expect(api.addPlates).toHaveBeenCalledTimes(1);
+    expect(api.supportsIdempotentPlateUploads).toHaveBeenCalledExactlyOnceWith("model");
     expect(progress.items).toEqual([
       { kind: "existing", id: "uploaded", filename: "part.3mf", filenameEdited: false, folder: null },
     ]);
   });
 
-  it("retries an uncertain upload with the same id when the server supports idempotency", async () => {
+  it("keeps reconciled uploads when checking retry support for another file fails", async () => {
+    const initial = print(plate("original", "base.3mf", 0));
+    const afterUpload = print(...initial.plates, plate("uploaded", "thingport-upload-first-first.3mf", 1));
+    const capabilityError = new PlateUploadCapabilityError(new Error("gateway failure"));
+    const api = {
+      get: vi.fn<PlateSaveApi["get"]>().mockResolvedValue(afterUpload),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+      supportsIdempotentPlateUploads: vi
+        .fn<PlateSaveApi["supportsIdempotentPlateUploads"]>()
+        .mockRejectedValue(capabilityError),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>(),
+    };
+    const items: PlateItem[] = ["first", "second"].map((localId) => ({
+      kind: "new",
+      localId,
+      file: new File(["model"], `${localId}.3mf`),
+      filename: `${localId}.3mf`,
+      uploadAttempted: true,
+      uploadOutcomeUnknown: true,
+    }));
+    const onProgress = vi.fn<(progress: PlateSaveProgress) => void>();
+
+    await expect(savePlateChanges(initial, items, new Set(), api, onProgress)).rejects.toBe(capabilityError);
+
+    expect(onProgress).toHaveBeenLastCalledWith({
+      print: afterUpload,
+      items: [
+        { kind: "existing", id: "uploaded", filename: "first.3mf", filenameEdited: true, folder: null },
+        items[1],
+      ],
+      removedPlateIds: new Set(),
+    });
+    expect(api.supportsIdempotentPlateUploads).toHaveBeenCalledExactlyOnceWith("model");
+    expect(api.addPlates).not.toHaveBeenCalled();
+  });
+
+  it("retries an uncertain upload with the same id even after a live upload conflict", async () => {
     const original = plate("original", "base.3mf", 0);
     const uploadName = "thingport-upload-safe-retry-part.3mf";
     const initial = print(original);
@@ -162,6 +201,9 @@ describe("savePlateChanges", () => {
         uploadedNames.push(files[0].name);
         if (uploadedNames.length === 1) {
           throw new PlateUploadOutcomeUnknownError(new Error("network lost"));
+        }
+        if (uploadedNames.length === 2) {
+          throw new PlateUploadOutcomeUnknownError(new Error("The matching plate upload is still processing"));
         }
         return { print: afterUpload, added_plate_ids: ["uploaded"] };
       }),
@@ -182,11 +224,16 @@ describe("savePlateChanges", () => {
       savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
     ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
 
+    await expect(
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
+    ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+    expect(progress.items[0]).toMatchObject({ kind: "new", uploadAttempted: true, uploadOutcomeUnknown: true });
+
     await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
 
-    expect(api.addPlates).toHaveBeenCalledTimes(2);
-    expect(uploadedNames).toEqual([uploadName, uploadName]);
-    expect(api.supportsIdempotentPlateUploads).toHaveBeenCalledTimes(1);
+    expect(api.addPlates).toHaveBeenCalledTimes(3);
+    expect(uploadedNames).toEqual([uploadName, uploadName, uploadName]);
+    expect(api.supportsIdempotentPlateUploads).toHaveBeenCalledTimes(2);
     expect(progress.items).toEqual([
       { kind: "existing", id: "uploaded", filename: "part.3mf", filenameEdited: false, folder: null },
     ]);

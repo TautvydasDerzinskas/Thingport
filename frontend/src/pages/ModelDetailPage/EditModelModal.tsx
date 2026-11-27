@@ -313,15 +313,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
       let stagedImages = images;
       if (newImageFiles.length) {
-        const previousImages = latest.preview_images;
         const uploadRes = await printsApi.addPreviewImages(print.id, newImageFiles);
         latest = uploadRes.print;
-        stagedImages = reconcilePreviewUploads(
-          images,
-          previousImages,
-          latest.preview_images,
-          uploadRes.added_image_ids,
-        );
+        stagedImages = reconcilePreviewUploads(images, latest.preview_images, uploadRes.added_image_ids);
         setImages(stagedImages);
         if (stagedImages.some((image) => image.kind === "unconfirmed")) {
           latestPrint.current = latest;
