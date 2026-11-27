@@ -11,8 +11,8 @@ import {
   shapeFill,
   sketchFrame,
   sketchMatrix,
-  hiddenPlates,
   plateOf,
+  printCheckBodies,
   topLevel,
   transformMatrix,
   type BodyFeature,
@@ -35,7 +35,7 @@ import {
   wallsOf,
   type Own,
 } from "./solids.generated";
-import { checkPrint, type PrintCheck, type PrintCheckOptions } from "./printCheck.generated";
+import { PRINT_PROBLEM_RANK, checkPrint, type PrintCheck, type PrintCheckOptions } from "./printCheck.generated";
 import { loftSolid, sweepSolid } from "./sweep.generated";
 import { threadSolid, threadTriangles } from "./threads.generated";
 import { splitWithPins } from "./splitConnectors.generated";
@@ -749,9 +749,7 @@ export function checkDesign(
     const bodies: { id: string; plate: string; solid: Manifold; plain?: Manifold }[] = [];
     const open: string[] = [];
     const invalid: { id: string; message: string }[] = [];
-    const hidden = hiddenPlates(doc);
-    for (const feature of topLevel(doc)) {
-      if (!isBody(feature) || !feature.visible || hidden.has(plateOf(feature))) continue;
+    for (const feature of printCheckBodies(doc, options.profileId)) {
       try {
         if (made.openOf(feature)) open.push(feature.id);
         else
@@ -766,15 +764,25 @@ export function checkDesign(
       }
     }
     const report = checkPrint(wasm, own, bodies, options);
+    const rankedProblems = [
+      ...invalid.map(({ id, message }) => ({
+        rank: PRINT_PROBLEM_RANK.invalid,
+        weight: 0,
+        text: `${id} couldn't be made. ${message}`,
+      })),
+      ...report.rankedProblems,
+      ...open.map((id) => ({
+        rank: PRINT_PROBLEM_RANK.open,
+        weight: 0,
+        text: `${id} has gaps, so it isn't a closed solid and can't be checked or printed as it is.`,
+      })),
+    ];
     return {
       ...report,
       open,
       ...(invalid.length ? { invalid } : {}),
-      problems: [
-        ...invalid.map(({ id, message }) => `${id} couldn't be made. ${message}`),
-        ...report.problems,
-        ...open.map((id) => `${id} has gaps, so it isn't a closed solid and can't be checked or printed as it is.`),
-      ],
+      problems: rankedProblems.map((problem) => problem.text),
+      rankedProblems,
     };
   } finally {
     for (const each of checked) each.delete();

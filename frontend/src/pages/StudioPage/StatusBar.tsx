@@ -157,7 +157,7 @@ export default function StatusBar({
           >
             <ListItemIcon>{panels[panel] && <CheckRoundedIcon fontSize="small" />}</ListItemIcon>
             <ListItemText>
-              {t(panel === "properties" ? "studio.panels.rightPanel" : "studio.panels.features")}
+              {t(panel === "properties" ? "studio.panels.rightPanel" : "studio.profiles.title")}
             </ListItemText>
           </MenuItem>
         ))}

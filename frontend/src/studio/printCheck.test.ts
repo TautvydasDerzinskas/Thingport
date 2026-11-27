@@ -82,6 +82,7 @@ describe("checkPrint", () => {
       ],
       overlaps: [],
       problems: [],
+      rankedProblems: [],
     });
   });
 

@@ -18,7 +18,9 @@ import {
   inputsOf,
   isBody,
   plateOf,
-  studioPlates,
+  hiddenPlates,
+  profileOfPlate,
+  profileSettings,
   sketchFrame,
   shapeContours,
   shapeOutline,
@@ -507,6 +509,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorKey, i18n.language]);
 
+  const setup = profileSettings(props.document, profileOfPlate(props.document, props.activePlate)).print_setup;
   // The bed: its grid, and X and Y drawn in their axis colours.
   useEffect(() => {
     const s = stage.current;
@@ -520,7 +523,6 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 }),
       );
     s.bed.add(axis(new THREE.Vector3(BED / 2, 0, 0.01), colors.x), axis(new THREE.Vector3(0, BED / 2, 0.01), colors.y));
-    const setup = props.document.print_setup;
     if (setup) {
       s.bed.add(
         new THREE.LineLoop(
@@ -533,7 +535,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     }
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey, props.document.print_setup]);
+  }, [colorKey, setup]);
   // A grid setting changed, or the design's units: drawn again with them.
   useEffect(() => {
     stage.current?.render();
@@ -550,7 +552,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       .filter((feature) => plateOf(feature) === props.activePlate)
       .filter(isBody);
     // A hidden plate's bodies are kept, only not drawn, so showing it again doesn't make them again.
-    const plateHidden = studioPlates(doc).some((plate) => plate.id === props.activePlate && plate.hidden);
+    const plateHidden = hiddenPlates(doc).has(props.activePlate);
     const wanted = new Map(bodies.map((feature) => [feature.id, shapeKey(doc, feature)]));
     const detailed = topologyRequest === "*" ? [...wanted.keys()] : topologyRequest.split(",");
     const needDetails = new Set(detailed);
@@ -599,7 +601,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           return [
             {
               id: feature.id,
-              visible: feature.visible,
+              visible: body.group.visible,
               bounds: { min: box.min.toArray(), max: box.max.toArray() },
               volume: body.volume * Math.abs(body.group.matrixWorld.determinant()),
             },
@@ -692,7 +694,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const s = stage.current;
     if (!s) return;
     clear(s.sketches);
-    const plateHidden = studioPlates(props.document).some((plate) => plate.id === props.activePlate && plate.hidden);
+    const plateHidden = hiddenPlates(props.document).has(props.activePlate);
     const shown = props.document.features.filter(
       (feature): feature is SketchFeature =>
         feature.type === "sketch" &&

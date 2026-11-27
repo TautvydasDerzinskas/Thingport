@@ -37,7 +37,6 @@ import { plateThumbEntry } from "./printProfileFile";
 export type StudioExportTarget = {
   slicer: string;
   printer?: { choice: PrinterChoice; recipe: PrinterRecipe; outline?: StudioPrintSetup["outline"] };
-  filamentSlots?: StudioFilamentSlot[];
 };
 
 type Part = { body: EvaluatedBody; name: string; plateId: string; color?: string };
@@ -94,6 +93,7 @@ export async function writeStudioThreeMf(
   setup?: StudioPrintSetup,
   printProfile?: StudioPrintProfile,
   thumbnailPlate?: string,
+  filamentSlots?: StudioFilamentSlot[],
 ): Promise<Uint8Array | null> {
   const profile = target ? slicerProfile(target.slicer) : null;
   const recipe = target?.printer?.recipe;
@@ -117,7 +117,7 @@ export async function writeStudioThreeMf(
   if (profile?.reads === "bambu" && usedColors.size > STUDIO_FILAMENT_SLOT_LIMIT) return null;
   const byColor = new Map<string, number>();
   const palette: ({ color: string; material: string } | undefined)[] = [];
-  for (const { color, slot, material } of target?.filamentSlots ?? []) {
+  for (const { color, slot, material } of (!profile || profile.reads === "bambu" ? filamentSlots : undefined) ?? []) {
     if (!usedColors.has(color)) continue;
     palette[slot - 1] = { color, material };
     byColor.set(color, slot);

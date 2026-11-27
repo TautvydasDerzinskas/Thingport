@@ -13,16 +13,15 @@ export function useOpenInStudio(print: Print) {
   /** The model's files Studio can open, in the model's order; none on a backend without Studio. */
   const files = studioEnabled ? print.plates.filter((plate) => plateCaps(plate).openInStudio) : [];
 
-  const open = (plate: Plate) =>
+  const open = (plate?: Plate) =>
     navigate("/studio", {
       state: {
         openModel: {
           model: { id: print.id, title: print.title || print.name },
-          fileId: plate.id,
-          filename: plate.filename,
+          ...(plate ? { fileId: plate.id, filename: plate.filename } : { allFiles: true }),
         },
       } satisfies StudioArrival,
     });
 
-  return { files, open };
+  return { files, open, openAll: () => open() };
 }

@@ -31,6 +31,7 @@ import {
   LIMITS,
   plateOf,
   studioPlates,
+  studioProfiles,
   type BodyFeature,
   type PathShape,
   type SketchFeature,
@@ -44,7 +45,7 @@ import type { TraceShape } from "../../studio/trace";
 import { PATH_CHARACTERS } from "../../studio/svgPath";
 import PictureThumb from "./PictureThumb";
 import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
-import { featureLabel, plateLabel } from "./labels";
+import { featureLabel, groupedPlateLabel } from "./labels";
 import { FeatureIcon, SeparateIcon } from "./studioIcons";
 import SplitConnectorFields from "./SplitConnectorFields";
 
@@ -168,6 +169,7 @@ export default function PropertiesPanel({
   });
   const bodies = roots.filter(isBody);
   const plates = studioPlates(document);
+  const profiles = studioProfiles(document);
   const plateId = roots[0] && roots.every((item) => plateOf(item) === plateOf(roots[0])) ? plateOf(roots[0]) : "";
   const firstColor = bodies[0]?.color;
   const color = bodies.every((body) => body.color === firstColor) ? firstColor : undefined;
@@ -185,7 +187,7 @@ export default function PropertiesPanel({
         >
           {plates.map((plate) => (
             <MenuItem key={plate.id} value={plate.id}>
-              {plateLabel(plate, t)}
+              {groupedPlateLabel(plate, profiles, t)}
             </MenuItem>
           ))}
         </TextField>

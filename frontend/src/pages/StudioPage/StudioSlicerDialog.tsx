@@ -19,20 +19,23 @@ import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
 import {
-  hiddenPlates,
+  exportablePlates,
+  exportableProfiles,
   isBody,
   plateOf,
+  profileOf,
+  profileOfPlate,
+  profileSettings,
   STUDIO_DEFAULT_BODY_COLOR,
   STUDIO_FILAMENT_MATERIALS,
   STUDIO_FILAMENT_SLOT_LIMIT,
-  studioPlates,
   topLevel,
   type StudioFilamentSlot,
 } from "../../studio/document";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import type { RunCommand } from "./useStudioDesign";
-import { plateLabel } from "./labels";
+import { plateLabel, profileLabel } from "./labels";
 
 export function studioExportName(name: string, extension: "3mf" | "stl" | "zip" = "3mf") {
   return `${name.replace(/[\\/:*?"<>|]+/g, "-") || "design"}.${extension}`;
@@ -58,48 +61,64 @@ export default function StudioSlicerDialog({
   const [chosenSlicer, setChosenSlicer] = useState("");
   const [chosenPrinter, setChosenPrinter] = useState<string | null>(null);
   const [chosenPlate, setChosenPlate] = useState(activePlate);
+  const [chosenGroup, setChosenGroup] = useState(() => profileOfPlate(design.document, activePlate));
   const [downloading, setDownloading] = useState(false);
-  const [slotDraft, setSlotDraft] = useState<StudioFilamentSlot[] | null>(null);
+  const [draft, setDraft] = useState<{ profileId: string; slots: StudioFilamentSlot[] } | null>(null);
   const [savingSlots, setSavingSlots] = useState(false);
 
+  const groups = exportableProfiles(design.document);
+  const group = groups.find((entry) => entry.id === chosenGroup) ?? groups[0];
+  const groupId = group?.id;
+  const [previousGroupId, setPreviousGroupId] = useState(groupId);
+  if (previousGroupId !== groupId) {
+    setPreviousGroupId(groupId);
+    setChosenSlicer("");
+    setChosenPrinter(null);
+    setDraft(null);
+  }
+  const slotDraft = draft?.profileId === groupId ? draft : null;
+  const print = profileSettings(design.document, groupId);
   const supported = SLICER_OPTIONS.filter((option) => slicerProfile(option.id));
   const installed = supported.filter((option) => settings.slicers.includes(option.id));
   const options = installed.length ? installed : supported;
-  const slicer = options.find((option) => option.id === (chosenSlicer || settings.slicer))?.id ?? options[0].id;
+  const slicer =
+    [chosenSlicer, print.print_profile?.slicer, settings.slicer].find((id) =>
+      options.some((option) => option.id === id),
+    ) ?? options[0].id;
   const profile = slicerProfile(slicer);
   const compatible = profile?.targetsPrinter ? printers.filter((entry) => entry.presets[slicer]) : [];
-  const setup = design.document.print_setup;
+  const savedPrinter =
+    print.print_profile?.printer ??
+    (print.print_setup ? { id: print.print_setup.printer, nozzle: print.print_setup.nozzle } : undefined);
   const supportsNozzle = (entry: UserPrinter, nozzle: string) =>
     entry.exact_nozzles?.[slicer]?.includes(nozzle) ??
     (entry.nozzle === nozzle || entry.printer.nozzles?.includes(nozzle));
   const printerChoices = compatible
     .filter((entry) => supportsNozzle(entry, entry.nozzle))
     .map(({ printer, nozzle }) => ({ key: `${printer.id}/${nozzle}`, printer, nozzle }));
-  const checkedPrinter = compatible.find(({ printer }) => printer.id === setup?.printer);
+  const checkedPrinter = compatible.find(({ printer }) => printer.id === savedPrinter?.id);
   if (
-    setup &&
+    savedPrinter &&
     checkedPrinter &&
-    setup.nozzle !== checkedPrinter.nozzle &&
-    supportsNozzle(checkedPrinter, setup.nozzle)
+    savedPrinter.nozzle !== checkedPrinter.nozzle &&
+    supportsNozzle(checkedPrinter, savedPrinter.nozzle)
   ) {
     printerChoices.unshift({
-      key: `${setup.printer}/${setup.nozzle}`,
+      key: `${savedPrinter.id}/${savedPrinter.nozzle}`,
       printer: checkedPrinter.printer,
-      nozzle: setup.nozzle,
+      nozzle: savedPrinter.nozzle,
     });
   }
   const defaultPrinter =
-    setup && checkedPrinter
-      ? `${setup.printer}/${setup.nozzle}`
+    savedPrinter && checkedPrinter
+      ? `${savedPrinter.id}/${savedPrinter.nozzle}`
       : printerChoices.find(({ printer }) => printer.id === settings.printers[slicer])?.key;
   const printer = printerChoices.find(({ key }) => key === (chosenPrinter ?? defaultPrinter));
-  // Hidden plates stay out of what a slicer opens.
-  const hidden = hiddenPlates(design.document);
+  const plates = exportablePlates(design.document).filter((plate) => profileOf(plate) === group?.id);
+  const plateIds = new Set(plates.map((plate) => plate.id));
   const bodies = topLevel(design.document)
     .filter(isBody)
-    .filter((body) => body.visible && !hidden.has(plateOf(body)));
-  const used = new Set(bodies.map(plateOf));
-  const plates = studioPlates(design.document).filter((plate) => !plate.hidden && (plate.source || used.has(plate.id)));
+    .filter((body) => body.visible && plateIds.has(plateOf(body)));
   const plate = plates.find((entry) => entry.id === chosenPlate) ?? plates[0];
   const onePlate = profile?.reads !== "bambu" && plates.length > 1;
   const canAssignSlots = profile?.reads === "bambu";
@@ -109,21 +128,28 @@ export default function StudioSlicerDialog({
     if (!colorsByPlate.has(color)) colorsByPlate.set(color, new Set());
     colorsByPlate.get(color)!.add(plateOf(body));
   }
-  const savedSlots = design.document.filament_slots ?? [];
+  const savedSlots = print.filament_slots ?? [];
   const tooManyColors = canAssignSlots && colorsByPlate.size > STUDIO_FILAMENT_SLOT_LIMIT;
-  const slots = slotDraft ?? savedSlots;
+  const slots = slotDraft?.slots ?? savedSlots;
   const missing = [...colorsByPlate.keys()].filter((color) => !slots.some((assignment) => assignment.color === color));
   const setSlot = (color: string, slot: number, material: StudioFilamentSlot["material"]) => {
+    if (!groupId) return;
     const other = slots.filter((assignment) => assignment.color !== color && (!slot || assignment.slot !== slot));
-    setSlotDraft(slot ? [...other, { color, slot, material }] : other);
+    setDraft({ profileId: groupId, slots: slot ? [...other, { color, slot, material }] : other });
   };
   const saveSlots = async () => {
     const submitted = slotDraft;
     if (!submitted) return;
     setSavingSlots(true);
     try {
-      if (await run("set_filament_slots", { slots: submitted }, { waitForSave: true }))
-        setSlotDraft((latest) => (latest === submitted ? null : latest));
+      if (
+        await run(
+          "set_filament_slots",
+          { profile_id: submitted.profileId, slots: submitted.slots },
+          { waitForSave: true },
+        )
+      )
+        setDraft((latest) => (latest === submitted ? null : latest));
     } finally {
       setSavingSlots(false);
     }
@@ -132,10 +158,13 @@ export default function StudioSlicerDialog({
   const canExport = Boolean(plates.length && !unsaved && !tooManyColors);
   const target: StudioExport = {
     slicer,
+    ...(design.document.profiles && group ? { profile: group.id } : {}),
     ...(printer ? { printer: { id: printer.printer.id, nozzle: printer.nozzle } } : {}),
     ...(onePlate && plate ? { plate: plate.id } : {}),
   };
-  const filename = studioExportName(onePlate && plate ? `${design.name} - ${plateLabel(plate, t)}` : design.name);
+  const label =
+    onePlate && plate ? plateLabel(plate, t) : design.document.profiles && group ? profileLabel(group, t) : null;
+  const filename = studioExportName(label ? `${design.name} - ${label}` : design.name);
   const href = slicerLaunchUrl(
     slicer,
     printsApi.slicerFileUrl(studioExportPath(design.id, filename, target)),
@@ -159,6 +188,22 @@ export default function StudioSlicerDialog({
       <DialogTitle>{t("studio.plates.openSlicer")}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
+          {groups.length > 1 && (
+            <TextField
+              select
+              size="small"
+              label={t("studio.profiles.label")}
+              value={group?.id ?? ""}
+              disabled={savingSlots}
+              onChange={(event) => setChosenGroup(event.target.value)}
+            >
+              {groups.map((entry) => (
+                <MenuItem key={entry.id} value={entry.id}>
+                  {profileLabel(entry, t)}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
           <TextField
             select
             size="small"

@@ -16,7 +16,7 @@ import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import type { StudioDesign } from "../../api/studio";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
-import { STUDIO_FILAMENT_MATERIALS } from "../../studio/document";
+import { profileSettings, STUDIO_FILAMENT_MATERIALS, type StudioProfile } from "../../studio/document";
 import {
   checkProfile,
   printPreset,
@@ -37,6 +37,8 @@ import {
   profileSlicers,
 } from "./printProfileUi";
 import PrintProfileSettings from "./PrintProfileSettings";
+import type { StudioCommandArgs } from "../../studio/commands";
+import { profileLabel } from "./labels";
 import type { RunCommand } from "./useStudioDesign";
 
 // The Print tab: the design's print profile, set from a preset and changed setting by setting, for the person's slicer
@@ -44,6 +46,7 @@ import type { RunCommand } from "./useStudioDesign";
 
 type Props = {
   design: StudioDesign;
+  group: StudioProfile;
   run: RunCommand;
   /** Whether Studio's assistant can be asked here. */
   canAskAi: boolean;
@@ -55,23 +58,30 @@ type Props = {
   about: string;
 };
 
-export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSuggestAi, about }: Props) {
+export default function PrintProfilePanel({ design, group, run, canAskAi, aiBusy, onSuggestAi, about }: Props) {
   const { t } = useTranslation("app");
   const settings = useSlicerSettings();
   const { printers } = useUserPrinters();
   const [presetsAt, setPresetsAt] = useState<HTMLElement | null>(null);
-  const profile = design.document.print_profile;
+  const profile = profileSettings(design.document, group.id).print_profile;
+  const setProfile = (change: StudioCommandArgs<"set_print_profile">["profile"]) =>
+    void run("set_print_profile", { profile_id: group.id, profile: change });
+  const heading = (
+    <Typography variant="subtitle2" noWrap title={profileLabel(group, t)}>
+      {profileLabel(group, t)}
+    </Typography>
+  );
   const suggested = suggestPresets(about)
     .slice(0, 2)
     .map((hit) => hit.id);
 
   const pickPreset = (preset: PrintPresetId) => {
     setPresetsAt(null);
-    if (profile) return void run("set_print_profile", { profile: { preset } });
+    if (profile) return setProfile({ preset });
     // A first profile is for the person's own slicer and printer.
     const slicer = defaultSlicer(settings);
     const printer = defaultPrinter(printers, settings, slicer);
-    void run("set_print_profile", { profile: { preset, slicer, ...(printer ? { printer } : {}) } });
+    setProfile({ preset, slicer, ...(printer ? { printer } : {}) });
   };
 
   const aiButton = canAskAi && (
@@ -103,6 +113,7 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
   if (!profile)
     return (
       <Stack spacing={1.5} sx={{ p: 1.5, alignItems: "stretch", textAlign: "center" }}>
+        {heading}
         <Box
           sx={{
             mx: "auto",
@@ -153,13 +164,13 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
   const Icon = preset ? PRESET_ICONS[preset.id] : PrintOutlinedIcon;
   const choices = printerChoices(printers, slicer);
   const printerKey = profile.printer ? `${profile.printer.id}/${profile.printer.nozzle}` : "";
-  const setSetting = (key: ProfileSettingKey, value: ProfileValue | null) =>
-    void run("set_print_profile", { profile: { settings: { [key]: value } } });
+  const setSetting = (key: ProfileSettingKey, value: ProfileValue | null) => setProfile({ settings: { [key]: value } });
   // For the slicer shown, which is the person's main one while the profile names none.
-  const checks = checkProfile(design.document, { ...profile, slicer });
+  const checks = checkProfile(design.document, { ...profile, slicer }, group.id);
 
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, pt: 1 }}>
+      {heading}
       {aiButton}
       <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1.5, p: 1.25 }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -231,7 +242,7 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
         onChange={(event) => {
           const next = event.target.value;
           const printer = defaultPrinter(printers, settings, next);
-          void run("set_print_profile", { profile: { slicer: next, printer } });
+          setProfile({ slicer: next, printer });
         }}
       >
         {profileSlicers(settings).map((option) => (
@@ -248,9 +259,7 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
           value={choices.some((choice) => choice.key === printerKey) ? printerKey : ""}
           onChange={(event) => {
             const choice = choices.find((entry) => entry.key === event.target.value);
-            void run("set_print_profile", {
-              profile: { printer: choice ? { id: choice.id, nozzle: choice.nozzle } : null },
-            });
+            setProfile({ printer: choice ? { id: choice.id, nozzle: choice.nozzle } : null });
           }}
         >
           <MenuItem value="">{t("studio.printProfile.anyPrinter")}</MenuItem>
@@ -267,9 +276,7 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
         label={t("studio.printProfile.material")}
         value={profile.material ?? ""}
         onChange={(event) =>
-          void run("set_print_profile", {
-            profile: { material: (event.target.value || null) as (typeof STUDIO_FILAMENT_MATERIALS)[number] | null },
-          })
+          setProfile({ material: (event.target.value || null) as (typeof STUDIO_FILAMENT_MATERIALS)[number] | null })
         }
       >
         <MenuItem value="">{t("studio.printProfile.anyMaterial")}</MenuItem>
@@ -291,12 +298,7 @@ export default function PrintProfilePanel({ design, run, canAskAi, aiBusy, onSug
         <PrintProfileSettings profile={profile} slicer={slicer} family={family} onSet={setSetting} />
       </Box>
 
-      <Button
-        size="small"
-        color="error"
-        onClick={() => void run("set_print_profile", { profile: null })}
-        sx={{ alignSelf: "flex-start" }}
-      >
+      <Button size="small" color="error" onClick={() => setProfile(null)} sx={{ alignSelf: "flex-start" }}>
         {t("studio.printProfile.remove")}
       </Button>
     </Stack>

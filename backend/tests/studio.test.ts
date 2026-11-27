@@ -635,6 +635,138 @@ describe("Studio", () => {
     expect(nothing.body.code).toBe("studio_save_empty");
   }, 60_000);
 
+  it("moves plates between profiles and saves or downloads only populated, visible profiles", async () => {
+    const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Variants" });
+    const base = `/api/studio/designs/${design.id}`;
+    const run = async (name: string, args: Record<string, unknown>) => {
+      const result = await command(alice, design.id, name, args);
+      expect(result.status).toBe(200);
+      return result.body;
+    };
+    const download = (format = "3mf", plate = "-", target = "") =>
+      request(app)
+        .get(`${base}/export/${format}/-/-/-/${plate}${target}/Variants`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse(readBinary);
+    const save = (body = {}) => request(app).post(`${base}/save-to-library`).set(auth(alice)).send(body);
+    const box = { width: 10, depth: 12, height: 2 };
+
+    await run("add_box", box);
+    await run("set_print_profile", { profile: { settings: { wall_loops: 2 } } });
+    await run("rename_profile", { profile_id: "profile-1", name: "Draft" });
+    const fine = (await run("create_profile", { name: "Fine" })).created[0];
+    const hidden = (await run("create_profile", { name: "Hidden" })).created[0];
+    await run("create_profile", { name: "Empty" });
+    const finePlate = (await run("create_plate", { profile_id: fine, name: "Details" })).created[0];
+    const movedPlate = (await run("create_plate", { name: "Moved" })).created[0];
+    const hiddenPlate = (await run("create_plate", { profile_id: hidden, name: "Private plate" })).created[0];
+    await run("add_box", { ...box, plate_id: finePlate });
+    const movedBody = (await run("add_box", { ...box, plate_id: movedPlate, color: "#ff0000" })).created[0];
+    await run("add_box", { ...box, plate_id: hiddenPlate, color: "#00ff00" });
+    await run("move_plate", { plate_id: movedPlate, profile_id: fine, position: 1 });
+    await run("move_profile", { profile_id: fine, position: 1 });
+    await run("set_print_profile", { profile_id: fine, profile: { settings: { wall_loops: 6 } } });
+    await run("set_print_setup", {
+      profile_id: fine,
+      setup: { printer: "small-bed", nozzle: "0.4", bed: [8, 8, 100], minWall: 0.8 },
+    });
+    await run("set_filament_slots", { profile_id: fine, slots: [{ color: "#ff0000", slot: 1, material: "PETG" }] });
+    await run("set_profile_visibility", { profile_id: hidden, visible: false });
+
+    const token = await mcpToken(alice);
+    const read = (await callTool(token, "studio_get_design", { design_id: design.id })).data;
+    expect(read.profiles.map((profile: { name: string }) => profile.name)).toEqual([
+      "Fine",
+      "Draft",
+      "Hidden",
+      "Empty",
+    ]);
+    expect(read.plates[0]).toMatchObject({ id: movedPlate, profile_id: fine, feature_ids: [movedBody] });
+    expect(read.profiles[2]).toMatchObject({ id: hidden, hidden: true });
+    const checked = (await callTool(token, "studio_check_print", { design_id: design.id })).data;
+    expect(checked.bodies).toMatchObject([
+      { plate_id: finePlate, fitsBed: false },
+      { plate_id: movedPlate, fitsBed: false },
+      { plate_id: "plate-1", fitsBed: true },
+    ]);
+
+    const downloaded = await download("auto");
+    expect(downloaded.status).toBe(200);
+    expect(downloaded.headers["content-type"]).toBe("application/zip");
+    const archive = await JSZip.loadAsync(downloaded.body);
+    expect(Object.keys(archive.files)).toEqual(["1 - Fine.3mf", "2 - Draft.3mf"]);
+    const readProfile = async (file: Buffer) => {
+      const project = await readBambuPackage(file);
+      const config = JSON.parse(await project.zip.file("Metadata/project_settings.config")!.async("string"));
+      return { plates: project.plates.map(({ name }) => name), config };
+    };
+    expect(await readProfile(await archive.file("1 - Fine.3mf")!.async("nodebuffer"))).toMatchObject({
+      plates: ["Moved", "Details"],
+      config: { wall_loops: "6", filament_type: ["PETG", "PLA"] },
+    });
+    expect(await readProfile(await archive.file("2 - Draft.3mf")!.async("nodebuffer"))).toMatchObject({
+      plates: ["Plate 1"],
+      config: { wall_loops: "2" },
+    });
+    expect((await download("stl", hiddenPlate)).status).toBe(400);
+    expect((await download("3mf", "-", `/${fine}`)).headers["content-type"]).toBe("model/3mf");
+
+    const saved = await save();
+    expect(saved.status).toBe(201);
+    const printId = saved.body.model.id;
+    const files = () => prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    const plates = await files();
+    expect(plates.map(({ filename }) => filename)).toEqual(["Fine.3mf", "Draft.3mf"]);
+    expect(plates.map(({ profile }) => profile)).toMatchObject([
+      { studio: { title: "Fine" } },
+      { studio: { title: "Draft" } },
+    ]);
+    expect(await readProfile(fs.readFileSync(resolvePlateFilePath(plates[0])!))).toMatchObject({
+      plates: ["Moved", "Details"],
+      config: { wall_loops: "6" },
+    });
+
+    expect((await save({ model_id: printId })).status).toBe(201);
+    expect(await files()).toHaveLength(4);
+    await run("set_profile_visibility", { profile_id: fine, visible: false });
+    expect((await download("auto")).headers["content-type"]).toBe("model/3mf");
+    expect((await save({ picture_plate_id: finePlate })).body.code).toBe("studio_picture_plate_invalid");
+
+    await run("move_profile", { profile_id: hidden, position: 1 });
+    const view = (plate_id?: string) =>
+      callTool(token, "studio_view_design", { design_id: design.id, plate_id, size: 128 });
+    const image = (result: Awaited<ReturnType<typeof view>>) => result.content.find((entry) => entry.type === "image");
+    const shown = image(await view("plate-1"));
+    expect(shown).toBeDefined();
+    expect(image(await view())).toEqual(shown);
+    const hiddenImage = image(await view(hiddenPlate));
+    expect(hiddenImage).toBeDefined();
+    expect(hiddenImage).not.toEqual(shown);
+  }, 60_000);
+
+  it("ranks MCP print problems across profiles by severity and weight", async () => {
+    const token = await mcpToken(alice);
+    const { data: design } = await callTool(token, "studio_create_design");
+    const tool = (name: string, args: Record<string, unknown> = {}) =>
+      callTool(token, `studio_${name}`, { design_id: design.design_id, ...args });
+    const box = { width: 4, depth: 4, height: 4 };
+    const low = (await tool("add_box", { ...box, position: [0, 0, 2] })).data.created[0];
+    const profile = (await tool("create_profile", { name: "Second profile" })).data.created[0];
+    const plate = (await tool("create_plate", { profile_id: profile, name: "Second plate" })).data.created[0];
+    const wide = (await tool("add_box", { ...box, width: 30, plate_id: plate })).data.created[0];
+    const high = (await tool("add_box", { ...box, position: [0, 6, 5], plate_id: plate })).data.created[0];
+    const bed = [24, 24, 100];
+
+    const expected = [
+      expect.stringContaining(`${wide} doesn't fit`),
+      expect.stringContaining(`${high} is floating 5 mm`),
+      expect.stringContaining(`${low} is floating 2 mm`),
+    ];
+    expect((await tool("check_print", { bed })).data.problems).toEqual(expected);
+    expect((await tool("check_print", { bed, profile_id: profile })).data.problems).toEqual(expected.slice(0, 2));
+  });
+
   it("saves a design to the library: its 3MF, its picture, and what was asked as its description", async () => {
     const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Tag" });
     const empty = await request(app).post(`/api/studio/designs/${design.id}/save-to-library`).set(auth(alice)).send({});
@@ -1214,6 +1346,90 @@ describe("Studio", () => {
       expect((await discard(withConversation)).status).toBe(409);
     });
 
+    it("imports all model files as ordered profiles with their source plates and print settings", async () => {
+      const project = async (plates: number[], walls: number, settingsEntry = "Metadata/project_settings.config") => {
+        const zip = new JSZip();
+        zip.file(
+          "3D/3dmodel.model",
+          `<model unit="millimeter"><resources><object id="1" type="model"><mesh>
+            <vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices>
+            <triangles><triangle v1="0" v2="1" v3="2"/></triangles>
+          </mesh></object></resources><build>
+            ${plates.map((id) => `<item objectid="1" plate_id="${id}"/>`).join("")}
+          </build></model>`,
+        );
+        zip.file(settingsEntry, JSON.stringify({ wall_loops: String(walls), sparse_infill_density: "20%" }));
+        return zip.generateAsync({ type: "nodebuffer" });
+      };
+      const uploadResult = await request(app)
+        .post("/api/upload")
+        .set(auth(alice))
+        .field("mode", "multiplate")
+        .attach("files", await project([1, 2], 3), "Brackets.3mf")
+        .attach("files", Buffer.from(boxStl(10, 12, 5)), "Base.stl")
+        .attach("files", await project([1], 6, "metadata/Project_Settings.config"), "Alternative.3mf")
+        .attach("files", Buffer.from("assembly instructions"), "Readme.txt");
+      expect(uploadResult.status).toBe(200);
+      const model = uploadResult.body.prints[0];
+      await prisma.plate.update({
+        where: { id: model.plates[2].id },
+        data: {
+          sourceInstanceId: "studio-alternative",
+          profile: { studio: { title: "Thick walls", designId: "source", description: null, creator: null } },
+        },
+      });
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const args = { model_id: model.id, all_files: true };
+      const opened = await command(alice, design.id, "import_model", args);
+      expect(opened.status).toBe(200);
+      expect(opened.body.design.document).toMatchObject({
+        profiles: [
+          { id: "profile-1", name: "Brackets" },
+          { id: "profile-2", name: "Base" },
+          { id: "profile-3", name: "Thick walls", print_profile: { settings: { wall_loops: 6 } } },
+        ],
+        print_profile: { settings: { wall_loops: 3, sparse_infill_density: 20 } },
+        plates: [
+          { id: "plate-1", source: { index: 1, model: { file_id: model.plates[0].id } } },
+          { id: "plate-2", source: { index: 2, model: { file_id: model.plates[0].id } } },
+          { id: "plate-3", profile_id: "profile-2" },
+          { id: "plate-4", profile_id: "profile-3", source: { index: 1, model: { file_id: model.plates[2].id } } },
+        ],
+        features: [{ plate_id: "plate-3", name: "Base", source: { file_id: model.plates[1].id } }],
+      });
+      expect((await command(alice, design.id, "import_model", args)).status).toBe(400);
+      const undone = await command(alice, design.id, "undo");
+      expect(undone.body.design.document).toMatchObject({ features: [] });
+      expect(undone.body.design.document.profiles).toBeUndefined();
+      expect((await command(alice, design.id, "redo")).body.design.document).toEqual(opened.body.design.document);
+
+      const loaded = await command(alice, design.id, "load_source_plate", { plate_id: "plate-4" });
+      expect(loaded.status).toBe(200);
+      expect(loaded.body.design.document.features[1]).toMatchObject({ plate_id: "plate-4", triangles: 1 });
+      expect(loaded.body.design.document.plates[1].source).toBeDefined();
+    }, 60_000);
+
+    it("leaves the design untouched when a later file fails during an all-files import", async () => {
+      const uploadResult = await request(app)
+        .post("/api/upload")
+        .set(auth(alice))
+        .field("mode", "multiplate")
+        .attach("files", Buffer.from(boxStl(10, 12, 5)), "Valid.stl")
+        .attach("files", Buffer.from("invalid 3MF archive"), "Broken.3mf");
+      expect(uploadResult.status).toBe(200);
+      const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+      const args = { model_id: uploadResult.body.prints[0].id, all_files: true };
+      const imported = await command(alice, design.id, "import_model", args);
+      expect(imported.status).toBe(422);
+      const current = await request(app).get(`/api/studio/designs/${design.id}`).set(auth(alice));
+      expect(current.body).toEqual(design);
+      const stored = await prisma.studioDesign.findUniqueOrThrow({
+        where: { id: design.id },
+        select: { userId: true },
+      });
+      expect(await fsPromises.readdir(studioAssetDir(stored.userId, design.id))).toEqual([]);
+    }, 60_000);
+
     it("loads one 3MF build plate at a time from the design's own source snapshot", async () => {
       const zip = new JSZip();
       zip.file(
@@ -1332,6 +1548,33 @@ describe("Studio", () => {
       });
       expect(viewed.data.bodies).toBe(1);
       expect(viewed.content.some((entry) => entry.type === "image")).toBe(true);
+
+      const profile = await command(alice, design.id, "create_profile", { name: "Shown" });
+      expect(profile.status).toBe(200);
+      const moved = await command(alice, design.id, "move_plate", {
+        plate_id: "plate-2",
+        profile_id: profile.body.created[0],
+        position: 1,
+      });
+      expect(moved.status).toBe(200);
+      const hidden = await command(alice, design.id, "set_profile_visibility", {
+        profile_id: "profile-1",
+        visible: false,
+      });
+      expect(hidden.status).toBe(200);
+      expect(
+        (await command(alice, design.id, "add_box", { width: 4, depth: 4, height: 4, plate_id: "plate-2" })).status,
+      ).toBe(200);
+      const shown = await callTool(token, "studio_view_design", { design_id: design.id, size: 128 });
+      expect(shown.data).toMatchObject({ plate_id: "plate-2", bodies: 2 });
+      const shownImage = shown.content.find((entry) => entry.type === "image");
+      expect(shownImage).toBeDefined();
+      const explicit = await callTool(token, "studio_view_design", {
+        design_id: design.id,
+        plate_id: "plate-2",
+        size: 128,
+      });
+      expect(explicit.content.find((entry) => entry.type === "image")).toEqual(shownImage);
     }, 60_000);
 
     it.each([

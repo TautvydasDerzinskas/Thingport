@@ -8,13 +8,14 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import { studioApi } from "../../api/studio";
 import HelpTip from "../../components/HelpTip";
-import type { StudioPlate } from "../../studio/document";
-import { plateLabel } from "./labels";
+import type { StudioPlate, StudioProfile } from "../../studio/document";
+import { groupedPlateLabel } from "./labels";
 
 type Props = {
   designId: string;
   version: number;
   plates: StudioPlate[];
+  profiles: readonly StudioProfile[];
   /** The plate in view, pictured by the view itself rather than the server. */
   activePlate: string;
   snapshot: () => Promise<Blob | null>;
@@ -27,6 +28,7 @@ export default function PlatePictureTiles({
   designId,
   version,
   plates,
+  profiles,
   activePlate,
   snapshot,
   value,
@@ -96,12 +98,13 @@ export default function PlatePictureTiles({
         {plates.map((plate) => {
           const on = plate.id === value;
           const picture = pictures[plate.id];
-          const name = plateLabel(plate, t);
+          const name = groupedPlateLabel(plate, profiles, t);
           return (
             // A native radio in each tile: the arrow keys move the choice, as in any radio group.
             <Box
               key={plate.id}
               component="label"
+              title={name}
               sx={(theme) => ({
                 position: "relative",
                 flexShrink: 0,

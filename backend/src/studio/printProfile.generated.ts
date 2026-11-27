@@ -1,6 +1,15 @@
 // GENERATED from frontend/src/studio/printProfile.ts by scripts/sync-studio.mjs. Don't edit it here:
 // change frontend/src/studio/ and run npm run studio:sync.
-import { isBody, plateOf, topLevel, type StudioDocument, type StudioFilamentSlot } from "./document.generated";
+import {
+  hiddenPlates,
+  isBody,
+  plateOf,
+  profileOfPlate,
+  profileSettings,
+  topLevel,
+  type StudioDocument,
+  type StudioFilamentSlot,
+} from "./document.generated";
 
 // A design's print profile: the slicer settings it's meant to be printed with, as a preset to start from and the
 // settings changed on it, for the slicer and printer the person prints with. Settings are kept under Bambu Studio's
@@ -741,18 +750,18 @@ export type ProfileCheck = {
 };
 
 /** The materials a design is set to print in: its filament slots', else the profile's own. */
-function materialsOf(doc: StudioDocument, profile: StudioPrintProfile): StudioFilamentMaterial[] {
-  const slots = doc.filament_slots ?? [];
+function materialsOf(doc: StudioDocument, profile: StudioPrintProfile, profileId?: string): StudioFilamentMaterial[] {
+  const slots = profileSettings(doc, profileId).filament_slots ?? [];
   if (slots.length) return [...new Set(slots.map((slot) => slot.material))];
   return profile.material ? [profile.material] : [];
 }
 
 /** What a person should know before printing with the profile. */
-export function checkProfile(doc: StudioDocument, profile: StudioPrintProfile): ProfileCheck[] {
+export function checkProfile(doc: StudioDocument, profile: StudioPrintProfile, profileId?: string): ProfileCheck[] {
   const checks: ProfileCheck[] = [];
   const preset = printPreset(profile.preset);
   if (preset) {
-    for (const material of materialsOf(doc, profile)) {
+    for (const material of materialsOf(doc, profile, profileId)) {
       if (preset.materials.includes(material)) continue;
       checks.push({
         code: "material",
@@ -776,9 +785,11 @@ export function checkProfile(doc: StudioDocument, profile: StudioPrintProfile): 
   }
   if (profile.settings.spiral_mode === true) {
     const perPlate = new Map<string, number>();
+    const hidden = hiddenPlates(doc);
     for (const feature of topLevel(doc)) {
       if (!isBody(feature) || !feature.visible) continue;
       const plate = plateOf(feature);
+      if (hidden.has(plate) || (profileId && profileOfPlate(doc, plate) !== profileId)) continue;
       perPlate.set(plate, (perPlate.get(plate) ?? 0) + 1);
     }
     const crowded = [...perPlate].filter(([, count]) => count > 1).map(([plate]) => plate);
