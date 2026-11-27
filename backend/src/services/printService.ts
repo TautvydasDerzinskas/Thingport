@@ -213,8 +213,9 @@ export async function availablePlateFilename(
   desiredFilename: string,
   excludePlateId?: string,
   folder?: string | null,
+  db: Prisma.TransactionClient = prisma,
 ): Promise<string> {
-  const siblings = await prisma.plate.findMany({
+  const siblings = await db.plate.findMany({
     where: { printId, folder: folder ?? null, ...(excludePlateId ? { id: { not: excludePlateId } } : {}) },
     select: { filename: true },
   });

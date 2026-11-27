@@ -265,6 +265,56 @@ describe("plate add/remove/reorder/rename", () => {
     expect(renamed.filename).toBe("renamed.stl");
   });
 
+  it("numbers an upload when a rename took its filename during file placement", async () => {
+    const originalBytes = Buffer.from("original plate bytes");
+    const submittedBytes = Buffer.from("new plate bytes");
+    const uploadId = randomUUID();
+    const filename = `thingport-upload-${uploadId}-new.gcode.3mf`;
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .attach("files", originalBytes, "old.gcode.3mf")
+      .expect(200);
+    const model = uploaded.body.prints[0];
+    const modelId: string = model.id;
+    const originalId: string = model.plates[0].id;
+    await trackPrint(modelId);
+
+    const placement = pauseAt("fileState:path.taken");
+    const append = track(
+      Promise.resolve(
+        auth(request(app).post(`/api/print/${modelId}/plates`)).attach("files", submittedBytes, filename),
+      ),
+    );
+    try {
+      await placement.reachedBy(append);
+      await auth(request(app).post(`/api/print/${modelId}/plate/${originalId}/rename`))
+        .send({ filename })
+        .expect(200);
+    } finally {
+      placement.release();
+    }
+
+    const res = await append;
+    expect(res.status).toBe(200);
+    const [appendedId] = res.body.added_plate_ids;
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => [plate.id, plate.filename])).toEqual([
+      [originalId, filename],
+      [appendedId, `thingport-upload-${uploadId}-new (2).gcode.3mf`],
+    ]);
+    expect(
+      plates.map((plate) => {
+        const file = resolvePlateFilePath(plate);
+        if (!file) throw new Error("Expected a readable plate");
+        return fs.readFileSync(file);
+      }),
+    ).toEqual([originalBytes, submittedBytes]);
+    expect(
+      await prisma.plateUploadAttempt.findUnique({
+        where: { printId_clientUploadId: { printId: modelId, clientUploadId: uploadId } },
+      }),
+    ).toMatchObject({ status: "complete", plateId: appendedId });
+  });
+
   it("keeps swapped names and readable bytes after a storage move fails", async () => {
     const uploaded = await auth(request(app).post("/api/upload"))
       .field("mode", "multiplate")

@@ -15,6 +15,7 @@ import {
   addPreviewImageForUpload,
   galleryThumbPath,
   generateCardRender,
+  lockPreviewGallery,
   previewImagePath,
 } from "../src/services/previewImageService";
 import { modelImagePath, modelImageState } from "../src/services/modelPreviewCache";
@@ -31,6 +32,8 @@ import {
 import { MODEL_SUMMARY_SELECT, toModelSummary } from "../src/services/dashboardService";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
+import { track } from "./harness/lifecycle";
+import { blockedBy, sessionOf } from "./helpers/locks";
 
 const app = createApp();
 let token: string;
@@ -190,7 +193,7 @@ describe("recoverable preview uploads", () => {
         .expect(200);
     const where = { printId_uploadId: { printId: print.id, uploadId } };
     const thumb = plateThumbPath(plate.id, await plateAssetHome(plate.id));
-    return { print, generated, imageId, lookup, where, thumb };
+    return { print, plate, generated, imageId, lookup, where, thumb };
   }
 
   it("resumes the first manual image's cover work from a receipt lookup", async () => {
@@ -202,6 +205,52 @@ describe("recoverable preview uploads", () => {
 
     expect(result.body.print.preview_images).toEqual([expect.objectContaining({ id: imageId, position: 0 })]);
     expect(await redOf(thumb)).toBeGreaterThan(180);
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
+  });
+
+  it("protects the recovered cover from a generated thumbnail waiting to be saved", async () => {
+    const { print, plate, lookup, where, thumb, imageId } = await interruptedCover();
+    const buffer = await png(60);
+    let locked!: (pid: number) => void;
+    let release!: () => void;
+    const holding = new Promise<number>((resolve) => (locked = resolve));
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const holder = track(
+      prisma.$transaction(
+        async (tx) => {
+          await lockPreviewGallery(tx, print.id);
+          locked(await sessionOf(tx));
+          await released;
+        },
+        { timeout: 15_000 },
+      ),
+    );
+    try {
+      const pid = await holding;
+      const recover = track(Promise.resolve(lookup()));
+      await blockedBy(pid);
+      const render = track(
+        Promise.resolve(
+          request(app)
+            .post(`/api/plate/${plate.id}/thumbnail-generated`)
+            .set(auth())
+            .attach("file", buffer, "late-render.png")
+            .expect(200),
+        ),
+      );
+      await blockedBy(pid, 2);
+      release();
+      await holder;
+      await Promise.all([recover, render]);
+    } finally {
+      release();
+    }
+
+    expect(await redOf(thumb)).toBeGreaterThan(180);
+    expect(await prisma.plate.findUnique({ where: { id: plate.id } })).toMatchObject({ thumbGenerated: false });
+    expect(await prisma.previewImage.findMany({ where: { printId: print.id } })).toMatchObject([
+      { id: imageId, position: 0, generated: false },
+    ]);
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
   });
 

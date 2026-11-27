@@ -192,8 +192,29 @@ export async function addPreviewImage(
   }
 }
 
-function lockPreviewGallery(tx: Prisma.TransactionClient, printId: string) {
+export function lockPreviewGallery(tx: Prisma.TransactionClient, printId: string) {
   return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('preview-gallery'), hashtext(${printId}))`;
+}
+
+/** Generated thumbnails and recovered covers must read and update the same thumbnail under the gallery lock. */
+export async function saveGeneratedPlateThumbnail(
+  printId: string,
+  plateId: string,
+  buffer: Buffer,
+): Promise<"saved" | "skipped" | "invalid"> {
+  await ensureAssetHome(printId);
+  return prisma.$transaction(async (tx) => {
+    await lockPreviewGallery(tx, printId);
+    const plate = await tx.plate.findFirst({
+      where: { id: plateId, printId },
+      select: { thumbGenerated: true, print: { select: { assetsPath: true } } },
+    });
+    const home = plate?.print.assetsPath;
+    if (!plate || !home || (!plate.thumbGenerated && plateThumbExists(plateId, home))) return "skipped";
+    if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx }))) return "invalid";
+    await tx.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
+    return "saved";
+  });
 }
 
 /** Publishes the stored image and receipt together. Each worker writes under its own image id so a concurrent
@@ -454,9 +475,7 @@ async function adoptRenderAsThumb(
   if (had && !(plate.thumbGenerated && (await writtenBefore(plateThumbPath(plateId, home), renderPath)))) return null;
   const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   // An upload or an import may have put its picture in meanwhile, which stays.
-  if (!(await plateThumbReplaceable(plateId))) return null;
-  if (!(await saveThumbFromBytes(plateId, buffer))) return null;
-  await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
+  if ((await saveGeneratedPlateThumbnail(plate.printId, plateId, buffer)) !== "saved") return null;
   if (had) return "redrawn";
   const cover = colorPath ? await fs.readFile(colorPath).catch(() => buffer) : buffer;
   return (await addGeneratedPreviewImageIfNone(plate.printId, cover)) ? "covered" : "adopted";

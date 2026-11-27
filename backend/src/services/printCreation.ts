@@ -206,6 +206,12 @@ export async function refreshAutoPreparedMetadata(printId: string): Promise<void
 type CreatedPlate = { record: Plate; effectivePath: string | null };
 type PlateUploadClaim = { printId: string; clientUploadId: string; claimToken: string };
 
+function lockPlateNames(tx: Prisma.TransactionClient, printId: string) {
+  return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('plate-names'), hashtext(${printId}))`;
+}
+
+class PlateFilenameChangedError extends Error {}
+
 async function createPlateAtPosition(
   print: Pick<Print, "id" | "name" | "creator" | "tags" | "categoryId" | "userId" | "authorId" | "sourceProvider">,
   input: NewPlateInput,
@@ -237,13 +243,16 @@ async function createPlateAtPosition(
       contentSha256,
       ...marker,
     };
-    record = claim
-      ? await prisma.$transaction(async (tx) => {
-          const plate = await tx.plate.create({ data });
-          await completePlateUpload(tx, claim, plate.id);
-          return plate;
-        })
-      : await prisma.plate.create({ data });
+    record = await prisma.$transaction(async (tx) => {
+      await lockPlateNames(tx, print.id);
+      // The storage path was prepared outside the lock. Confirm the filename is still available before publishing it.
+      if ((await availablePlateFilename(print.id, sanitized, undefined, folder, tx)) !== desiredFilename) {
+        throw new PlateFilenameChangedError();
+      }
+      const plate = await tx.plate.create({ data });
+      if (claim) await completePlateUpload(tx, claim, plate.id);
+      return plate;
+    });
   } catch (err) {
     // e.g. a concurrent import of the same profile won; don't orphan the placed file.
     if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
@@ -463,12 +472,13 @@ async function appendPlate(
     try {
       return (await createPlateAtPosition(print, input, position, claim)).record;
     } catch (error) {
+      if (error instanceof PlateFilenameChangedError) continue;
       if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
       const target = error.meta?.target;
       if (!Array.isArray(target) || !target.includes("printId") || !target.includes("position")) throw error;
     }
   }
-  throw new HttpError(409, "Another upload took the plate position; try again");
+  throw new HttpError(409, "The plate name or position changed during upload; try again");
 }
 
 const UPLOAD_ATTEMPT_POLL_MS = 100;
@@ -648,7 +658,7 @@ const withPlateRenameLock = createKeyedLock();
 async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Plate[]> {
   return withPlateRenameLock(print.id, async () => {
     const renamed = await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('plate-names'), hashtext(${print.id}))`;
+      await lockPlateNames(tx, print.id);
       const plates = await tx.plate.findMany({ where: { printId: print.id } });
       const byId = new Map(plates.map((plate) => [plate.id, plate]));
       const planned = edits.map(({ plate_id, filename }) => {
