@@ -591,11 +591,18 @@ export async function setStorageTemplate(value: string): Promise<void> {
 
 // -- Thumbnails -------------------------------------------------------------
 
-async function saveThumbBuffer(plateId: string, input: Buffer, keepExif = false): Promise<boolean> {
+type ThumbTarget = { home: string; db: Prisma.TransactionClient };
+
+async function saveThumbBuffer(
+  plateId: string,
+  input: Buffer,
+  keepExif = false,
+  target?: ThumbTarget,
+): Promise<boolean> {
   let tmp: string | null = null;
   try {
     const file = plateThumbFile(plateId);
-    const home = await ensurePlateAssetHome(plateId);
+    const home = target?.home ?? (await ensurePlateAssetHome(plateId));
     const dest = assetTarget(home, file);
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
@@ -604,7 +611,8 @@ async function saveThumbBuffer(plateId: string, input: Buffer, keepExif = false)
     // The one in the old shared folder is out of date now.
     await removeAsset(null, file);
     // Any thumb but our own render; the generated-thumbnail route marks those after saving.
-    await prisma.plate.updateMany({ where: { id: plateId, thumbGenerated: true }, data: { thumbGenerated: false } });
+    const db = target?.db ?? prisma;
+    await db.plate.updateMany({ where: { id: plateId, thumbGenerated: true }, data: { thumbGenerated: false } });
     return true;
   } catch {
     if (tmp) await fs.rm(tmp, { force: true });
@@ -621,8 +629,13 @@ export async function saveThumbFromFile(plateId: string, srcPath: string): Promi
   }
 }
 
-export async function saveThumbFromBytes(plateId: string, data: Buffer, keepExif = false): Promise<boolean> {
-  return saveThumbBuffer(plateId, data, keepExif);
+export async function saveThumbFromBytes(
+  plateId: string,
+  data: Buffer,
+  keepExif = false,
+  target?: ThumbTarget,
+): Promise<boolean> {
+  return saveThumbBuffer(plateId, data, keepExif, target);
 }
 
 const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {

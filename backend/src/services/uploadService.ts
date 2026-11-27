@@ -17,7 +17,12 @@ import {
 } from "./printCreation";
 import { deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
 import { isPreparedPrintFilename } from "./preparedPrint";
-import { addPreviewImage, addPreviewImageForUpload, preferImageOverRenders } from "./previewImageService";
+import {
+  addPreviewImage,
+  addPreviewImageForUpload,
+  preferImageOverRenders,
+  resumePreviewUploadCover,
+} from "./previewImageService";
 import { recordActivity } from "./activityService";
 import { createLog } from "./auditLog";
 import { isGltfName, packGltfFiles } from "./gltfPacker";
@@ -177,22 +182,21 @@ export async function addUploadedPreviewImages(
   buffers: Iterable<Buffer> | AsyncIterable<Buffer>,
   { uploadIds, onImageResult }: { uploadIds?: string[]; onImageResult?: (imageId: string | null) => void } = {},
 ): Promise<string[]> {
-  const firstPlate = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
+  const firstPlate = uploadIds
+    ? null
+    : await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
   const added: string[] = [];
   let nextUpload = 0;
-  let choseCover = false;
   for await (const buffer of buffers) {
     const uploadId = uploadIds?.[nextUpload++];
-    const result = uploadId
-      ? await addPreviewImageForUpload(printId, uploadId, buffer)
-      : { imageId: (await addPreviewImage(printId, buffer, { keepExif: true }))?.id ?? null, added: true };
-    onImageResult?.(result.imageId);
-    if (!result.imageId) continue;
-    if (!choseCover && result.added) {
-      await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
-      choseCover = true;
-    }
-    added.push(result.imageId);
+    const imageId = uploadId
+      ? await addPreviewImageForUpload(printId, uploadId, buffer, added.length === 0)
+      : ((await addPreviewImage(printId, buffer, { keepExif: true }))?.id ?? null);
+    onImageResult?.(imageId);
+    if (!imageId) continue;
+    if (!uploadIds && !added.length) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
+    added.push(imageId);
   }
+  if (uploadIds) await resumePreviewUploadCover(printId);
   return added;
 }

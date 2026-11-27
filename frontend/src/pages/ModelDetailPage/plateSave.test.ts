@@ -432,6 +432,16 @@ describe("dependent plate renames", () => {
     expect(result.plates.map((candidate) => candidate.filename)).toEqual(["CON_.stl", "new.stl"]);
   });
 
+  it("sends a rename when a stale snapshot already shows the requested filename", async () => {
+    const { api } = renameFixture([plate("a", "changed-elsewhere.stl", 0)]);
+    const stale = print(plate("a", "target.stl", 0));
+
+    const result = await savePlateChanges(stale, [edited("a", "target.stl")], new Set(), api, () => {});
+
+    expect(api.renamePlate).toHaveBeenCalledExactlyOnceWith("model", "a", "target.stl");
+    expect(result.plates[0].filename).toBe("target.stl");
+  });
+
   it("resumes a filename swap after moving a plate aside and a later request fails", async () => {
     const { api, initial } = renameFixture([plate("a", "a.gcode.3mf", 0), plate("b", "b.gcode.3mf", 1)]);
     let progress: PlateSaveProgress = {

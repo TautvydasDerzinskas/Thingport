@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import os from "node:os";
@@ -8,9 +9,10 @@ import sharp from "sharp";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
-import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
+import { ensureAssetHome, plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
 import {
   addPreviewImage,
+  addPreviewImageForUpload,
   galleryThumbPath,
   generateCardRender,
   previewImagePath,
@@ -18,7 +20,14 @@ import {
 import { modelImagePath, modelImageState } from "../src/services/modelPreviewCache";
 import { resolvePlateFilePath } from "../src/services/printCreation";
 import { getPreviewMode, setPreviewMode } from "../src/services/settingsService";
-import { assetPath, galleryThumbFile, plateAssetHome, printAssetHome } from "../src/services/modelAssets";
+import {
+  assetPath,
+  assetTarget,
+  galleryImageFile,
+  galleryThumbFile,
+  plateAssetHome,
+  printAssetHome,
+} from "../src/services/modelAssets";
 import { MODEL_SUMMARY_SELECT, toModelSummary } from "../src/services/dashboardService";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
@@ -37,12 +46,11 @@ function png(r: number) {
     .toBuffer();
 }
 
-// The stored JPEGs are re-encoded, so an image is recognised by its red channel.
+// Recognize re-encoded pictures by their channels. Read bytes because sharp can cache a path whose file changed.
 async function redOf(filePath: string) {
-  return Math.round((await sharp(filePath).stats()).channels[0].mean);
+  return Math.round((await sharp(await fs.readFile(filePath)).stats()).channels[0].mean);
 }
-// A red test picture has none; our own render's slate shading has plenty. Read from the file's bytes: sharp keeps a
-// picture it loaded by its path, so one written over since would read as before.
+// A red test picture has no green; our own render's slate shading has plenty.
 async function greenOf(filePath: string) {
   return Math.round((await sharp(await fs.readFile(filePath)).stats()).channels[1].mean);
 }
@@ -112,6 +120,108 @@ describe("preview images", () => {
       expect(metadata).toMatchObject({ width: 40, height: 80, orientation: 1 });
       expect(metadata.exif?.toString("latin1")).toContain("Thingport test");
     }
+  });
+});
+
+describe("recoverable preview uploads", () => {
+  async function uploadStorage() {
+    const print = await uploadStl();
+    const home = await ensureAssetHome(print.id);
+    const gallery = path.dirname(assetTarget(home, galleryImageFile("unused")));
+    await fs.mkdir(gallery, { recursive: true });
+    const uploadId = randomUUID();
+    return { print, gallery, uploadId, where: { printId_uploadId: { printId: print.id, uploadId } } };
+  }
+
+  it("keeps an upload key retryable when writing its JPEG fails", async () => {
+    const { print, gallery, uploadId, where } = await uploadStorage();
+    const bytes = await png(200);
+    const rename = fs.rename;
+    const stalled = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      if (path.dirname(String(to)) === gallery) throw Object.assign(new Error("Disk is full"), { code: "ENOSPC" });
+      return rename(from, to);
+    });
+    try {
+      await expect(addPreviewImageForUpload(print.id, uploadId, bytes, true)).rejects.toThrow("Disk is full");
+    } finally {
+      stalled.mockRestore();
+    }
+
+    expect(await prisma.previewImageUpload.findUnique({ where })).toBeNull();
+    expect(await fs.readdir(gallery)).toEqual([]);
+    await expect(addPreviewImageForUpload(print.id, uploadId, bytes, true)).resolves.toEqual(expect.any(String));
+  });
+
+  it("discards a JPEG when its database publication rolls back", async () => {
+    const { print, gallery, uploadId, where } = await uploadStorage();
+    const bytes = await png(200);
+    const rename = fs.rename;
+    const removed = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      await rename(from, to);
+      if (path.dirname(String(to)) === gallery) await prisma.print.delete({ where: { id: print.id } });
+    });
+    try {
+      await expect(addPreviewImageForUpload(print.id, uploadId, bytes, true)).rejects.toMatchObject({ code: "P2003" });
+    } finally {
+      removed.mockRestore();
+    }
+
+    expect(await prisma.previewImageUpload.findUnique({ where })).toBeNull();
+    expect(await fs.readdir(gallery)).toEqual([]);
+  });
+
+  async function interruptedCover() {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    await request(app)
+      .post(`/api/plate/${plate.id}/thumbnail-generated`)
+      .set(auth())
+      .attach("file", await png(10), "render.png")
+      .expect(200);
+    const generated = await prisma.previewImage.findFirstOrThrow({ where: { printId: print.id, generated: true } });
+    const uploadId = randomUUID();
+    const imageId = await addPreviewImageForUpload(print.id, uploadId, await png(205), true);
+    if (!imageId) throw new Error("Expected a stored preview image");
+    const lookup = () =>
+      request(app)
+        .post(`/api/print/${print.id}/preview-images/upload-results`)
+        .set(auth())
+        .send({ upload_ids: [uploadId] })
+        .expect(200);
+    const where = { printId_uploadId: { printId: print.id, uploadId } };
+    const thumb = plateThumbPath(plate.id, await plateAssetHome(plate.id));
+    return { print, generated, imageId, lookup, where, thumb };
+  }
+
+  it("resumes the first manual image's cover work from a receipt lookup", async () => {
+    const { lookup, where, thumb, imageId } = await interruptedCover();
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: true });
+    expect(await redOf(thumb)).toBeLessThan(30);
+
+    const result = await lookup();
+
+    expect(result.body.print.preview_images).toEqual([expect.objectContaining({ id: imageId, position: 0 })]);
+    expect(await redOf(thumb)).toBeGreaterThan(180);
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
+  });
+
+  it("keeps the gallery and thumbnail chosen after an interrupted upload", async () => {
+    const { print, generated, imageId, lookup, where, thumb } = await interruptedCover();
+    const later = await addPreviewImage(print.id, await png(120));
+    if (!later) throw new Error("Expected a second preview to reorder");
+    const order = [later.id, imageId, generated.id];
+    await request(app)
+      .post(`/api/print/${print.id}/preview-images/reorder`)
+      .set(auth())
+      .send({ image_ids: order })
+      .expect(200);
+
+    const result = await lookup();
+
+    const images: { id: string }[] = result.body.print.preview_images;
+    expect(images.map((image) => image.id)).toEqual(order);
+    expect(await redOf(thumb)).toBeLessThan(30);
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
   });
 });
 

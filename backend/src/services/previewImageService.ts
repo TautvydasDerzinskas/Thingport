@@ -99,35 +99,38 @@ export async function removeGalleryFiles(home: AssetHome, id: string): Promise<v
   await removeAsset(home, galleryThumbFile(id));
 }
 
-/** Where the JPEG was stored, its size, and its SHA-256 when it was hashed for sharing (file reuse on),
- *  and the marker of a clone that was kept. Null when it
- *  couldn't be saved. The path is returned so a caller that has to undo the save removes exactly this file, without
- *  looking the folder up again through a print that may be gone. */
-async function saveBuffer(
+/** Stores an already-encoded JPEG. The caller can undo this write by path even if the print has been deleted. */
+async function storePreviewJpeg(
   printId: string,
   id: string,
-  input: Buffer,
-  keepExif: boolean,
-): Promise<({ dest: string; size: number; contentSha256: string | null } & ReuseMarker) | null> {
-  let tmp: string | null = null;
+  jpeg: Buffer,
+): Promise<{ dest: string; size: number; contentSha256: string | null } & ReuseMarker> {
+  const dest = assetTarget(await ensureAssetHome(printId), galleryImageFile(id));
+  const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+  let placed = false;
   try {
-    const dest = assetTarget(await ensureAssetHome(printId), galleryImageFile(id));
-    tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
-    // Hero-sized: this is the detail page's main image. Kept in memory rather than written by sharp: what's shared is
-    // the re-encoded JPEG, not the download (the same picture fetched twice is rarely the same bytes, but encoded the
-    // same way it is), so it's hashed before it's written.
-    const out = await photoJpeg(input, 1600, 90, keepExif);
-    // Cloned (or written) at the temp name, then renamed into place as before, so a half-written picture is never
-    // served. A clone that can't be made is no reason to fail: the bytes are written as usual.
-    const { contentSha256, shared } = await shareStoredBytes(out, tmp, findStoredCopies, plainWriteMode());
-    if (!shared) await fs.writeFile(tmp, out, { flag: "wx" });
+    const { contentSha256, shared } = await shareStoredBytes(jpeg, tmp, findStoredCopies, plainWriteMode());
+    if (!shared) await fs.writeFile(tmp, jpeg, { flag: "wx" });
     await fs.rename(tmp, dest);
-    // After the rename, which changes the file's ctime.
-    return { dest, size: out.length, contentSha256, ...(await reuseMarker(dest, shared, contentSha256)) };
-  } catch {
-    if (tmp) await fs.rm(tmp, { force: true });
-    return null;
+    placed = true;
+    return { dest, size: jpeg.length, contentSha256, ...(await reuseMarker(dest, shared, contentSha256)) };
+  } catch (error) {
+    await fs.rm(placed ? dest : tmp, { force: true }).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function encodePreviewUpload(buffer: Buffer): Promise<Buffer | null> {
+  if (!buffer.length) return null;
+  try {
+    return await photoJpeg(buffer, 1600, 90, true);
+  } catch (error) {
+    // Sharp reports input rejection through Error messages. A different decoder or encoder failure is retryable.
+    const rejected =
+      /^(Input buffer (contains unsupported image format|has corrupt header:)|Input image exceeds (pixel|channel) limit|VipsJpeg: premature end of JPEG image)/;
+    if (error instanceof Error && rejected.test(error.message)) return null;
+    throw error;
   }
 }
 
@@ -161,7 +164,9 @@ export async function addPreviewImage(
 ): Promise<PreviewImage | null> {
   const row = await createPreviewImageRow(printId, generated);
   if (!row) return null;
-  const saved = await saveBuffer(printId, row.id, buffer, keepExif);
+  const saved = await photoJpeg(buffer, 1600, 90, keepExif)
+    .then((jpeg) => storePreviewJpeg(printId, row.id, jpeg))
+    .catch(() => null);
   if (!saved) {
     await prisma.previewImage.delete({ where: { id: row.id } }).catch(() => undefined);
     return null;
@@ -185,43 +190,67 @@ export async function addPreviewImage(
   }
 }
 
-/** Publishes the stored image and its upload receipt together. A replay keeps the recorded result, including a skip.
- *  Each worker writes under its own image id, so a concurrent loser can discard its file without touching the winner. */
+function lockPreviewGallery(tx: Prisma.TransactionClient, printId: string) {
+  return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('preview-gallery'), hashtext(${printId}))`;
+}
+
+/** Publishes the stored image and receipt together. Each worker writes under its own image id so a concurrent
+ *  loser can discard its file without touching the winner. */
 export async function addPreviewImageForUpload(
   printId: string,
   uploadId: string,
   buffer: Buffer,
-): Promise<{ imageId: string | null; added: boolean }> {
+  chooseCover: boolean,
+): Promise<string | null> {
   const where = { printId_uploadId: { printId, uploadId } };
   const previous = await prisma.previewImageUpload.findUnique({ where });
-  if (previous) return { imageId: previous.imageId, added: false };
+  if (previous) return previous.imageId;
 
   const id = randomUUID();
-  const saved = await saveBuffer(printId, id, buffer, true);
+  const jpeg = await encodePreviewUpload(buffer);
+  const saved = jpeg && (await storePreviewJpeg(printId, id, jpeg));
+  const discard = () => saved && fs.rm(saved.dest, { force: true }).catch(() => undefined);
 
   for (let attempt = 0; attempt < 5; attempt++) {
+    let readyToCommit = false;
     try {
-      const outcome = await prisma.$transaction(async (tx) => {
+      const imageId = await prisma.$transaction(async (tx) => {
+        await lockPreviewGallery(tx, printId);
         const receipt = await tx.previewImageUpload.findUnique({ where });
-        if (receipt) return { imageId: receipt.imageId, added: false };
+        if (receipt) return receipt.imageId;
         if (saved) {
           const { dest: _dest, ...stored } = saved;
           const last = await tx.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
           await tx.previewImage.create({ data: { id, printId, position: (last?.position ?? -1) + 1, ...stored } });
         }
-        await tx.previewImageUpload.create({ data: { printId, uploadId, imageId: saved ? id : null } });
-        return { imageId: saved ? id : null, added: Boolean(saved) };
+        const published = saved ? id : null;
+        await tx.previewImageUpload.create({
+          data: { printId, uploadId, imageId: published, coverPending: Boolean(saved && chooseCover) },
+        });
+        readyToCommit = true;
+        return published;
       });
-      if (saved && !outcome.added) await fs.rm(saved.dest, { force: true }).catch(() => undefined);
-      return outcome;
-    } catch (err) {
-      // Position or receipt races roll back both writes. A commit error can be ambiguous, so keep the file
-      // in case it already belongs to the published receipt.
-      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+      if (imageId !== id) await discard();
+      return imageId;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") continue;
+      if (!readyToCommit) {
+        await discard();
+      } else if (saved) {
+        // Wait for the publishing transaction to release the gallery lock before checking a disputed commit.
+        const owner = await prisma
+          .$transaction(async (tx) => {
+            await lockPreviewGallery(tx, printId);
+            return tx.previewImage.findUnique({ where: { id }, select: { id: true } });
+          })
+          .catch(() => undefined);
+        if (owner === null) await discard();
+      }
+      throw error;
     }
   }
 
-  if (saved) await fs.rm(saved.dest, { force: true }).catch(() => undefined);
+  await discard();
   throw new HttpError(409, "Could not record the preview upload; try again");
 }
 
@@ -240,15 +269,67 @@ export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Bu
   return true;
 }
 
+async function removeGeneratedRows(
+  tx: Prisma.TransactionClient,
+  images: { id: string; generated: boolean }[],
+): Promise<string[]> {
+  const generated = images.filter((image) => image.generated).map((image) => image.id);
+  if (generated.length) {
+    await tx.previewImage.deleteMany({ where: { id: { in: generated } } });
+    await renumberPreviewImages(
+      tx,
+      images.filter((image) => !image.generated).map((image) => image.id),
+    );
+  }
+  return generated;
+}
+
 /** Drops our own renders, so the images that replace them start at position 0. */
 export async function removeGeneratedPreviewImages(printId: string): Promise<void> {
-  const generated = await prisma.previewImage.findMany({ where: { printId, generated: true } });
+  const generated = await prisma.$transaction(async (tx) => {
+    await lockPreviewGallery(tx, printId);
+    const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    return removeGeneratedRows(tx, images);
+  });
   if (!generated.length) return;
-  await prisma.previewImage.deleteMany({ where: { id: { in: generated.map((img) => img.id) } } });
-  const remaining = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
-  await renumberPreviewImages(remaining.map((img) => img.id));
   const home = await printAssetHome(printId);
-  for (const img of generated) await removeGalleryFiles(home, img.id);
+  for (const id of generated) await removeGalleryFiles(home, id);
+}
+
+/** Finishes the first uploaded photo's cover work on upload or receipt lookup. A new cover choice, a removed
+ *  photo, or a different first manual photo supersedes the pending receipt. */
+export async function resumePreviewUploadCover(printId: string): Promise<void> {
+  const pending = { printId, coverPending: true };
+  if (!(await prisma.previewImageUpload.findFirst({ where: pending, select: { uploadId: true } }))) return;
+  const result = await prisma.$transaction(async (tx) => {
+    await lockPreviewGallery(tx, printId);
+    const receipts = await tx.previewImageUpload.findMany({ where: pending });
+    if (!receipts.length) return null;
+    const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    const home = (await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } }))?.assetsPath;
+    const cover = images.find((image) => !image.generated && previewImageExists(image.id, home));
+    const receipt = receipts.find((upload) => upload.imageId === cover?.id);
+    if (!home || !cover || !receipt) {
+      await tx.previewImageUpload.updateMany({ where: pending, data: { coverPending: false } });
+      return null;
+    }
+
+    const plate = await tx.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
+    let thumbnailReady = true;
+    if (plate && (plate.thumbGenerated || !plateThumbExists(plate.id, home))) {
+      const jpeg = await fs.readFile(previewImagePath(cover.id, home));
+      thumbnailReady = await saveThumbFromBytes(plate.id, jpeg, true, { home, db: tx });
+    }
+    const generated = await removeGeneratedRows(tx, images);
+    await tx.previewImageUpload.updateMany({
+      where: thumbnailReady ? pending : { ...pending, uploadId: { not: receipt.uploadId } },
+      data: { coverPending: false },
+    });
+    return { home, generated };
+  });
+  if (result) {
+    for (const id of result.generated) await removeGalleryFiles(result.home, id);
+  }
 }
 
 /** Call once a real image is added: it takes over from our own render, as the cover and, when the plate's thumb is
@@ -275,21 +356,24 @@ export async function removePreviewImageFile(printId: string, id: string): Promi
   await removeGalleryFiles(await printAssetHome(printId), id);
 }
 
-/** Renumbers the model's gallery in this order. Two phases, as in plates.ts, to avoid (printId, position) collisions,
- *  in one transaction: the first phase's order is backwards, and the photos clean-up mustn't read it. */
-async function renumberPreviewImages(ids: string[]): Promise<void> {
-  await prisma.$transaction([
-    ...ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: -(idx + 1) } })),
-    ...ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: idx } })),
-  ]);
+/** Renumbers in two phases to avoid (printId, position) collisions. The caller holds the gallery lock. */
+async function renumberPreviewImages(tx: Prisma.TransactionClient, ids: string[]): Promise<void> {
+  await Promise.all(ids.map((id, idx) => tx.previewImage.update({ where: { id }, data: { position: -(idx + 1) } })));
+  await Promise.all(ids.map((id, idx) => tx.previewImage.update({ where: { id }, data: { position: idx } })));
 }
 
 /** Removes one of the model's gallery images; the next one up becomes the cover if it was. */
 export async function removePreviewImage(printId: string, imageId: string): Promise<void> {
-  const images = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
-  if (!images.some((img) => img.id === imageId)) throw new HttpError(404, "Preview image not found");
-  await prisma.previewImage.delete({ where: { id: imageId } });
-  await renumberPreviewImages(images.filter((img) => img.id !== imageId).map((img) => img.id));
+  await prisma.$transaction(async (tx) => {
+    await lockPreviewGallery(tx, printId);
+    const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    if (!images.some((img) => img.id === imageId)) throw new HttpError(404, "Preview image not found");
+    await tx.previewImage.delete({ where: { id: imageId } });
+    await renumberPreviewImages(
+      tx,
+      images.filter((img) => img.id !== imageId).map((img) => img.id),
+    );
+  });
   await removePreviewImageFile(printId, imageId);
 }
 
@@ -297,21 +381,32 @@ export async function removePreviewImage(printId: string, imageId: string): Prom
  *  is shown (toPrintOut leaves them out) and so no one can list: they keep their order after the rest. The first is
  *  the cover. */
 export async function reorderPreviewImages(printId: string, ids: string[]): Promise<void> {
-  const print = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
-  const images = await prisma.previewImage.findMany({
-    where: { printId },
-    orderBy: { position: "asc" },
-    select: { id: true },
+  await prisma.$transaction(async (tx) => {
+    await lockPreviewGallery(tx, printId);
+    const print = await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
+    const images = await tx.previewImage.findMany({
+      where: { printId },
+      orderBy: { position: "asc" },
+      select: { id: true },
+    });
+    const known = new Set(images.map((img) => img.id));
+    const listed = new Set(ids);
+    const unseen = images
+      .filter((img) => !listed.has(img.id) && !previewImageExists(img.id, print?.assetsPath))
+      .map((img) => img.id);
+    if (
+      ids.length + unseen.length !== images.length ||
+      listed.size !== ids.length ||
+      ids.some((id) => !known.has(id))
+    ) {
+      throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
+    }
+    const cover = images.find((img) => previewImageExists(img.id, print?.assetsPath));
+    await renumberPreviewImages(tx, [...ids, ...unseen]);
+    if (cover?.id !== ids[0]) {
+      await tx.previewImageUpload.updateMany({ where: { printId, coverPending: true }, data: { coverPending: false } });
+    }
   });
-  const known = new Set(images.map((img) => img.id));
-  const listed = new Set(ids);
-  const unseen = images
-    .filter((img) => !listed.has(img.id) && !previewImageExists(img.id, print?.assetsPath))
-    .map((img) => img.id);
-  if (ids.length + unseen.length !== images.length || listed.size !== ids.length || ids.some((id) => !known.has(id))) {
-    throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
-  }
-  await renumberPreviewImages([...ids, ...unseen]);
 }
 
 // The card render is white shading for the cards to tint, too pale on a light background as it is; as a thumb it's

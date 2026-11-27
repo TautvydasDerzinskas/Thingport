@@ -243,10 +243,8 @@ export async function savePlateChanges(
       continue;
     }
 
-    if (plate.filename !== normalized || typeof Intl.Segmenter !== "function") {
-      const res = await api.renamePlate(print.id, plate.id, filename);
-      latest = res.print;
-    }
+    const res = await api.renamePlate(print.id, plate.id, filename);
+    latest = res.print;
     const renamed = latest.plates.find((current) => current.id === plate.id);
     stagedItems = stagedItems.map((staged) =>
       staged.kind === "existing" && staged.id === plate.id

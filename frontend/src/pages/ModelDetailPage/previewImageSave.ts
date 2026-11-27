@@ -96,11 +96,13 @@ export async function savePreviewUploads(
   };
 
   const hasReceipts = await reconcile();
-  if (!hasReceipts && latest.items.some(isPendingPreviewImage)) {
-    await lockPending();
-    return latest;
+  if (!hasReceipts) {
+    if (latest.items.some(isPendingPreviewImage)) {
+      await lockPending();
+      return latest;
+    }
+    if (latest.items.some((image) => image.kind === "unconfirmed")) return latest;
   }
-  if (latest.items.some((image) => image.kind === "unconfirmed")) return latest;
 
   const beforeUpload = latest;
   const uploads = latest.items.map((image) =>

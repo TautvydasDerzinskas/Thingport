@@ -8,7 +8,7 @@ import {
   type PreviewSaveApi,
 } from "./previewImageSave";
 
-const pendingImage = (id: string): ImageItem => ({
+const pendingImage = (id: string): Extract<ImageItem, { kind: "new" }> => ({
   kind: "new",
   localId: id,
   file: new File(["image"], `${id}.png`),
@@ -112,6 +112,27 @@ describe("savePreviewUploads", () => {
     const [, resentFiles, resentIds] = api.addPreviewImages.mock.calls[1];
     expect(resentFiles.map((file) => file.name)).toEqual(["second.png"]);
     expect(resentIds).toEqual([api.addPreviewImages.mock.calls[0][2]?.[1]]);
+  });
+
+  it("retries pending keyed files when an earlier confirmed image has been deleted", async () => {
+    const first = { ...pendingImage("first"), pendingUploadId: "first-key" };
+    const second = { ...pendingImage("second"), pendingUploadId: "second-key" };
+    const { api, save } = previewSaveFixture(first, second);
+    const updated = printWithImages(storedImage("second-saved", 0));
+    api.getPreviewUploadResults.mockResolvedValue({
+      print: printWithImages(),
+      upload_results: [{ upload_id: "first-key", image_id: "deleted-image" }],
+    });
+    api.addPreviewImages.mockResolvedValue({ print: updated, added_image_ids: ["second-saved"] });
+
+    await expect(save()).resolves.toEqual({
+      print: updated,
+      items: [
+        { kind: "unconfirmed", localId: "first", previewUrl: "blob:first" },
+        { kind: "existing", id: "second-saved", url: "/second-saved.jpg" },
+      ],
+    });
+    expect(api.addPreviewImages).toHaveBeenCalledExactlyOnceWith("model", [second.file], ["second-key"]);
   });
 
   it("stops on a skipped image, keeps successful rows, and retries the skipped file with a new ID", async () => {

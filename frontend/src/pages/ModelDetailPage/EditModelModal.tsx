@@ -142,6 +142,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasUnconfirmedImages = images.some((image) => image.kind === "unconfirmed");
+  const previewSaveBlocked = hasUnconfirmedImages && !images.some(isPendingPreviewImage);
 
   const createdUrlsRef = useRef<string[]>([]);
   const addImageInputRef = useRef<HTMLInputElement>(null);
@@ -278,7 +279,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
-    if (hasUnconfirmedImages) return;
+    if (previewSaveBlocked) return;
     if (hasInvalidPlateFilename(plateItems)) {
       setError(t("models:edit.fileNameRequired"));
       return;
@@ -804,7 +805,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving || hasUnconfirmedImages || hasInvalidPlateFilename(plateItems)}
+          disabled={saving || previewSaveBlocked || hasInvalidPlateFilename(plateItems)}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}
