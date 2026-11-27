@@ -707,6 +707,8 @@ model PlateUploadAttempt {
   clientUploadId String
   status         String    @default("pending")
   plateId        String?
+  /// SHA-256 of the bytes this upload ID was first sent with: a replay is the same upload only with the same bytes.
+  contentSha256  String
   claimToken     String?
   leaseExpiresAt DateTime?
 

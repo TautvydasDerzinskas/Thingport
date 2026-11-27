@@ -143,6 +143,19 @@ export function assetExists(home: AssetHome, file: AssetFile): boolean {
   return fsSync.existsSync(assetPath(home, file));
 }
 
+/** Whether the picture is there, in the model's folder or the old shared one, for a caller that records or removes
+ *  something on the answer: only ENOENT and ENOTDIR mean it isn't, a folder isn't one, and any other error is thrown. */
+export async function assetIsThere(home: AssetHome, file: AssetFile): Promise<boolean> {
+  for (const place of home ? [assetTarget(home, file), legacyAssetPath(file)] : [legacyAssetPath(file)]) {
+    try {
+      if ((await fs.stat(place)).isFile()) return true;
+    } catch (error) {
+      if (!isMissingError(error)) throw error;
+    }
+  }
+  return false;
+}
+
 export async function printAssetHome(printId: string): Promise<AssetHome> {
   const print = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
   return print?.assetsPath;

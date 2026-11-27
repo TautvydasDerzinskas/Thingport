@@ -37,6 +37,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import {
   PlateUploadCapabilityError,
   PlateUploadOutcomeUnknownError,
+  PlateRenameResponseError,
+  PlateRenameTargetGoneError,
   UploadReceiptLookupError,
   type LicenseFamily,
   type LicenseOption,
@@ -415,6 +417,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         return;
       }
       console.error(err);
+      if (err instanceof PlateRenameResponseError) {
+        setError(t("models:edit.renameUnconfirmed"));
+        return;
+      }
+      if (err instanceof PlateRenameTargetGoneError) {
+        setError(t("models:edit.renameTargetGone"));
+        return;
+      }
       if (err instanceof UploadReceiptLookupError) {
         setError(t("models:edit.uploadReceiptLookupFailed"));
         return;

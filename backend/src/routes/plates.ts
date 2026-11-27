@@ -15,6 +15,7 @@ import {
   removePlate,
   renamePlate,
   renamePlates,
+  reorderPlates,
   resolvePlateFilePath,
   type NewPlateInput,
 } from "../services/printCreation";
@@ -126,22 +127,7 @@ router.post(
     const body = parseBody(reorderSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
-    const byId = new Map(plates.map((p) => [p.id, p]));
-    if (body.plate_ids.length !== plates.length || body.plate_ids.some((id) => !byId.has(id))) {
-      throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids");
-    }
-    const previousFirst = plates.toSorted((a, b) => a.position - b.position)[0]?.id;
-
-    // One transaction, so an append never sees the temporary negative positions as the model's last.
-    await prisma.$transaction([
-      ...body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: -(idx + 1) } })),
-      ...body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: idx } })),
-    ]);
-
-    if (previousFirst !== body.plate_ids[0]) {
-      await refreshAutoPreparedMetadata(print.id);
-    }
+    if (await reorderPlates(print.id, body.plate_ids)) await refreshAutoPreparedMetadata(print.id);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

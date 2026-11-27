@@ -220,6 +220,36 @@ describe("recoverable preview uploads", () => {
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
   });
 
+  it("keeps the cover work pending while the pictures can't be looked at", async () => {
+    const { print, generated, imageId, uploadId, lookup, where, thumb } = await interruptedCover();
+    const home = await printAssetHome(print.id);
+    const unreadable = new Set([previewImagePath(imageId, home), previewImagePath(generated.id, home)]);
+    const stat = fs.stat;
+    const failing = vi.spyOn(fs, "stat").mockImplementation((async (target: unknown, ...rest: unknown[]) => {
+      if (unreadable.has(String(target))) throw Object.assign(new Error("EIO: i/o error"), { code: "EIO" });
+      return Reflect.apply(stat, fs, [target, ...rest]);
+    }) as never);
+    try {
+      await request(app)
+        .post(`/api/print/${print.id}/preview-images/upload-results`)
+        .set(auth())
+        .send({ upload_ids: [uploadId] })
+        .expect(500);
+      await request(app)
+        .post(`/api/print/${print.id}/preview-images/reorder`)
+        .set(auth())
+        .send({ image_ids: [generated.id, imageId] })
+        .expect(500);
+    } finally {
+      failing.mockRestore();
+    }
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: true });
+
+    await lookup();
+    expect(await redOf(thumb)).toBeGreaterThan(180);
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
+  });
+
   it("protects the recovered cover from a generated thumbnail waiting to be saved", async () => {
     const { print, plate, lookup, where, thumb, imageId } = await interruptedCover();
     const buffer = await png(60);

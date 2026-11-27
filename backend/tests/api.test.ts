@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
@@ -11,7 +11,7 @@ import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
 import { resolvePlateFilePath } from "../src/services/printCreation";
 import { checkLibraryInvariants } from "./harness";
-import { pauseAt, track } from "./harness/lifecycle";
+import { faults, pauseAt, track } from "./harness/lifecycle";
 
 const app = createApp();
 
@@ -357,6 +357,9 @@ describe("plate add/remove/reorder/rename", () => {
     } finally {
       failMove.mockRestore();
     }
+    const stuck = await prisma.plate.findUniqueOrThrow({ where: { id: first.id } });
+    // The names committed; the first plate's file stayed where the failed move found it.
+    expect(stuck.storagePath).toBe(first.storagePath);
 
     const expectSwap = async () => {
       const stored = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
@@ -371,6 +374,68 @@ describe("plate add/remove/reorder/rename", () => {
     await expectSwap();
     expect((await swap()).status).toBe(200);
     await expectSwap();
+    const moved = await prisma.plate.findUniqueOrThrow({ where: { id: first.id } });
+    expect(path.basename(moved.storagePath)).toBe("swap-b.stl");
+    expect(fs.readFileSync(resolvePlateFilePath(moved) ?? "", "utf8")).toBe("solid first endsolid");
+  });
+
+  it("records no name when a file a rename would move can't be looked at", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid look a endsolid"), "look-a.stl")
+      .attach("files", Buffer.from("solid look b endsolid"), "look-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const before = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    const rename = () =>
+      auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [{ plate_id: before[1].id, filename: "look-c.stl" }],
+      });
+
+    faults.at("fileState:rename.look", 1, "EIO");
+    expect((await rename()).status).toBe(500);
+    const after = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(after.map((plate) => [plate.filename, plate.storagePath])).toEqual(
+      before.map((plate) => [plate.filename, plate.storagePath]),
+    );
+
+    expect((await rename()).status).toBe(200);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("appends after a plate removed while the new file was being placed", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid keep endsolid"), "keep.stl")
+      .attach("files", Buffer.from("solid gone endsolid"), "gone.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [, gone] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+
+    const placement = pauseAt("fileState:path.taken");
+    const append = track(
+      Promise.resolve(
+        auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+          "files",
+          Buffer.from("solid late endsolid"),
+          "late.stl",
+        ),
+      ),
+    );
+    try {
+      await placement.reachedBy(append);
+      await auth(request(app).delete(`/api/print/${modelId}/plates/${gone.id}`)).expect(200);
+    } finally {
+      placement.release();
+    }
+
+    expect((await append).status).toBe(200);
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => [plate.filename, plate.position])).toEqual([
+      ["keep.stl", 0],
+      ["late.stl", 1],
+    ]);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("removes plates down to one, then 409s on the last one", async () => {
@@ -418,8 +483,8 @@ describe("plate add/remove/reorder/rename", () => {
     const filename = `thingport-upload-${uploadId}-retry.stl`;
     const firstFile = tmpFile(filename, "solid retry endsolid");
     const secondFile = tmpFile(filename, "solid retry endsolid");
-    // Another file under the same upload ID isn't a retry.
-    const otherFile = tmpFile(filename, "solid other endsolid");
+    // Another file under the same upload ID isn't a retry, even one with the bytes the stored plate was edited to.
+    const otherFile = tmpFile(filename, "solid edited endsolid");
     const post = (file: string) => auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", file);
 
     try {
@@ -431,6 +496,16 @@ describe("plate add/remove/reorder/rename", () => {
       expect(
         second.body.print.plates.filter((p: any) => p.filename.startsWith(`thingport-upload-${uploadId}-`)),
       ).toHaveLength(1);
+
+      // Edited outside Thingport, the stored plate no longer has the bytes the upload was first sent with.
+      const stored = resolvePlateFilePath(
+        await prisma.plate.findUniqueOrThrow({ where: { id: first.body.added_plate_ids[0] } }),
+      );
+      if (!stored) throw new Error("Expected a readable plate");
+      fs.writeFileSync(stored, "solid edited endsolid");
+      const replay = await post(firstFile);
+      expect(replay.status).toBe(200);
+      expect(replay.body.added_plate_ids).toEqual(first.body.added_plate_ids);
 
       const other = await post(otherFile);
       expect(other.status).toBe(409);
@@ -508,14 +583,11 @@ describe("plate add/remove/reorder/rename", () => {
   ])("reclaims a $status upload without a live lease ($leaseExpiresAt)", async (previousAttempt) => {
     const clientUploadId = randomUUID();
     const filename = `thingport-upload-${clientUploadId}-recover.stl`;
-    await prisma.plateUploadAttempt.create({ data: { printId, clientUploadId, ...previousAttempt } });
+    const bytes = Buffer.from("solid recovered endsolid");
+    const contentSha256 = createHash("sha256").update(bytes).digest("hex");
+    await prisma.plateUploadAttempt.create({ data: { printId, clientUploadId, contentSha256, ...previousAttempt } });
 
-    const upload = () =>
-      auth(request(app).post(`/api/print/${printId}/plates`)).attach(
-        "files",
-        Buffer.from("solid recovered endsolid"),
-        filename,
-      );
+    const upload = () => auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", bytes, filename);
     const res = await upload();
     expect(res.status).toBe(200);
     expect(res.body.added_plate_ids).toHaveLength(1);

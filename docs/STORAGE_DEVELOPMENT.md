@@ -42,12 +42,12 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
   Only ENOENT and ENOTDIR mean missing, and a folder isn't a file. Any other error (EIO, EACCES, ELOOP) stops the
   operation before it removes or records anything, save in the repair's sweep, which runs once the plates are in: there
   the row whose look failed stays, and the rest go on. It holds for downloads and the zip, copies, Send to, MCP's
-  `get_model_file`, partners' downloads, Migrate's export, free paths, moves, the storage browser, the missing-files scan
-  and the repair. A plate with a `sourcePath` is read there only. It doesn't hold yet for pictures and the files made
+  `get_model_file`, partners' downloads, Migrate's export, free paths, moves, a rename's look at the files it will move, the
+  storage browser, the missing-files scan and the repair. A plate with a `sourcePath` is read there only. It doesn't hold yet for pictures and the files made
   from a model's files, an upload's temporary files, the prune, a profile plate's size before it's matched and a new
   plate's recorded size: `tests/modelFiles/door.test.ts` lists every `existsSync` left with the step that removes it, and
-  fails on a new one, and on a door call site no test fails. Pinned by `tests/modelFiles/door.*.test.ts` and
-  `tests/repairKeeps.test.ts`.
+  fails on a new one, and on a door call site no test fails. Pinned by `tests/modelFiles/door.*.test.ts`,
+  `tests/repairKeeps.test.ts` and the rename cases in `tests/api.test.ts`.
 - **Fs 2: a download serves the file it opened.** A model's file is opened first; its row is read again by id, and the
   open handle is served only while the row still names that path (`utils/sendStored.ts`), else the answer is 404. Not its
   size: a file may be edited in place, and its row keeps the size it was saved with. It covers plates, supporting files,

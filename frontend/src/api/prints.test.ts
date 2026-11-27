@@ -3,6 +3,8 @@ import { UnauthorizedError } from "./client";
 import {
   BULK_LIMIT,
   PlateUploadCapabilityError,
+  PlateRenameResponseError,
+  PlateRenameTargetGoneError,
   PlateUploadOutcomeUnknownError,
   printsApi,
   UploadReceiptLookupError,
@@ -260,14 +262,25 @@ describe("printsApi.renamePlates", () => {
   it.each([
     ["plate_not_found", "Plate not found"],
     ["print_not_found", "Print not found"],
-  ])("fails with the server's message when it answers %s", async (code, detail) => {
+  ])("fails as a removed target when it answers %s", async (code, detail) => {
     respond(404, { detail, code });
-    await expect(rename()).rejects.toThrow(detail);
+    const renaming = rename();
+    await expect(renaming).rejects.toBeInstanceOf(PlateRenameTargetGoneError);
+    await expect(renaming).rejects.toThrow(detail);
   });
 
-  it.each([{}, { print: { id: "print" } }])("rejects a renamed model it can't read (%j)", async (body) => {
+  it.each([{}, { print: { id: "print" } }])("can't confirm a rename whose model it can't read (%j)", async (body) => {
     respond(200, body);
-    await expect(rename()).rejects.toThrow("invalid print");
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+  });
+
+  it("can't confirm a rename the server failed partway, or that got no readable answer", async () => {
+    respond(500, { detail: "Internal server error" });
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("not json", { status: 200 })));
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
   });
 
   it("returns the renamed model", async () => {

@@ -29,6 +29,7 @@ export const STORAGE_SITES = [
   "migrate.export",
   "delete.look",
   "delete.unlink",
+  "rename.look",
 ] as const;
 export type StorageSite = (typeof STORAGE_SITES)[number];
 

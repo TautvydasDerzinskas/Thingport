@@ -6578,6 +6578,8 @@
       "fileName": "File name",
       "fileExtensionRequired": "Keep the file’s original extension.",
       "fileSwapUnsupported": "This server does not support safely swapping file names.",
+      "renameUnconfirmed": "Could not confirm the new file names. Save again to finish renaming.",
+      "renameTargetGone": "A file you renamed, or its model, was removed in the meantime. Reload the model to see its files.",
       "fileNameRequired": "File name is required.",
       "uploadReceiptLookupFailed": "Could not check which files were saved. Select Update again.",
       "uploadCapabilityCheckFailed": "Could not check whether the upload can be safely retried. Please try again.",

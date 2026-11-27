@@ -6836,6 +6836,8 @@
       "fileName": "Nom du fichier",
       "fileExtensionRequired": "Conservez l’extension d’origine du fichier.",
       "fileSwapUnsupported": "Ce serveur ne permet pas de permuter les noms de fichiers en toute sécurité.",
+      "renameUnconfirmed": "Impossible de confirmer les nouveaux noms de fichiers. Enregistrez à nouveau pour terminer le renommage.",
+      "renameTargetGone": "Un fichier renommé, ou son modèle, a été supprimé entre-temps. Rechargez le modèle pour voir ses fichiers.",
       "fileNameRequired": "Le nom du fichier est obligatoire.",
       "uploadReceiptLookupFailed": "Impossible de vérifier quels fichiers ont été enregistrés. Sélectionnez de nouveau Mettre à jour.",
       "uploadCapabilityCheckFailed": "Impossible de vérifier si l’envoi peut être relancé sans risque. Veuillez réessayer.",

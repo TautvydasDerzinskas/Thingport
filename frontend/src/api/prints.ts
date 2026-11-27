@@ -418,6 +418,23 @@ export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance" | "
 /** A site the library's models came from; `provider` is "thingport" for the ones uploaded here. */
 export type PrintSource = { provider: string; model_count: number };
 
+/** A batch rename whose outcome is unknown: its answer couldn't be read, or the server failed partway. The names may
+ *  be saved with their files still to move; sending the same renames again finishes them. */
+export class PlateRenameResponseError extends Error {
+  constructor(cause?: unknown) {
+    super("Could not confirm the file renames", { cause });
+    this.name = "PlateRenameResponseError";
+  }
+}
+
+/** A batch rename refused because a plate it names, or their model, was removed meanwhile. Nothing was renamed. */
+export class PlateRenameTargetGoneError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlateRenameTargetGoneError";
+  }
+}
+
 export class PrintApiError extends Error {
   constructor(
     message: string,
@@ -801,23 +818,37 @@ export const printsApi = {
     printId: string,
     renames: { plate_id: string; filename: string }[],
   ): Promise<{ print: Print } | null> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plates/rename`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ renames }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plates/rename`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ renames }),
+      });
+    } catch (error) {
+      throw new PlateRenameResponseError(error);
+    }
+    if (res.status === 401) throw new UnauthorizedError();
     // Only an older server's catch-all 404 comes without a code; a gone plate or model has one.
     if (res.status === 404) {
-      const { message, code } = await readCodedError(res, "Could not rename the model files");
+      const { message, code } = await readCodedError(res, "");
       if (!code) return null;
-      throw new Error(message);
+      throw new PlateRenameTargetGoneError(message);
     }
-    await assertOkWithMessage(res, "Could not rename the model files");
-    const body: unknown = await res.json();
-    if (!isRecord(body) || !isUploadPrint(body.print, printId)) {
-      throw new Error("The server returned an invalid print after the rename");
+    if (res.status >= 500)
+      throw new PlateRenameResponseError(new Error(await readErrorMessage(res, `HTTP ${res.status}`)));
+    if (!res.ok) {
+      // Empty only when the answer couldn't be read at all.
+      const message = await readErrorMessage(res, "");
+      throw message ? new Error(message) : new PlateRenameResponseError();
     }
-    return { print: body.print };
+    try {
+      const body: unknown = await res.json();
+      if (isRecord(body) && isUploadPrint(body.print, printId)) return { print: body.print };
+    } catch (error) {
+      throw new PlateRenameResponseError(error);
+    }
+    throw new PlateRenameResponseError();
   },
 
   setTags: async (id: string, tags: string[]) => {

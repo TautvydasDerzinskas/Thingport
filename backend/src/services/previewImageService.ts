@@ -8,12 +8,14 @@ import { generateModelImage } from "./modelPreviewCache";
 import { photoJpeg, renderThumbShade } from "./imageProcessing";
 import {
   assetExists,
+  assetIsThere,
   assetPath,
   assetTarget,
   galleryImageFile,
   galleryThumbFile,
   legacyAssetPath,
   plateAssetHome,
+  plateThumbFile,
   printAssetHome,
   removeAsset,
   type AssetHome,
@@ -126,9 +128,10 @@ async function encodePreviewUpload(buffer: Buffer): Promise<Buffer | null> {
   try {
     return await photoJpeg(buffer, 1600, 90, true);
   } catch (error) {
-    // Sharp reports input rejection through Error messages. A different decoder or encoder failure is retryable.
+    // Sharp reports input rejection through Error messages. A different decoder or encoder failure is retryable. A
+    // truncated PNG fails as a libpng read error or, as the decoder's warning comes first, through failOn.
     const rejected =
-      /^(Input buffer (contains unsupported image format|has corrupt header:)|Input image exceeds (pixel|channel) limit|VipsJpeg: premature end of JPEG image)/;
+      /^(Input buffer (contains unsupported image format|has corrupt header:)|Input image exceeds (pixel|channel) limit|VipsJpeg: premature end of JPEG image|Warning treated as error due to failOn setting)/;
     if (error instanceof Error && (rejected.test(error.message) || error.message === "vipspng: libpng read error")) {
       return null;
     }
@@ -210,7 +213,8 @@ export async function saveGeneratedPlateThumbnail(
       select: { thumbGenerated: true, print: { select: { assetsPath: true } } },
     });
     const home = plate?.print.assetsPath;
-    if (!plate || !home || (!plate.thumbGenerated && plateThumbExists(plateId, home))) return "skipped";
+    if (!plate || !home) return "skipped";
+    if (!plate.thumbGenerated && (await assetIsThere(home, plateThumbFile(plateId)))) return "skipped";
     if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx }))) return "invalid";
     await tx.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
     return "saved";
@@ -319,6 +323,14 @@ export async function removeGeneratedPreviewImages(printId: string): Promise<voi
   for (const id of generated) await removeGalleryFiles(home, id);
 }
 
+/** The first of `images` whose file is there, by a look that throws on any error but a missing file. */
+async function firstImageThere<T extends { id: string }>(images: T[], home: AssetHome): Promise<T | undefined> {
+  for (const image of images) {
+    if (await assetIsThere(home, galleryImageFile(image.id))) return image;
+  }
+  return undefined;
+}
+
 /** Finishes the first uploaded photo's cover work on upload or receipt lookup. A new cover choice, a removed
  *  photo, or a different first manual photo supersedes the pending receipt. */
 export async function resumePreviewUploadCover(printId: string): Promise<void> {
@@ -330,7 +342,11 @@ export async function resumePreviewUploadCover(printId: string): Promise<void> {
     if (!receipts.length) return null;
     const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
     const home = (await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } }))?.assetsPath;
-    const cover = images.find((image) => !image.generated && previewImageExists(image.id, home));
+    // A look that fails throws, so the pending work stays for when the disk answers again.
+    const cover = await firstImageThere(
+      images.filter((image) => !image.generated),
+      home,
+    );
     const receipt = receipts.find((upload) => upload.imageId === cover?.id);
     if (!home || !cover || !receipt) {
       await tx.previewImageUpload.updateMany({ where: pending, data: { coverPending: false } });
@@ -339,7 +355,7 @@ export async function resumePreviewUploadCover(printId: string): Promise<void> {
 
     const plate = await tx.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
     let thumbnailReady = true;
-    if (plate && (plate.thumbGenerated || !plateThumbExists(plate.id, home))) {
+    if (plate && (plate.thumbGenerated || !(await assetIsThere(home, plateThumbFile(plate.id))))) {
       const jpeg = await fs.readFile(previewImagePath(cover.id, home));
       thumbnailReady = await saveThumbFromBytes(plate.id, jpeg, true, { home, db: tx });
     }
@@ -414,9 +430,11 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
     });
     const known = new Set(images.map((img) => img.id));
     const listed = new Set(ids);
-    const unseen = images
-      .filter((img) => !listed.has(img.id) && !previewImageExists(img.id, print?.assetsPath))
-      .map((img) => img.id);
+    const unseen: string[] = [];
+    for (const img of images) {
+      if (!listed.has(img.id) && !(await assetIsThere(print?.assetsPath, galleryImageFile(img.id))))
+        unseen.push(img.id);
+    }
     if (
       ids.length + unseen.length !== images.length ||
       listed.size !== ids.length ||
@@ -424,7 +442,7 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
     ) {
       throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
     }
-    const cover = images.find((img) => previewImageExists(img.id, print?.assetsPath));
+    const cover = await firstImageThere(images, print?.assetsPath);
     await renumberPreviewImages(tx, [...ids, ...unseen]);
     if (cover?.id !== ids[0]) {
       await tx.previewImageUpload.updateMany({ where: { printId, coverPending: true }, data: { coverPending: false } });

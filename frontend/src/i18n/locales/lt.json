@@ -6959,6 +6959,8 @@
       "fileName": "Failo pavadinimas",
       "fileExtensionRequired": "Palikite pradinį failo plėtinį.",
       "fileSwapUnsupported": "Šis serveris nepalaiko saugaus failų vardų sukeitimo.",
+      "renameUnconfirmed": "Nepavyko patvirtinti naujų failų vardų. Išsaugokite dar kartą, kad pervadinimas būtų baigtas.",
+      "renameTargetGone": "Pervadintas failas arba jo modelis tuo metu buvo pašalintas. Įkelkite modelį iš naujo, kad pamatytumėte jo failus.",
       "fileNameRequired": "Failo pavadinimas privalomas.",
       "uploadReceiptLookupFailed": "Nepavyko patikrinti, kurie failai išsaugoti. Dar kartą pasirinkite „Atnaujinti“.",
       "uploadCapabilityCheckFailed": "Nepavyko patikrinti, ar galima saugiai pakartoti įkėlimą. Bandykite dar kartą.",

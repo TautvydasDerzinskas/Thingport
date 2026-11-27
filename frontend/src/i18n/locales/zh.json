@@ -6337,6 +6337,8 @@
       "fileName": "文件名",
       "fileExtensionRequired": "请保留文件原有的扩展名。",
       "fileSwapUnsupported": "此服务器不支持安全地交换文件名。",
+      "renameUnconfirmed": "无法确认新的文件名。请再次保存以完成重命名。",
+      "renameTargetGone": "你重命名的文件或其模型已在此期间被删除。请重新加载模型以查看其文件。",
       "fileNameRequired": "文件名为必填项。",
       "uploadReceiptLookupFailed": "无法确认哪些文件已保存。请再次选择“更新”。",
       "uploadCapabilityCheckFailed": "无法确认能否安全地重试上传。请重试。",

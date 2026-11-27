@@ -4,6 +4,7 @@ CREATE TABLE "PlateUploadAttempt" (
     "clientUploadId" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'pending',
     "plateId" TEXT,
+    "contentSha256" TEXT NOT NULL,
 
     CONSTRAINT "PlateUploadAttempt_pkey" PRIMARY KEY ("id")
 );
