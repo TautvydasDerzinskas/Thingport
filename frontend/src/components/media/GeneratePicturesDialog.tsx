@@ -106,11 +106,14 @@ export default function GeneratePicturesDialog({
     if (!open || chooseOnly) return;
     let cancelled = false;
     let made: ScenePictureRenderer | null = null;
-    void loadRender().then(({ ScenePictureRenderer }) => {
-      if (cancelled) return;
-      made = new ScenePictureRenderer();
-      setRenderer(made);
-    });
+    // WebGL missing or the chunk failing to load leaves no renderer: say so rather than leave the previews waiting.
+    void loadRender()
+      .then(({ ScenePictureRenderer }) => {
+        if (cancelled) return;
+        made = new ScenePictureRenderer();
+        setRenderer(made);
+      })
+      .catch(() => !cancelled && setError(t("models:scenePictures.renderFailed")));
     return () => {
       cancelled = true;
       made?.dispose();
@@ -119,7 +122,7 @@ export default function GeneratePicturesDialog({
       urlsRef.current = [];
       setPreviews({});
     };
-  }, [open, chooseOnly]);
+  }, [open, chooseOnly, t]);
 
   // The model, again whenever the file or plate changes.
   useEffect(() => {
@@ -149,6 +152,7 @@ export default function GeneratePicturesDialog({
   useEffect(() => {
     if (!model || !renderer) return;
     let cancelled = false;
+    setError(null);
     void (async () => {
       const { colourModel } = await loadRender();
       colourModel(model, colour);

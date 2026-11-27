@@ -155,11 +155,14 @@ export class ScenePictureRenderer {
   private room(light: string): Promise<Room> {
     let room = this.rooms.get(light);
     if (!room) {
-      room = new HDRLoader().loadAsync(lightUrl(light)).then((panorama) => {
+      const loading = new HDRLoader().loadAsync(lightUrl(light)).then((panorama) => {
         panorama.mapping = THREE.EquirectangularReflectionMapping;
         return { panorama, env: this.pmrem.fromEquirectangular(panorama).texture };
       });
-      this.rooms.set(light, room);
+      // A failed load isn't kept, so the next picture tries again.
+      loading.catch(() => this.rooms.get(light) === loading && this.rooms.delete(light));
+      this.rooms.set(light, loading);
+      room = loading;
     }
     return room;
   }
@@ -168,7 +171,7 @@ export class ScenePictureRenderer {
     const key = `${folder}:${tableMm}`;
     let surface = this.surfaces.get(key);
     if (!surface) {
-      surface = Promise.all(
+      const loading = Promise.all(
         (["color", "normal", "rough"] as const).map((map) => this.textureLoader.loadAsync(surfaceUrl(folder, map))),
       ).then(([map, normal, rough]) => {
         map.colorSpace = THREE.SRGBColorSpace;
@@ -179,7 +182,9 @@ export class ScenePictureRenderer {
         }
         return { map, normal, rough };
       });
-      this.surfaces.set(key, surface);
+      loading.catch(() => this.surfaces.get(key) === loading && this.surfaces.delete(key));
+      this.surfaces.set(key, loading);
+      surface = loading;
     }
     return surface;
   }
@@ -308,13 +313,14 @@ export class ScenePictureRenderer {
   }
 
   dispose(): void {
+    const ignore = () => undefined;
     for (const room of this.rooms.values())
       void room.then(({ panorama, env }) => {
         panorama.dispose();
         env.dispose();
-      });
+      }, ignore);
     for (const surface of this.surfaces.values())
-      void surface.then(({ map, normal, rough }) => [map, normal, rough].forEach((t) => t.dispose()));
+      void surface.then(({ map, normal, rough }) => [map, normal, rough].forEach((t) => t.dispose()), ignore);
     this.pmrem.dispose();
     this.renderer.dispose();
     this.renderer.forceContextLoss();

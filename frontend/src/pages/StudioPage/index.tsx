@@ -70,6 +70,7 @@ import ResizeHandle, { useResizableWidth } from "../../components/ResizeHandle";
 import PrintProfilePanel from "./PrintProfilePanel";
 import StudioSaveDialog, { type StudioSaveDraft, type StudioSaveRequest } from "./StudioSaveDialog";
 import { addScenePictures } from "../../utils/scenePictures/addToModel";
+import { savedPlateLocation } from "../../utils/scenePictures/studioPlate";
 import type { Shot } from "../../utils/scenePictures/scenes";
 import { profileAiPrompt } from "./printProfileUi";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
@@ -823,6 +824,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       const plateHasBodies =
         !modelId && chosenPlate === activePlateRef.current && picturablePlates(saved.document).includes(chosenPlate);
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
+      // The plate the cover shows, which generated pictures show too: the chosen one, else the server's first.
+      const coverPlate = plateHasBodies || picturePlate ? chosenPlate : picturablePlates(saved.document)[0];
       const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;
       const { model } = await studioApi.saveToLibrary(saved.id, {
         ...(name ? { name } : {}),
@@ -844,17 +847,28 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         autoHideMs: 8000,
       });
       // Generated pictures go on after, in the background: the model is saved whether or not they come out.
-      if (pictures?.length && !modelId) void addPicturesToSaved(model.id, model.title || model.name, pictures);
+      if (pictures?.length && !modelId)
+        void addPicturesToSaved(
+          model.id,
+          model.title || model.name,
+          pictures,
+          coverPlate ? savedPlateLocation(saved.document, coverPlate) : null,
+        );
     } catch (error) {
       showError(error);
     } finally {
       setSaving(false);
     }
   };
-  const addPicturesToSaved = async (id: string, modelName: string, pictures: Shot[]) => {
+  const addPicturesToSaved = async (
+    id: string,
+    modelName: string,
+    pictures: Shot[],
+    at: { file: number; plate: number } | null,
+  ) => {
     toast({ message: t("studio.save.addingPictures", { name: modelName }), severity: "info", autoHideMs: 4000 });
     try {
-      const count = await addScenePictures(id, pictures);
+      const count = await addScenePictures(id, pictures, at);
       if (count)
         toast({
           message: t("studio.save.addedPictures", { count, name: modelName }),

@@ -179,7 +179,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const pictureSources = useMemo(
     () =>
       print.plates
-        .filter((p) => canPicture(p.filename))
+        .filter((p) => canPicture(p))
         .map((p) => ({ id: p.id, filename: p.filename, url: printsApi.fileUrl(p.url) })),
     [print.plates],
   );

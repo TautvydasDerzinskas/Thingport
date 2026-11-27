@@ -94,11 +94,15 @@ describe("a generated picture's name", () => {
 });
 
 describe("what can be pictured", () => {
-  it("takes the files the 3D viewer opens", () => {
-    expect(canPicture("coin.3MF")).toBe(true);
-    expect(canPicture("bracket.step")).toBe(true);
-    expect(canPicture("readme.pdf")).toBe(false);
-    expect(canPicture("print.gcode")).toBe(false);
+  const caps = { preview3d: false, openInSlicer: true, openInStudio: false, customize: false, view: null };
+  it("takes what the server says the 3D viewer draws", () => {
+    expect(canPicture({ filename: "coin.3mf", caps: { ...caps, preview3d: true } })).toBe(true);
+    expect(canPicture({ filename: "coin.3mf", caps })).toBe(false);
+  });
+
+  it("goes by the name for an older backend that doesn't say", () => {
+    expect(canPicture({ filename: "bracket.step" })).toBe(true);
+    expect(canPicture({ filename: "readme.pdf" })).toBe(false);
   });
 });
 

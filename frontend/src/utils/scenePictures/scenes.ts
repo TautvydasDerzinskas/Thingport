@@ -1,3 +1,6 @@
+import type { Plate } from "../../api/prints";
+import { plateCaps } from "../fileCaps";
+
 // What "Generate pictures" places a model in: the backgrounds, the camera angles and the colours a model without
 // colours of its own can be printed in. The files are in public/scenes (README there credits them).
 
@@ -141,11 +144,9 @@ export function pictureFilename(modelName: string, shot: Shot, index: number): s
   return `${base}-${shot.scene}-${shot.angle}-${index + 1}.jpg`;
 }
 
-/** The files a picture can be made from: what the 3D viewer opens. */
-export const SCENE_MODEL_EXTENSIONS = ["3mf", "stl", "obj", "step", "stp", "glb"];
-
-export function canPicture(filename: string): boolean {
-  return SCENE_MODEL_EXTENSIONS.includes(filename.split(".").pop()?.toLowerCase() ?? "");
+/** Whether a model file can be pictured: what the 3D viewer draws, as the server says (plateCaps). */
+export function canPicture(plate: Pick<Plate, "filename" | "caps">): boolean {
+  return plateCaps(plate).preview3d;
 }
 
 const ADD_ON_SAVE_KEY = "thingport_studio_add_pictures";
