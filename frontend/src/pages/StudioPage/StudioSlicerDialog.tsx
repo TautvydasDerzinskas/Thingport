@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -69,10 +69,14 @@ export default function StudioSlicerDialog({
   const groups = exportableProfiles(design.document);
   const group = groups.find((entry) => entry.id === chosenGroup) ?? groups[0];
   const groupId = group?.id;
+  const [previousGroupId, setPreviousGroupId] = useState(groupId);
+  if (previousGroupId !== groupId) {
+    setPreviousGroupId(groupId);
+    setChosenSlicer("");
+    setChosenPrinter(null);
+    setDraft(null);
+  }
   const slotDraft = draft?.profileId === groupId ? draft : null;
-  useEffect(() => {
-    setDraft((current) => (current?.profileId === groupId ? current : null));
-  }, [groupId]);
   const print = profileSettings(design.document, groupId);
   const supported = SLICER_OPTIONS.filter((option) => slicerProfile(option.id));
   const installed = supported.filter((option) => settings.slicers.includes(option.id));
@@ -191,12 +195,7 @@ export default function StudioSlicerDialog({
               label={t("studio.profiles.label")}
               value={group?.id ?? ""}
               disabled={savingSlots}
-              onChange={(event) => {
-                setChosenGroup(event.target.value);
-                setChosenPrinter(null);
-                setChosenSlicer("");
-                setDraft(null);
-              }}
+              onChange={(event) => setChosenGroup(event.target.value)}
             >
               {groups.map((entry) => (
                 <MenuItem key={entry.id} value={entry.id}>
