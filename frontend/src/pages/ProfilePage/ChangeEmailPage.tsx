@@ -34,9 +34,8 @@ export default function ChangeEmailPage({ user, onUserUpdated, onUnauthorized }:
   const [captchaKey, setCaptchaKey] = React.useState(0);
   const { info, reload } = useSignInMethods(onUnauthorized);
   const sso = useSsoResult();
-  // Without a password, a recent sign-in stands in for it.
-  const noPassword = info?.has_password === false;
-  const mustConfirm = noPassword && !info.signed_in_recently;
+  const passwordAvailable = info?.password_available ?? info?.has_password ?? true;
+  const mustConfirm = info && !passwordAvailable && !info.signed_in_recently;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +44,7 @@ export default function ChangeEmailPage({ user, onUserUpdated, onUnauthorized }:
     setLoading(true);
     try {
       const result = await authApi.updateProfile({
-        ...(noPassword ? {} : { current_password: password }),
+        ...(passwordAvailable ? { current_password: password } : {}),
         email: email.trim(),
         ...(captchaEnabled && captcha),
       });
@@ -62,7 +61,7 @@ export default function ChangeEmailPage({ user, onUserUpdated, onUnauthorized }:
         return;
       }
       setError(err instanceof Error ? err.message : t("profile.genericError"));
-      if (noPassword) reload();
+      reload();
     } finally {
       // Every attempt, successful or not, uses the captcha up.
       if (captchaEnabled) setCaptchaKey((k) => k + 1);
@@ -108,7 +107,7 @@ export default function ChangeEmailPage({ user, onUserUpdated, onUnauthorized }:
               fullWidth
               size="small"
             />
-            {!noPassword && (
+            {passwordAvailable && (
               <TextField
                 type="password"
                 label={t("profile.currentPasswordLabel")}

@@ -878,6 +878,8 @@ describe("connecting providers from the profile", () => {
       });
       expect(fragmentOf(landed).get("sso_connected")).toBe(provider.name);
 
+      const before = await request(app).get("/api/profile/sign-in").set(as);
+      expect(before.body).toMatchObject({ has_password: true, password_available: true });
       const stillRequiresPassword = await request(app)
         .patch("/api/profile")
         .set(as)
@@ -896,16 +898,19 @@ describe("connecting providers from the profile", () => {
         process.env.AUTH_SECRET || "changeme-secret",
         { algorithm: "HS256", expiresIn: 600 },
       );
+      const asStale = { Authorization: `Bearer ${stale}` };
+      const after = await request(app).get("/api/profile/sign-in").set(asStale);
+      expect(after.body).toMatchObject({ has_password: true, password_available: false, signed_in_recently: false });
       const refused = await request(app)
         .patch("/api/profile")
-        .set({ Authorization: `Bearer ${stale}` })
+        .set(asStale)
         .send({ email: `stale-change-${stamp}@example.com` });
       expect(refused.status).toBe(403);
       expect(refused.body.code).toBe("REAUTH_REQUIRED");
 
       const confirmation = await request(app)
         .post(`/api/profile/sign-in/${provider.slug}/confirm`)
-        .set({ Authorization: `Bearer ${stale}` })
+        .set(asStale)
         .send({ next: "/profile/email" });
       expect(confirmation.status).toBe(200);
       const confirmedPage = await roundTrip(confirmation.body.url, cookieOf(confirmation), {
@@ -914,9 +919,12 @@ describe("connecting providers from the profile", () => {
       const fresh = await exchange(fragmentOf(confirmedPage));
       expect(fresh.status).toBe(200);
 
+      const asFresh = { Authorization: `Bearer ${fresh.body.token}` };
+      const confirmed = await request(app).get("/api/profile/sign-in").set(asFresh);
+      expect(confirmed.body).toMatchObject({ has_password: true, password_available: false, signed_in_recently: true });
       const changed = await request(app)
         .patch("/api/profile")
-        .set({ Authorization: `Bearer ${fresh.body.token}` })
+        .set(asFresh)
         .send({ email: `after-confirmation-${stamp}@example.com` });
       expect(changed.status).toBe(200);
       expect(changed.body.user.email).toBe(`after-confirmation-${stamp}@example.com`);
@@ -970,7 +978,7 @@ describe("connecting providers from the profile", () => {
     const person = await ssoUser(provider.slug, `only-${stamp}`, `only-${stamp}@example.com`);
     const as = { Authorization: `Bearer ${person.token}` };
     const methods = await request(app).get("/api/profile/sign-in").set(as);
-    expect(methods.body).toMatchObject({ has_password: false, signed_in_recently: true });
+    expect(methods.body).toMatchObject({ has_password: false, password_available: false, signed_in_recently: true });
     const connection = methods.body.providers.find((p: { slug: string }) => p.slug === provider.slug).connection;
     const refused = await request(app).delete(`/api/profile/sign-in/connections/${connection.id}`).set(as);
     expect(refused.status).toBe(409);

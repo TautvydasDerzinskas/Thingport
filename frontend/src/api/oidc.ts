@@ -48,7 +48,10 @@ export type OidcAccountMatch =
 
 /** How the signed-in user can sign in: their password, and each provider they could connect or have. */
 export type ProfileSignIn = {
+  /** Whether the account has a stored password. */
   has_password: boolean;
+  /** Whether the stored password can currently be used. */
+  password_available: boolean;
   /** Recent enough to set a password or change email without confirming it's them first. */
   signed_in_recently: boolean;
   can_connect: boolean;

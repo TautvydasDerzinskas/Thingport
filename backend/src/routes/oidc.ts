@@ -242,8 +242,10 @@ router.get(
       where: { OR: [{ enabled: true }, { identities: { some: { userId: req.userId! } } }] },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
     });
+    const hasPassword = Boolean(user.passwordHash);
     res.json({
-      has_password: Boolean(user.passwordHash),
+      has_password: hasPassword,
+      password_available: hasPassword && (await getEmailPasswordEnabled()),
       signed_in_recently: signedInRecently(req),
       // Connecting needs the provider to send people back here.
       can_connect: Boolean(publicUrlOf(res)),
