@@ -5193,7 +5193,15 @@
         "willHave_one": "“{{name}}” will have {{count}} profile",
         "willHave_other": "“{{name}}” will have {{count}} profiles",
         "addProfile": "Add profile",
-        "addedProfile": "Added “{{profile}}” to “{{name}}”"
+        "addedProfile": "Added “{{profile}}” to “{{name}}”",
+        "pictures": "Pictures",
+        "picturesHelp": "Adds rendered pictures of the model on real surfaces once it's saved, after the picture above.",
+        "addPictures": "Add generated pictures",
+        "changePictures": "Change",
+        "addingPictures": "Adding pictures to {{name}}…",
+        "addedPictures_one": "Added a picture to {{name}}",
+        "addedPictures_other": "Added {{count}} pictures to {{name}}",
+        "picturesFailed": "The model is saved, but its pictures couldn't be made: {{error}}"
       }
     },
     "chats": {
@@ -7426,6 +7434,56 @@
       "showMore_one": "Show {{count}} more",
       "showMore_other": "Show {{count}} more",
       "sharedFailed": "Couldn't load more of what's shared with you. Try again."
+    },
+    "scenePictures": {
+      "generate": "Generate",
+      "generateTooltip": "Generate pictures of the model on real surfaces",
+      "title": "Generate pictures",
+      "help": "Renders the model on photo-scanned surfaces, lit like a real room. Each picture has its own angle and background. They go after the model's pictures, or first if it has none.",
+      "file": "File",
+      "plate": "Plate",
+      "plateNumber": "Plate {{number}}",
+      "colour": "Colour",
+      "ownColour": "Its own colours",
+      "colours": {
+        "white": "White",
+        "grey": "Grey",
+        "black": "Black",
+        "red": "Red",
+        "orange": "Orange",
+        "yellow": "Yellow",
+        "green": "Green",
+        "blue": "Blue"
+      },
+      "angle": "Angle",
+      "angles": {
+        "hero": "Front",
+        "side": "Side",
+        "top": "Top"
+      },
+      "background": "Background",
+      "scenes": {
+        "white-oak": "White oak",
+        "oak-desk": "Oak desk",
+        "walnut": "Walnut",
+        "plywood": "Plywood",
+        "workbench": "Workbench",
+        "leather": "Leather pad",
+        "wool": "Wool mat",
+        "studio": "Studio"
+      },
+      "removePicture": "Remove picture",
+      "addPicture": "Add picture",
+      "addCount_one": "Add {{count}} picture",
+      "addCount_other": "Add {{count}} pictures",
+      "rendering": "Rendering {{done}} of {{total}}…",
+      "afterExisting_one": "Added after the model's picture",
+      "afterExisting_other": "Added after the model's {{count}} pictures",
+      "firstPictures": "They'll be the model's first pictures",
+      "loadFailed": "Couldn't open {{file}} to picture it",
+      "renderFailed": "Couldn't render the pictures. Your browser may not support WebGL.",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "Done"
     }
   },
   "providers": {

@@ -4991,7 +4991,14 @@
         "askAi": "让 AI 选择",
         "willHave_other": "“{{name}}”将有 {{count}} 个配置",
         "addProfile": "添加配置",
-        "addedProfile": "已将“{{profile}}”添加到“{{name}}”"
+        "addedProfile": "已将“{{profile}}”添加到“{{name}}”",
+        "pictures": "图片",
+        "picturesHelp": "保存后，添加模型在真实表面上的渲染图片，排在上方图片之后。",
+        "addPictures": "添加生成的图片",
+        "changePictures": "更改",
+        "addingPictures": "正在为 {{name}} 添加图片…",
+        "addedPictures_other": "已为 {{name}} 添加 {{count}} 张图片",
+        "picturesFailed": "模型已保存，但无法生成其图片：{{error}}"
       }
     },
     "chats": {
@@ -7102,6 +7109,54 @@
       "sharedWithYouHelp": "所有者分享给你和少数其他人的合集。其他人在探索中看不到它们。",
       "showMore_other": "再显示 {{count}} 个",
       "sharedFailed": "无法加载更多分享给你的内容。请重试。"
+    },
+    "scenePictures": {
+      "generate": "生成",
+      "generateTooltip": "在真实表面上生成模型图片",
+      "title": "生成图片",
+      "help": "在照片扫描的真实表面上渲染模型，采用真实房间的光照。每张图片有各自的角度和背景，添加在模型现有图片之后；若模型还没有图片，则排在最前。",
+      "file": "文件",
+      "plate": "打印板",
+      "plateNumber": "打印板 {{number}}",
+      "colour": "颜色",
+      "ownColour": "自带颜色",
+      "colours": {
+        "white": "白色",
+        "grey": "灰色",
+        "black": "黑色",
+        "red": "红色",
+        "orange": "橙色",
+        "yellow": "黄色",
+        "green": "绿色",
+        "blue": "蓝色"
+      },
+      "angle": "角度",
+      "angles": {
+        "hero": "正面",
+        "side": "侧面",
+        "top": "顶部"
+      },
+      "background": "背景",
+      "scenes": {
+        "white-oak": "白橡木",
+        "oak-desk": "橡木桌",
+        "walnut": "胡桃木",
+        "plywood": "胶合板",
+        "workbench": "工作台",
+        "leather": "皮革垫",
+        "wool": "羊毛垫",
+        "studio": "摄影棚"
+      },
+      "removePicture": "移除图片",
+      "addPicture": "添加图片",
+      "addCount_other": "添加 {{count}} 张图片",
+      "rendering": "正在渲染 {{done}}/{{total}}…",
+      "afterExisting_other": "添加在模型现有的 {{count}} 张图片之后",
+      "firstPictures": "它们将成为模型的首批图片",
+      "loadFailed": "无法打开 {{file}} 来生成图片",
+      "renderFailed": "无法渲染图片。你的浏览器可能不支持 WebGL。",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "完成"
     }
   },
   "providers": {

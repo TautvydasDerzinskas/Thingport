@@ -5197,7 +5197,15 @@
         "willHave_one": "„{{name}}“ hat dann {{count}} Profil",
         "willHave_other": "„{{name}}“ hat dann {{count}} Profile",
         "addProfile": "Profil hinzufügen",
-        "addedProfile": "„{{profile}}“ zu „{{name}}“ hinzugefügt"
+        "addedProfile": "„{{profile}}“ zu „{{name}}“ hinzugefügt",
+        "pictures": "Bilder",
+        "picturesHelp": "Fügt nach dem Speichern gerenderte Bilder des Modells auf echten Oberflächen hinzu, nach dem Bild oben.",
+        "addPictures": "Generierte Bilder hinzufügen",
+        "changePictures": "Ändern",
+        "addingPictures": "Bilder werden zu {{name}} hinzugefügt …",
+        "addedPictures_one": "Ein Bild zu {{name}} hinzugefügt",
+        "addedPictures_other": "{{count}} Bilder zu {{name}} hinzugefügt",
+        "picturesFailed": "Das Modell ist gespeichert, aber seine Bilder konnten nicht erstellt werden: {{error}}"
       }
     },
     "chats": {
@@ -7432,6 +7440,56 @@
       "showMore_one": "{{count}} weitere anzeigen",
       "showMore_other": "{{count}} weitere anzeigen",
       "sharedFailed": "Weitere mit dir geteilte Inhalte konnten nicht geladen werden. Versuche es erneut."
+    },
+    "scenePictures": {
+      "generate": "Generieren",
+      "generateTooltip": "Bilder des Modells auf echten Oberflächen erzeugen",
+      "title": "Bilder generieren",
+      "help": "Rendert das Modell auf fotogescannten Oberflächen, beleuchtet wie in einem echten Raum. Jedes Bild hat einen eigenen Blickwinkel und Hintergrund. Sie kommen nach den Bildern des Modells, oder zuerst, wenn es keine hat.",
+      "file": "Datei",
+      "plate": "Platte",
+      "plateNumber": "Platte {{number}}",
+      "colour": "Farbe",
+      "ownColour": "Eigene Farben",
+      "colours": {
+        "white": "Weiß",
+        "grey": "Grau",
+        "black": "Schwarz",
+        "red": "Rot",
+        "orange": "Orange",
+        "yellow": "Gelb",
+        "green": "Grün",
+        "blue": "Blau"
+      },
+      "angle": "Blickwinkel",
+      "angles": {
+        "hero": "Vorne",
+        "side": "Seite",
+        "top": "Oben"
+      },
+      "background": "Hintergrund",
+      "scenes": {
+        "white-oak": "Weiße Eiche",
+        "oak-desk": "Eichentisch",
+        "walnut": "Nussbaum",
+        "plywood": "Sperrholz",
+        "workbench": "Werkbank",
+        "leather": "Lederunterlage",
+        "wool": "Wollmatte",
+        "studio": "Studio"
+      },
+      "removePicture": "Bild entfernen",
+      "addPicture": "Bild hinzufügen",
+      "addCount_one": "{{count}} Bild hinzufügen",
+      "addCount_other": "{{count}} Bilder hinzufügen",
+      "rendering": "Rendere {{done}} von {{total}} …",
+      "afterExisting_one": "Kommen nach dem Bild des Modells",
+      "afterExisting_other": "Kommen nach den {{count}} Bildern des Modells",
+      "firstPictures": "Sie werden die ersten Bilder des Modells",
+      "loadFailed": "{{file}} konnte nicht zum Abbilden geöffnet werden",
+      "renderFailed": "Die Bilder konnten nicht gerendert werden. Dein Browser unterstützt WebGL vielleicht nicht.",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "Fertig"
     }
   },
   "providers": {

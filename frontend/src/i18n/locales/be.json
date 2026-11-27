@@ -1034,7 +1034,17 @@
         "willHave_many": "У «{{name}}» будзе {{count}} профіляў",
         "willHave_other": "У «{{name}}» будзе {{count}} профілю",
         "addProfile": "Дадаць профіль",
-        "addedProfile": "«{{profile}}» дададзены да «{{name}}»"
+        "addedProfile": "«{{profile}}» дададзены да «{{name}}»",
+        "pictures": "Выявы",
+        "picturesHelp": "Пасля захавання дадае адмаляваныя выявы мадэлі на сапраўдных паверхнях — пасля выявы вышэй.",
+        "addPictures": "Дадаць створаныя выявы",
+        "changePictures": "Змяніць",
+        "addingPictures": "Дадаванне выяў да {{name}}…",
+        "addedPictures_one": "Да {{name}} дададзена {{count}} выява",
+        "addedPictures_few": "Да {{name}} дададзена {{count}} выявы",
+        "addedPictures_many": "Да {{name}} дададзена {{count}} выяў",
+        "addedPictures_other": "Да {{name}} дададзена {{count}} выявы",
+        "picturesFailed": "Мадэль захавана, але стварыць яе выявы не ўдалося: {{error}}"
       }
     },
     "shell": {
@@ -8056,6 +8066,60 @@
     "pageTitle": "Мадэлі",
     "grid": {
       "empty": "Пакуль няма мадэляў."
+    },
+    "scenePictures": {
+      "generate": "Стварыць",
+      "generateTooltip": "Стварыць выявы мадэлі на сапраўдных паверхнях",
+      "title": "Стварыць выявы",
+      "help": "Адмалёўвае мадэль на адсканаваных сапраўдных паверхнях з асвятленнем сапраўднага пакоя. У кожнай выявы свой ракурс і фон. Яны дадаюцца пасля выяў мадэлі, а калі іх няма — становяцца першымі.",
+      "file": "Файл",
+      "plate": "Пласціна",
+      "plateNumber": "Пласціна {{number}}",
+      "colour": "Колер",
+      "ownColour": "Уласныя колеры",
+      "colours": {
+        "white": "Белы",
+        "grey": "Шэры",
+        "black": "Чорны",
+        "red": "Чырвоны",
+        "orange": "Аранжавы",
+        "yellow": "Жоўты",
+        "green": "Зялёны",
+        "blue": "Сіні"
+      },
+      "angle": "Ракурс",
+      "angles": {
+        "hero": "Спераду",
+        "side": "Збоку",
+        "top": "Зверху"
+      },
+      "background": "Фон",
+      "scenes": {
+        "white-oak": "Белы дуб",
+        "oak-desk": "Дубовы стол",
+        "walnut": "Арэх",
+        "plywood": "Фанера",
+        "workbench": "Варштат",
+        "leather": "Скураны дыванок",
+        "wool": "Ваўняны дыванок",
+        "studio": "Студыя"
+      },
+      "removePicture": "Выдаліць выяву",
+      "addPicture": "Дадаць выяву",
+      "addCount_one": "Дадаць {{count}} выяву",
+      "addCount_few": "Дадаць {{count}} выявы",
+      "addCount_many": "Дадаць {{count}} выяў",
+      "addCount_other": "Дадаць {{count}} выявы",
+      "rendering": "Адмалёўка {{done}} з {{total}}…",
+      "afterExisting_one": "Дададуцца пасля выявы мадэлі",
+      "afterExisting_few": "Дададуцца пасля выяў мадэлі ({{count}})",
+      "afterExisting_many": "Дададуцца пасля выяў мадэлі ({{count}})",
+      "afterExisting_other": "Дададуцца пасля выяў мадэлі ({{count}})",
+      "firstPictures": "Яны стануць першымі выявамі мадэлі",
+      "loadFailed": "Не ўдалося адкрыць {{file}}, каб стварыць выявы",
+      "renderFailed": "Не ўдалося адмаляваць выявы. Магчыма, ваш браўзер не падтрымлівае WebGL.",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "Гатова"
     }
   },
   "providers": {

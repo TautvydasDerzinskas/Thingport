@@ -5400,7 +5400,16 @@
         "willHave_many": "«{{name}}» tendrá {{count}} perfiles",
         "willHave_other": "«{{name}}» tendrá {{count}} perfiles",
         "addProfile": "Añadir perfil",
-        "addedProfile": "«{{profile}}» añadido a «{{name}}»"
+        "addedProfile": "«{{profile}}» añadido a «{{name}}»",
+        "pictures": "Imágenes",
+        "picturesHelp": "Al guardar, añade imágenes renderizadas del modelo sobre superficies reales, después de la imagen de arriba.",
+        "addPictures": "Añadir imágenes generadas",
+        "changePictures": "Cambiar",
+        "addingPictures": "Añadiendo imágenes a {{name}}…",
+        "addedPictures_one": "Se añadió una imagen a {{name}}",
+        "addedPictures_many": "Se añadieron {{count}} imágenes a {{name}}",
+        "addedPictures_other": "Se añadieron {{count}} imágenes a {{name}}",
+        "picturesFailed": "El modelo está guardado, pero no se pudieron crear sus imágenes: {{error}}"
       }
     },
     "chats": {
@@ -7756,6 +7765,58 @@
       "collectionCount_many": "{{count}} colecciones",
       "modelCount_many": "{{count}} modelos",
       "showMore_many": "Mostrar {{count}} más"
+    },
+    "scenePictures": {
+      "generate": "Generar",
+      "generateTooltip": "Generar imágenes del modelo sobre superficies reales",
+      "title": "Generar imágenes",
+      "help": "Renderiza el modelo sobre superficies escaneadas de fotos, iluminado como en una habitación real. Cada imagen tiene su propio ángulo y fondo. Se añaden después de las imágenes del modelo, o primero si no tiene ninguna.",
+      "file": "Archivo",
+      "plate": "Placa",
+      "plateNumber": "Placa {{number}}",
+      "colour": "Color",
+      "ownColour": "Sus propios colores",
+      "colours": {
+        "white": "Blanco",
+        "grey": "Gris",
+        "black": "Negro",
+        "red": "Rojo",
+        "orange": "Naranja",
+        "yellow": "Amarillo",
+        "green": "Verde",
+        "blue": "Azul"
+      },
+      "angle": "Ángulo",
+      "angles": {
+        "hero": "Frente",
+        "side": "Lado",
+        "top": "Arriba"
+      },
+      "background": "Fondo",
+      "scenes": {
+        "white-oak": "Roble blanco",
+        "oak-desk": "Escritorio de roble",
+        "walnut": "Nogal",
+        "plywood": "Contrachapado",
+        "workbench": "Banco de trabajo",
+        "leather": "Alfombrilla de cuero",
+        "wool": "Alfombrilla de lana",
+        "studio": "Estudio"
+      },
+      "removePicture": "Quitar imagen",
+      "addPicture": "Añadir imagen",
+      "addCount_one": "Añadir {{count}} imagen",
+      "addCount_many": "Añadir {{count}} imágenes",
+      "addCount_other": "Añadir {{count}} imágenes",
+      "rendering": "Renderizando {{done}} de {{total}}…",
+      "afterExisting_one": "Se añaden después de la imagen del modelo",
+      "afterExisting_many": "Se añaden después de las {{count}} imágenes del modelo",
+      "afterExisting_other": "Se añaden después de las {{count}} imágenes del modelo",
+      "firstPictures": "Serán las primeras imágenes del modelo",
+      "loadFailed": "No se pudo abrir {{file}} para crear sus imágenes",
+      "renderFailed": "No se pudieron renderizar las imágenes. Puede que tu navegador no admita WebGL.",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "Listo"
     }
   },
   "providers": {

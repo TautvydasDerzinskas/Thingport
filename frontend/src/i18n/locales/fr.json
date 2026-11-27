@@ -5413,7 +5413,16 @@
         "willHave_many": "« {{name}} » aura {{count}} profils",
         "willHave_other": "« {{name}} » aura {{count}} profils",
         "addProfile": "Ajouter le profil",
-        "addedProfile": "« {{profile}} » ajouté à « {{name}} »"
+        "addedProfile": "« {{profile}} » ajouté à « {{name}} »",
+        "pictures": "Images",
+        "picturesHelp": "Ajoute des images rendues du modèle sur de vraies surfaces une fois enregistré, après l’image ci-dessus.",
+        "addPictures": "Ajouter des images générées",
+        "changePictures": "Modifier",
+        "addingPictures": "Ajout d’images à {{name}}…",
+        "addedPictures_one": "Une image ajoutée à {{name}}",
+        "addedPictures_many": "{{count}} images ajoutées à {{name}}",
+        "addedPictures_other": "{{count}} images ajoutées à {{name}}",
+        "picturesFailed": "Le modèle est enregistré, mais ses images n’ont pas pu être créées : {{error}}"
       }
     },
     "chats": {
@@ -7769,6 +7778,58 @@
       "collectionCount_many": "{{count}} collections",
       "modelCount_many": "{{count}} modèles",
       "showMore_many": "Afficher {{count}} de plus"
+    },
+    "scenePictures": {
+      "generate": "Générer",
+      "generateTooltip": "Générer des images du modèle sur de vraies surfaces",
+      "title": "Générer des images",
+      "help": "Rend le modèle sur des surfaces scannées d’après photo, éclairé comme dans une vraie pièce. Chaque image a son propre angle et son propre fond. Elles s’ajoutent après les images du modèle, ou en premier s’il n’en a pas.",
+      "file": "Fichier",
+      "plate": "Plateau",
+      "plateNumber": "Plateau {{number}}",
+      "colour": "Couleur",
+      "ownColour": "Ses propres couleurs",
+      "colours": {
+        "white": "Blanc",
+        "grey": "Gris",
+        "black": "Noir",
+        "red": "Rouge",
+        "orange": "Orange",
+        "yellow": "Jaune",
+        "green": "Vert",
+        "blue": "Bleu"
+      },
+      "angle": "Angle",
+      "angles": {
+        "hero": "Face",
+        "side": "Côté",
+        "top": "Dessus"
+      },
+      "background": "Fond",
+      "scenes": {
+        "white-oak": "Chêne blanc",
+        "oak-desk": "Bureau en chêne",
+        "walnut": "Noyer",
+        "plywood": "Contreplaqué",
+        "workbench": "Établi",
+        "leather": "Sous-main en cuir",
+        "wool": "Tapis en laine",
+        "studio": "Studio"
+      },
+      "removePicture": "Retirer l’image",
+      "addPicture": "Ajouter une image",
+      "addCount_one": "Ajouter {{count}} image",
+      "addCount_many": "Ajouter {{count}} images",
+      "addCount_other": "Ajouter {{count}} images",
+      "rendering": "Rendu de {{done}} sur {{total}}…",
+      "afterExisting_one": "Ajoutées après l’image du modèle",
+      "afterExisting_many": "Ajoutées après les {{count}} images du modèle",
+      "afterExisting_other": "Ajoutées après les {{count}} images du modèle",
+      "firstPictures": "Ce seront les premières images du modèle",
+      "loadFailed": "Impossible d’ouvrir {{file}} pour en faire des images",
+      "renderFailed": "Impossible de rendre les images. Votre navigateur ne prend peut-être pas en charge WebGL.",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "Terminé"
     }
   },
   "providers": {

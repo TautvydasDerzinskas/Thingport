@@ -14,6 +14,7 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
@@ -26,6 +27,14 @@ import type { StudioDesign } from "../../api/studio";
 import { ModelThumb, useLibraryModels } from "../../components/ModelPickerDialog";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import Segmented from "../../components/controls/Segmented";
+import HelpTip from "../../components/HelpTip";
+import GeneratePicturesDialog from "../../components/media/GeneratePicturesDialog";
+import {
+  addPicturesOnSave,
+  rememberAddPicturesOnSave,
+  rememberedShots,
+  type Shot,
+} from "../../utils/scenePictures/scenes";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
 import { printPreset, suggestPresets, type PrintPresetId } from "../../studio/printProfile";
@@ -47,8 +56,14 @@ import { profileLabel } from "./labels";
 // its print profile settled first: chosen by the person, suggested by Studio's assistant, or left out.
 
 /** `name` is a new model's; a profile added to a model takes none. `picturePlate` is the plate a new model is
- *  pictured by. */
-export type StudioSaveRequest = { name?: string; modelId?: string; profileName?: string; picturePlate?: string };
+ *  pictured by; `pictures` the generated pictures added after it's saved. */
+export type StudioSaveRequest = {
+  name?: string;
+  modelId?: string;
+  profileName?: string;
+  picturePlate?: string;
+  pictures?: Shot[];
+};
 
 type Mode = "new" | "add";
 type Choice = "myself" | "ai" | "without";
@@ -62,6 +77,8 @@ export type StudioSaveDraft = {
   profileName: string;
   nameTouched: boolean;
   picturePlate: string | null;
+  /** The generated pictures to add, or null for none. */
+  pictures: Shot[] | null;
 };
 
 type Props = {
@@ -102,7 +119,7 @@ export default function StudioSaveDialog({
   onClose,
   onUnauthorized,
 }: Props) {
-  const { t } = useTranslation(["app", "common"]);
+  const { t } = useTranslation(["app", "common", "models"]);
   const settings = useSlicerSettings();
   const { printers } = useUserPrinters();
   const groups = exportableProfiles(design.document);
@@ -118,6 +135,10 @@ export default function StudioSaveDialog({
   const picturable = picturablePlates(design.document);
   const picturePlates = studioPlates(design.document).filter((plate) => picturable.includes(plate.id));
   const [chosenPicture, setChosenPicture] = useState<string | null>(draft?.picturePlate ?? null);
+  const [pictures, setPictures] = useState<Shot[] | null>(() =>
+    draft ? draft.pictures : addPicturesOnSave() ? rememberedShots() : null,
+  );
+  const [choosingPictures, setChoosingPictures] = useState(false);
   const picturePlate =
     [chosenPicture, activePlate].find((id) => id && picturable.includes(id)) ?? picturable[0] ?? null;
   const { query, setQuery, debounced, models, failed } = useLibraryModels(onUnauthorized);
@@ -151,16 +172,21 @@ export default function StudioSaveDialog({
         ? Boolean(name.trim()) && (Boolean(profile) || choice === "without")
         : Boolean(model && profile && profileName.trim()));
   const editProfile = (profileId?: string) =>
-    onEditProfile({ mode, name, model, choice, profileName, nameTouched, picturePlate: chosenPicture }, profileId);
+    onEditProfile(
+      { mode, name, model, choice, profileName, nameTouched, picturePlate: chosenPicture, pictures },
+      profileId,
+    );
 
   const save = () => {
     if (!ready) return;
+    if (mode === "new") rememberAddPicturesOnSave(Boolean(pictures));
     onSave(
       mode === "new"
         ? {
             name: name.trim(),
             ...(profile ? { profileName: profileName.trim() || undefined } : {}),
             ...(picturePlate ? { picturePlate } : {}),
+            ...(pictures ? { pictures } : {}),
           }
         : { modelId: model!.id, ...(profile ? { profileName: profileName.trim() } : {}) },
     );
@@ -289,6 +315,51 @@ export default function StudioSaveDialog({
             value={picturePlate}
             onChange={setChosenPicture}
           />
+        )}
+
+        {mode === "new" && (
+          <Box>
+            <Typography
+              variant="caption"
+              component="h3"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                mb: 0.5,
+                fontWeight: 700,
+                color: "text.secondary",
+                textTransform: "uppercase",
+              }}
+            >
+              {t("studio.save.pictures")}
+              <HelpTip text={t("studio.save.picturesHelp")} />
+            </Typography>
+            <Stack
+              direction="row"
+              sx={{ alignItems: "center", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}
+            >
+              <Stack direction="row" sx={{ alignItems: "center", minWidth: 0 }}>
+                <Switch
+                  checked={Boolean(pictures)}
+                  onChange={(e) => setPictures(e.target.checked ? rememberedShots() : null)}
+                  disabled={saving}
+                  slotProps={{ input: { "aria-label": t("studio.save.addPictures") } }}
+                />
+                <Typography variant="body2">{t("studio.save.addPictures")}</Typography>
+              </Stack>
+              {pictures && (
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1, minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {pictures.map((shot) => t(`models:scenePictures.scenes.${shot.scene}`)).join(" · ")}
+                  </Typography>
+                  <Button size="small" onClick={() => setChoosingPictures(true)} disabled={saving}>
+                    {t("studio.save.changePictures")}
+                  </Button>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
         )}
 
         <Box>
@@ -471,6 +542,17 @@ export default function StudioSaveDialog({
           {mode === "add" ? t(groups.length === 1 ? "studio.save.addProfile" : "common:add") : t("common:save")}
         </Button>
       </DialogActions>
+      {choosingPictures && pictures && (
+        <GeneratePicturesDialog
+          open
+          onClose={() => setChoosingPictures(false)}
+          modelName={name}
+          files={[]}
+          existingCount={1}
+          initialShots={pictures}
+          onChoose={setPictures}
+        />
+      )}
     </Dialog>
   );
 }
