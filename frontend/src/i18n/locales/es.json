@@ -6778,6 +6778,8 @@
       "fileName": "Nombre del archivo",
       "fileNameRequired": "El nombre del archivo es obligatorio.",
       "uploadCapabilityCheckFailed": "No se pudo comprobar si la carga se puede repetir de forma segura. Inténtalo de nuevo.",
+      "previewUploadSkipped": "No se pudieron guardar algunas imágenes. Elimínalas o vuelve a intentar subirlas.",
+      "previewUploadPending": "No se pudo confirmar la carga de las imágenes. Selecciona Actualizar de nuevo para comprobar cuáles se guardaron.",
       "previewUploadUnconfirmed": "No se pudieron asociar las imágenes seleccionadas con las guardadas. Cierra y vuelve a abrir el editor para ver qué imágenes se guardaron.",
       "uploadConfirmationFailed": "No se pudo confirmar qué archivos del modelo se guardaron. Inténtalo de nuevo.",
       "uploadPending": "Aún se está confirmando el estado de la carga. Vuelve a actualizar antes de eliminar este archivo.",

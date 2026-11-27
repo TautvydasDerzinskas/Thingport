@@ -56,7 +56,7 @@ import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
 import { PlateUploadConfirmationError, savePlateChanges, type PlateItem } from "./plateSave";
-import { reconcilePreviewUploads, type ImageItem } from "./previewImageSave";
+import { isPendingPreviewImage, PreviewUploadError, savePreviewUploads, type ImageItem } from "./previewImageSave";
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -197,7 +197,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
   const removeImage = (key: string) => {
     const target = images.find((img) => imageKey(img) === key);
-    if (!target || target.kind === "unconfirmed") return;
+    if (!target || target.kind === "unconfirmed" || isPendingPreviewImage(target)) return;
     if (target.kind === "existing") {
       setRemovedImageIds((ids) => new Set(ids).add(target.id));
     }
@@ -310,15 +310,16 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         latest = res.print ?? latest;
         setRemovedImageIds((pending) => new Set([...pending].filter((imageId) => imageId !== id)));
       }
-      const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
       let stagedImages = images;
-      if (newImageFiles.length) {
-        const uploadRes = await printsApi.addPreviewImages(print.id, newImageFiles);
-        latest = uploadRes.print;
-        stagedImages = reconcilePreviewUploads(images, latest.preview_images, uploadRes.added_image_ids);
-        setImages(stagedImages);
+      if (images.some((image) => image.kind === "new")) {
+        const result = await savePreviewUploads(latest, images, printsApi, (progress) => {
+          latest = progress.print;
+          latestPrint.current = progress.print;
+          setImages(progress.items);
+        });
+        latest = result.print;
+        stagedImages = result.items;
         if (stagedImages.some((image) => image.kind === "unconfirmed")) {
-          latestPrint.current = latest;
           onUpdated(latest);
           return;
         }
@@ -359,6 +360,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       onUpdated(latest);
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
+        return;
+      }
+      if (err instanceof PreviewUploadError) {
+        setError(t(err.reason === "skipped" ? "models:edit.previewUploadSkipped" : "models:edit.previewUploadPending"));
         return;
       }
       console.error(err);
@@ -602,7 +607,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     )}
                     <IconButton
                       size="small"
-                      disabled={saving || img.kind === "unconfirmed"}
+                      disabled={saving || img.kind === "unconfirmed" || isPendingPreviewImage(img)}
                       aria-label={t("models:edit.removeImage")}
                       onClick={() => removeImage(key)}
                       sx={{ ...overImageButtonSx, position: "absolute", top: 2, right: 2 }}

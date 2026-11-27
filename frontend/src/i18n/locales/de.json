@@ -6542,6 +6542,8 @@
       "fileName": "Dateiname",
       "fileNameRequired": "Dateiname erforderlich.",
       "uploadCapabilityCheckFailed": "Es konnte nicht geprüft werden, ob der Upload sicher wiederholt werden kann. Bitte versuchen Sie es erneut.",
+      "previewUploadSkipped": "Einige Bilder wurden nicht gespeichert. Entfernen Sie sie oder versuchen Sie den Upload erneut.",
+      "previewUploadPending": "Der Bildupload konnte nicht bestätigt werden. Klicken Sie erneut auf „Aktualisieren“, um zu prüfen, welche Bilder gespeichert wurden.",
       "previewUploadUnconfirmed": "Die ausgewählten Bilder konnten den gespeicherten Bildern nicht zugeordnet werden. Schließen Sie den Editor und öffnen Sie ihn erneut, um die gespeicherten Bilder zu sehen.",
       "uploadConfirmationFailed": "Es konnte nicht bestätigt werden, welche Modelldateien gespeichert wurden. Bitte versuchen Sie es erneut.",
       "uploadPending": "Der Uploadstatus wird noch bestätigt. Versuchen Sie erneut, das Modell zu aktualisieren, bevor Sie diese Datei entfernen.",

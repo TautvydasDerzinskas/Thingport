@@ -970,16 +970,33 @@ export const printsApi = {
   addPreviewImages: async (
     id: string,
     files: File[],
+    uploadIds?: string[],
   ): Promise<{ print: Print; added_image_ids?: (string | null)[] }> => {
     const fd = new FormData();
     for (const file of files) fd.append("files", file);
-    const res = await fetch(`${apiBase()}/print/${id}/preview-images`, {
+    for (const uploadId of uploadIds ?? []) fd.append("upload_ids", uploadId);
+    const suffix = uploadIds ? "/idempotent" : "";
+    const res = await fetch(`${apiBase()}/print/${id}/preview-images${suffix}`, {
       method: "POST",
       body: fd,
       headers: authHeaders(),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to add preview image"));
+    if (!res.ok) throw new PrintApiError(await readErrorMessage(res, "Failed to add preview image"), res.status, null);
+    return res.json();
+  },
+
+  getPreviewUploadResults: async (
+    id: string,
+    uploadIds: string[],
+  ): Promise<{ print: Print; upload_results: { upload_id: string; image_id: string | null }[] } | null> => {
+    const res = await fetch(`${apiBase()}/print/${id}/preview-images/upload-results`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ upload_ids: uploadIds }),
+    });
+    if (res.status === 404) return null;
+    await assertOkWithMessage(res, "Could not check preview upload results");
     return res.json();
   },
 

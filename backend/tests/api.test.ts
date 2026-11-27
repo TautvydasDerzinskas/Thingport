@@ -467,6 +467,48 @@ describe("plate add/remove/reorder/rename", () => {
       res.body.added_image_ids.filter(Boolean),
     );
   });
+  it("recovers keyed preview upload receipts and replays the same result without adding another image", async () => {
+    const image = await sharp({ create: { width: 8, height: 8, channels: 3, background: "#3366cc" } })
+      .png()
+      .toBuffer();
+    const [uploadId, skippedId, unknownId] = [randomUUID(), randomUUID(), randomUUID()];
+    const upload = () =>
+      auth(request(app).post(`/api/print/${printId}/preview-images/idempotent`))
+        .field("upload_ids", uploadId)
+        .field("upload_ids", skippedId)
+        .attach("files", image, "picture.png")
+        .attach("files", Buffer.from("invalid"), "invalid.png");
+    const results = () =>
+      auth(request(app).post(`/api/print/${printId}/preview-images/upload-results`)).send({
+        upload_ids: [uploadId, skippedId, unknownId],
+      });
+
+    const baseline = await auth(request(app).get(`/api/print/${printId}`));
+    const [first, replay] = await Promise.all([upload(), upload()]);
+    expect(first.status).toBe(200);
+    expect(replay.status).toBe(200);
+    expect(first.body.added_image_ids).toEqual([expect.any(String), null]);
+    expect(replay.body.added_image_ids).toEqual(first.body.added_image_ids);
+
+    const [imageId] = first.body.added_image_ids;
+    const recovered = await results();
+    expect(recovered.status).toBe(200);
+    expect(recovered.body.upload_results).toHaveLength(2);
+    expect(recovered.body.upload_results).toEqual(
+      expect.arrayContaining([
+        { upload_id: uploadId, image_id: imageId },
+        { upload_id: skippedId, image_id: null },
+      ]),
+    );
+    expect(recovered.body.print.preview_images).toHaveLength(baseline.body.preview_images.length + 1);
+
+    const removed = await auth(request(app).delete(`/api/print/${printId}/preview-images/${imageId}`));
+    expect(removed.status).toBe(200);
+    const afterRemoval = await upload();
+    expect(afterRemoval.status).toBe(200);
+    expect(afterRemoval.body.added_image_ids).toEqual([imageId, null]);
+    expect(afterRemoval.body.print.preview_images).toHaveLength(baseline.body.preview_images.length);
+  });
 });
 
 describe("category CRUD + cycle rejection", () => {

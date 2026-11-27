@@ -17,7 +17,7 @@ import {
 } from "./printCreation";
 import { deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
 import { isPreparedPrintFilename } from "./preparedPrint";
-import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
+import { addPreviewImage, addPreviewImageForUpload, preferImageOverRenders } from "./previewImageService";
 import { recordActivity } from "./activityService";
 import { createLog } from "./auditLog";
 import { isGltfName, packGltfFiles } from "./gltfPacker";
@@ -175,16 +175,24 @@ async function addFilesTo(
 export async function addUploadedPreviewImages(
   printId: string,
   buffers: Iterable<Buffer> | AsyncIterable<Buffer>,
-  onImageResult?: (imageId: string | null) => void,
+  { uploadIds, onImageResult }: { uploadIds?: string[]; onImageResult?: (imageId: string | null) => void } = {},
 ): Promise<string[]> {
   const firstPlate = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
   const added: string[] = [];
+  let nextUpload = 0;
+  let choseCover = false;
   for await (const buffer of buffers) {
-    const image = await addPreviewImage(printId, buffer, { keepExif: true });
-    onImageResult?.(image?.id ?? null);
-    if (!image) continue;
-    if (!added.length) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
-    added.push(image.id);
+    const uploadId = uploadIds?.[nextUpload++];
+    const result = uploadId
+      ? await addPreviewImageForUpload(printId, uploadId, buffer)
+      : { imageId: (await addPreviewImage(printId, buffer, { keepExif: true }))?.id ?? null, added: true };
+    onImageResult?.(result.imageId);
+    if (!result.imageId) continue;
+    if (!choseCover && result.added) {
+      await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
+      choseCover = true;
+    }
+    added.push(result.imageId);
   }
   return added;
 }

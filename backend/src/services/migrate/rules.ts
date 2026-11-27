@@ -20,6 +20,7 @@ export const MERGE_RULES = {
   Plate: { part: "people" },
   PlateUploadAttempt: { never: "Upload retry state belongs to the old instance." },
   PreviewImage: { part: "people" },
+  PreviewImageUpload: { never: "Upload retry state belongs to the old instance." },
   DescriptionImage: { part: "people" },
   PrintFile: { part: "people" },
   Author: { part: "people" },

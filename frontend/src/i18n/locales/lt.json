@@ -6911,6 +6911,8 @@
       "fileName": "Failo pavadinimas",
       "fileNameRequired": "Failo pavadinimas privalomas.",
       "uploadCapabilityCheckFailed": "Nepavyko patikrinti, ar galima saugiai pakartoti įkėlimą. Bandykite dar kartą.",
+      "previewUploadSkipped": "Nepavyko išsaugoti kai kurių vaizdų. Pašalinkite juos arba bandykite įkelti dar kartą.",
+      "previewUploadPending": "Nepavyko patvirtinti vaizdų įkėlimo. Dar kartą pasirinkite „Atnaujinti“, kad patikrintumėte, kurie vaizdai išsaugoti.",
       "previewUploadUnconfirmed": "Nepavyko susieti pasirinktų vaizdų su išsaugotais. Uždarykite ir vėl atidarykite redaktorių, kad pamatytumėte, kurie vaizdai išsaugoti.",
       "uploadConfirmationFailed": "Nepavyko patvirtinti, kurie modelio failai buvo išsaugoti. Bandykite dar kartą.",
       "uploadPending": "Įkėlimo būsena dar tikrinama. Prieš pašalindami šį failą, dar kartą pabandykite atnaujinti.",

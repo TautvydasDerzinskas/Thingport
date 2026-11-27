@@ -271,6 +271,7 @@ model Print {
   plates                   Plate[]
   plateUploadAttempts      PlateUploadAttempt[]
   previewImages            PreviewImage[]
+  previewImageUploads      PreviewImageUpload[]
   descriptionImages        DescriptionImage[]
   files                    PrintFile[]              @relation("PrintFiles")
   preparedFileId           String?                  @unique
@@ -710,6 +711,16 @@ model PlateUploadAttempt {
   leaseExpiresAt DateTime?
 
   @@unique([printId, clientUploadId])
+}
+
+/// The outcome of one submitted gallery file. Retained after an image is removed so a replay cannot recreate it.
+model PreviewImageUpload {
+  printId  String
+  print    Print   @relation(fields: [printId], references: [id], onDelete: Cascade)
+  uploadId String
+  imageId  String?
+
+  @@id([printId, uploadId])
 }
 
 /// A photo of the finished model, stored as a normalized JPEG keyed by id. Position 0 is the

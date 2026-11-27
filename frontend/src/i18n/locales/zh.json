@@ -6296,6 +6296,8 @@
       "fileName": "文件名",
       "fileNameRequired": "文件名为必填项。",
       "uploadCapabilityCheckFailed": "无法确认能否安全地重试上传。请重试。",
+      "previewUploadSkipped": "部分图片未能保存。请移除这些图片或重新上传。",
+      "previewUploadPending": "无法确认图片是否已上传。请再次选择“更新”，查看已保存的图片。",
       "previewUploadUnconfirmed": "无法将所选图片与已保存的图片对应。请关闭并重新打开编辑器，查看已保存的图片。",
       "uploadConfirmationFailed": "无法确认哪些模型文件已保存。请重试。",
       "uploadPending": "上传状态仍在确认中。请再次更新后再删除此文件。",

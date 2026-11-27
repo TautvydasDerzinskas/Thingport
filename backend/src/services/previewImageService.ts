@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
@@ -182,6 +183,46 @@ export async function addPreviewImage(
     await prisma.previewImage.deleteMany({ where: { id: row.id } }).catch(() => undefined);
     return null;
   }
+}
+
+/** Publishes the stored image and its upload receipt together. A replay keeps the recorded result, including a skip.
+ *  Each worker writes under its own image id, so a concurrent loser can discard its file without touching the winner. */
+export async function addPreviewImageForUpload(
+  printId: string,
+  uploadId: string,
+  buffer: Buffer,
+): Promise<{ imageId: string | null; added: boolean }> {
+  const where = { printId_uploadId: { printId, uploadId } };
+  const previous = await prisma.previewImageUpload.findUnique({ where });
+  if (previous) return { imageId: previous.imageId, added: false };
+
+  const id = randomUUID();
+  const saved = await saveBuffer(printId, id, buffer, true);
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const outcome = await prisma.$transaction(async (tx) => {
+        const receipt = await tx.previewImageUpload.findUnique({ where });
+        if (receipt) return { imageId: receipt.imageId, added: false };
+        if (saved) {
+          const { dest: _dest, ...stored } = saved;
+          const last = await tx.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
+          await tx.previewImage.create({ data: { id, printId, position: (last?.position ?? -1) + 1, ...stored } });
+        }
+        await tx.previewImageUpload.create({ data: { printId, uploadId, imageId: saved ? id : null } });
+        return { imageId: saved ? id : null, added: Boolean(saved) };
+      });
+      if (saved && !outcome.added) await fs.rm(saved.dest, { force: true }).catch(() => undefined);
+      return outcome;
+    } catch (err) {
+      // Position or receipt races roll back both writes. A commit error can be ambiguous, so keep the file
+      // in case it already belongs to the published receipt.
+      if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+    }
+  }
+
+  if (saved) await fs.rm(saved.dest, { force: true }).catch(() => undefined);
+  throw new HttpError(409, "Could not record the preview upload; try again");
 }
 
 /** An existing image (e.g. an import's cover) always wins. True when this one became the cover. */
