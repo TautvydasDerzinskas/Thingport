@@ -22,7 +22,11 @@ export type OidcProvider = {
   user_count: number;
 };
 
-export type OidcSettings = { public_url: string | null; providers: OidcProvider[] };
+export type OidcSettings = {
+  public_url: string | null;
+  email_password_enabled: boolean;
+  providers: OidcProvider[];
+};
 
 /** client_secret: omitted keeps the saved one, null or "" removes it. slug is only taken when adding. */
 export type OidcProviderInput = {
@@ -44,7 +48,10 @@ export type OidcAccountMatch =
 
 /** How the signed-in user can sign in: their password, and each provider they could connect or have. */
 export type ProfileSignIn = {
+  /** Whether the account has a stored password. */
   has_password: boolean;
+  /** Whether the stored password can currently be used. */
+  password_available: boolean;
   /** Recent enough to set a password or change email without confirming it's them first. */
   signed_in_recently: boolean;
   can_connect: boolean;
@@ -104,6 +111,8 @@ export const oidcApi = {
     request(`/profile/sign-in/connections/${encodeURIComponent(connectionId)}`, "DELETE"),
 
   get: (): Promise<OidcSettings> => request("/settings/auth/oidc"),
+  setEmailPasswordEnabled: (enabled: boolean): Promise<OidcSettings> =>
+    request("/settings/auth/oidc", "PATCH", { email_password_enabled: enabled }),
   check: (issuerUrl: string): Promise<{ ok: true; issuer: string } | { ok: false; error: string }> =>
     request("/settings/auth/oidc/check", "POST", { issuer_url: issuerUrl }),
   create: (input: OidcProviderInput): Promise<OidcProvider> => request("/settings/auth/oidc/providers", "POST", input),

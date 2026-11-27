@@ -22,6 +22,7 @@ vi.mock("node:dns/promises", () => ({
 
 import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
+import * as dbModule from "../src/db";
 import { prisma } from "../src/db";
 import {
   hasActiveCollectionSync,
@@ -48,6 +49,7 @@ import {
   resumeImportWorker,
   wakeImportWorker,
 } from "../src/services/importWorker";
+import { withSignInMethodsLock } from "../src/services/settingsService";
 import { HttpError } from "../src/utils/fileUtils";
 import { bodyReadTuning, readCapped, withIdleLimit } from "../src/utils/readCapped";
 
@@ -237,7 +239,7 @@ describe("switching the database", () => {
     url.pathname = `/${database}`;
     return url.toString();
   };
-  // One with the whole schema, and one that's only got a User table: an older schema, as far as the worker can tell.
+  // One with the whole schema, and one with only the fields needed to authorize switching back.
   const fullName = `${homeName}_guards_full`;
   const bareName = `${homeName}_guards_bare`;
   const IMPORTS_RUNNING = /Imports are running/;
@@ -248,8 +250,8 @@ describe("switching the database", () => {
   let homeClient: PrismaClient;
   let fullClient: PrismaClient;
 
-  async function makeAdmin() {
-    const email = `guards-admin-${stamp}@example.com`;
+  async function makeAdmin(name = "admin") {
+    const email = `guards-${name}-${stamp}@example.com`;
     const registered = await request(app)
       .post("/api/register")
       .send({ displayName: "Guards admin", email, password: "password123" });
@@ -259,11 +261,8 @@ describe("switching the database", () => {
     return { id, token: login.body.token as string };
   }
 
-  function postSwitch(database: string) {
-    return request(app)
-      .post("/api/settings/database")
-      .set("Authorization", `Bearer ${admin.token}`)
-      .send(credsFor(database));
+  function postSwitch(database: string, token = admin.token) {
+    return request(app).post("/api/settings/database").set("Authorization", `Bearer ${token}`).send(credsFor(database));
   }
 
   const nothingHere = () => vi.fn<typeof fetch>(async () => new Response("nothing here", { status: 404 }));
@@ -298,7 +297,9 @@ describe("switching the database", () => {
       await prisma.$executeRawUnsafe(`CREATE DATABASE "${name}"`);
     }
     const bareClient = new PrismaClient({ datasources: { db: { url: urlOf(bareName) } } });
-    await bareClient.$executeRawUnsafe('CREATE TABLE "User" ("id" TEXT PRIMARY KEY)');
+    await bareClient.$executeRaw`CREATE TYPE "Role" AS ENUM ('ADMIN', 'MEMBER')`;
+    await bareClient.$executeRaw`CREATE TABLE "User" ("id" TEXT PRIMARY KEY, "role" "Role", "isOwner" BOOLEAN)`;
+    await bareClient.$executeRaw`INSERT INTO "User" ("id", "role", "isOwner") VALUES (${admin.id}, 'ADMIN', false)`;
     await bareClient.$disconnect();
 
     execFileSync("npx", ["prisma", "db", "push", "--skip-generate", "--accept-data-loss"], {
@@ -306,6 +307,9 @@ describe("switching the database", () => {
       stdio: "pipe",
     });
     fullClient = new PrismaClient({ datasources: { db: { url: urlOf(fullName) } } });
+    await fullClient.user.create({
+      data: { id: admin.id, email: `guards-admin-${stamp}@example.com`, displayName: "Guards admin", role: "ADMIN" },
+    });
   }, 60_000);
 
   afterEach(async () => {
@@ -314,7 +318,7 @@ describe("switching the database", () => {
     Object.assign(importWorkerTuning, tuning);
     resumeImportWorker();
     await importWorkerIdle();
-    if (getDatabaseInfo().database !== homeName) await testAndSwitchDatabase(credsFor(homeName));
+    if (getDatabaseInfo().database !== homeName) await testAndSwitchDatabase(admin.id, credsFor(homeName));
   });
 
   afterAll(async () => {
@@ -410,15 +414,17 @@ describe("switching the database", () => {
   });
 
   it("opens the gate again when the candidate can't connect", async () => {
-    await expect(testAndSwitchDatabase(credsFor(`${homeName}_guards_none`))).rejects.toThrow(/does not exist/);
+    await expect(testAndSwitchDatabase(admin.id, credsFor(`${homeName}_guards_none`))).rejects.toThrow(
+      /does not exist/,
+    );
     expect(getDatabaseInfo().database).toBe(homeName);
     await expectGateOpen();
   });
 
   it("refuses a second switch while one is under way", async () => {
     const answers = await Promise.allSettled([
-      testAndSwitchDatabase(credsFor(fullName)),
-      testAndSwitchDatabase(credsFor(bareName)),
+      testAndSwitchDatabase(admin.id, credsFor(fullName)),
+      testAndSwitchDatabase(admin.id, credsFor(bareName)),
     ]);
     expect(answers[0].status).toBe("fulfilled");
     expect(answers[1]).toMatchObject({
@@ -426,6 +432,32 @@ describe("switching the database", () => {
       reason: expect.objectContaining({ message: expect.stringMatching(/under way/) }),
     });
     expect(getDatabaseInfo().database).toBe(fullName);
+  });
+
+  it("rejects a database switch if the caller loses admin access while waiting", async () => {
+    const queuedAdmin = await makeAdmin("queued-admin");
+    const started = deferred();
+    const demotion = deferred();
+    const lockHolder = withSignInMethodsLock(async () => {
+      started.release();
+      await demotion.held;
+      await prisma.user.update({ where: { id: queuedAdmin.id }, data: { role: "MEMBER" } });
+    });
+    await started.held;
+
+    const lockAttempt = vi.spyOn(dbModule, "getActiveDatabaseUrl");
+    const queuedSwitch = postSwitch(fullName, queuedAdmin.token).then((res) => res);
+    try {
+      // Reaching the lock proves the request passed the route's admin check.
+      await vi.waitFor(() => expect(lockAttempt).toHaveBeenCalled());
+    } finally {
+      demotion.release();
+      await Promise.all([lockHolder, queuedSwitch]);
+      lockAttempt.mockRestore();
+    }
+    expect((await queuedSwitch).status).toBe(403);
+    expect(getDatabaseInfo().database).toBe(homeName);
+    expect(isDatabaseSwitching()).toBe(false);
   });
 
   it("keeps syncs from starting while it's going", async () => {
@@ -513,7 +545,7 @@ describe("switching the database", () => {
       vi.spyOn(prisma.importJob, "findMany").mockRejectedValueOnce(new Error("no such column"));
       await recoverAfterDatabaseSwitch();
       expect((await postSwitch(fullName)).status).toBe(200);
-      await testAndSwitchDatabase(credsFor(homeName));
+      await testAndSwitchDatabase(admin.id, credsFor(homeName));
       await homeClient.importJob.delete({ where: { id: owed.id } });
     });
   });

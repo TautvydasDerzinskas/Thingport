@@ -29,18 +29,21 @@ read it again (studio_get_design) before building on something.
 - studio_get_design lists every feature, each body's size and volume, and problems (a feature that couldn't be made
   and why). Check problems after each step.
 
-## Build plates and colors
+## Profiles, build plates and colors
 
-- studio_get_design lists the plates in order and the plate and color of each body. New bodies go on plate-1 unless
-  you pass plate_id. studio_create_plate adds a named plate at the end and returns its ID.
-- studio_move_plate puts a plate at another position; the order is the order plates are saved and exported in.
-  studio_set_plate_visibility hides a plate (get_design marks it hidden): it stays in the design, but saving,
-  downloading, opening in a slicer and studio_check_print leave it out. Only hide a plate when the user asks.
+- studio_get_design lists profiles and their plates in order. A design starts with profile-1 and plate-1. New
+  bodies go on plate-1 unless you pass plate_id. studio_create_profile adds an empty profile. Pass its profile_id
+  to studio_create_plate to add a plate there.
+- studio_move_profile reorders profiles. studio_move_plate takes a one-based position within its profile and
+  an optional destination profile_id. studio_set_profile_visibility excludes a profile and all its plates from saving,
+  downloads and print checks. studio_set_plate_visibility controls one plate. Only hide items when the user asks.
 - Use studio_move_to_plate for existing bodies or sketches. Their local positions stay the same. Two different
   plates can have bodies at the same coordinates. Use studio_set_body_color with an RGB hex color on each body.
 - studio_import_model accepts defer_plates: true for a 3MF in a new design. The result lists pending_plate_ids,
   and studio_get_design marks those plates with pending_import. Use studio_load_source_plate with the plate_id
   to bring in its bodies before editing or viewing that plate. Load all shown pending plates before studio_check_print.
+- Use studio_import_model with all_files: true to open a library model's importable files as separate profiles in
+  a new design. Its 3MF build plates load on demand.
 - studio_view_design can show an individual plate by plate_id. Saving to the library preserves plates and colors in 3MF;
   studio_save_to_library's picture_plate_id picks the plate the new model is pictured by.
 
@@ -153,9 +156,8 @@ saving something to print: it shows what the print stands on.
 
 ## Print profiles
 
-A design has one print profile (print_profile in studio_get_design): the slicer settings it's meant to print with. It
-goes into every 3MF the design is exported, opened or saved as, made for its slicer and printer, and shows as a print
-profile on the saved model's page. Set it with set_print_profile: start from a preset, change single settings by
+A profile's print_profile in studio_get_design contains the slicer settings for its plates. Each visible, populated
+profile becomes a separate 3MF. Pass profile_id to studio_set_print_profile (profile-1 by default). Start from a preset, change settings by
 Bambu Studio's key names, and say why in reason, which the person reads. Presets (for a 0.4 mm nozzle; the slicer's
 own preset for the printer covers what they leave out):
 
@@ -170,6 +172,6 @@ Choose from what the design is for: the user's requests, and the descriptions of
 (made_from in studio_get_design). Prefer the person's slicer and printer when they're known, and keep the material in
 step with the filament slots. Speeds (initial_layer_speed, outer_wall_speed, inner_wall_speed, sparse_infill_speed, in
 mm/s) reach only Bambu Studio and the slicers built on it. profile_checks lists what to tell the person, such as a material that doesn't suit the
-preset or settings their slicer won't take from a 3MF. studio_save_to_library with model_id adds the design to one
-of the user's models as one more print profile.
+preset or settings their slicer won't take from a 3MF. studio_save_to_library with model_id adds the included profiles
+to one of the user's models.
 `;

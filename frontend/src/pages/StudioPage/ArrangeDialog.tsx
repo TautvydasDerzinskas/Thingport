@@ -12,7 +12,14 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { arrangeMeasures, CommandError, previewArrangement, type Bounds } from "../../studio/commands";
-import { featureById, MAX_PLATES, studioPlates, type StudioDocument } from "../../studio/document";
+import {
+  featureById,
+  MAX_PLATES,
+  profileOfPlate,
+  profileSettings,
+  studioPlates,
+  type StudioDocument,
+} from "../../studio/document";
 import { bedOutline, DEFAULT_PRINT_BED } from "../../studio/printLayout";
 import { NumberField } from "./fields";
 import { measureBoundsInWorker } from "./geometryClient";
@@ -61,8 +68,9 @@ export default function ArrangeDialog({
     () => (bounds ? previewArrangement(doc, { plate_id: plateId, spacing }, bounds) : null),
     [doc, plateId, spacing, bounds],
   );
-  const bed = doc.print_setup?.bed ?? DEFAULT_PRINT_BED;
-  const polygon = bedOutline(bed, doc.print_setup?.outline)
+  const setup = profileSettings(doc, profileOfPlate(doc, plateId)).print_setup;
+  const bed = setup?.bed ?? DEFAULT_PRINT_BED;
+  const polygon = bedOutline(bed, setup?.outline)
     .map(([x, y]) => `${(0.5 + x / bed[0]) * 100}% ${(0.5 - y / bed[1]) * 100}%`)
     .join(", ");
   const label = (id: string) => featureLabel(featureById(doc, id)!, t);

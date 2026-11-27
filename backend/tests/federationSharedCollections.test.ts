@@ -146,6 +146,7 @@ let savedSettings: { key: string; value: Prisma.JsonValue }[];
 let alex: Account;
 let bea: Account;
 let carl: Account;
+let admin: Account;
 let partnerId: string;
 let otherId: string;
 let rutaId: string;
@@ -256,6 +257,8 @@ beforeAll(async () => {
   alex = await register("Alex");
   bea = await register("Bea");
   carl = await register("Carl");
+  admin = await register("Admin");
+  await prisma.user.update({ where: { id: admin.id }, data: { role: "ADMIN" } });
   await setSocialSettings({ enabled: true });
   await prisma.setting.upsert({
     where: { key: "public_url" },
@@ -429,7 +432,7 @@ describe("sharing with a partner's people", () => {
       .set(auth(erin))
       .send({ visibility: "shared", add_remote_person_ids: [rutaId] });
     await prisma.federationDelivery.deleteMany({ where: { origin: PARTNER } });
-    await deleteUser(alex.id, erin.id);
+    await deleteUser(admin.id, erin.id);
     const sent = await queued(PARTNER);
     expect(sent.map((activity) => [activity.type, objectId(activity)])).toEqual([
       ["Delete", `${ORIGIN}/api/ap/collections/${theirs}`],
@@ -555,7 +558,7 @@ describe("sharing with a partner's people", () => {
     let deleting: Promise<Error | null> | undefined;
     try {
       await Promise.race([changing, held]);
-      deleting = deleteUser(alex.id, account.id).then(
+      deleting = deleteUser(admin.id, account.id).then(
         () => null,
         (err: Error) => err,
       );

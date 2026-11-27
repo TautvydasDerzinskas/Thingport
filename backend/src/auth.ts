@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import type { Role } from "@prisma/client";
+import type { Prisma, Role } from "@prisma/client";
 import { AUTH_ALGO, AUTH_SECRET } from "./config";
 import { getAuthTokenTtl } from "./services/settingsService";
 import { findApiTokenUser, isApiToken } from "./services/apiTokenService";
@@ -9,6 +9,7 @@ import { noteBridgeDownload } from "./services/bridgeUpdateService";
 import { noteActiveDay } from "./services/achievementService";
 import { asyncHandler } from "./utils/asyncHandler";
 import { prisma } from "./db";
+import { HttpError } from "./utils/fileUtils";
 
 // sat: when the person last actually signed in, in seconds. A refreshed session keeps it, so "signed in a
 // moment ago" can't be had by refreshing. sid: the browser session (services/sessionService.ts) it was issued
@@ -146,4 +147,15 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     return;
   }
   next();
+}
+
+/** Recheck the role when an admin action can wait for the sign-in methods lock. */
+export async function requireCurrentAdmin(userId: string, db: Pick<Prisma.TransactionClient, "user"> = prisma) {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true, isOwner: true },
+  });
+  if (!user) throw new HttpError(401, "Unauthorized");
+  if (user.role !== "ADMIN") throw new HttpError(403, "Admin access required");
+  return { id: user.id, isOwner: user.isOwner };
 }

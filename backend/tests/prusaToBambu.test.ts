@@ -435,6 +435,7 @@ describe("a PrusaSlicer project's copy for a printer", () => {
     expect(settings).toMatchObject({
       printer_settings_id: "Bambu Lab P1S 0.4 nozzle",
       printer_model: "Bambu Lab P1S",
+      printer_variant: "0.4",
       print_settings_id: "0.16mm Optimal @BBL X1C",
       print_compatible_printers: ["Bambu Lab P1S 0.4 nozzle"],
       filament_settings_id: ["Generic PLA", "Generic PETG"],

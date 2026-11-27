@@ -37,13 +37,16 @@ export function StudioSplash({ label, detail }: { label: string; detail?: string
 }
 
 export default function StudioModelImport({
-  request: { model, fileId, filename },
+  request,
   onUnauthorized,
 }: {
   request: StudioModelRequest;
   onUnauthorized: () => void;
 }) {
   const { t } = useTranslation(["app", "common"]);
+  const { model } = request;
+  const fileId = "fileId" in request ? request.fileId : undefined;
+  const filename = "filename" in request ? request.filename : model.title;
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const pending = useRef<ReturnType<typeof openModelAsDesign> | null>(null);

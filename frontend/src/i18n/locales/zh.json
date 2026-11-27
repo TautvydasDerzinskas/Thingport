@@ -8,6 +8,7 @@
     },
     "auth": {
       "subtitle": "登录以继续",
+      "oidcOnly": "已禁用邮箱和密码登录。请选择一个提供商以继续。",
       "apiOffline": "API 似乎已离线。请确认 API 服务正在运行。",
       "signInTab": "登录",
       "registerTab": "注册",
@@ -46,6 +47,7 @@
         "verifying": "正在确认你的邮箱…",
         "missingToken": "此验证链接缺少令牌。",
         "failed": "此验证链接无效或已过期。",
+        "verified": "邮箱已验证。请通过 OIDC 提供商登录以继续。",
         "backToSignIn": "返回登录"
       },
       "forgotPassword": {
@@ -2333,9 +2335,15 @@
       },
       "signIn": {
         "heading": "登录方式",
-        "subtitle": "用户如何登录 Thingport。邮箱和密码始终可用；每个单点登录（OIDC）提供商都会在登录页面上添加一个按钮。",
+        "subtitle": "用户如何登录 Thingport。启用 OIDC 提供商后，用户便可通过它登录；如需仅使用 OIDC，请关闭邮箱和密码登录。",
         "password": "邮箱和密码",
         "passwordDescription": "使用邮箱地址和密码登录和注册。",
+        "passwordDisabledDescription": "邮箱和密码登录已禁用。用户只能通过已启用的 OIDC 提供商登录。",
+        "passwordNeedsOidc": "请先设置公开 URL 并添加、启用 OIDC 提供商，再禁用邮箱和密码登录。",
+        "disablePasswordTitle": "要禁用邮箱和密码登录吗？",
+        "disablePasswordMessage": "禁用后只能通过已启用的 OIDC 提供商登录。请先测试提供商；如果它不可用，您需要重新启用邮箱和密码登录才能登录。",
+        "disablePasswordConfirm": "禁用登录",
+        "keepOidcEnabled": "禁用邮箱和密码登录时，请至少保留一个已启用的 OIDC 提供商。",
         "alwaysOn": "始终开启",
         "userCount_other": "{{count}} 人用它登录过",
         "createsAccounts": "自动创建账号",
@@ -2350,10 +2358,14 @@
         "addedOn": "已添加 {{name}}，并显示在登录页面上。请运行“测试登录”，确认它能正常使用。",
         "disableTitle": "要从登录页面隐藏 {{name}} 吗？",
         "disableMessage_other": "已有 {{count}} 人用 {{name}} 登录过。其中没有设置密码的人，在它重新开启之前将无法登录。",
+        "disableMessageOidcOnly_one": "已有 {{count}} 人用 {{name}} 登录过。在它重新开启之前，他们将无法登录。",
+        "disableMessageOidcOnly_other": "已有 {{count}} 人用 {{name}} 登录过。在它重新开启之前，他们将无法登录。",
         "disableConfirm": "隐藏",
         "deleteTitle": "要删除 {{name}} 吗？",
         "deleteMessage": "登录页面将不再提供 {{name}}。",
         "deleteUsedMessage_other": "已有 {{count}} 人用 {{name}} 登录过。他们的账号会保留，但没有密码的人将无法登录。再次添加该提供商也不会自动重新连接他们的账号。",
+        "deleteUsedMessageOidcOnly_one": "已有 {{count}} 人用 {{name}} 登录过。他们的账号会保留，但删除提供商会移除他们的连接。他们需要使用其他登录方式。",
+        "deleteUsedMessageOidcOnly_other": "已有 {{count}} 人用 {{name}} 登录过。他们的账号会保留，但删除提供商会移除他们的连接。他们需要使用其他登录方式。",
         "testTitle": "测试登录：{{name}}",
         "testWaiting": "请在打开的窗口中用 {{name}} 登录。Thingport 中不会有任何更改：这只会显示 {{name}} 发送的内容。",
         "testClosed": "登录完成前测试窗口就被关闭了。如果窗口中显示了错误，那就是问题所在。",
@@ -4215,6 +4227,26 @@
         "tooManySlots": "此切片软件最多支持 {{limit}} 个料槽。请减少颜色数量后再导出。",
         "saveSlots": "保存分配"
       },
+      "profiles": {
+        "title": "配置",
+        "label": "配置",
+        "defaultName": "配置 {{number}}",
+        "add": "添加配置",
+        "actions": "配置操作",
+        "drag": "拖动配置",
+        "rename": "重命名配置",
+        "show": "显示配置",
+        "hide": "隐藏配置",
+        "hiddenTitle": "{{name}} 已隐藏",
+        "hiddenHint": "保存和导出时会排除此配置及其所有打印板。",
+        "empty": "此配置中没有打印板",
+        "delete": "删除空配置",
+        "settings": "打印设置",
+        "movePlateTo": "移动到 {{name}}",
+        "downloadZip": "ZIP 压缩包包含每个有可打印对象的可见配置的独立 3MF 文件。",
+        "addedToModel": "已将配置保存到 {{name}}。",
+        "aiTarget": "为 profile_id {{id}} 设置打印参数。"
+      },
       "plates": {
         "label": "打印板",
         "actions": "打印板操作",
@@ -4257,6 +4289,7 @@
           "title": "导出",
           "format": "文件格式",
           "threeMf": "下载一个 3MF 文件，其中包含所有有模型的打印板及其颜色。",
+          "threeMfZipLabel": "3MF ZIP 压缩包",
           "stlZip": "下载一个 ZIP 压缩包，每个有模型的打印板对应一个 STL 文件。"
         },
         "delete": "删除设计",
@@ -4785,8 +4818,8 @@
       "printProfile": {
         "title": "打印配置",
         "presets": "预设",
-        "empty": "还没有打印配置",
-        "emptyHint": "为这个设计选择一个预设，或让 AI 按用途来选。",
+        "empty": "尚无打印设置",
+        "emptyHint": "为此配置选择预设，或让 AI 帮你选择。",
         "choosePreset": "选择预设",
         "change": "更改",
         "changed": "已修改",
@@ -4809,7 +4842,7 @@
         "reset": "使用切片软件自己的值",
         "nativeName": "在 {{slicer}} 中：{{name}}",
         "notCarried": "{{slicer}} 不会从 3MF 读取此项：请在其中设置。",
-        "remove": "移除打印配置",
+        "remove": "清除打印设置",
         "on": "开",
         "off": "关",
         "aiPrompt": "根据这个设计的用途为它选择打印配置：参考我的要求，以及它所来源的模型的描述。用打印配置工具设置好，并用一句话告诉我原因。",
@@ -4958,7 +4991,14 @@
         "askAi": "让 AI 选择",
         "willHave_other": "“{{name}}”将有 {{count}} 个配置",
         "addProfile": "添加配置",
-        "addedProfile": "已将“{{profile}}”添加到“{{name}}”"
+        "addedProfile": "已将“{{profile}}”添加到“{{name}}”",
+        "pictures": "图片",
+        "picturesHelp": "保存后，添加模型在真实表面上的渲染图片，排在上方图片之后。",
+        "addPictures": "添加生成的图片",
+        "changePictures": "更改",
+        "addingPictures": "正在为 {{name}} 添加图片…",
+        "addedPictures_other": "已为 {{name}} 添加 {{count}} 张图片",
+        "picturesFailed": "模型已保存，但无法生成其图片：{{error}}"
       }
     },
     "chats": {
@@ -6047,6 +6087,7 @@
       },
       "openInSlicer": "在 {{slicer}} 中打开",
       "openInStudio": "在 Thingport Studio 中打开",
+      "openAllInStudio": "在 Studio 中全部打开",
       "openAdaptedInSlicer": "在 {{slicer}} 中打开适配版",
       "adaptedFor": "已适配 {{target}}",
       "adaptedForYourPrinter": "已适配你的打印机",
@@ -7081,6 +7122,54 @@
       "sharedWithYouHelp": "所有者分享给你和少数其他人的合集。其他人在探索中看不到它们。",
       "showMore_other": "再显示 {{count}} 个",
       "sharedFailed": "无法加载更多分享给你的内容。请重试。"
+    },
+    "scenePictures": {
+      "generate": "生成",
+      "generateTooltip": "在真实表面上生成模型图片",
+      "title": "生成图片",
+      "help": "在照片扫描的真实表面上渲染模型，采用真实房间的光照。每张图片有各自的角度和背景，添加在模型现有图片之后；若模型还没有图片，则排在最前。",
+      "file": "文件",
+      "plate": "打印板",
+      "plateNumber": "打印板 {{number}}",
+      "colour": "颜色",
+      "ownColour": "自带颜色",
+      "colours": {
+        "white": "白色",
+        "grey": "灰色",
+        "black": "黑色",
+        "red": "红色",
+        "orange": "橙色",
+        "yellow": "黄色",
+        "green": "绿色",
+        "blue": "蓝色"
+      },
+      "angle": "角度",
+      "angles": {
+        "hero": "正面",
+        "side": "侧面",
+        "top": "顶部"
+      },
+      "background": "背景",
+      "scenes": {
+        "white-oak": "白橡木",
+        "oak-desk": "橡木桌",
+        "walnut": "胡桃木",
+        "plywood": "胶合板",
+        "workbench": "工作台",
+        "leather": "皮革垫",
+        "wool": "羊毛垫",
+        "studio": "摄影棚"
+      },
+      "removePicture": "移除图片",
+      "addPicture": "添加图片",
+      "addCount_other": "添加 {{count}} 张图片",
+      "rendering": "正在渲染 {{done}}/{{total}}…",
+      "afterExisting_other": "添加在模型现有的 {{count}} 张图片之后",
+      "firstPictures": "它们将成为模型的首批图片",
+      "loadFailed": "无法打开 {{file}} 来生成图片",
+      "renderFailed": "无法渲染图片。你的浏览器可能不支持 WebGL。",
+      "previewAlt": "{{background}}, {{angle}}",
+      "done": "完成"
     }
   },
   "providers": {

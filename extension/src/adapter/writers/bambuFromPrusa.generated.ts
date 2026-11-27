@@ -568,6 +568,7 @@ export async function writeBambuFromPrusa(
       ...globals,
       printer_settings_id: target.preset,
       ...(target.model ? { printer_model: target.model } : {}),
+      printer_variant: String(target.nozzle),
       ...(process ? { print_settings_id: process } : {}),
       print_compatible_printers: [target.preset],
       filament_settings_id: presets,

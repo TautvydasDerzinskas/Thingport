@@ -112,8 +112,8 @@ export function importStudioThreeMf(
   return queued({ kind: "import-3mf", srcPath, destDir, plate }, IMPORT_TIMEOUT_MS);
 }
 
-export function listStudioSourcePlates(srcPath: string): Promise<StudioWorkerResult> {
-  return queued({ kind: "list-3mf-plates", srcPath }, IMPORT_TIMEOUT_MS);
+export function listStudioSourcePlates(srcPath: string, includePrintSettings: boolean): Promise<StudioWorkerResult> {
+  return queued({ kind: "list-3mf-plates", srcPath, includePrintSettings }, IMPORT_TIMEOUT_MS);
 }
 
 /** Traces one of a design's pictures, as trace_picture does. */

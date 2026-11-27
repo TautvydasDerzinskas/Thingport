@@ -18,6 +18,11 @@ fix the title, add tags and notes, and choose a category or folder before you mo
 slicer projects do, uses it right away. For an STL, OBJ, STEP or glTF file, Thingport renders a thumbnail the first time
 the model is shown.
 
+No photos of the print yet? **Generate** under Pictures in the edit dialog renders the model on photo-scanned surfaces
+(oak, walnut, plywood, a workbench, a leather pad, a wool mat or a plain studio floor), lit like a real room. Each
+picture gets its own angle and background, and a model without colours of its own can be shown in a filament colour.
+The pictures go after the ones the model has, or first if it has none, when you save.
+
 To put new models straight into an existing folder, open that folder on the **Models** page before you upload.
 
 ## Upload several files at once

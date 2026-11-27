@@ -216,7 +216,8 @@ As in other CAD, a thread is judged as the plain cylinder it's cut on, so its ri
 **Save to Thingport** saves the design as a **New model**, named after the design unless you change it, or with **Add
 to a model** as one more print profile of a model you already have: search your library and pick it, and you see how
 many profiles it has. A new model gets the design's 3MF, a picture of the view, and what you asked Ask AI about the
-design as its description. If the design has no print profile yet, the dialog asks for one first: **Choose myself**
+design as its description. With **Add generated pictures** on, it also gets pictures of the model rendered on real
+surfaces once it's saved, each with the angle and background you pick under **Change**. If the design has no print profile yet, the dialog asks for one first: **Choose myself**
 (the presets), **Suggest with AI**, or, for a new model, **Save without**. Name the profile as it should read on the
 model's page. An assistant can save it too when you ask.
 

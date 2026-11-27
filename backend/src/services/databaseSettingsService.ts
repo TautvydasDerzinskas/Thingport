@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { requireCurrentAdmin } from "../auth";
 import { setActiveClient } from "../db";
 import { createLogger } from "../logger";
 import { hasActiveCollectionSync } from "./collectionSyncRunner";
@@ -14,6 +15,7 @@ import {
   importWorkerStatus,
   recoverAfterDatabaseSwitch,
 } from "./importWorker";
+import { withSignInMethodsLock } from "./settingsService";
 
 const log = createLogger("import");
 const POLL_WAIT_MS = 2_000;
@@ -135,28 +137,31 @@ const inMemoryImportWork = () =>
 
 /** Hot-swaps the live connection only after the candidate credentials pass a test, and only with no import running:
  *  a job's next write would land in the new database. Refused rather than waited for, as an import can run for hours. */
-export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise<DatabaseInfo> {
+export async function testAndSwitchDatabase(actorId: string, creds: PostgresCredentials): Promise<DatabaseInfo> {
   const url = buildCandidateUrl(creds);
   if (!url) throw new Error("DATABASE_URL is not set for this instance -- nothing to switch relative to.");
   if (!beginDatabaseSwitch()) throw new Error("Another database switch is under way.");
   try {
-    const candidate = await connectCandidate(url);
-    await pollSettled();
-    const rows = await runningRows();
-    // Nothing awaited from this check to the swap, so nothing can start in between.
-    if (rows > 0 || inMemoryImportWork()) {
-      await candidate.$disconnect().catch(() => undefined);
-      throw new Error("Imports are running. Pause them or let them finish, then try again.");
-    }
-    if (migrationBusy()) {
-      await candidate.$disconnect().catch(() => undefined);
-      throw new Error("A migration is under way. Let it finish, then try again.");
-    }
-    setActiveClient(candidate);
-    active = creds;
-    forgetJobsOfLastDatabase();
-    await recoverAfterDatabaseSwitch();
-    return getDatabaseInfo();
+    return await withSignInMethodsLock(async () => {
+      await requireCurrentAdmin(actorId);
+      const candidate = await connectCandidate(url);
+      await pollSettled();
+      const rows = await runningRows();
+      // Nothing awaited from this check to the swap, so nothing can start in between.
+      if (rows > 0 || inMemoryImportWork()) {
+        await candidate.$disconnect().catch(() => undefined);
+        throw new Error("Imports are running. Pause them or let them finish, then try again.");
+      }
+      if (migrationBusy()) {
+        await candidate.$disconnect().catch(() => undefined);
+        throw new Error("A migration is under way. Let it finish, then try again.");
+      }
+      setActiveClient(candidate, url);
+      active = creds;
+      forgetJobsOfLastDatabase();
+      await recoverAfterDatabaseSwitch();
+      return getDatabaseInfo();
+    });
   } finally {
     endDatabaseSwitch();
   }

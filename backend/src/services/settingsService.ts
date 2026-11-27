@@ -1,16 +1,21 @@
-import type { AiProviderKind, Prisma } from "@prisma/client";
-import { prisma } from "../db";
+import { PrismaClient, type AiProviderKind, type Prisma } from "@prisma/client";
+import { getActiveDatabaseUrl, prisma } from "../db";
 import { FLARESOLVERR_REQUIRE_HTTPS, FLARESOLVERR_URL, PUBLIC_URL } from "../config";
+import { createLogger } from "../logger";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
+import { sleep } from "../utils/concurrency";
+import { HttpError } from "../utils/fileUtils";
 
-async function getBoolSetting(key: string, fallback: boolean): Promise<boolean> {
-  const row = await prisma.setting.findUnique({ where: { key } });
+type SettingClient = Pick<Prisma.TransactionClient, "setting">;
+
+async function getBoolSetting(key: string, fallback: boolean, db: SettingClient = prisma): Promise<boolean> {
+  const row = await db.setting.findUnique({ where: { key } });
   if (row === null || row === undefined) return fallback;
   return typeof row.value === "boolean" ? row.value : fallback;
 }
 
-async function setBoolSetting(key: string, value: boolean): Promise<void> {
-  await prisma.setting.upsert({
+async function setBoolSetting(key: string, value: boolean, db: SettingClient = prisma): Promise<void> {
+  await db.setting.upsert({
     where: { key },
     create: { key, value },
     update: { value },
@@ -164,6 +169,113 @@ export async function getAllowRegistrations(fallback: boolean): Promise<boolean>
 
 export async function setAllowRegistrations(value: boolean): Promise<void> {
   await setBoolSetting(ALLOW_REGISTRATIONS_KEY, value);
+}
+
+const EMAIL_PASSWORD_ENABLED_KEY = "email_password_enabled";
+const SIGN_IN_METHODS_LOCK = 74_210_305;
+const SIGN_IN_METHODS_LOCK_WAIT_MS = 60_000;
+const SIGN_IN_METHODS_LOCK_POLL_MS = 100;
+const SIGN_IN_METHODS_MAX_WAITERS = 32;
+const log = createLogger("settings");
+
+let signInLockClientLeased = false;
+const signInLockWaiters = new Set<() => void>();
+
+function signInMethodsBusy(): HttpError {
+  return new HttpError(409, "Sign-in method settings are busy. Try again shortly.", "sign_in_methods_busy");
+}
+
+async function acquireSignInLockClient(deadline: number): Promise<void> {
+  if (!signInLockClientLeased) {
+    signInLockClientLeased = true;
+    return;
+  }
+  if (signInLockWaiters.size >= SIGN_IN_METHODS_MAX_WAITERS) throw signInMethodsBusy();
+  await new Promise<void>((resolve, reject) => {
+    const admit = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    const timer = setTimeout(() => {
+      signInLockWaiters.delete(admit);
+      reject(signInMethodsBusy());
+    }, deadline - Date.now());
+    signInLockWaiters.add(admit);
+  });
+}
+
+function releaseSignInLockClient(): void {
+  const next = signInLockWaiters.values().next().value;
+  if (next) {
+    signInLockWaiters.delete(next);
+    next();
+  } else {
+    signInLockClientLeased = false;
+  }
+}
+
+// Serialize changes that could remove the last usable sign-in method. Only the current lease holder
+// opens a database session. The advisory lock also coordinates with other backend processes.
+export async function withSignInMethodsLock<T>(operation: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + SIGN_IN_METHODS_LOCK_WAIT_MS;
+  const databaseUrl = getActiveDatabaseUrl();
+  await acquireSignInLockClient(deadline);
+  try {
+    if (Date.now() >= deadline) throw signInMethodsBusy();
+    if (databaseUrl !== getActiveDatabaseUrl()) {
+      throw new HttpError(
+        409,
+        "The active database changed while the request was waiting. Try again.",
+        "database_changed",
+      );
+    }
+    const lockUrl = new URL(databaseUrl);
+    lockUrl.searchParams.set("connection_limit", "1");
+    // A session lock lets account cleanup hold the lock without keeping a transaction open.
+    const client = new PrismaClient({ datasources: { db: { url: lockUrl.toString() } } });
+    let locked = false;
+    try {
+      await client.$connect();
+      while (!locked) {
+        const [result] = await client.$queryRaw<{ locked: boolean }[]>`
+          SELECT pg_try_advisory_lock(${SIGN_IN_METHODS_LOCK}) AS locked`;
+        locked = result?.locked === true;
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw signInMethodsBusy();
+        if (!locked) await sleep(Math.min(SIGN_IN_METHODS_LOCK_POLL_MS, remaining));
+      }
+      return await operation();
+    } finally {
+      try {
+        if (locked) await client.$executeRaw`SELECT pg_advisory_unlock(${SIGN_IN_METHODS_LOCK})`;
+      } catch (error) {
+        log.warn("couldn't unlock sign-in methods advisory lock", { error });
+      } finally {
+        try {
+          await client.$disconnect();
+        } catch (error) {
+          log.warn("couldn't disconnect sign-in methods lock client", { error });
+        }
+      }
+    }
+  } finally {
+    releaseSignInLockClient();
+  }
+}
+
+export async function withSignInMethodsTransaction<T>(
+  operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  options: { timeout?: number } = {},
+): Promise<T> {
+  return withSignInMethodsLock(() => prisma.$transaction(operation, options));
+}
+
+export async function getEmailPasswordEnabled(db: SettingClient = prisma): Promise<boolean> {
+  return getBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, true, db);
+}
+
+export async function setEmailPasswordEnabled(value: boolean, db: SettingClient = prisma): Promise<void> {
+  await setBoolSetting(EMAIL_PASSWORD_ENABLED_KEY, value, db);
 }
 
 const SIMPLIFY_PREVIEWS_KEY = "simplify_previews";

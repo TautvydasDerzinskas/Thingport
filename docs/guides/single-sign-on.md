@@ -4,8 +4,9 @@ If you already run an identity provider for your self-hosted apps, such as Authe
 Zitadel, people can sign in to Thingport with it too. Each provider you add puts a **Continue with …** button on the
 sign-in page.
 
-Single sign-on is optional and sits next to email and password, which always keep working. With no provider added,
-the sign-in page, registration and profile look exactly as they always have.
+Single sign-on is optional and sits next to email and password, which are enabled by default. An admin can turn off
+email and password in **Administration → Auth → Sign-in Methods** to require OIDC. With no provider added, the sign-in
+page, registration and profile look exactly as they always have.
 
 ![The sign-in page with a Continue with Authentik button under the password form](../../frontend/src/assets/screenshots/25_sign_in_sso.png)
 
@@ -41,6 +42,21 @@ On the first run it's taken from `PUBLIC_URL` in `.env`; after that it's managed
 
 ![Adding an OIDC provider](../../frontend/src/assets/screenshots/24_oidc_provider_dialog.png)
 
+## Require OIDC
+
+After testing and enabling a provider, an admin can turn off **Email & password** in **Sign-in Methods**. The sign-in
+page then offers only enabled OIDC providers. Email/password registration, login, password resets and setting a
+password are disabled too. Email verification still works, but no longer signs the person in. If you change your
+email address while signed in, sign out of Thingport before opening the verification link sent to your new address.
+
+Set the public URL and connect at least one administrator account to an enabled OIDC provider before turning off
+email and password. An administrator can connect a provider from **Profile** or complete an OIDC sign-in with verified
+email linking enabled and a matching email address. While email and password are off, Thingport rejects changes that
+would remove the last administrator connection to an enabled provider.
+
+If one provider is down, an administrator can sign in through another enabled provider connected to their account.
+An administrator with an active session can turn password sign-in back on.
+
 **Scopes** are what Thingport asks the provider for. `openid email profile` suits most providers, and `openid` is
 always needed.
 
@@ -68,7 +84,8 @@ The first time someone signs in, two switches decide what happens:
   address there gets into the Thingport account with it.
 
 Without the second switch, someone whose email already has a Thingport account is asked to sign in with their password
-instead, and can connect the provider from their profile.
+instead, and can connect the provider from their profile. If email and password are disabled, they need to connect
+their account before the admin turns it off, or enable **Connect to existing accounts by email** for a trusted provider.
 
 An invitation link (**Administration → Auth → Registrations → Invite users**) can be accepted with single sign-on too, as long as the provider signs the person
 in with the invited address.
@@ -81,8 +98,8 @@ Thingport doesn't read groups from the provider.
 On their **Profile** page, under the password, anyone can connect a provider to their account, to sign in with one click from then on,
 or disconnect it again.
 
-Someone whose account was created through single sign-on has no password. They can set one from the same place, to
-also sign in with their email. [Thingport Grab](../../extension/README.md) needs no password either way: it pairs by
+Someone whose account was created through single sign-on has no password. While email and password are enabled, they
+can set one from the same place, to also sign in with their email. [Thingport Grab](../../extension/README.md) needs no password either way: it pairs by
 opening Thingport in a tab, where you approve the browser while signed in -- however you signed in.
 
 ![A profile with a connected sign-in provider](../../frontend/src/assets/screenshots/26_profile_sign_in.png)
@@ -90,9 +107,9 @@ opening Thingport in a tab, where you approve the browser while signed in -- how
 ## Hiding or removing a provider
 
 Switching a provider off hides its button. Deleting it removes it altogether. Either way, people who signed in with it
-keep their accounts and models, but those without a password can't sign in until it's back. Thingport warns how many
-people that affects before you go ahead, and the **Users** page shows how each person signs in, flagging anyone left
-with no way in.
+keep their accounts and models, but those without another enabled sign-in method can't sign in until one is restored.
+Thingport warns how many people that affects before you go ahead, and the **Users** page shows how each person signs
+in, flagging anyone left with no way in.
 
 ## Troubleshooting
 

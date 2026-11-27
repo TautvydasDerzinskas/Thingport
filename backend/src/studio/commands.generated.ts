@@ -6,16 +6,22 @@ import {
   consumerOf,
   DEFAULT_SEGMENTS,
   DEFAULT_PLATE_ID,
+  DEFAULT_PROFILE_ID,
   featureById,
   inputsOf,
   isBody,
   isSolid,
   LIMITS,
   MAX_PLATES,
+  MAX_PROFILES,
   STUDIO_FILAMENT_MATERIALS,
   STUDIO_FILAMENT_SLOT_LIMIT,
   plateOf,
+  profileOf,
+  profileOfPlate,
+  profileSettings,
   studioPlates,
+  studioProfiles,
   topLevel,
   shapeContours,
   transformMatrix,
@@ -237,6 +243,10 @@ const plateId = z
   .string()
   .regex(/^plate-[1-9]\d*$/)
   .describe("A plate ID from studio_get_design.");
+const profileId = z
+  .string()
+  .regex(/^profile-[1-9]\d*$/)
+  .describe("A profile ID from studio_get_design.");
 const bodyColor = z
   .string()
   .regex(/^#[0-9a-f]{6}$/i)
@@ -432,13 +442,20 @@ function findPlate(doc: StudioDocument, id: string) {
   return plate;
 }
 
-function addPlate(doc: StudioDocument, name: string): string {
+function findProfile(doc: StudioDocument, id: string) {
+  const profile = studioProfiles(doc).find((entry) => entry.id === id);
+  if (!profile) throw new CommandError(`There's no profile ${id} in this design.`);
+  return profile;
+}
+
+function addPlate(doc: StudioDocument, name: string, profile = DEFAULT_PROFILE_ID): string {
+  findProfile(doc, profile);
   const plates = studioPlates(doc);
   if (plates.length >= MAX_PLATES) throw new CommandError(`A design holds up to ${MAX_PLATES} plates.`);
   const next = doc.next_plate_id ?? Math.max(...plates.map((plate) => Number(plate.id.slice(6)))) + 1;
   const id = `plate-${next}`;
   doc.next_plate_id = next + 1;
-  doc.plates = [...plates, { id, name }];
+  doc.plates = [...plates, { id, name, ...(profile === DEFAULT_PROFILE_ID ? {} : { profile_id: profile }) }];
   return id;
 }
 
@@ -1827,7 +1844,7 @@ export const STUDIO_COMMANDS = {
             )
           : undefined;
       const secondPlate = args.separate_plates
-        ? addPlate(doc, `${(body.name || body.id).slice(0, 65)} · 2`)
+        ? addPlate(doc, `${(body.name || body.id).slice(0, 65)} · 2`, profileOfPlate(doc, plateOf(body)))
         : undefined;
       const parts = (toolCopy ? (["inside", "outside"] as const) : (["front", "back"] as const)).map((keep, index) => {
         const id = nextId(doc, "split");
@@ -2448,12 +2465,93 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  create_profile: command({
+    title: "Create a profile",
+    description:
+      "Creates an empty profile for its own 3MF, plates and print settings. Returns the profile ID in created.",
+    args: { name: z.string().trim().min(1).max(80).describe("The name to show for the profile.") },
+    apply(doc, { name }) {
+      const profiles = studioProfiles(doc);
+      if (profiles.length >= MAX_PROFILES) throw new CommandError(`A design holds up to ${MAX_PROFILES} profiles.`);
+      const next = doc.next_profile_id ?? 2;
+      const id = `profile-${next}`;
+      doc.profiles = [...profiles, { id, name }];
+      doc.next_profile_id = next + 1;
+      return { document: doc, created: [id], summary: `Created ${id} “${name}”` };
+    },
+  }),
+
+  rename_profile: command({
+    title: "Rename a profile",
+    description: "Sets the name used in Studio and when saving or exporting this profile.",
+    destructive: true,
+    args: { profile_id: profileId, name: z.string().trim().min(1).max(80).describe("The profile's new name.") },
+    apply(doc, { profile_id, name }) {
+      doc.profiles = [...studioProfiles(doc)];
+      findProfile(doc, profile_id).name = name;
+      return { document: doc, created: [], summary: `Named ${profile_id} “${name}”` };
+    },
+  }),
+
+  move_profile: command({
+    title: "Reorder a profile",
+    description: "Moves a profile to a one-based position in the profile list. Its plates and settings move with it.",
+    destructive: true,
+    args: {
+      profile_id: profileId,
+      position: z.number().int().min(1).max(MAX_PROFILES).describe("Position in the profile list, with 1 first."),
+    },
+    apply(doc, { profile_id, position }) {
+      const profile = findProfile(doc, profile_id);
+      const profiles = [...studioProfiles(doc)];
+      if (position > profiles.length) throw new CommandError(`This design has ${profiles.length} profiles.`);
+      profiles.splice(profiles.indexOf(profile), 1);
+      profiles.splice(position - 1, 0, profile);
+      doc.profiles = profiles;
+      return { document: doc, created: [], summary: `Moved ${profile_id} to position ${position}` };
+    },
+  }),
+
+  set_profile_visibility: command({
+    title: "Show or hide a profile",
+    description:
+      "Hides every plate in a profile from the viewport, saving and export. Showing it restores each plate's own visibility.",
+    destructive: true,
+    args: { profile_id: profileId, visible: z.boolean() },
+    apply(doc, { profile_id, visible }) {
+      doc.profiles = [...studioProfiles(doc)];
+      const profile = findProfile(doc, profile_id);
+      if (visible) delete profile.hidden;
+      else profile.hidden = true;
+      return { document: doc, created: [], summary: `${visible ? "Showed" : "Hid"} ${profile_id}` };
+    },
+  }),
+
+  delete_profile: command({
+    title: "Delete an empty profile",
+    description:
+      "Deletes a profile and its settings after all its plates have been moved or deleted. The first profile (profile-1) remains.",
+    destructive: true,
+    args: { profile_id: profileId },
+    apply(doc, { profile_id }) {
+      findProfile(doc, profile_id);
+      if (profile_id === DEFAULT_PROFILE_ID) throw new CommandError("profile-1 cannot be deleted.");
+      if (studioPlates(doc).some((plate) => profileOf(plate) === profile_id))
+        throw new CommandError("Move or delete this profile's plates first.");
+      doc.profiles = studioProfiles(doc).filter((profile) => profile.id !== profile_id);
+      return { document: doc, created: [], summary: `Deleted ${profile_id}` };
+    },
+  }),
+
   create_plate: command({
     title: "Create a build plate",
     description: "Creates an empty named build plate and returns its plate ID in created.",
-    args: { name: z.string().trim().min(1).max(80).describe("The name to show for the plate.") },
-    apply(doc, { name }) {
-      const id = addPlate(doc, name);
+    args: {
+      name: z.string().trim().min(1).max(80).describe("The name to show for the plate."),
+      profile_id: profileId.optional().describe("The profile to add it to. Defaults to profile-1."),
+    },
+    apply(doc, { name, profile_id }) {
+      const id = addPlate(doc, name, profile_id);
       return { document: doc, created: [id], summary: `Created ${id} “${name}”` };
     },
   }),
@@ -2462,8 +2560,9 @@ export const STUDIO_COMMANDS = {
     title: "Set the Studio printer",
     destructive: true,
     description:
-      "Sets the printer, nozzle and centered bed used by print checks and plate arrangement. Null clears it.",
+      "Sets the printer, nozzle and centered bed used by the profile's print checks and plate arrangement. Null clears it.",
     args: {
+      profile_id: profileId.optional().describe("The profile to change. Defaults to profile-1."),
       setup: z
         .object({
           printer: z.string().min(1).max(120),
@@ -2491,9 +2590,11 @@ export const STUDIO_COMMANDS = {
           "Printer and nozzle with centered bed dimensions, optional outline and minimum wall thickness, or null to clear.",
         ),
     },
-    apply(doc, { setup }) {
-      if (setup) doc.print_setup = setup;
-      else delete doc.print_setup;
+    apply(doc, { setup, profile_id = DEFAULT_PROFILE_ID }) {
+      findProfile(doc, profile_id);
+      const settings = profileSettings(doc, profile_id);
+      if (setup) settings.print_setup = setup;
+      else delete settings.print_setup;
       return {
         document: doc,
         summary: setup ? `Set up printing with ${setup.printer}` : "Cleared the printer setup",
@@ -2503,10 +2604,10 @@ export const STUDIO_COMMANDS = {
   }),
 
   set_print_profile: command({
-    title: "Set the design's print profile",
+    title: "Set a profile's print settings",
     destructive: true,
     description:
-      "Sets the design's print profile: the slicer settings it's meant to be printed with, one per design, written into " +
+      "Sets the slicer settings for a profile, written into " +
       "its 3MF when it's exported, opened in a slicer or saved to the library, where it shows as a print profile on the " +
       "model's page. `preset` starts from a built-in preset (studio_guide lists them: standard, fine, draft, strong, " +
       "outdoor, water, toy, flexible, heat, vase, smooth) and replaces the settings with the preset's; `settings` then " +
@@ -2518,6 +2619,7 @@ export const STUDIO_COMMANDS = {
       "one- or two-sentence `reason`, which the person sees. Fields left out stay as they are; null clears one. A null " +
       "profile removes it.",
     args: {
+      profile_id: profileId.optional().describe("The profile to change. Defaults to profile-1."),
       profile: z
         .object({
           preset: z
@@ -2562,17 +2664,19 @@ export const STUDIO_COMMANDS = {
         .nullable()
         .describe("The changes to the print profile, or null to remove it."),
     },
-    apply(doc, { profile: change }) {
+    apply(doc, { profile: change, profile_id = DEFAULT_PROFILE_ID }) {
+      findProfile(doc, profile_id);
+      const settings = profileSettings(doc, profile_id);
       if (!change) {
-        const had = Boolean(doc.print_profile);
-        delete doc.print_profile;
+        const had = Boolean(settings.print_profile);
+        delete settings.print_profile;
         return {
           document: doc,
           summary: had ? "Removed the print profile" : "There was no print profile",
           created: [],
         };
       }
-      const current = doc.print_profile;
+      const current = settings.print_profile;
       const next: StudioPrintProfile = current
         ? { ...current, settings: { ...current.settings } }
         : { preset: null, settings: {} };
@@ -2596,7 +2700,7 @@ export const STUDIO_COMMANDS = {
       }
       // The server records who it was when it isn't the person on the page.
       next.by = "person";
-      doc.print_profile = next;
+      settings.print_profile = next;
       return { document: doc, summary: `Set the print profile: ${profileSummary(next)}`, created: [] };
     },
   }),
@@ -2712,28 +2816,36 @@ export const STUDIO_COMMANDS = {
     title: "Move a build plate in the plate list",
     destructive: true,
     description:
-      "Moves a build plate to another place in the design's plate list, the order plates are shown, saved and exported " +
-      "in. The other plates keep their order; the plate keeps its ID, name and bodies.",
+      "Moves a build plate within its profile or to another profile. The plate keeps its ID, name and bodies.",
     args: {
       plate_id: plateId,
+      profile_id: profileId.optional().describe("The destination profile. Defaults to the plate's current profile."),
       position: z
         .number()
         .int()
         .min(1)
         .max(MAX_PLATES)
-        .describe("Its place in the plate list as studio_get_design lists it: 1 is first."),
+        .describe("Its place within the destination profile: 1 is first."),
     },
-    apply(doc, { plate_id, position }) {
-      findPlate(doc, plate_id);
-      const plates = [...studioPlates(doc)];
-      const from = plates.findIndex((plate) => plate.id === plate_id);
-      if (position > plates.length)
+    apply(doc, { plate_id, profile_id, position }) {
+      const plate = findPlate(doc, plate_id);
+      const destination = profile_id ?? profileOf(plate);
+      findProfile(doc, destination);
+      const remaining = studioPlates(doc).filter((entry) => entry.id !== plate_id);
+      const siblings = remaining.filter((entry) => profileOf(entry) === destination);
+      const count = siblings.length + 1;
+      if (position > count) {
+        const scope = studioProfiles(doc).length === 1 ? "This design" : `Profile ${destination}`;
         throw new CommandError(
-          `This design has ${plates.length} ${plates.length === 1 ? "plate" : "plates"}, so position goes up to ${plates.length}.`,
+          `${scope} has ${count} ${count === 1 ? "plate" : "plates"}, so position goes up to ${count}.`,
         );
-      plates.splice(position - 1, 0, ...plates.splice(from, 1));
-      doc.plates = plates;
-      return { document: doc, created: [], summary: `Moved ${plate_id} to position ${position}` };
+      }
+      if (destination === DEFAULT_PROFILE_ID) delete plate.profile_id;
+      else plate.profile_id = destination;
+      siblings.splice(position - 1, 0, plate);
+      doc.plates = [...remaining.filter((entry) => profileOf(entry) !== destination), ...siblings];
+      doc.plates = [...studioPlates(doc)];
+      return { document: doc, created: [], summary: `Moved ${plate_id} to position ${position} in ${destination}` };
     },
   }),
 
@@ -2800,8 +2912,9 @@ export const STUDIO_COMMANDS = {
     title: "Map body colors to slicer filament slots",
     destructive: true,
     description:
-      "Replaces the design's color to filament slot assignments for Bambu-compatible 3MF handoff. Use one slot per color. An empty list restores automatic assignment.",
+      "Replaces the profile's color to filament slot assignments for Bambu-compatible 3MF handoff. Use one slot per color. An empty list restores automatic assignment.",
     args: {
+      profile_id: profileId.optional().describe("The profile to change. Defaults to profile-1."),
       slots: z
         .array(
           z
@@ -2815,14 +2928,16 @@ export const STUDIO_COMMANDS = {
         .max(STUDIO_FILAMENT_SLOT_LIMIT)
         .describe("Color, loaded slot number and material for each assignment."),
     },
-    apply(doc, { slots }) {
+    apply(doc, { slots, profile_id = DEFAULT_PROFILE_ID }) {
       if (
         new Set(slots.map(({ color }) => color)).size !== slots.length ||
         new Set(slots.map(({ slot }) => slot)).size !== slots.length
       )
         throw new CommandError("Each color and slot can appear once in the filament mapping.");
-      if (slots.length) doc.filament_slots = slots.toSorted((a, b) => a.slot - b.slot);
-      else delete doc.filament_slots;
+      findProfile(doc, profile_id);
+      const settings = profileSettings(doc, profile_id);
+      if (slots.length) settings.filament_slots = slots.toSorted((a, b) => a.slot - b.slot);
+      else delete settings.filament_slots;
       return {
         document: doc,
         created: [],
@@ -2970,7 +3085,8 @@ export const STUDIO_COMMANDS = {
       "Brings in an STL, 3MF, STEP, OBJ or GLB from the library. Find the model with search_models and its files " +
       "with list_model_files. STL, STEP, OBJ and GLB come in as one mesh, centered on the bed. A 3MF brings each " +
       "printable object as its own body, retaining its name, layout and uniform color where given. The first plate " +
-      "imports into plate_id or plate-1; additional populated plates are created. Each loose piece " +
+      "imports into plate_id or plate-1; additional populated plates are created. Use all_files on a new design " +
+      "to put every importable file into its own profile, with 3MF plates loaded on demand. Each loose piece " +
       "within a body can be split with separate_parts. A closed mesh can be combined, rounded, drilled and " +
       `hollowed. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
     kind: "import",
@@ -2981,6 +3097,10 @@ export const STUDIO_COMMANDS = {
         .min(1)
         .optional()
         .describe("Which of its 3D files, by its id from list_model_files. Default: its first one."),
+      all_files: z
+        .boolean()
+        .optional()
+        .describe("Import all 3D files as separate profiles on a new design. Leave out file_id and placement options."),
       defer_plates: z.boolean().optional().describe("On a new design, load each source 3MF plate on demand."),
       ...placement,
     },
@@ -3215,9 +3335,10 @@ export function makeFitTest(source: StudioDocument, args: StudioCommandArgs<"mak
   const clearances = [...new Set(args.clearances.map((value) => Number(value.toFixed(3))))];
   const size = Math.max(14, joint.connector.diameter + 2 * Math.max(...clearances) + 8);
   const step = size + 3;
-  const plate = addPlate(doc, args.name ?? "Fit test");
+  const profile = profileOfPlate(doc, plateOf(joint));
+  const plate = addPlate(doc, args.name ?? "Fit test", profile);
   const count = clearances.length + 1;
-  const bed = doc.print_setup?.bed ?? DEFAULT_PRINT_BED;
+  const bed = profileSettings(doc, profile).print_setup?.bed ?? DEFAULT_PRINT_BED;
   const columns = Math.min(count, Math.max(1, Math.floor(bed[0] / step)));
   const rows = Math.ceil(count / columns);
   const created: string[] = [];
@@ -3270,17 +3391,13 @@ export function previewArrangement(
   args: { plate_id: string; spacing?: number },
   bounds: Record<string, Bounds>,
 ) {
+  const setup = profileSettings(doc, profileOfPlate(doc, args.plate_id)).print_setup;
   const locked = new Set(doc.locked_layout);
   const bodies = arrangeMeasures(doc, args).map((id) => {
     if (!bounds[id]) throw new CommandError(`Couldn't measure ${id} to arrange it.`);
     return { id, bound: bounds[id], locked: locked.has(id) };
   });
-  return arrangeFootprints(
-    bodies,
-    doc.print_setup?.bed ?? DEFAULT_PRINT_BED,
-    args.spacing ?? 3,
-    doc.print_setup?.outline,
-  );
+  return arrangeFootprints(bodies, setup?.bed ?? DEFAULT_PRINT_BED, args.spacing ?? 3, setup?.outline);
 }
 
 export function arrangePlate(
@@ -3295,9 +3412,10 @@ export function arrangePlate(
     throw new CommandError("Some bodies need another plate. Enable overflow plates or use less spacing.");
   const result = structuredClone(doc);
   const name = findPlate(result, args.plate_id).name;
+  const groupId = profileOfPlate(result, args.plate_id);
   const created: string[] = [];
   for (const [index, placements] of planes.entries()) {
-    const id = index === 0 ? args.plate_id : addPlate(result, `${name.slice(0, 67)} · ${index + 1}`);
+    const id = index === 0 ? args.plate_id : addPlate(result, `${name.slice(0, 67)} · ${index + 1}`, groupId);
     if (index > 0) created.push(id);
     for (const place of placements) {
       if (place.locked) continue;

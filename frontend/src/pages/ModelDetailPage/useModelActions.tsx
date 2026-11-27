@@ -476,7 +476,7 @@ export function useModelActions({
           ),
     });
   }
-  // One file opens straight away; several are listed, as the slicer's are.
+  // One file opens straight away. The submenu also offers a design with all the listed files as profiles.
   add(
     studio.files.length > 0 && {
       key: "studio",
@@ -487,17 +487,24 @@ export function useModelActions({
       onSelect: () => studio.open(studio.files[0]),
       picks:
         studio.files.length > 1
-          ? studio.files.map((plate) => {
-              const text = fileRowText(t, plate.filename, plate.position, plate.folder, studioNames.get(plate.id));
-              return {
-                key: plate.id,
-                label: text.primary,
-                secondary: text.secondary,
-                title: plate.filename,
-                media: <PlateThumbnail plate={plate} size={THUMB} />,
-                onSelect: () => studio.open(plate),
-              };
-            })
+          ? [
+              {
+                key: "all",
+                label: t("models:detail.openAllInStudio"),
+                onSelect: studio.openAll,
+              },
+              ...studio.files.map((plate) => {
+                const text = fileRowText(t, plate.filename, plate.position, plate.folder, studioNames.get(plate.id));
+                return {
+                  key: plate.id,
+                  label: text.primary,
+                  secondary: text.secondary,
+                  title: plate.filename,
+                  media: <PlateThumbnail plate={plate} size={THUMB} />,
+                  onSelect: () => studio.open(plate),
+                };
+              }),
+            ]
           : undefined,
     },
   );

@@ -3,10 +3,9 @@ import { z } from "zod";
 import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
 import { attachmentDisposition, HttpError } from "../utils/fileUtils";
-import { normalizeFileName } from "../files/names";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
-import { exportStudioDesign } from "../services/studioExport";
+import { exportStudioDesign, studioExportFilename } from "../services/studioExport";
 import { saveStudioDesignToLibrary, studioPlatePicture } from "../services/studioLibrary";
 import { getStudioAssistantPrefs } from "../services/settingsService";
 import {
@@ -17,7 +16,7 @@ import {
   studioGridSchema,
   type StudioSettings,
 } from "../services/studioSettingsService";
-import { ASSET_ID, studioPlates } from "../studio/document.generated";
+import { ASSET_ID, studioPlates, studioProfileName, studioProfiles } from "../studio/document.generated";
 import {
   assistantThread,
   clearAssistantThread,
@@ -202,13 +201,20 @@ const exportSchema = z.object({
   printer: z.string().regex(/^[a-z0-9-]{1,120}$/),
   nozzle: z.string().regex(/^(?:-|[A-Za-z]{0,3}\d+(?:\.\d+)?)$/),
   plate: z.string().regex(/^(?:-|plate-[1-9]\d*)$/),
+  profile: z
+    .string()
+    .regex(/^profile-[1-9]\d*$/)
+    .optional(),
 });
 
 router.get(
-  "/studio/designs/:id/export/:format/:slicer/:printer/:nozzle/:plate/:filename",
+  [
+    "/studio/designs/:id/export/:format/:slicer/:printer/:nozzle/:plate/:filename",
+    "/studio/designs/:id/export/:format/:slicer/:printer/:nozzle/:plate/:profile/:filename",
+  ],
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { format, slicer, printer, nozzle, plate } = parseBody(exportSchema, req.params);
+    const { format, slicer, printer, nozzle, plate, profile } = parseBody(exportSchema, req.params);
     if ((printer === "-") !== (nozzle === "-") || (printer !== "-" && slicer === "-"))
       throw new HttpError(400, "Choose a slicer, printer and nozzle together.");
     const design = await getStudioDesign(req.userId!, req.params.id);
@@ -217,11 +223,14 @@ router.get(
       slicer: slicer === "-" ? undefined : slicer,
       printer: printer === "-" ? undefined : { id: printer, nozzle },
       plate: plate === "-" ? undefined : plate,
+      profile,
     });
     const plateName = plate === "-" ? null : studioPlates(design.document).find((entry) => entry.id === plate)?.name;
-    const title = plateName ? `${design.name} - ${plateName}` : design.name;
+    const group = profile && studioProfiles(design.document).find((entry) => entry.id === profile);
+    const label = plateName || (group && studioProfileName(group));
+    const title = label ? `${design.name} - ${label}` : design.name;
     // With its extension, so the whole name keeps within the limit and the cut comes off the title.
-    const name = normalizeFileName(`${title}.${file.format}`).replace(/[:*?"<>|]+/g, "-");
+    const name = studioExportFilename(title, file.format);
     res.set("Cache-Control", "private, no-store");
     res.set("Content-Disposition", attachmentDisposition(name));
     res.type(file.mime).send(Buffer.from(file.bytes));

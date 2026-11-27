@@ -39,8 +39,14 @@ export async function listZipEntries(filePath: string): Promise<ZipEntryInfo[]> 
 /**
  * Null if the entry is missing, a directory, or over maxBytes. For small metadata files only.
  */
-export async function readZipEntry(filePath: string, entryName: string, maxBytes: number): Promise<Buffer | null> {
+export async function readZipEntry(
+  filePath: string,
+  entryName: string,
+  maxBytes: number,
+  { ignoreCase = false }: { ignoreCase?: boolean } = {},
+): Promise<Buffer | null> {
   const zipfile = await openZip(filePath);
+  const name = ignoreCase ? entryName.toLowerCase() : entryName;
   return new Promise((resolve, reject) => {
     let settled = false;
     const finish = (value: Buffer | null, err?: Error) => {
@@ -51,7 +57,8 @@ export async function readZipEntry(filePath: string, entryName: string, maxBytes
       else resolve(value);
     };
     zipfile.on("entry", (entry) => {
-      if (entry.fileName !== entryName || entry.fileName.endsWith("/")) {
+      const candidate = ignoreCase ? entry.fileName.toLowerCase() : entry.fileName;
+      if (candidate !== name || entry.fileName.endsWith("/")) {
         zipfile.readEntry();
         return;
       }

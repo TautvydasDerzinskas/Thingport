@@ -14,10 +14,12 @@ type Props = {
   onSuccess: (token: string, expires_in: number, user: AuthUser) => void;
 };
 
-/** Rendered outside the router, so `token` is read from window.location. Success signs in. */
+/** Rendered outside the router, so `token` is read from window.location. */
 export default function VerifyEmailPage({ onSuccess }: Props) {
   const { t } = useTranslation("app");
   const [error, setError] = React.useState<string | null>(null);
+  const [verified, setVerified] = React.useState(false);
+  const verificationRequest = React.useRef<ReturnType<typeof authApi.verifyEmail> | null>(null);
 
   React.useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
@@ -25,16 +27,24 @@ export default function VerifyEmailPage({ onSuccess }: Props) {
       setError(t("auth.verifyEmail.missingToken"));
       return;
     }
+    // The token is single-use. Share its request across StrictMode's effect replay.
+    const request = (verificationRequest.current ??= authApi.verifyEmail(token));
+    let cancelled = false;
     (async () => {
       try {
-        const res = await authApi.verifyEmail(token);
+        const res = await request;
+        if (cancelled) return;
         window.history.replaceState(null, "", "/");
-        onSuccess(res.token, res.expires_in, res.user);
+        if ("token" in res) onSuccess(res.token, res.expires_in, res.user);
+        else setVerified(true);
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("auth.verifyEmail.failed"));
+        if (!cancelled) setError(err instanceof Error ? err.message : t("auth.verifyEmail.failed"));
       }
     })();
-    // Runs once against whatever token was in the URL on mount.
+    return () => {
+      cancelled = true;
+    };
+    // Uses the token from the URL on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -66,6 +76,15 @@ export default function VerifyEmailPage({ onSuccess }: Props) {
                 window.location.reload();
               }}
             >
+              {t("auth.verifyEmail.backToSignIn")}
+            </Button>
+          </Stack>
+        ) : verified ? (
+          <Stack spacing={2} alignItems="center">
+            <Typography variant="body2" color="text.secondary">
+              {t("auth.verifyEmail.verified")}
+            </Typography>
+            <Button variant="contained" onClick={() => window.location.reload()}>
               {t("auth.verifyEmail.backToSignIn")}
             </Button>
           </Stack>

@@ -344,6 +344,7 @@ export function retargetSettings(config: Settings, recipe: PrinterRecipe): Retar
 
   out.printer_settings_id = recipe.preset;
   if (recipe.model) out.printer_model = recipe.model;
+  out.printer_variant = String(recipe.nozzle);
   out.inherits_group = Array.from({ length: count + 2 }, () => "");
   diff[count + 1] = "";
   out.different_settings_to_system = diff;

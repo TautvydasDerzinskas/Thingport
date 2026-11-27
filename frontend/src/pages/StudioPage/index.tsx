@@ -30,8 +30,13 @@ import { useToast } from "../../components/ToastProvider";
 import {
   consumerOf,
   DEFAULT_PLATE_ID,
+  exportableProfiles,
+  picturablePlates,
   plateOf,
+  profileOf,
+  profileSettings,
   studioPlates,
+  studioProfiles,
   featureById,
   inputsOf,
   isBody,
@@ -55,7 +60,7 @@ import StudioSlicerDialog, { studioExportName } from "./StudioSlicerDialog";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { onTopBarHeight } from "../../utils/topBarHeight";
 import ObjectsPanel from "./ObjectsPanel";
-import { featureLabel, plateLabel } from "./labels";
+import { featureLabel, plateLabel, profileLabel } from "./labels";
 import { AssistantPanel } from "./AssistantThread";
 import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
@@ -64,6 +69,9 @@ import SidePanel from "./SidePanel";
 import ResizeHandle, { useResizableWidth } from "../../components/ResizeHandle";
 import PrintProfilePanel from "./PrintProfilePanel";
 import StudioSaveDialog, { type StudioSaveDraft, type StudioSaveRequest } from "./StudioSaveDialog";
+import { addScenePictures } from "../../utils/scenePictures/addToModel";
+import { savedPlateLocation } from "../../utils/scenePictures/studioPlate";
+import type { Shot } from "../../utils/scenePictures/scenes";
 import { profileAiPrompt } from "./printProfileUi";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
@@ -246,11 +254,16 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
 
   const [selected, setSelected] = useState<string[]>([]);
   const [pickedPlate, setPickedPlate] = useState(DEFAULT_PLATE_ID);
+  const [printTarget, setPrintTarget] = useState<string | null>(null);
   const activePlate =
     doc && studioPlates(doc).some((plate) => plate.id === pickedPlate) ? pickedPlate : DEFAULT_PLATE_ID;
   const activePlateRef = useRef(activePlate);
   activePlateRef.current = activePlate;
   const plateInView = doc ? studioPlates(doc).find((plate) => plate.id === activePlate) : undefined;
+  const profiles = doc ? studioProfiles(doc) : [];
+  const activeProfile = profiles.find((profile) => profile.id === profileOf(plateInView));
+  const printGroup = profiles.find((profile) => profile.id === printTarget) ?? activeProfile;
+  const plateHidden = Boolean(activeProfile?.hidden || plateInView?.hidden);
   const plateSource = plateInView?.source;
   const [slicerOpen, setSlicerOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -340,7 +353,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const sourcePlate = useSourcePlate(
     designId,
     // A hidden plate isn't drawn, so there's no need to load it.
-    plateInView?.hidden ? undefined : plateInView,
+    plateHidden ? undefined : plateInView,
     design?.undone_source_plate_ids?.includes(activePlate) ?? false,
     run,
     setPartsHint,
@@ -351,6 +364,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   if (shownDesign !== designId) {
     setShownDesign(designId);
     setPickedPlate(DEFAULT_PLATE_ID);
+    setPrintTarget(null);
     setSlicerOpen(false);
     setExportOpen(false);
     setSaveOpen(false);
@@ -373,13 +387,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     };
     setSelected((prev) => (prev.every(onPlate) ? prev : prev.filter(onPlate)));
     // Hiding the plate, from here or by an assistant, ends drawing on a sketch the view no longer shows.
-    const plateHidden = studioPlates(doc).some((plate) => plate.id === activePlate && plate.hidden);
     setSketch((prev) =>
       prev && !plateHidden && onPlate(prev.id) && featureById(doc, prev.id)?.type === "sketch" ? prev : null,
     );
-  }, [doc, activePlate]);
+  }, [doc, activePlate, plateHidden]);
 
   const changePlate = (id: string) => {
+    setPrintTarget(null);
     if (id === activePlate) return;
     setPickedPlate(id);
     setSelected([]);
@@ -779,7 +793,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       const plateId = options?.plate;
       const plate = plateId ? studioPlates(saved.document).find((entry) => entry.id === plateId) : undefined;
       const name = plate ? `${saved.name} - ${plateLabel(plate, t)}` : saved.name;
-      const extension = options?.format === "stl-zip" ? "zip" : options?.format;
+      const extension =
+        options?.format === "stl-zip" ||
+        (!plateId && !options?.profile && exportableProfiles(saved.document).length > 1)
+          ? "zip"
+          : options?.format;
       const filename = studioExportName(name, extension);
       await saveResponseToDisk(await studioApi.export(saved.id, filename, options), filename);
     } catch (error) {
@@ -793,7 +811,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [saving, setSaving] = useState(false);
   // The view as shown, for the save dialog's picture of the plate in view.
   const snapshotView = useCallback(() => viewport.current?.snapshot() ?? Promise.resolve(null), []);
-  const saveToLibrary = async ({ name, modelId, profileName, picturePlate }: StudioSaveRequest) => {
+  const saveToLibrary = async ({ name, modelId, profileName, picturePlate, pictures }: StudioSaveRequest) => {
     if (!design || saving) return;
     setSaving(true);
     try {
@@ -804,13 +822,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       // pictures that one. A profile added to a model leaves its pictures alone. A hidden plate draws nothing, so it
       // gives no picture. The view's snapshot is only used if the chosen plate is still the one displayed.
       const plateHasBodies =
-        !modelId &&
-        chosenPlate === activePlateRef.current &&
-        !studioPlates(saved.document).some((plate) => plate.id === chosenPlate && plate.hidden) &&
-        topLevel(saved.document).some(
-          (feature) => isBody(feature) && feature.visible && plateOf(feature) === chosenPlate,
-        );
+        !modelId && chosenPlate === activePlateRef.current && picturablePlates(saved.document).includes(chosenPlate);
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
+      // The plate the cover shows, which generated pictures show too: the chosen one, else the server's first.
+      const coverPlate = plateHasBodies || picturePlate ? chosenPlate : picturablePlates(saved.document)[0];
       const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;
       const { model } = await studioApi.saveToLibrary(saved.id, {
         ...(name ? { name } : {}),
@@ -823,16 +838,49 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       setSaveDraft(null);
       toast({
         message: modelId
-          ? t("studio.save.addedProfile", { profile: profileName, name: model.title || model.name })
+          ? profileName
+            ? t("studio.save.addedProfile", { profile: profileName, name: model.title || model.name })
+            : t("studio.profiles.addedToModel", { name: model.title || model.name })
           : t("studio.design.saved", { name: model.title || model.name }),
         severity: "success",
         action: { label: t("studio.design.openSaved"), onClick: () => navigate(`/models/${model.id}`) },
         autoHideMs: 8000,
       });
+      // Generated pictures go on after, in the background: the model is saved whether or not they come out.
+      if (pictures?.length && !modelId)
+        void addPicturesToSaved(
+          model.id,
+          model.title || model.name,
+          pictures,
+          coverPlate ? savedPlateLocation(saved.document, coverPlate) : null,
+        );
     } catch (error) {
       showError(error);
     } finally {
       setSaving(false);
+    }
+  };
+  const addPicturesToSaved = async (
+    id: string,
+    modelName: string,
+    pictures: Shot[],
+    at: { file: number; plate: number } | null,
+  ) => {
+    toast({ message: t("studio.save.addingPictures", { name: modelName }), severity: "info", autoHideMs: 4000 });
+    try {
+      const count = await addScenePictures(id, pictures, at);
+      if (count)
+        toast({
+          message: t("studio.save.addedPictures", { count, name: modelName }),
+          severity: "success",
+          action: { label: t("studio.design.openSaved"), onClick: () => navigate(`/models/${id}`) },
+          autoHideMs: 8000,
+        });
+    } catch (error) {
+      toast({
+        message: t("studio.save.picturesFailed", { error: error instanceof Error ? error.message : String(error) }),
+        severity: "error",
+      });
     }
   };
 
@@ -1016,22 +1064,30 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     .filter(Boolean)
     .join("\n");
   const suggestProfile = () => {
-    if (!design || aiBusy) return;
-    void assistant.send(profileAiPrompt(t, design.document.print_profile, slicerSettings, userPrinters));
+    if (!design || !printGroup || aiBusy) return;
+    const settings = profileSettings(design.document, printGroup.id).print_profile;
+    const prompt = profileAiPrompt(t, settings, slicerSettings, userPrinters);
+    void assistant.send(`${prompt} ${t("studio.profiles.aiTarget", { id: printGroup.id })}`);
   };
   // A profile an AI chose or changed marks the Print tab until it's looked at; nothing opens by itself.
   const [printBadge, setPrintBadge] = useState(false);
   const printShown = editing && panels.properties && rightTab === "print";
-  const profileStamp = `${design?.id ?? ""}:${doc?.print_profile ? JSON.stringify(doc.print_profile) : ""}`;
-  const seenProfile = useRef(profileStamp);
+  const printSettings = doc && profileSettings(doc, printGroup?.id).print_profile;
+  const profileKey = `${design?.id ?? ""}:${printGroup?.id ?? ""}`;
+  const profileStamp = JSON.stringify(printSettings);
+  const seenProfile = useRef({ key: profileKey, settings: profileStamp });
   useEffect(() => {
-    if (profileStamp === seenProfile.current) return;
-    const sameDesign = seenProfile.current.split(":")[0] === profileStamp.split(":")[0];
-    seenProfile.current = profileStamp;
-    const by = doc?.print_profile?.by;
-    if (sameDesign && by && by !== "person" && !printShown) setPrintBadge(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileStamp]);
+    const previous = seenProfile.current;
+    seenProfile.current = { key: profileKey, settings: profileStamp };
+    if (
+      previous.key === profileKey &&
+      previous.settings !== profileStamp &&
+      printSettings?.by &&
+      printSettings.by !== "person" &&
+      !printShown
+    )
+      setPrintBadge(true);
+  }, [profileKey, profileStamp, printSettings?.by, printShown]);
   useEffect(() => {
     if (printShown) setPrintBadge(false);
   }, [printShown]);
@@ -1042,8 +1098,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   };
 
   const viewportArea = (() => {
-    if (plateInView && plateSource && !plateInView.hidden)
-      return <StudioSourcePlate plate={plateInView} {...sourcePlate} />;
+    if (plateInView && plateSource && !plateHidden) return <StudioSourcePlate plate={plateInView} {...sourcePlate} />;
     if (noDesigns && !designId) {
       return (
         <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", p: 2 }}>
@@ -1122,10 +1177,15 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           tinted={operation?.kind === "separate" ? own : undefined}
           bottomInset={promptInset}
         />
-        {plateInView?.hidden && (
+        {plateInView && plateHidden && (
           <HiddenPlateNotice
-            plate={plateInView}
-            onShow={() => void run("set_plate_visibility", { plate_id: plateInView.id, visible: true })}
+            kind={activeProfile?.hidden ? "profiles" : "plates"}
+            name={activeProfile?.hidden ? profileLabel(activeProfile, t) : plateLabel(plateInView, t)}
+            onShow={() => {
+              if (activeProfile?.hidden)
+                void run("set_profile_visibility", { profile_id: activeProfile.id, visible: true });
+              else void run("set_plate_visibility", { plate_id: plateInView.id, visible: true });
+            }}
           />
         )}
         {operation && (
@@ -1206,8 +1266,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     );
   })();
 
-  const showObjectsPanel = editing || (doc !== null && studioPlates(doc).length > 1);
-  const objectsLabel = t("studio.panels.features");
+  const showObjectsPanel = editing || (doc !== null && (studioPlates(doc).length > 1 || Boolean(doc.profiles)));
+  const objectsLabel = t("studio.profiles.title");
 
   return (
     <StudioUnitsContext.Provider value={units}>
@@ -1328,6 +1388,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                   errors={errors}
                   onHide={() => togglePanel("features")}
                   onChangePlate={changePlate}
+                  onEditProfile={(profileId, plateId) => {
+                    if (plateId) changePlate(plateId);
+                    setPrintTarget(profileId);
+                    openPrintTab();
+                  }}
                   onExportPlate={(plate) => void downloadDesign({ format: "stl", plate })}
                   onArrange={(plate) => {
                     if (!design) return;
@@ -1398,10 +1463,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                       }}
                     />
                   )}
-                  {doc && design && rightTab === "print" && (
+                  {doc && design && printGroup && rightTab === "print" && (
                     <Box sx={{ height: "100%", overflowY: "auto" }}>
                       <PrintProfilePanel
+                        key={printGroup.id}
                         design={design}
+                        group={printGroup}
                         run={run}
                         canAskAi={canAskAi}
                         aiBusy={aiBusy}
@@ -1483,6 +1550,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           open={checking}
           designId={design?.id ?? null}
           doc={doc}
+          profileId={profileOf(plateInView)}
           selected={selected}
           run={run}
           onClose={() => setChecking(false)}
@@ -1699,9 +1767,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             draft={saveDraft}
             activePlate={activePlate}
             snapshot={snapshotView}
-            onEditProfile={(left) => {
+            onEditProfile={(left, profileId) => {
               setSaveDraft(left);
               setSaveOpen(false);
+              setPrintTarget(profileId ?? null);
               openPrintTab();
             }}
             onSave={(request) => void saveToLibrary(request)}
