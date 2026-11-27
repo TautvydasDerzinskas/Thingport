@@ -9,7 +9,15 @@ import { UnauthorizedError } from "../../api/client";
 import { normalizeFileName, preservesFileExtension } from "../../utils/fileNames.generated";
 
 export type PlateItem =
-  | { kind: "existing"; id: string; filename: string; filenameEdited: boolean; folder: string | null }
+  | {
+      kind: "existing";
+      id: string;
+      filename: string;
+      filenameEdited: boolean;
+      folder: string | null;
+      /** The name asked for when the server saved a numbered one instead, kept until the save that reports it. */
+      numberedFrom?: string;
+    }
   | {
       kind: "new";
       localId: string;
@@ -259,7 +267,6 @@ export async function savePlateChanges(
         : [],
     ),
   );
-  const numbered: { requested: string; saved: string }[] = [];
   // Asked again once, after the plate that held its name has moved away.
   const askedAgain = new Set<string>();
   /** The other plate in `plate`'s folder holding `name`, which the server numbered `plate`'s name apart from. */
@@ -304,16 +311,13 @@ export async function savePlateChanges(
       if (!result) throw new PlateRenameSwapUnsupportedError();
       latest = result.print;
       // Every plate of the batch moved together, so a name still held is held by a file outside this save.
-      for (const edit of pending) {
-        const renamed = latest.plates.find((current) => current.id === edit.plate.id);
-        if (renamed && holderOf(renamed, edit.normalized)) {
-          numbered.push({ requested: edit.normalized, saved: renamed.filename });
-        }
-      }
       stagedItems = stagedItems.map((staged) => {
-        if (staged.kind !== "existing" || !renameTargets.has(staged.id)) return staged;
+        const target = staged.kind === "existing" ? renameTargets.get(staged.id) : undefined;
+        if (staged.kind !== "existing" || !target) return staged;
         const renamed = latest.plates.find((current) => current.id === staged.id);
-        return renamed ? { ...staged, filename: renamed.filename, filenameEdited: false } : staged;
+        if (!renamed) return staged;
+        const numberedFrom = holderOf(renamed, target.normalized) ? target.normalized : undefined;
+        return { ...staged, filename: renamed.filename, filenameEdited: false, numberedFrom };
       });
       reportProgress();
       break;
@@ -330,10 +334,11 @@ export async function savePlateChanges(
       reportProgress();
       continue;
     }
-    if (renamed && holder) numbered.push({ requested: normalized, saved: renamed.filename });
+    // Kept on the item, so a later step failing doesn't lose it: the save that finishes reports it.
+    const numberedFrom = renamed && holder ? normalized : undefined;
     stagedItems = stagedItems.map((staged) =>
       staged.kind === "existing" && staged.id === plate.id
-        ? { ...staged, filename: renamed?.filename ?? filename, filenameEdited: false }
+        ? { ...staged, filename: renamed?.filename ?? filename, filenameEdited: false, numberedFrom }
         : staged,
     );
     renameTargets.delete(plate.id);
@@ -369,7 +374,17 @@ export async function savePlateChanges(
       reportProgress();
     }
   }
+  const numbered = stagedItems.find((item) => item.kind === "existing" && item.numberedFrom);
+  if (numbered?.kind === "existing" && numbered.numberedFrom) {
+    // Reported once: the next save goes through quietly.
+    stagedItems = stagedItems.map((item) => {
+      if (item.kind !== "existing" || !item.numberedFrom) return item;
+      const { numberedFrom: _reported, ...rest } = item;
+      return rest;
+    });
+    reportProgress();
+    throw new PlateRenameNumberedError(numbered.numberedFrom, numbered.filename);
+  }
   reportProgress();
-  if (numbered.length) throw new PlateRenameNumberedError(numbered[0].requested, numbered[0].saved);
   return latest;
 }

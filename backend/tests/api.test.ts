@@ -6,7 +6,9 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import sharp from "sharp";
+import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
+import { BUNDLES } from "../src/config";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
 import { resolvePlateFilePath } from "../src/services/printCreation";
@@ -520,7 +522,7 @@ describe("plate add/remove/reorder/rename", () => {
     const firstFile = tmpFile(filename, "solid retry endsolid");
     const secondFile = tmpFile(filename, "solid retry endsolid");
     // Another file under the same upload ID isn't a retry, even one with the bytes the stored plate was edited to.
-    const otherFile = tmpFile(filename, "solid edited endsolid");
+    const otherFile = tmpFile(filename, "solid edits endsolid");
     const post = (file: string) => auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", file);
 
     try {
@@ -538,7 +540,8 @@ describe("plate add/remove/reorder/rename", () => {
         await prisma.plate.findUniqueOrThrow({ where: { id: first.body.added_plate_ids[0] } }),
       );
       if (!stored) throw new Error("Expected a readable plate");
-      fs.writeFileSync(stored, "solid edited endsolid");
+      // Same length, so the row's size still holds, as an edit in place keeps it.
+      fs.writeFileSync(stored, "solid edits endsolid");
       const replay = await post(firstFile);
       expect(replay.status).toBe(200);
       expect(replay.body.added_plate_ids).toEqual(first.body.added_plate_ids);
@@ -699,10 +702,74 @@ describe("plate add/remove/reorder/rename", () => {
         status: "complete",
         plateId: saved.body.added_plate_ids[0],
       });
+      // The worker that lost its lease took its file back; the replacement's is its plate's.
+      expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
     } finally {
       firstPlacement.release();
       replacementPlacement.release();
     }
+  });
+
+  it("keeps a plate's file when its commit was reported failed but went through", async () => {
+    const clientUploadId = randomUUID();
+    const filename = `thingport-upload-${clientUploadId}-committed.stl`;
+    const upload = () =>
+      auth(request(app).post(`/api/print/${printId}/plates`)).attach(
+        "files",
+        Buffer.from("solid committed endsolid"),
+        filename,
+      );
+    const transaction = PrismaClient.prototype.$transaction;
+    // The plate's transaction commits and its acknowledgement is lost, as when the connection drops at COMMIT.
+    const lost = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
+      this: PrismaClient,
+      ...args: unknown[]
+    ) {
+      await Reflect.apply(transaction, this, args);
+      throw new Error("Connection lost after COMMIT");
+    } as never);
+    try {
+      expect((await upload()).status).toBe(500);
+    } finally {
+      lost.mockRestore();
+    }
+
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId, filename } });
+    expect(resolvePlateFilePath(plate)).not.toBeNull();
+    const replay = await upload();
+    expect(replay.status).toBe(200);
+    expect(replay.body.added_plate_ids).toEqual([plate.id]);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("renames a plate without touching the model's other files", async () => {
+    const uploaded = await auth(request(app).post("/api/upload")).attach(
+      "files",
+      Buffer.from("solid own endsolid"),
+      "own.stl",
+    );
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [plate] = await prisma.plate.findMany({ where: { printId: modelId } });
+    // A supporting file still where older versions kept them, which a move of the model's files would take along.
+    const file = await prisma.printFile.create({
+      data: { printId: modelId, role: "SUPPORTING", filename: "guide.txt", mime: "text/plain", storagePath: "pending" },
+    });
+    const bundled = path.join("bundles", modelId, file.id, "guide.txt");
+    await prisma.printFile.update({ where: { id: file.id }, data: { storagePath: bundled, size: 5 } });
+    const legacy = path.join(BUNDLES, modelId, file.id, "guide.txt");
+    fs.mkdirSync(path.dirname(legacy), { recursive: true });
+    fs.writeFileSync(legacy, "guide");
+
+    // Moved along, it would be looked at after the name is recorded, where a disk error leaves a failed save renamed.
+    const res = await auth(request(app).post(`/api/print/${modelId}/plate/${plate.id}/rename`)).send({
+      filename: "renamed-own.stl",
+    });
+    expect(res.status).toBe(200);
+    expect(await prisma.printFile.findUniqueOrThrow({ where: { id: file.id } })).toMatchObject({
+      storagePath: bundled,
+    });
+    expect(fs.readFileSync(legacy, "utf8")).toBe("guide");
   });
 
   it("uses the completed plate's id even when another plate has its original upload name", async () => {

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
@@ -130,9 +130,10 @@ async function encodePreviewUpload(buffer: Buffer): Promise<Buffer | null> {
     return await photoJpeg(buffer, 1600, 90, true);
   } catch (error) {
     // Sharp reports input rejection through Error messages. A different decoder or encoder failure is retryable. A
-    // truncated PNG fails as a libpng read error or, as the decoder's warning comes first, through failOn.
+    // truncated PNG fails as a libpng read error or, as the decoder's warning comes first, through failOn. WebP, TIFF
+    // and HEIF readers name themselves when a valid header leads to pixels they can't read (their writers don't).
     const rejected =
-      /^(Input buffer (contains unsupported image format|has corrupt header:)|Input image exceeds (pixel|channel) limit|VipsJpeg: premature end of JPEG image|Warning treated as error due to failOn setting)/;
+      /^(Input buffer (contains unsupported image format|has corrupt header:)|Input image exceeds (pixel|channel) limit|VipsJpeg: premature end of JPEG image|Warning treated as error due to failOn setting|(webp2vips|tiff2vips|heifload\w*): )/;
     if (error instanceof Error && (rejected.test(error.message) || error.message === "vipspng: libpng read error")) {
       return null;
     }
@@ -150,10 +151,13 @@ async function encodePreviewUpload(buffer: Buffer): Promise<Buffer | null> {
  */
 async function createPreviewImageRow(printId: string, generated: boolean): Promise<PreviewImage | null> {
   for (let attempt = 0; attempt < 5; attempt++) {
-    const last = await prisma.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
-    const position = last ? last.position + 1 : 0;
     try {
-      return await prisma.previewImage.create({ data: { printId, position, generated } });
+      // Under the gallery lock, so a renumbering can't run between the position read and the insert.
+      return await prisma.$transaction(async (tx) => {
+        await lockPreviewGallery(tx, printId);
+        const last = await tx.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
+        return tx.previewImage.create({ data: { printId, position: last ? last.position + 1 : 0, generated } });
+      });
     } catch (err) {
       if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
     }
@@ -207,19 +211,42 @@ export async function saveGeneratedPlateThumbnail(
   buffer: Buffer,
 ): Promise<"saved" | "skipped" | "invalid"> {
   await ensureAssetHome(printId);
-  return prisma.$transaction(async (tx) => {
-    await lockPreviewGallery(tx, printId);
-    const plate = await tx.plate.findFirst({
-      where: { id: plateId, printId },
-      select: { thumbGenerated: true, print: { select: { assetsPath: true } } },
+  // Where this attempt writes the plate's first thumbnail, when it had none.
+  let firstThumb: string | null = null;
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await lockPreviewGallery(tx, printId);
+      const plate = await tx.plate.findFirst({
+        where: { id: plateId, printId },
+        select: { thumbGenerated: true, print: { select: { assetsPath: true } } },
+      });
+      const home = plate?.print.assetsPath;
+      if (!plate || !home) return "skipped";
+      const had = await assetIsThere(home, plateThumbFile(plateId));
+      if (!plate.thumbGenerated && had) return "skipped";
+      if (!had) firstThumb = assetTarget(home, plateThumbFile(plateId));
+      if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx }))) return "invalid";
+      await tx.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
+      return "saved";
     });
-    const home = plate?.print.assetsPath;
-    if (!plate || !home) return "skipped";
-    if (!plate.thumbGenerated && (await assetIsThere(home, plateThumbFile(plateId)))) return "skipped";
-    if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx }))) return "invalid";
-    await tx.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
-    return "saved";
-  });
+  } catch (error) {
+    if (firstThumb) await takeBackRolledBackThumb(printId, plateId, firstThumb, Date.now());
+    throw error;
+  }
+}
+
+/** Removes a first thumbnail a failed save wrote, once a locked read confirms its flag rolled back: left in place, later
+ *  renders would take it for one the owner chose. Kept when that read fails, or when the file changed since. */
+async function takeBackRolledBackThumb(printId: string, plateId: string, file: string, failedAt: number) {
+  await prisma
+    .$transaction(async (tx) => {
+      await lockPreviewGallery(tx, printId);
+      const plate = await tx.plate.findFirst({ where: { id: plateId, printId }, select: { thumbGenerated: true } });
+      if (!plate || plate.thumbGenerated) return;
+      const written = await fs.stat(file).catch(() => null);
+      if (written?.isFile() && written.mtimeMs <= failedAt) await fs.rm(file, { force: true });
+    })
+    .catch((error) => console.error(`Couldn't take back plate ${plateId}'s thumbnail:`, error));
 }
 
 /** Publishes the stored image and receipt together. Each worker writes under its own image id so a concurrent
@@ -231,8 +258,16 @@ export async function addPreviewImageForUpload(
   buffer: Buffer,
 ): Promise<string | null> {
   const where = { printId_uploadId: { printId, uploadId } };
+  // An upload ID names one picture: other bytes under it are another picture, which a replay would report as saved.
+  const contentSha256 = createHash("sha256").update(buffer).digest("hex");
+  const replay = (receipt: { imageId: string | null; contentSha256: string }) => {
+    if (receipt.contentSha256 !== contentSha256) {
+      throw new HttpError(409, "This upload ID was already used for a different picture");
+    }
+    return receipt.imageId;
+  };
   const previous = await prisma.previewImageUpload.findUnique({ where });
-  if (previous) return previous.imageId;
+  if (previous) return replay(previous);
 
   const id = randomUUID();
   const jpeg = await encodePreviewUpload(buffer);
@@ -245,7 +280,7 @@ export async function addPreviewImageForUpload(
       const imageId = await prisma.$transaction(async (tx) => {
         await lockPreviewGallery(tx, printId);
         const receipt = await tx.previewImageUpload.findUnique({ where });
-        if (receipt) return receipt.imageId;
+        if (receipt) return replay(receipt);
         if (saved) {
           const { dest: _dest, ...stored } = saved;
           const last = await tx.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
@@ -253,7 +288,7 @@ export async function addPreviewImageForUpload(
         }
         const published = saved ? id : null;
         await tx.previewImageUpload.create({
-          data: { printId, uploadId, imageId: published, coverPending: Boolean(saved) },
+          data: { printId, uploadId, imageId: published, contentSha256, coverPending: Boolean(saved) },
         });
         readyToCommit = true;
         return published;
@@ -334,6 +369,14 @@ async function firstImageThere<T extends { id: string }>(
     if (file) return { image, file };
   }
   return undefined;
+}
+
+/** resumePreviewUploadCover for a request that has more to answer than the cover: a failure is logged, and the work
+ *  stays pending for the next upload or receipt lookup. */
+export async function resumePreviewUploadCoverQuietly(printId: string): Promise<void> {
+  await resumePreviewUploadCover(printId).catch((error) =>
+    console.error(`Couldn't finish the cover work for print ${printId}:`, error),
+  );
 }
 
 /** Finishes the first uploaded photo's cover work on upload or receipt lookup. A new cover choice, a removed

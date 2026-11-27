@@ -411,17 +411,13 @@ async function relocateAssets(
   return moved;
 }
 
-/**
- * Moves everything of a print -- plates, supporting and prepared files, pictures -- after a change to anything its
- * storage path is built from. Returns how many files moved.
- */
-export async function relocatePrint(
+/** Moves these plates' files to where their names and the template now put them. */
+async function relocatePlates(
   print: PrintLike & { assetsPath?: string | null },
   plates: Plate[],
-  template?: string | null,
+  safeTemplate: string,
+  printValues: Awaited<ReturnType<typeof printTemplateValues>>,
 ): Promise<number> {
-  const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
-  const printValues = await printTemplateValues(print, safeTemplate);
   let moved = 0;
   for (const plate of plates) {
     // A tool's plate reads the tool's file, which isn't the model's to move.
@@ -447,6 +443,31 @@ export async function relocatePrint(
     );
     if (didMove) moved += 1;
   }
+  return moved;
+}
+
+/** Moves only these plates' files, as a rename does: their names are all it changed, so nothing else of the model
+ *  moves, and nothing else has to be looked at before the names are recorded. */
+export async function relocateRenamedPlates(
+  print: PrintLike & { assetsPath?: string | null },
+  plates: Plate[],
+): Promise<number> {
+  const safeTemplate = validateStorageTemplate(await getStorageTemplate());
+  return relocatePlates(print, plates, safeTemplate, await printTemplateValues(print, safeTemplate));
+}
+
+/**
+ * Moves everything of a print -- plates, supporting and prepared files, pictures -- after a change to anything its
+ * storage path is built from. Returns how many files moved.
+ */
+export async function relocatePrint(
+  print: PrintLike & { assetsPath?: string | null },
+  plates: Plate[],
+  template?: string | null,
+): Promise<number> {
+  const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
+  const printValues = await printTemplateValues(print, safeTemplate);
+  let moved = await relocatePlates(print, plates, safeTemplate, printValues);
   moved += await relocatePrintFiles(print, safeTemplate, printValues);
   // A caller that only had some of the plates still moves every plate's pictures.
   const [current, allPlates] = await Promise.all([
@@ -601,6 +622,7 @@ async function saveThumbBuffer(
   target?: ThumbTarget,
 ): Promise<boolean> {
   let tmp: string | null = null;
+  let placed = false;
   try {
     const file = plateThumbFile(plateId);
     const home = target?.home ?? (await ensurePlateAssetHome(plateId));
@@ -609,14 +631,17 @@ async function saveThumbBuffer(
     await fs.mkdir(path.dirname(dest), { recursive: true });
     await writePhotoJpeg(input, tmp, 512, 88, keepExif);
     await fs.rename(tmp, dest);
+    placed = true;
     // The one in the old shared folder is out of date now.
     await removeAsset(null, file);
     // Any thumb but our own render; the generated-thumbnail route marks those after saving.
     const db = target?.db ?? prisma;
     await db.plate.updateMany({ where: { id: plateId, thumbGenerated: true }, data: { thumbGenerated: false } });
     return true;
-  } catch {
+  } catch (error) {
     if (tmp) await fs.rm(tmp, { force: true });
+    // A caller in a transaction hears of a failure after the file is in place, so its rollback can take the file back.
+    if (placed && target) throw error;
     return false;
   }
 }

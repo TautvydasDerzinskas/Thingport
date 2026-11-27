@@ -713,6 +713,25 @@ describe("renames another editor's changes get in the way of", () => {
     expect(progress?.print.plates.map((candidate) => candidate.filename)).toEqual(["c (2).stl", "c.stl"]);
   });
 
+  it("still reports a numbered name when the save's reorder failed, without renaming again", async () => {
+    const { api } = numberingServer([plate("a", "a.stl", 0), plate("x", "c.stl", 1)]);
+    let progress: PlateSaveProgress = {
+      print: print(plate("a", "a.stl", 0), plate("x", "c.stl", 1)),
+      items: [edited("a", "c.stl")],
+      removedPlateIds: new Set(),
+    };
+    const save = () =>
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, (updated) => {
+        progress = updated;
+      });
+    api.reorderPlates.mockRejectedValueOnce(new Error("temporary failure"));
+
+    await expect(save()).rejects.toThrow("temporary failure");
+    await expect(save()).rejects.toMatchObject({ requested: "c.stl", saved: "c (2).stl" });
+    await expect(save()).resolves.toBeDefined();
+    expect(api.renamePlate).toHaveBeenCalledOnce();
+  });
+
   it("puts the draft's order onto the plates there are now when another editor added one", async () => {
     const { api, set } = numberingServer([plate("a", "a.stl", 0), plate("b", "b.stl", 1)]);
     const initial = print(plate("a", "a.stl", 0), plate("b", "b.stl", 1));

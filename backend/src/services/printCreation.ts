@@ -23,7 +23,7 @@ import {
   ensurePlateThumbnail,
   managedPlatePath,
   pruneEmptyStorageDirs,
-  relocatePrint,
+  relocateRenamedPlates,
   removePlatePictures,
   renderPlateStoragePath,
   saveThumbFromFile,
@@ -212,6 +212,19 @@ function lockPlateList(tx: Prisma.TransactionClient, printId: string) {
   return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('plate-names'), hashtext(${printId}))`;
 }
 
+/** Whether a committed plate of the model names this storage path, read under lockPlateList so a transaction whose
+ *  commit was in doubt has ended. True when the read fails: the file is kept rather than taken from a plate. */
+async function plateMayName(printId: string, storagePath: string): Promise<boolean> {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await lockPlateList(tx, printId);
+      return (await tx.plate.count({ where: { printId, storagePath } })) > 0;
+    });
+  } catch {
+    return true;
+  }
+}
+
 /** The name or position a plate was prepared with stopped being the model's next while its file was placed. */
 class PlateListChangedError extends Error {}
 
@@ -272,8 +285,11 @@ async function createPlateAtPosition(
       return plate;
     });
   } catch (err) {
-    // e.g. a concurrent import of the same profile won; don't orphan the placed file.
-    if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
+    // e.g. a concurrent import of the same profile won; don't orphan the placed file. A commit that failed may still
+    // have committed, so the file goes only once a locked read finds no plate naming it.
+    if (effectivePath && !input.sourcePath && !(await plateMayName(print.id, storagePath))) {
+      await fs.rm(effectivePath, { force: true }).catch(() => undefined);
+    }
     throw err;
   }
 
@@ -756,7 +772,7 @@ async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Pl
 
     // Commit logical names together. Each storage move can be retried, and a failed move keeps its source readable.
     // A repeated request still runs relocation in case the names committed before an earlier move failed.
-    await relocatePrint(print, renamed);
+    await relocateRenamedPlates(print, renamed);
     if (renamed.some((plate) => plate.position === 0)) await refreshAutoPreparedMetadata(print.id);
     return renamed;
   });

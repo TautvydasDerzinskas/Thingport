@@ -21,7 +21,7 @@ import {
   addPreviewImage,
   addPreviewImageForUpload,
   preferImageOverRenders,
-  resumePreviewUploadCover,
+  resumePreviewUploadCoverQuietly,
 } from "./previewImageService";
 import { recordActivity } from "./activityService";
 import { createLog } from "./auditLog";
@@ -197,6 +197,6 @@ export async function addUploadedPreviewImages(
     if (!uploadIds && !added.length) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
     added.push(imageId);
   }
-  if (uploadIds) await resumePreviewUploadCover(printId);
+  if (uploadIds) await resumePreviewUploadCoverQuietly(printId);
   return added;
 }

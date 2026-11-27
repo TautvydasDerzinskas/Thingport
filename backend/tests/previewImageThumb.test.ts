@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import sharp from "sharp";
+import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
@@ -17,6 +18,7 @@ import {
   generateCardRender,
   lockPreviewGallery,
   previewImagePath,
+  saveGeneratedPlateThumbnail,
 } from "../src/services/previewImageService";
 import { modelImagePath, modelImageState } from "../src/services/modelPreviewCache";
 import { resolvePlateFilePath } from "../src/services/printCreation";
@@ -28,6 +30,7 @@ import {
   galleryThumbFile,
   legacyAssetPath,
   plateAssetHome,
+  plateThumbFile,
   printAssetHome,
 } from "../src/services/modelAssets";
 import { MODEL_SUMMARY_SELECT, toModelSummary } from "../src/services/dashboardService";
@@ -136,6 +139,62 @@ describe("recoverable preview uploads", () => {
     const uploadId = randomUUID();
     return { print, gallery, uploadId, where: { printId_uploadId: { printId: print.id, uploadId } } };
   }
+
+  it.each(["webp", "tiff"] as const)("skips a %s whose header reads but whose pixels don't", async (format) => {
+    const { print, uploadId, where } = await uploadStorage();
+    const image = sharp({ create: { width: 64, height: 64, channels: 3, background: { r: 200, g: 20, b: 20 } } });
+    const valid = await image[format]().toBuffer();
+    const damaged = Buffer.from(valid);
+    for (let at = Math.floor(valid.length * 0.4); at < valid.length; at++) damaged[at] = (damaged[at] * 7 + 13) & 255;
+
+    expect(await addPreviewImageForUpload(print.id, uploadId, damaged)).toBeNull();
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ imageId: null });
+  });
+
+  it("answers an upload ID only for the picture it was first sent with, a skipped one's included", async () => {
+    const { print, uploadId } = await uploadStorage();
+    const imageId = await addPreviewImageForUpload(print.id, uploadId, await png(205));
+    expect(await addPreviewImageForUpload(print.id, uploadId, await png(205))).toBe(imageId);
+    await expect(addPreviewImageForUpload(print.id, uploadId, await png(120))).rejects.toMatchObject({ status: 409 });
+
+    const skipped = randomUUID();
+    expect(await addPreviewImageForUpload(print.id, skipped, Buffer.from("not a picture"))).toBeNull();
+    await expect(addPreviewImageForUpload(print.id, skipped, await png(120))).rejects.toMatchObject({ status: 409 });
+    expect(await prisma.previewImage.count({ where: { printId: print.id, generated: false } })).toBe(1);
+  });
+
+  it("takes back a first thumbnail whose save rolled back, so a later render can still replace it", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const home = await ensureAssetHome(print.id);
+    const thumb = assetTarget(home, plateThumbFile(plate.id));
+    await fs.rm(thumb, { force: true });
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: false } });
+    const transaction = PrismaClient.prototype.$transaction;
+    const rolledBack = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
+      this: PrismaClient,
+      callback: unknown,
+      options: unknown,
+    ) {
+      const fn = callback as (tx: unknown) => Promise<unknown>;
+      return Reflect.apply(transaction, this, [
+        async (tx: unknown) => {
+          await fn(tx);
+          throw new Error("rolled back");
+        },
+        options,
+      ]);
+    } as never);
+    try {
+      await expect(saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).rejects.toThrow("rolled back");
+    } finally {
+      rolledBack.mockRestore();
+    }
+    expect(fsSync.existsSync(thumb)).toBe(false);
+    expect(await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).toMatchObject({ thumbGenerated: false });
+
+    expect(await saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).toBe("saved");
+  });
 
   it("keeps an upload key retryable when writing its JPEG fails", async () => {
     const { print, gallery, uploadId, where } = await uploadStorage();
@@ -249,11 +308,12 @@ describe("recoverable preview uploads", () => {
       return Reflect.apply(stat, fs, [target, ...rest]);
     }) as never);
     try {
-      await request(app)
+      const answered = await request(app)
         .post(`/api/print/${print.id}/preview-images/upload-results`)
         .set(auth())
         .send({ upload_ids: [uploadId] })
-        .expect(500);
+        .expect(200);
+      expect(answered.body.upload_results).toEqual([{ upload_id: uploadId, image_id: imageId }]);
       await request(app)
         .post(`/api/print/${print.id}/preview-images/reorder`)
         .set(auth())
@@ -371,7 +431,8 @@ describe("recoverable preview uploads", () => {
     expect(added[0]).toBe(imageId);
     expect(images.map((image) => image.id)).toEqual([added[1]]);
     expect(await prisma.previewImage.findUnique({ where: { id: generated.id } })).toBeNull();
-    expect(await redOf(thumb)).toBeGreaterThan(100);
+    // The second picture's red (120), not the removed one's (205) or our render's.
+    expect(Math.abs((await redOf(thumb)) - 120)).toBeLessThan(25);
   });
 });
 

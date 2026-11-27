@@ -717,11 +717,13 @@ model PlateUploadAttempt {
 
 /// The outcome of one submitted gallery file. Retained after an image is removed so a replay cannot recreate it.
 model PreviewImageUpload {
-  printId      String
-  print        Print   @relation(fields: [printId], references: [id], onDelete: Cascade)
-  uploadId     String
-  imageId      String?
-  coverPending Boolean @default(false)
+  printId       String
+  print         Print   @relation(fields: [printId], references: [id], onDelete: Cascade)
+  uploadId      String
+  imageId       String?
+  /// SHA-256 of the bytes this upload ID was first sent with: a replay is the same picture only with the same bytes.
+  contentSha256 String
+  coverPending  Boolean @default(false)
 
   @@id([printId, uploadId])
 }

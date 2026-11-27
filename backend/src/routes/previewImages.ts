@@ -6,7 +6,11 @@ import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { thumbnailUpload } from "../uploadMiddleware";
-import { removePreviewImage, reorderPreviewImages, resumePreviewUploadCover } from "../services/previewImageService";
+import {
+  removePreviewImage,
+  reorderPreviewImages,
+  resumePreviewUploadCoverQuietly,
+} from "../services/previewImageService";
 import { addUploadedPreviewImages } from "../services/uploadService";
 import { printOutById } from "../services/printLoader";
 
@@ -49,7 +53,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const { upload_ids } = parseBody(z.object({ upload_ids: uploadIdsSchema }), req.body);
     const print = await ownerPrint(req);
-    await resumePreviewUploadCover(print.id);
+    // The receipts are answered whether or not the cover work can finish now.
+    await resumePreviewUploadCoverQuietly(print.id);
     const receipts = await prisma.previewImageUpload.findMany({
       where: { printId: print.id, uploadId: { in: upload_ids } },
     });
