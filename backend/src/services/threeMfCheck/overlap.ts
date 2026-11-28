@@ -9,9 +9,8 @@ import { printedHeights, type Box3, type LayoutItem, type LayoutPlate } from "./
 
 // Bounds that share less than this along an axis only touch.
 const TOUCH = 0.05;
-// Heights sliced: one between each two heights a vertex is at, where the cross-sections change, so a thin foot or
-// flange is cut too; past MAX_EVENT_LEVELS of those, one per LEVEL_STEP, at most MAX_LEVELS, and the lowest and
-// highest of them.
+// Heights sliced: one per LEVEL_STEP, at most MAX_LEVELS, and one between each two heights a vertex is at, where the
+// cross-sections change, so a thin foot or flange is cut too (past MAX_EVENT_LEVELS of those, the lowest and highest).
 const MAX_EVENT_LEVELS = 256;
 const LEVEL_STEP = 0.2;
 const MAX_LEVELS = 48;
@@ -156,11 +155,13 @@ function levels(a: LayoutItem, b: LayoutItem, z0: number, z1: number, budget: nu
   const between: number[] = [];
   for (let i = 0; i + 1 < sorted.length; i++)
     if (sorted[i + 1] - sorted[i] > 1e-4) between.push((sorted[i] + sorted[i + 1]) / 2);
-  if (between.length <= Math.min(budget, MAX_EVENT_LEVELS)) return between;
-  // Off the layer grid a little, so a height isn't exactly a vertex's.
+  // Evenly too, for what slants across others between those heights; off the layer grid a little, so a height isn't
+  // exactly a vertex's.
   const count = Math.max(1, Math.min(MAX_LEVELS, Math.ceil((z1 - z0) / LEVEL_STEP), budget));
   const even = Array.from({ length: count }, (_, level) => z0 + ((level + 0.5) * (z1 - z0)) / count + 1e-5);
-  return [between[0], ...even, between[between.length - 1]];
+  const room = Math.min(MAX_EVENT_LEVELS, budget - count);
+  const events = between.length <= room ? between : [between[0], between[between.length - 1]];
+  return [...events, ...even].filter((z) => z !== undefined);
 }
 
 function triangleCount(item: LayoutItem): number {
@@ -182,7 +183,8 @@ export function solidsOverlap(a: LayoutItem, b: LayoutItem): boolean {
     const spansB = itemSpans(sections(b, z), box.min[1], rows, step);
     let area = 0;
     for (let r = 0; r < rows; r++) {
-      area += sharedLength(spansA[r], spansB[r]) * step;
+      // The last row only as far as the shared band reaches.
+      area += sharedLength(spansA[r], spansB[r]) * Math.min(step, box.max[1] - (box.min[1] + r * step));
       if (area >= MIN_AREA) return true;
     }
   }

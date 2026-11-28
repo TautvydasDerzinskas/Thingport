@@ -161,11 +161,11 @@ export async function runThreeMfCheck(
 
   const format = await formatOf(source);
   if (format.kind === "sliced") {
-    if (checks.has("sliced")) issues.push({ check: "sliced", problem: "sliced", plate: null, fix: null });
+    issues.push({ check: "sliced", problem: "sliced", plate: null, fix: null });
     return done(null);
   }
   if (format.kind !== "bambu" && format.kind !== "prusa") {
-    if (checks.has("project")) issues.push({ check: "project", problem: "not-a-project", plate: null, fix: null });
+    issues.push({ check: "project", problem: "not-a-project", plate: null, fix: null });
     return done(null);
   }
 
@@ -178,19 +178,19 @@ export async function runThreeMfCheck(
   const chosen = asked ?? own?.printer ?? null;
   const target = chosen ? printerTarget(rules.slicer, chosen.id, chosen.nozzle) : null;
   if (!chosen || !target) {
-    if (checks.has("project"))
-      issues.push({
-        check: "project",
-        problem: format.kind === "prusa" ? "other-slicer" : "other-printer",
-        plate: null,
-        fix: format.kind === "prusa" ? "convert" : "retarget",
-      });
+    issues.push({
+      check: "project",
+      problem: format.kind === "prusa" ? "other-slicer" : "other-printer",
+      plate: null,
+      fix: format.kind === "prusa" ? "convert" : "retarget",
+    });
     return done(null, true);
   }
   const printer: ThreeMfPrinter = { id: chosen.id, nozzle: target.choice.nozzle };
 
   // The slicer's own project for that printer, through the adapter, which Thingport opens files in slicers with too.
-  const plan = checks.has("project") ? planAdaptation(format, slicerProfile(rules.slicer), target.choice) : null;
+  // Every other check reads the project as the slicer would, so this one always runs.
+  const plan = planAdaptation(format, slicerProfile(rules.slicer), target.choice);
   let changed = Boolean(plan);
   if (plan) {
     const sameAsOwn = own && own.printer.id === printer.id && own.printer.nozzle === printer.nozzle;
@@ -212,7 +212,7 @@ export async function runThreeMfCheck(
   const pkg = await readBambuPackage(zip);
   if (!pkg.config) {
     issues.length = 0;
-    if (checks.has("project")) issues.push({ check: "project", problem: "not-a-project", plate: null, fix: null });
+    issues.push({ check: "project", problem: "not-a-project", plate: null, fix: null });
     return done(null);
   }
   const settings: Settings = { ...pkg.config };

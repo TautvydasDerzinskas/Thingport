@@ -8,9 +8,9 @@
 
 import { randomUUID } from "node:crypto";
 import type { ObjectSettings } from "../../adapter/readers/bambuProject";
-import { composeTransform, formatTransform, parseTransform } from "../../adapter/transform";
+import { composeTransform, parseTransform } from "../../adapter/transform";
 import { escapeXml } from "../../adapter/xml";
-import { attrValue, buildItems, withAttr, type LayoutItem } from "./layout";
+import { ATTRS, attrValue, buildItems, withAttr, type LayoutItem } from "./layout";
 
 export type ProjectFiles = {
   rootXml: string;
@@ -33,13 +33,21 @@ const byLines = (name: string) =>
   Object.entries(SIDE_FILES).some(([file, kind]) => kind === "lines" && file.toLowerCase() === name.toLowerCase());
 
 const LINE_ID_RE = /^object_id=(\d+)\|/;
-const XML_OBJECT_RE = /<object\b[^>]*\bid="(\d+)"[^>]*>[\s\S]*?<\/object>\s*/g;
-const SETTINGS_OBJECT_RE = /<object\b([^>]*)>([\s\S]*?)<\/object>/g;
-const PART_RE = /<part\b[^>]*?(?:\/>|>[\s\S]*?<\/part>)/g;
+// Tags read up to their real end: XML lets a quoted value hold a `>`.
+const tags = (source: string) => new RegExp(source, "g");
+const XML_OBJECT_RE = tags(String.raw`<object\b(${ATTRS})>[\s\S]*?<\/object>\s*`);
+const SETTINGS_OBJECT_RE = tags(String.raw`<object\b(${ATTRS})>([\s\S]*?)<\/object>`);
+const PART_RE = tags(String.raw`<part\b${ATTRS}(?:\/>|>[\s\S]*?<\/part>)`);
+const PART_OPEN_RE = new RegExp(String.raw`<part\b${ATTRS}\/?>`);
 const INSTANCE_RE = /<model_instance>([\s\S]*?)<\/model_instance>\s*/g;
-const ASSEMBLE_RE = /<assemble_item\b([^>]*?)\/?>\s*/g;
-const ROOT_OBJECT_RE = /<object\b([^>]*)>([\s\S]*?)<\/object>\s*/g;
-const COMPONENT_RE = /<component\b([^>]*?)\/?>/g;
+const ASSEMBLE_RE = tags(String.raw`<assemble_item\b(${ATTRS})\/?>\s*`);
+const ROOT_OBJECT_RE = tags(String.raw`<object\b(${ATTRS})>([\s\S]*?)<\/object>\s*`);
+const COMPONENT_RE = tags(String.raw`<component\b(${ATTRS})\/?>`);
+const ITEM_TAG_RE = tags(String.raw`<item\b(${ATTRS})\/?>\s*`);
+// The resources a 3MF numbers: every one's id is unique across them (3MF Core Specification, Resources).
+const RESOURCE_RE = tags(
+  String.raw`<(?:[\w-]+:)?(?:object|basematerials|colorgroup|texture2d|texture2dgroup|compositematerials|multiproperties|slicestack|displacement2d|normvectorgroup|disp2dgroup)\b(${ATTRS})\/?>`,
+);
 // What Bambu Studio writes at an object's level besides the settings changed for it.
 const OBJECT_INFO = new Set(["name", "extruder", "module"]);
 
@@ -59,7 +67,11 @@ export function sideFilePlaces(files: Record<string, string>): Set<number> {
         const m = LINE_ID_RE.exec(line);
         if (m) places.add(Number(m[1]));
       }
-    } else for (const m of text.matchAll(XML_OBJECT_RE)) places.add(Number(m[1]));
+    } else
+      for (const m of text.matchAll(XML_OBJECT_RE)) {
+        const id = Number(attrValue(m[1], "id"));
+        if (Number.isInteger(id)) places.add(id);
+      }
   }
   return places;
 }
@@ -97,7 +109,8 @@ function referencesIn(rootXml: string): Map<string, Set<string>> {
 
 /** Whether merging the group would lose what's set for an object (the joining objects' own settings or anything a
  *  side file keeps for them, or the main one's side files where its parts go on a new object), or can't be written:
- *  an object in a model part of its own, or a main one placed by a transform that can't be undone. */
+ *  an object in a model part of its own or made of components of components, or a main one placed by a transform that
+ *  can't be undone. */
 export function mergeLoses(
   group: LayoutItem[],
   modelSettings: Record<string, ObjectSettings>,
@@ -105,7 +118,7 @@ export function mergeLoses(
   sidePlaces: Set<number>,
 ): boolean {
   const main = mainItem(group);
-  if (group.some((item) => item.external)) return true;
+  if (group.some((item) => item.external || item.nested)) return true;
   if (!invertTransform(parseTransform(buildItems(rootXml)[main.index]?.transform))) return true;
   const places = buildPlaces(rootXml);
   const kept = (item: LayoutItem) => sidePlaces.has(places.get(item.objectId) ?? 0);
@@ -146,7 +159,11 @@ export function invertTransform(m: number[]): number[] | null {
 
 const compose = (outer: number[], inner: number[]) => composeTransform(outer.join(" "), inner.join(" "));
 
-const METADATA_TAG_RE = /<metadata\b[^>]*>/g;
+/** A transform written as exactly as its numbers are: a part placed relative to another can be scaled by far less
+ *  than the adapter's seven decimals keep. */
+const exact = (m: number[]) => m.map((n) => (Object.is(n, -0) ? "0" : String(n))).join(" ");
+
+const METADATA_TAG_RE = tags(String.raw`<metadata\b${ATTRS}\/?>`);
 
 /** A metadata entry's value by its key, as Bambu Studio's reader takes it: its attributes in any order, the last entry
  *  with that key. */
@@ -178,7 +195,10 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
     const id = attrValue(m[1], "id");
     if (id) entries.set(id, m[2]);
   }
-  let nextId = Math.max(0, ...[...objects.keys()].map(Number).filter(Number.isFinite)) + 1;
+  const taken = [...rootXml.slice(0, Math.max(rootXml.lastIndexOf("<build"), 0)).matchAll(RESOURCE_RE)]
+    .map((m) => Number(attrValue(m[1], "id")))
+    .filter(Number.isFinite);
+  let nextId = Math.max(0, ...taken) + 1;
 
   // What changes: each object rewritten or added, build items dropped or renamed, settings entries likewise.
   const newObjects = new Map<string, string>();
@@ -208,12 +228,12 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
       const extruder = metadataValue(entry.split(/<part\b/)[0], "extruder") ?? "1";
       const leafIds: string[] = [];
       if (/<mesh[\s>]/.test(object.body)) {
-        components.push(`<component objectid="${member.objectId}" transform="${formatTransform(relative)}"/>`);
+        components.push(`<component objectid="${member.objectId}" transform="${exact(relative)}"/>`);
         leafIds.push(member.objectId);
       } else {
         for (const c of object.body.matchAll(COMPONENT_RE)) {
           const tag = c[0];
-          const placed = formatTransform(compose(relative, parseTransform(attrValue(tag, "transform"))));
+          const placed = exact(compose(relative, parseTransform(attrValue(tag, "transform"))));
           let out = withAttr(tag, "transform", placed);
           if (attrValue(tag, "p:UUID") !== null && !(reuse && member === main))
             out = withAttr(out, "p:UUID", randomUUID());
@@ -223,12 +243,12 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
       }
       // Each part keeps its filament: a part on "the object's" is on its own object's.
       const rows = [...entry.matchAll(PART_RE)].map(([part]) => {
-        const id = attrValue(/<part\b[^>]*>/.exec(part)?.[0] ?? "", "id");
+        const id = attrValue(PART_OPEN_RE.exec(part)?.[0] ?? "", "id");
         const value = metadataValue(part, "extruder");
         if (value && value !== "0") return { id, xml: part };
         if (value === "0") return { id, xml: withMetadata(part, "extruder", extruder) };
         const xml = part
-          .replace(/(<part\b[^>]*?)\/>$/, "$1></part>")
+          .replace(new RegExp(String.raw`^(<part\b${ATTRS})\/>$`), "$1></part>")
           .replace(/<\/part>$/, `<metadata key="extruder" value="${escapeXml(extruder)}"/></part>`);
         return { id, xml };
       });
@@ -302,7 +322,7 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
     return whole;
   });
   const added = [...newObjects.values()].join("");
-  const build = rootXml.slice(buildAt).replace(/<item\b([^>]*?)\/?>\s*/g, (whole, attrs: string) => {
+  const build = rootXml.slice(buildAt).replace(ITEM_TAG_RE, (whole, attrs: string) => {
     if (!attrValue(attrs, "objectid")) return whole;
     itemIndex++;
     if (dropItems.has(itemIndex)) return "";
@@ -385,9 +405,12 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
         ];
       return [
         name,
-        text.replace(XML_OBJECT_RE, (whole, at: string) => {
-          const to = moved.get(Number(at));
-          return to === undefined ? "" : whole.replace(/\bid="\d+"/, `id="${to}"`);
+        text.replace(XML_OBJECT_RE, (whole, attrs: string) => {
+          const to = moved.get(Number(attrValue(attrs, "id")));
+          if (to === undefined) return "";
+          // Only the opening tag's own id: the cut pieces' entries hold ids of their own further in.
+          const open = whole.slice(0, "<object".length + attrs.length + 1);
+          return withAttr(open, "id", String(to)) + whole.slice(open.length);
         }),
       ];
     }),

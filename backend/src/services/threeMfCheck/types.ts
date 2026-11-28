@@ -1,7 +1,8 @@
 // What a site needs of a 3MF before it takes it as a print profile, and what Thingport changes in the copy it uploads
 // for it. A provider names what its site needs (ProviderBackend.publishThreeMf); check.ts finds what a file lacks.
 
-/** The checks there are, each finding one or more problems. */
+/** The checks there are, each finding one or more problems. `sliced` and `project` run whatever a site lists, as the
+ *  others read the file as its slicer's project. */
 export type ThreeMfCheckId = "sliced" | "project" | "nozzle" | "overlapping-objects" | "wipe-tower" | "off-bed";
 
 export type ThreeMfRules = {

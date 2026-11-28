@@ -68,7 +68,8 @@ export async function fixThreeMf(
 ): Promise<ThreeMfCheckResult & { written: boolean }> {
   // The worker writes beside it under a name of its own, and the copy goes in place only once it's whole and only
   // where nothing is yet. A worker stopped part way (its time up) leaves just that file, which goes either way.
-  const staging = path.join(path.dirname(destPath), `.${path.basename(destPath)}.${randomUUID()}.part`);
+  // A name of its own length, whatever the copy's is: a long name plus a suffix can pass the 255 bytes a name may be.
+  const staging = path.join(path.dirname(destPath), `.${randomUUID()}.3mf.part`);
   try {
     const { result, written } = await run({ srcPath, destPath: staging, rules, options });
     if (written) await fs.copyFile(staging, destPath, constants.COPYFILE_EXCL);

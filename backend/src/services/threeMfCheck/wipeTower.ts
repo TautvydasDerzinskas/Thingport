@@ -162,17 +162,33 @@ export function towerClear(plate: TowerPlate, bed: BedBox, s: TowerSettings, x: 
   return onBed && clearance(plate.footprint, inner) > 0;
 }
 
+/** A coordinate as the project keeps it, to a thousandth: a spot is tested as it will be written. */
+const kept = (n: number) => Math.round(n * 1000) / 1000;
+
 /** Corners to try from lo to hi, both included: counted, not stepped through, so far from the origin, where a step
  *  can be lost to rounding, there are still at most MAX_STEPS. */
 function steps(lo: number, hi: number): number[] {
-  if (!(hi > lo)) return [lo];
+  if (!(hi > lo)) return [kept(lo)];
   const count = Math.min(Math.ceil((hi - lo) / STEP), MAX_STEPS);
-  return Array.from({ length: count + 1 }, (_, i) => (i === count ? hi : lo + ((hi - lo) * i) / count));
+  return Array.from({ length: count + 1 }, (_, i) => kept(i === count ? hi : lo + ((hi - lo) * i) / count));
+}
+
+/** Corners that put the tower's edge, as towerClear tests it, on a cell's edge, for a gap narrower than a step: at most
+ *  MAX_STEPS of them along an axis, within lo to hi. */
+function edgeSteps(f: Footprint, axis: 0 | 1, lo: number, hi: number, near: number, far: number): number[] {
+  const [origin, cells] = axis ? [f.y0, f.rows] : [f.x0, f.cols];
+  const out = new Set<number>();
+  for (let k = 0; k <= cells && out.size < MAX_STEPS; k++) {
+    const edge = origin + k * f.cell;
+    for (const at of [edge - near - TOUCH, edge + TOUCH - far]) if (at >= lo && at <= hi) out.add(kept(at));
+  }
+  return [...out];
 }
 
 /** The corner of a tower sized by `s` where it keeps furthest from the plate's objects, up to CLEARANCE, and nearest
- *  the slicer's own default among those, `slack` in from the bed's edges. */
-function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLACK, clearOnly = false) {
+ *  the slicer's own default among those, `slack` in from the bed's edges. `clearOnly` takes only corners towerClear
+ *  passes; `edges` tries corners on the cells' edges as well as the steps. */
+function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLACK, clearOnly = false, edges = false) {
   const reach = towerFootprint(plate, s, 0, 0);
   const lo: [number, number] = [bed.minX - reach.minX + slack, bed.minY - reach.minY + slack];
   const hi: [number, number] = [
@@ -183,22 +199,29 @@ function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLAC
     const [min, max] = axis ? [bed.minY, bed.maxY] : [bed.minX, bed.maxX];
     return Math.min(Math.max(min + HOME[axis] * (max - min), lo[axis]), hi[axis]);
   });
-  let best: [number, number] | null = clearOnly ? null : [home[0], home[1]];
+  const xs = steps(lo[0], hi[0]);
+  const ys = steps(lo[1], hi[1]);
+  const spots: [number, number][] = xs.flatMap((x) => ys.map((y): [number, number] => [x, y]));
+  if (edges) {
+    const f = plate.footprint;
+    for (const x of edgeSteps(f, 0, lo[0], hi[0], reach.minX, reach.maxX)) for (const y of ys) spots.push([x, y]);
+    for (const y of edgeSteps(f, 1, lo[1], hi[1], reach.minY, reach.maxY)) for (const x of xs) spots.push([x, y]);
+  }
+  let best: [number, number] | null = clearOnly ? null : [kept(home[0]), kept(home[1])];
   let bestScore = -Infinity;
   let bestDistance = Infinity;
-  for (const x of steps(lo[0], hi[0]))
-    for (const y of steps(lo[1], hi[1])) {
-      // Ranked by the whole tower's clearance, a spot can come first and still not be clear by towerClear's test.
-      if (clearOnly && !towerClear(plate, bed, s, x, y)) continue;
-      const tower = towerFootprint(plate, s, x, y);
-      const score = clearance(plate.footprint, tower, CLEARANCE);
-      const distance = Math.hypot(x - home[0], y - home[1]);
-      if (score > bestScore + 1e-9 || (score > bestScore - 1e-9 && distance < bestDistance)) {
-        best = [x, y];
-        bestScore = score;
-        bestDistance = distance;
-      }
+  for (const [x, y] of spots) {
+    // Ranked by the whole tower's clearance, a spot can come first and still not be clear by towerClear's test.
+    if (clearOnly && !towerClear(plate, bed, s, x, y)) continue;
+    const tower = towerFootprint(plate, s, x, y);
+    const score = clearance(plate.footprint, tower, CLEARANCE);
+    const distance = Math.hypot(x - home[0], y - home[1]);
+    if (score > bestScore + 1e-9 || (score > bestScore - 1e-9 && distance < bestDistance)) {
+      best = [x, y];
+      bestScore = score;
+      bestDistance = distance;
     }
+  }
   return best;
 }
 
@@ -211,10 +234,14 @@ export function placeTower(
 ): { spot: [number, number]; clear: boolean } {
   // Each size kept SLACK in from the bed's edges first, then right up to them, where a bed has no more room; the
   // best of the clear spots each time.
-  for (const sizing of [placed(s), s])
+  for (const sizing of [placed(s), s]) {
     for (const slack of [SLACK, 0]) {
       const spot = bestSpot(plate, bed, sizing, slack, true);
       if (spot) return { spot, clear: true };
     }
+    // Last, a gap narrower than the steps: corners lined up with the edges of what's taken.
+    const spot = bestSpot(plate, bed, sizing, 0, true, true);
+    if (spot) return { spot, clear: true };
+  }
   return { spot: bestSpot(plate, bed, s) ?? [bed.minX, bed.minY], clear: false };
 }

@@ -124,9 +124,12 @@ function measure(f: Footprint) {
 /** What the plate's objects and the bed's no-print areas cover of the bed. */
 export function plateFootprint(plate: LayoutPlate, bed: BedBox, exclude: Box2[]): Footprint {
   const [width, depth] = [bed.maxX - bed.minX, bed.maxY - bed.minY];
-  const cell = Math.max(CELL, Math.sqrt((width * depth) / MAX_CELLS));
-  const cols = Math.max(1, Math.min(Math.ceil(width / cell), MAX_CELLS));
-  const rows = Math.max(1, Math.min(Math.ceil(depth / cell), Math.floor(MAX_CELLS / cols)));
+  // Cells as large as it takes for the whole bed to fit in MAX_CELLS of them, whole cells rounding up.
+  let cell = Math.max(CELL, Math.sqrt((width * depth) / MAX_CELLS));
+  const fits = (size: number) => Math.ceil(width / size) * Math.ceil(depth / size) <= MAX_CELLS;
+  while (!fits(cell) && Number.isFinite(cell)) cell *= 1.01;
+  const cols = Math.max(1, Math.ceil(width / cell));
+  const rows = Math.max(1, Math.ceil(depth / cell));
   const f: Footprint = {
     cell,
     x0: bed.minX,
@@ -154,9 +157,10 @@ export function plateFootprint(plate: LayoutPlate, bed: BedBox, exclude: Box2[])
   // Each area's cells, the area clipped to the grid first, so one larger than the bed costs no more than the bed.
   for (const area of exclude) {
     const minC = Math.max(Math.floor((area.minX - f.x0) / f.cell), 0);
-    const maxC = Math.min(Math.floor((area.maxX - f.x0) / f.cell), f.cols - 1);
+    // The cells it reaches into: one it only ends at the edge of isn't.
+    const maxC = Math.min(Math.ceil((area.maxX - f.x0) / f.cell) - 1, f.cols - 1);
     const minR = Math.max(Math.floor((area.minY - f.y0) / f.cell), 0);
-    const maxR = Math.min(Math.floor((area.maxY - f.y0) / f.cell), f.rows - 1);
+    const maxR = Math.min(Math.ceil((area.maxY - f.y0) / f.cell) - 1, f.rows - 1);
     // An area off the grid clips to nothing, which fill would take from the array's end.
     if (minC > maxC || minR > maxR) continue;
     for (let r = minR; r <= maxR; r++) f.taken.fill(1, r * f.cols + minC, r * f.cols + maxC + 1);

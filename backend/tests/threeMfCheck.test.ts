@@ -10,7 +10,14 @@ import { checkThreeMf, fixThreeMf } from "../src/services/threeMfCheck";
 import { runThreeMfCheck } from "../src/services/threeMfCheck/check";
 import { invertTransform } from "../src/services/threeMfCheck/merge";
 import { plateFootprint } from "../src/services/threeMfCheck/footprint";
-import { attrValue, readLayout, withAttr, type Box3, type LayoutItem } from "../src/services/threeMfCheck/layout";
+import {
+  attrValue,
+  readLayout,
+  withAttr,
+  type Box2,
+  type Box3,
+  type LayoutItem,
+} from "../src/services/threeMfCheck/layout";
 import { placeTower, towerFootprint, towerSettings, towerSize } from "../src/services/threeMfCheck/wipeTower";
 
 // Pure: no database. 3MFs a site would turn down, what the check says of each, and the copy it makes.
@@ -946,6 +953,178 @@ describe("3MF check for publishing", () => {
     expect(placeTower({ footprint, filaments: 2, height: 2 }, bed, flat).clear).toBe(true);
   });
 
+  it("reads the project as its slicer would even where the site lists no project check", async () => {
+    const bytes = await bambuProject({
+      objects: [coin()],
+      items: [{ object: 0, at: [128, 128] }],
+      app: "OrcaSlicer-2.3.0",
+    });
+    const run = await runThreeMfCheck(bytes, { ...RULES, checks: ["off-bed"] });
+    expect(run.result.issues).toEqual([{ check: "project", problem: "other-app", plate: null, fix: "retag" }]);
+    expect(run.zip).not.toBeNull();
+  });
+
+  it("leaves to the slicer objects made of components of components, and those a side file keeps settings for", async () => {
+    // The twin is made of the logo's object, which is made of its mesh: rows the merge can't match.
+    const nested = await bambuProject({
+      objects: [coin(), logo(), { name: "Twin", of: { object: 1, dx: 0 } }],
+      items: [
+        { object: 0, at: [120, 120] },
+        { object: 2, at: [120, 120] },
+      ],
+    });
+    expect((await fixed(nested)).issues).toEqual([
+      { check: "overlapping-objects", problem: "overlapping-objects", plate: 1, objects: ["Coin", "Twin"], fix: null },
+    ]);
+    const ranged = await bambuProject({
+      objects: [coin(), logo()],
+      items: [
+        { object: 0, at: [120, 120] },
+        { object: 1, at: [120, 120] },
+      ],
+      // Single-quoted, as an XML writer may: the logo's (the second object's) height range.
+      files: {
+        "Metadata/layer_config_ranges.xml": `<objects><object id='2'><range min_z="0" max_z="1"/></object></objects>`,
+      },
+    });
+    expect((await fixed(ranged)).issues.map((issue) => issue.fix)).toEqual([null]);
+  });
+
+  it("reads tags whose values hold a '>' or a character reference", async () => {
+    const zip = await JSZip.loadAsync(
+      await bambuProject({
+        objects: [
+          coin(),
+          logo(),
+          { name: "Plain", mesh: box([-5, -5], [5, 5], 2) },
+          { name: "Painted", mesh: box([-5, -5], [5, 5], 2), paint: "&#56;" },
+        ],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 1, at: [120, 120] },
+          { object: 2, at: [40, 40] },
+          { object: 3, at: [40, 80] },
+        ],
+        settings: { ...P1S_SETTINGS, wipe_tower_x: ["165"], wipe_tower_y: ["200"] },
+      }),
+    );
+    const model = await zip.file("3D/3dmodel.model")!.async("string");
+    zip.file(
+      "3D/3dmodel.model",
+      model
+        .replace('<item objectid="4"', '<item partnumber="A > B" objectid="4"')
+        .replace('<object id="2" ', '<object id="2" name="A > B" '),
+    );
+    const { issues, copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
+    // The logo's item is read past its '>', and the painted object's &#56; is filament 2.
+    expect(issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+    const merged = await (await JSZip.loadAsync(copy!)).file("3D/3dmodel.model")!.async("string");
+    expect(merged).toMatch(/<object id="2" name="A > B" /);
+    expect((await fixed(copy!)).issues).toEqual([]);
+    expect(paintStates(attrValue(` paint_color="&#56;"`, "paint_color")!)).toEqual([2]);
+  });
+
+  it("gives a merged object an id no resource has, and keeps tiny relative scales exact", async () => {
+    const zip = await JSZip.loadAsync(
+      await bambuProject({
+        objects: [{ name: "Coin", mesh: box([-2e-7, -2e-7], [2e-7, 2e-7], 2e-8) }, logo()],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 0, at: [120, 120], plate: 2 },
+          { object: 1, at: [120, 120] },
+        ],
+        plates: 2,
+      }),
+    );
+    const model = await zip.file("3D/3dmodel.model")!.async("string");
+    zip.file(
+      "3D/3dmodel.model",
+      model
+        .replace(
+          " <resources>",
+          ' <resources>\n  <basematerials id="7"><base name="White" displaycolor="#FFFFFF"/></basematerials>',
+        )
+        // The coin is scaled up by its build item from a mesh a hundred-millionth its size.
+        .replaceAll(
+          '<item objectid="2" transform="1 0 0 0 1 0 0 0 1',
+          '<item objectid="2" transform="1e8 0 0 0 1e8 0 0 0 1e8',
+        ),
+    );
+    const { issues, copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
+    expect(issues.map((issue) => [issue.problem, issue.plate])).toEqual([["overlapping-objects", 1]]);
+    const out = await JSZip.loadAsync(copy!);
+    expect(
+      [...(await out.file("3D/3dmodel.model")!.async("string")).matchAll(/<item objectid="(\d+)"/g)].map((m) => m[1]),
+    ).toEqual(["8", "2"]);
+    const [merged] = (await readLayout(await readBambuPackage(out))).plates[0].items;
+    expectBox(boundsOf(merged, 1), { min: [112, 112, 1.4], max: [128, 128, 2.4] });
+  });
+
+  it("finds overlaps between vertex heights, and doesn't count area past the shared band", async () => {
+    const slanted: MeshSpec = {
+      vertices: [0, 1, 2, 3, 4, 5, 6, 7].map((i): Vec3 => [
+        (i & 4 ? 40 : 0) + (i & 1 ? 74 : 72),
+        i & 2 ? 2 : 0,
+        i & 4 ? 10 : 0,
+      ]),
+      triangles: box([0, 0], [1, 1], 1).triangles,
+    };
+    const crossing = await bambuProject({
+      objects: [
+        { name: "Slanted", mesh: slanted },
+        { name: "Upright", mesh: box([80, 0], [82, 2], 10) },
+      ],
+      items: [
+        { object: 0, at: [20, 100] },
+        { object: 1, at: [20, 100] },
+      ],
+    });
+    expect((await fixed(crossing)).issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+    // 3 mm by 0.06 mm shared: 0.18 mm², under the 0.25 that counts.
+    const grazing = await bambuProject({
+      objects: [
+        { name: "A", mesh: box([0, 0], [10, 10], 2) },
+        { name: "B", mesh: box([7, 9.94], [17, 20], 2) },
+      ],
+      items: [
+        { object: 0, at: [100, 100] },
+        { object: 1, at: [100, 100] },
+      ],
+    });
+    expect((await fixed(grazing)).issues).toEqual([]);
+  });
+
+  it("places a tower only at coordinates as they're written, in a gap narrower than a step, and on any bed", () => {
+    const flat = (extra: Record<string, unknown> = {}) =>
+      towerSettings({
+        layer_height: "0.2",
+        prime_tower_rib_wall: "0",
+        prime_tower_brim_width: "0",
+        filament_prime_volume: ["10"],
+        ...extra,
+      });
+    // Only X = 0.0004 fits, which isn't a thousandth: nothing as written does.
+    const shifted = { minX: 0.0004, minY: 0, maxX: 35.0004, maxY: 60 };
+    const free = (bed: typeof shifted, exclude: Box2[] = []) =>
+      plateFootprint({ items: [], origin: [0, 0] }, bed, exclude);
+    expect(placeTower({ footprint: free(shifted), filaments: 2, height: 2 }, shifted, flat()).clear).toBe(false);
+    // Taken at X 0-1.5 and 36.9-40: a 35.8 mm tower fits only at X 1-1.2, between the search's steps.
+    const narrow = { minX: 0, minY: 0, maxX: 40, maxY: 20 };
+    const footprint = free(narrow, [
+      { minX: 0, minY: 0, maxX: 1.5, maxY: 20 },
+      { minX: 36.9, minY: 0, maxX: 40, maxY: 20 },
+    ]);
+    const placed = placeTower({ footprint, filaments: 2, height: 2 }, narrow, flat({ prime_tower_width: "35.8" }));
+    expect(placed.clear).toBe(true);
+    expect(placed.spot[0]).toBeGreaterThanOrEqual(1);
+    expect(placed.spot[0]).toBeLessThanOrEqual(1.2);
+    // A bed whose cells had to grow still covers all of it.
+    const big = plateFootprint({ items: [], origin: [0, 0] }, { minX: 0, minY: 0, maxX: 3000, maxY: 2000 }, []);
+    expect(big.cols * big.rows).toBeLessThanOrEqual(4_000_000);
+    expect(big.cols * big.cell).toBeGreaterThanOrEqual(3000);
+    expect(big.rows * big.cell).toBeGreaterThanOrEqual(2000);
+  });
+
   describe("in a worker", () => {
     let dir: string;
     beforeAll(async () => {
@@ -987,6 +1166,9 @@ describe("3MF check for publishing", () => {
       expect(new Uint8Array(await fs.readFile(src))).toEqual(bytes);
       // What the worker wrote it to first is gone either way.
       expect((await fs.readdir(dir)).filter((name) => name.endsWith(".part"))).toEqual([]);
+      // A name as long as one may be still gets its copy: the worker's file has a short name of its own.
+      const long = path.join(dir, `${"é".repeat(110)}.3mf`);
+      expect((await fixThreeMf(src, long, RULES)).written).toBe(true);
     });
   });
 });

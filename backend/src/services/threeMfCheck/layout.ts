@@ -27,6 +27,8 @@ export type LayoutItem = {
   instance: number;
   /** Its object is in a model part of its own, not the main model, which a merge can't rewrite. */
   external: boolean;
+  /** Some of its meshes are further down than its object's own components, whose part rows a merge can't match. */
+  nested: boolean;
   name: string;
   /** Into the layout's plates. */
   plate: number;
@@ -62,19 +64,22 @@ export const DEFAULT_BED: BedBox = { minX: 0, minY: 0, maxX: 256, maxY: 256 };
 type Component = { objectid: string; path: string | null; transform: string | null };
 type FileObject = { mesh: Mesh | null; components: Component[] };
 
-const OBJECT_RE = /<object\b([^>]*)>([\s\S]*?)<\/object>/g;
-const COMPONENT_RE = /<component\b([^>]*?)\/?>/g;
+/** A tag's attributes up to its end: a `>` inside a quoted value doesn't end it, as XML allows one there. */
+export const ATTRS = String.raw`(?:[^>"']|"[^"]*"|'[^']*')*?`;
+const OBJECT_RE = new RegExp(String.raw`<object\b(${ATTRS})>([\s\S]*?)<\/object>`, "g");
+const COMPONENT_RE = new RegExp(String.raw`<component\b(${ATTRS})\/?>`, "g");
 const VERTEX_RE = /<vertex\b([^>]*?)\/?>/g;
 const TRIANGLE_RE = /<triangle\b([^>]*?)\/?>/g;
-const ITEM_RE = /<item\b([^>]*?)\/?>/g;
+const ITEM_RE = new RegExp(String.raw`<item\b(${ATTRS})\/?>`, "g");
 const MAX_DEPTH = 8;
 
 // Each attribute of a tag in turn, a quoted value taken whole, so text inside one is never read as another.
 const ATTR_RE = /([^\s=/<>"']+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 
-/** An attribute's raw value, in any of XML's ways: double- or single-quoted, spaced around the `=` or not. */
+/** An attribute's value, in any of XML's ways: double- or single-quoted, spaced around the `=` or not, its entities
+ *  and character references read. */
 export function attrValue(tag: string, name: string): string | null {
-  for (const m of tag.matchAll(ATTR_RE)) if (m[1] === name) return m[2] ?? m[3];
+  for (const m of tag.matchAll(ATTR_RE)) if (m[1] === name) return decodeXml(m[2] ?? m[3]);
   return null;
 }
 
@@ -96,7 +101,7 @@ function meshAttr(tag: string, name: string): string | null {
   if (at >= 0) {
     const start = at + key.length;
     const end = tag.indexOf('"', start);
-    return end < 0 ? null : tag.slice(start, end);
+    return end < 0 ? null : decodeXml(tag.slice(start, end));
   }
   return tag.includes(name) ? attrValue(tag, name) : null;
 }
@@ -159,7 +164,7 @@ function readObjects(xml: string, paints: Map<string, number[]>): Map<string, Fi
       if (objectid)
         components.push({
           objectid,
-          path: decodeOrNull(attrValue(c[1], "p:path") ?? attrValue(c[1], "path")),
+          path: attrValue(c[1], "p:path") ?? attrValue(c[1], "path"),
           transform: attrValue(c[1], "transform"),
         });
     }
@@ -167,8 +172,6 @@ function readObjects(xml: string, paints: Map<string, number[]>): Map<string, Fi
   }
   return objects;
 }
-
-const decodeOrNull = (value: string | null) => (value === null ? null : decodeXml(value));
 
 /** The build's items as the main model lists them, each numbered among its object's. */
 export function buildItems(rootXml: string) {
@@ -196,7 +199,7 @@ export function buildItems(rootXml: string) {
       transform: attrValue(m[1], "transform"),
       // As Bambu Studio reads it: "0" and "false" are left out, anything else or nothing prints.
       printable: !["0", "false"].includes(attrValue(m[1], "printable") ?? ""),
-      path: decodeOrNull(attrValue(m[1], "p:path")),
+      path: attrValue(m[1], "p:path"),
     });
   }
   return items;
@@ -260,11 +263,11 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
     id: string,
     matrix: number[],
     depth: number,
-    out: { id: string; placed: PlacedMesh }[],
+    out: { id: string; placed: PlacedMesh; depth: number }[],
   ) => {
     const object = (await objectsIn(key)).get(id);
     if (!object || depth > MAX_DEPTH) return;
-    if (object.mesh) out.push({ id, placed: { mesh: object.mesh, matrix } });
+    if (object.mesh) out.push({ id, placed: { mesh: object.mesh, matrix }, depth });
     for (const c of object.components) {
       const child = c.path ? pathKey(normalizePath(c.path)) : key;
       await leaves(child, c.objectid, composeTransform(matrixString(matrix), c.transform), depth + 1, out);
@@ -285,7 +288,7 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
 
   for (const [index, item] of buildItems(rootXml).entries()) {
     if (!item.printable) continue;
-    const found: { id: string; placed: PlacedMesh }[] = [];
+    const found: { id: string; placed: PlacedMesh; depth: number }[] = [];
     const start = item.path ? pathKey(normalizePath(item.path)) : rootKey;
     await leaves(start, item.objectId, parseTransform(item.transform), 0, found);
     // model_settings.config describes the main model's objects.
@@ -313,6 +316,7 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
       objectId: item.objectId,
       instance: item.instance,
       external: Boolean(item.path),
+      nested: found.some((leaf) => leaf.depth > 1),
       name: object?.name || `Object ${item.objectId}`,
       plate,
       parts,
