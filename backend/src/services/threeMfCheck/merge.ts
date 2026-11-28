@@ -19,13 +19,18 @@ export type ProjectFiles = {
   sideFiles: Record<string, string>;
 };
 
-/** The project's files naming objects by their place in the build: lines `object_id=N|...` or `<object id="N">`. */
-export const SIDE_FILES = [
-  "Metadata/layer_heights_profile.txt",
-  "Metadata/brim_ear_points.txt",
-  "Metadata/layer_config_ranges.xml",
-  "Metadata/cut_information.xml",
-];
+/** The project's files naming objects by their place in the build, and how each does: by lines `object_id=N|...`, or
+ *  as XML, `<object id="N">`. */
+export const SIDE_FILES: Record<string, "lines" | "xml"> = {
+  "Metadata/layer_heights_profile.txt": "lines",
+  "Metadata/brim_ear_points.txt": "lines",
+  "Metadata/layer_config_ranges.xml": "xml",
+  "Metadata/cut_information.xml": "xml",
+};
+
+/** Whether a side file names its objects by lines; its entry name in any case, as zips spell it. */
+const byLines = (name: string) =>
+  Object.entries(SIDE_FILES).some(([file, kind]) => kind === "lines" && file.toLowerCase() === name.toLowerCase());
 
 const LINE_ID_RE = /^object_id=(\d+)\|/;
 const XML_OBJECT_RE = /<object\b[^>]*\bid="(\d+)"[^>]*>[\s\S]*?<\/object>\s*/g;
@@ -49,7 +54,7 @@ function buildPlaces(rootXml: string): Map<string, number> {
 export function sideFilePlaces(files: Record<string, string>): Set<number> {
   const places = new Set<number>();
   for (const [name, text] of Object.entries(files)) {
-    if (name.endsWith(".txt")) {
+    if (byLines(name)) {
       for (const line of text.split(/\r?\n/)) {
         const m = LINE_ID_RE.exec(line);
         if (m) places.add(Number(m[1]));
@@ -358,7 +363,7 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
   }
   const sideFiles = Object.fromEntries(
     Object.entries(files.sideFiles).map(([name, text]) => {
-      if (name.endsWith(".txt"))
+      if (byLines(name))
         return [
           name,
           text

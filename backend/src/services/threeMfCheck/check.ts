@@ -208,7 +208,7 @@ export async function runThreeMfCheck(
   }
   const rootXml = await pkg.root.entry.async("string");
   const sideFiles: Record<string, string> = {};
-  for (const name of SIDE_FILES) {
+  for (const name of Object.keys(SIDE_FILES)) {
     const rec = pkg.filesByKey[name.toLowerCase()];
     if (rec) sideFiles[rec.relativePath] = await rec.entry.async("string");
   }
