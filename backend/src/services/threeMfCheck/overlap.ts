@@ -9,11 +9,16 @@ import { printedHeights, type Box3, type LayoutItem, type LayoutPlate } from "./
 
 // Bounds that share less than this along an axis only touch.
 const TOUCH = 0.05;
-// Heights sliced: one per this much of the shared height, at most MAX_LEVELS of them.
+// Heights sliced: one between each two heights a vertex is at, where the cross-sections change, so a thin foot or
+// flange is cut too; past MAX_EVENT_LEVELS of those, one per LEVEL_STEP, at most MAX_LEVELS, and the lowest and
+// highest of them.
+const MAX_EVENT_LEVELS = 256;
 const LEVEL_STEP = 0.2;
 const MAX_LEVELS = 48;
-// Rows the cross-sections are measured along, and the shared area that counts as overlapping, in mm and mm².
+// Rows the cross-sections are measured along, at most MAX_ROWS of them, and the shared area that counts as
+// overlapping, in mm and mm².
 const ROW = 0.1;
+const MAX_ROWS = 20_000;
 const MIN_AREA = 0.25;
 // Triangles cut at all heights, past which fewer heights are sliced.
 const WORK = 2e8;
@@ -85,8 +90,8 @@ function sections(item: LayoutItem, printedZ: number): number[][] {
 
 /** Each row's spans of the parts together: each part's by the even-odd rule, so its holes stay holes, then joined, as
  *  parts that overlap print as one. */
-function itemSpans(parts: number[][], y0: number, rows: number): number[][] {
-  const perPart = parts.filter((segments) => segments.length).map((segments) => rowSpans(segments, y0, rows));
+function itemSpans(parts: number[][], y0: number, rows: number, step: number): number[][] {
+  const perPart = parts.filter((segments) => segments.length).map((segments) => rowSpans(segments, y0, rows, step));
   if (perPart.length <= 1) return perPart[0] ?? Array.from({ length: rows }, () => []);
   return Array.from({ length: rows }, (_, r) => {
     const spans: [number, number][] = [];
@@ -103,15 +108,15 @@ function itemSpans(parts: number[][], y0: number, rows: number): number[][] {
 }
 
 /** Each row's spans inside the section, by the even-odd rule, as [from, to, from, to, ...]. */
-function rowSpans(segments: number[], y0: number, rows: number): number[][] {
+function rowSpans(segments: number[], y0: number, rows: number, step: number): number[][] {
   const crossings: number[][] = Array.from({ length: rows }, () => []);
   for (let s = 0; s < segments.length; s += 4) {
     const [x1, y1, x2, y2] = [segments[s], segments[s + 1], segments[s + 2], segments[s + 3]];
     if (y1 === y2) continue;
-    const lo = Math.max(Math.ceil((Math.min(y1, y2) - y0) / ROW - 0.5), 0);
-    const hi = Math.min(Math.floor((Math.max(y1, y2) - y0) / ROW - 0.5), rows - 1);
+    const lo = Math.max(Math.ceil((Math.min(y1, y2) - y0) / step - 0.5), 0);
+    const hi = Math.min(Math.floor((Math.max(y1, y2) - y0) / step - 0.5), rows - 1);
     for (let r = lo; r <= hi; r++) {
-      const y = y0 + (r + 0.5) * ROW;
+      const y = y0 + (r + 0.5) * step;
       if (y1 <= y === y2 <= y) continue;
       crossings[r].push(x1 + ((y - y1) * (x2 - x1)) / (y2 - y1));
     }
@@ -138,6 +143,26 @@ function sharedLength(a: number[], b: number[]): number {
   return total;
 }
 
+/** The printed heights to slice two items at, between z0 and z1, at most `budget` of them past the lowest and highest. */
+function levels(a: LayoutItem, b: LayoutItem, z0: number, z1: number, budget: number): number[] {
+  const heights = new Set([z0, z1]);
+  for (const item of [a, b])
+    for (const { positions } of verticesOf(item))
+      for (let i = 2; i < positions.length; i += 3) {
+        const z = positions[i] - item.lift;
+        if (z > z0 && z < z1) heights.add(Math.round(z * 1000) / 1000);
+      }
+  const sorted = [...heights].toSorted((p, q) => p - q);
+  const between: number[] = [];
+  for (let i = 0; i + 1 < sorted.length; i++)
+    if (sorted[i + 1] - sorted[i] > 1e-4) between.push((sorted[i] + sorted[i + 1]) / 2);
+  if (between.length <= Math.min(budget, MAX_EVENT_LEVELS)) return between;
+  // Off the layer grid a little, so a height isn't exactly a vertex's.
+  const count = Math.max(1, Math.min(MAX_LEVELS, Math.ceil((z1 - z0) / LEVEL_STEP), budget));
+  const even = Array.from({ length: count }, (_, level) => z0 + ((level + 0.5) * (z1 - z0)) / count + 1e-5);
+  return [between[0], ...even, between[between.length - 1]];
+}
+
 function triangleCount(item: LayoutItem): number {
   return item.parts.reduce((n, { mesh }) => n + mesh.triangles.length / 3, 0);
 }
@@ -148,16 +173,16 @@ export function solidsOverlap(a: LayoutItem, b: LayoutItem): boolean {
   if (!box) return false;
   const [z0, z1] = [box.min[2], box.max[2]];
   const triangles = triangleCount(a) + triangleCount(b);
-  const levels = Math.max(1, Math.min(MAX_LEVELS, Math.ceil((z1 - z0) / LEVEL_STEP), Math.floor(WORK / triangles)));
-  const rows = Math.max(1, Math.ceil((box.max[1] - box.min[1]) / ROW));
-  for (let level = 0; level < levels; level++) {
-    // Off the layer grid a little, so a height isn't exactly a vertex's.
-    const z = z0 + ((level + 0.5) * (z1 - z0)) / levels + 1e-5;
-    const spansA = itemSpans(sections(a, z), box.min[1], rows);
-    const spansB = itemSpans(sections(b, z), box.min[1], rows);
+  const budget = Math.max(1, Math.floor(WORK / triangles));
+  const span = box.max[1] - box.min[1];
+  const step = Math.max(ROW, span / MAX_ROWS);
+  const rows = Math.max(1, Math.min(Math.ceil(span / step), MAX_ROWS));
+  for (const z of levels(a, b, z0, z1, budget)) {
+    const spansA = itemSpans(sections(a, z), box.min[1], rows, step);
+    const spansB = itemSpans(sections(b, z), box.min[1], rows, step);
     let area = 0;
     for (let r = 0; r < rows; r++) {
-      area += sharedLength(spansA[r], spansB[r]) * ROW;
+      area += sharedLength(spansA[r], spansB[r]) * step;
       if (area >= MIN_AREA) return true;
     }
   }

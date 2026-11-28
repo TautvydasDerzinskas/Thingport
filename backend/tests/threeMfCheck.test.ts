@@ -3,10 +3,12 @@ import os from "node:os";
 import path from "node:path";
 import JSZip from "jszip";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { paintStates } from "../src/adapter/paint";
 import { readBambuPackage } from "../src/adapter/readers/bambuProject";
 import { makerworldThreeMfRules as RULES } from "../src/providers/makerworld/threeMfRules";
 import { checkThreeMf, fixThreeMf } from "../src/services/threeMfCheck";
 import { runThreeMfCheck } from "../src/services/threeMfCheck/check";
+import { invertTransform } from "../src/services/threeMfCheck/merge";
 import { plateFootprint } from "../src/services/threeMfCheck/footprint";
 import { attrValue, readLayout, type Box3, type LayoutItem } from "../src/services/threeMfCheck/layout";
 import { placeTower, towerFootprint, towerSettings, towerSize } from "../src/services/threeMfCheck/wipeTower";
@@ -748,6 +750,142 @@ describe("3MF check for publishing", () => {
     const f = plateFootprint({ items: [], origin: [0, 0] }, { minX: 0, minY: 0, maxX: 100_000, maxY: 100_000 }, []);
     expect(f.cell).toBeGreaterThan(1);
     expect(f.taken.length).toBeLessThanOrEqual(4_000_000);
+  });
+
+  it("leaves to the slicer a merge that would put a part where another object is", async () => {
+    // The bead floats over the coin, so alone the slicer lowers it into the coin; kept at its height as a part of the
+    // coin, it would print into the arch, which clears both as they are.
+    const bytes = await bambuProject({
+      objects: [
+        coin(),
+        { name: "Bead", mesh: box([-5, -5], [5, 5], 2, 10) },
+        {
+          name: "Arch",
+          parts: [
+            { name: "Left", mesh: box([-30, -5], [-25, 5], 12) },
+            { name: "Right", mesh: box([25, -5], [30, 5], 12) },
+            { name: "Top", mesh: box([-30, -5], [30, 5], 2, 10) },
+          ],
+        },
+      ],
+      items: [
+        { object: 0, at: [120, 120] },
+        { object: 1, at: [120, 120] },
+        { object: 2, at: [120, 120] },
+      ],
+    });
+    const { issues, copy } = await fixed(bytes);
+    expect(issues).toEqual([
+      { check: "overlapping-objects", problem: "overlapping-objects", plate: 1, objects: ["Coin", "Bead"], fix: null },
+    ]);
+    expect(copy).toBeNull();
+  });
+
+  it("slices where the geometry changes, so thin feet of tall objects are seen", async () => {
+    // Columns 100 mm tall, apart, on 0.6 mm feet that overlap: evenly spaced heights would all miss the feet.
+    const footed = (x: number, column: number) => ({
+      name: `Column ${x}`,
+      parts: [
+        { name: "Foot", mesh: box([x, 0], [x + 30, 10], 0.6) },
+        { name: "Column", mesh: box([column, 0], [column + 5, 10], 100) },
+      ],
+    });
+    const bytes = await bambuProject({
+      objects: [footed(0, 0), footed(20, 45)],
+      items: [
+        { object: 0, at: [100, 100] },
+        { object: 1, at: [100, 100] },
+      ],
+    });
+    expect((await fixed(bytes)).issues.map((issue) => [issue.problem, issue.fix])).toEqual([
+      ["overlapping-objects", "merge-objects"],
+    ]);
+  });
+
+  it("leaves out build items marked not to print, and reads one whose object is in another model part", async () => {
+    const zip = await JSZip.loadAsync(
+      await bambuProject({
+        objects: [coin(), { name: "Far", mesh: box([-4, -4], [4, 4], 2) }, logo()],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 1, at: [300, 120] },
+          { object: 2, at: [120, 120] },
+        ],
+      }),
+    );
+    const model = await zip.file("3D/3dmodel.model")!.async("string");
+    zip.file(
+      "3D/3dmodel.model",
+      model
+        .replace(/(<item objectid="4"[^>]*)printable="1"/, '$1printable="false"')
+        // The logo's build item names its mesh in its own model part.
+        .replace(/<item objectid="6"/, '<item p:path="/3D/Objects/object_3.model" objectid="5"'),
+    );
+    const { issues, copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
+    // The far object doesn't print, so isn't off the bed; the logo is read from its part and overlaps the coin, but a
+    // merge can't move an object out of its own model part.
+    expect(issues).toEqual([
+      {
+        check: "overlapping-objects",
+        problem: "overlapping-objects",
+        plate: 1,
+        objects: ["Coin", "Object 5"],
+        fix: null,
+      },
+    ]);
+    expect(copy).toBeNull();
+  });
+
+  it("reads a settings entry with a single-quoted id, and a mesh's bad triangles not at all", async () => {
+    const zip = await JSZip.loadAsync(
+      await bambuProject({
+        objects: [coin(), logo()],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 1, at: [120, 120] },
+        ],
+      }),
+    );
+    const config = await zip.file("Metadata/model_settings.config")!.async("string");
+    zip.file("Metadata/model_settings.config", config.replace('<object id="4">', "<object id='4'>"));
+    const part = await zip.file("3D/Objects/object_2.model")!.async("string");
+    zip.file(
+      "3D/Objects/object_2.model",
+      part.replace("</triangles>", '<triangle v1="-1" v2="0" v3="1"/></triangles>'),
+    );
+    const { issues, copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
+    expect(issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+    const merged = (await (await JSZip.loadAsync(copy!)).file("Metadata/model_settings.config")!.async("string")).match(
+      /<object id="2">[\s\S]*?<\/object>/,
+    )![0];
+    expect(
+      [...merged.matchAll(/<part id="(\d+)"[\s\S]*?key="extruder" value="(\d+)"/g)].map((m) => [m[1], m[2]]),
+    ).toEqual([
+      ["1", "1"],
+      ["3", "2"],
+    ]);
+  });
+
+  it("reads attributes and paint however deep or strangely written, and undoes tiny scales", () => {
+    expect(attrValue(` partnumber='note objectid="7"' objectid='2'`, "objectid")).toBe("2");
+    expect(() => paintStates("F".repeat(100_000))).not.toThrow();
+    const undone = invertTransform([1e-5, 0, 0, 0, 1e-5, 0, 0, 0, 1e-5, 1, 2, 3])!;
+    [1e5, 0, 0, 0, 1e5, 0, 0, 0, 1e5, -1e5, -2e5, -3e5].forEach((n, i) => expect(undone[i]).toBeCloseTo(n, 3));
+    expect(invertTransform([1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 2, 3])).toBeNull();
+  });
+
+  it("finds a tower room right up to the bed's edges, and stays bounded far from the origin", () => {
+    const flat = towerSettings({ layer_height: "0.2", prime_tower_rib_wall: "0", prime_tower_brim_width: "0" });
+    const bed = { minX: 0, minY: 0, maxX: 36, maxY: 80 };
+    const plate = { footprint: plateFootprint({ items: [], origin: [0, 0] }, bed, []), filaments: 2, height: 2 };
+    // A 35 mm tower on a 36 mm bed only fits without the 2 mm kept from the edges.
+    expect(placeTower(plate, bed, flat).clear).toBe(true);
+    const far = { minX: 1e17, minY: 1e17, maxX: 1e17 + 256, maxY: 1e17 + 256 };
+    const farPlate = {
+      ...plate,
+      footprint: plateFootprint({ items: [], origin: [0, 0] }, far, [{ ...far, minY: -1e12 }]),
+    };
+    expect(placeTower(farPlate, far, flat).clear).toBe(false);
   });
 
   describe("in a worker", () => {

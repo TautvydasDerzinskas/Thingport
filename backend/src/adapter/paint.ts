@@ -87,25 +87,26 @@ export function paintStates(hex: string): number[] {
     return n;
   };
   const states = new Set<number>();
-  const visit = () => {
-    if (pos >= bits.length) return;
+  // The tree is written depth first, so its nodes are read in turn: a split one adds its children to those to read.
+  let pending = 1;
+  while (pending > 0 && pos < bits.length) {
+    pending--;
     const splitSides = read2();
-    if (splitSides === 0) {
-      let state = read2();
-      if (state === 3) {
-        let nibble;
-        do {
-          nibble = read4();
-          state += nibble;
-        } while (nibble === 15 && pos < bits.length);
-      }
-      if (state > 0) states.add(state);
-      return;
+    if (splitSides !== 0) {
+      read2();
+      pending += splitSides + 1;
+      continue;
     }
-    read2();
-    for (let c = splitSides; c >= 0; c--) visit();
-  };
-  visit();
+    let state = read2();
+    if (state === 3) {
+      let nibble;
+      do {
+        nibble = read4();
+        state += nibble;
+      } while (nibble === 15 && pos < bits.length);
+    }
+    if (state > 0) states.add(state);
+  }
   return [...states];
 }
 

@@ -34,7 +34,7 @@ const byLines = (name: string) =>
 
 const LINE_ID_RE = /^object_id=(\d+)\|/;
 const XML_OBJECT_RE = /<object\b[^>]*\bid="(\d+)"[^>]*>[\s\S]*?<\/object>\s*/g;
-const SETTINGS_OBJECT_RE = /<object\b[^>]*\bid="([^"]*)"[^>]*>([\s\S]*?)<\/object>/g;
+const SETTINGS_OBJECT_RE = /<object\b([^>]*)>([\s\S]*?)<\/object>/g;
 const PART_RE = /<part\b[^>]*?(?:\/>|>[\s\S]*?<\/part>)/g;
 const INSTANCE_RE = /<model_instance>([\s\S]*?)<\/model_instance>\s*/g;
 const ASSEMBLE_RE = /<assemble_item\b([^>]*?)\/?>\s*/g;
@@ -95,8 +95,9 @@ function referencesIn(rootXml: string): Map<string, Set<string>> {
   return references;
 }
 
-/** Whether merging the group would lose what's set for an object: the joining objects' own settings or anything a
- *  side file keeps for them, or the main one's side files where its parts go on a new object. */
+/** Whether merging the group would lose what's set for an object (the joining objects' own settings or anything a
+ *  side file keeps for them, or the main one's side files where its parts go on a new object), or can't be written:
+ *  an object in a model part of its own, or a main one placed by a transform that can't be undone. */
 export function mergeLoses(
   group: LayoutItem[],
   modelSettings: Record<string, ObjectSettings>,
@@ -104,6 +105,8 @@ export function mergeLoses(
   sidePlaces: Set<number>,
 ): boolean {
   const main = mainItem(group);
+  if (group.some((item) => item.external)) return true;
+  if (!invertTransform(parseTransform(buildItems(rootXml)[main.index]?.transform))) return true;
   const places = buildPlaces(rootXml);
   const kept = (item: LayoutItem) => sidePlaces.has(places.get(item.objectId) ?? 0);
   if (kept(main) && !reusable(main, rootXml)) return true;
@@ -114,11 +117,13 @@ export function mergeLoses(
   });
 }
 
-/** `m` undone: for an affine 3MF transform, row-vector form. */
-export function invertTransform(m: number[]): number[] {
+/** `m` undone, for an affine 3MF transform in row-vector form; null where it can't be, reliably: flat, or near enough
+ *  for its size (a determinant judged against the scale, so a tiny uniform scale still inverts). */
+export function invertTransform(m: number[]): number[] | null {
   const [a, b, c, d, e, f, g, h, i] = m;
   const det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
-  if (Math.abs(det) < 1e-12) return [1, 0, 0, 0, 1, 0, 0, 0, 1, -m[9], -m[10], -m[11]];
+  const scale = Math.max(...m.slice(0, 9).map(Math.abs));
+  if (!Number.isFinite(det) || !(scale > 0) || Math.abs(det) / scale ** 3 < 1e-9) return null;
   const inv = [
     (e * i - f * h) / det,
     (c * h - b * i) / det,
@@ -172,7 +177,10 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
   }
   const settingsXml = files.modelSettingsXml ?? "";
   const entries = new Map<string, string>();
-  for (const m of settingsXml.matchAll(SETTINGS_OBJECT_RE)) entries.set(m[1], m[2]);
+  for (const m of settingsXml.matchAll(SETTINGS_OBJECT_RE)) {
+    const id = attrValue(m[1], "id");
+    if (id) entries.set(id, m[2]);
+  }
   let nextId = Math.max(0, ...[...objects.keys()].map(Number).filter(Number.isFinite)) + 1;
 
   // What changes: each object rewritten or added, build items dropped or renamed, settings entries likewise.
@@ -191,6 +199,7 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
     const reuse = reusable(main, rootXml);
     const targetId = reuse ? main.objectId : String(nextId++);
     const undo = invertTransform(parseTransform(items[main.index].transform));
+    if (!undo) continue;
 
     const components: string[] = [];
     const parts: string[] = [];
@@ -318,7 +327,8 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
 
   let newSettings = files.modelSettingsXml;
   if (newSettings !== null) {
-    newSettings = newSettings.replace(SETTINGS_OBJECT_RE, (whole, id: string) => {
+    newSettings = newSettings.replace(SETTINGS_OBJECT_RE, (whole, attrs: string) => {
+      const id = attrValue(attrs, "id") ?? "";
       if (newEntries.has(id)) {
         const entry = newEntries.get(id)!;
         newEntries.delete(id);

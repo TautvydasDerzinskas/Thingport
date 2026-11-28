@@ -10,7 +10,7 @@ import { printerTarget } from "../../printers/targets";
 import { convexHull, hullMeetsBox, plateFootprint } from "./footprint";
 import { printedHeights, readLayout, type Box2, type Layout, type LayoutItem, type LayoutPlate } from "./layout";
 import { mergeLoses, mergeObjects, SIDE_FILES, sideFilePlaces } from "./merge";
-import { overlappingGroups } from "./overlap";
+import { overlappingGroups, solidsOverlap } from "./overlap";
 import type { ThreeMfCheckOptions, ThreeMfCheckResult, ThreeMfIssue, ThreeMfPrinter, ThreeMfRules } from "./types";
 import { placeTower, towerClear, towerSettings, type TowerPlate } from "./wipeTower";
 
@@ -103,11 +103,37 @@ function mergedTop(group: LayoutItem[]): number {
 
 const filamentsOn = (plate: LayoutPlate) => new Set(plate.items.flatMap((item) => [...item.filaments])).size;
 
-function towerPlate(plate: LayoutPlate, layout: Layout): TowerPlate {
+/** The plate as its tower sees it, with each group that's merged printing as one object, as tall as that makes it. */
+function towerPlate(plate: LayoutPlate, layout: Layout, merges: LayoutItem[][]): TowerPlate {
+  const merged = new Set(merges.flat());
+  const tops = [
+    ...plate.items.filter((item) => !merged.has(item)).map((item) => printedHeights(item)[1]),
+    ...merges.filter((group) => plate.items.includes(group[0])).map(mergedTop),
+  ];
   return {
     footprint: plateFootprint(plate, layout.bed, layout.exclude),
     filaments: filamentsOn(plate),
-    height: Math.max(0, ...plate.items.map((item) => printedHeights(item)[1])),
+    height: Math.max(0, ...tops),
+  };
+}
+
+/** A group as the one object a merge makes of it: its parts together, lowered onto the bed by its lowest point. */
+function asOne(group: LayoutItem[]): LayoutItem {
+  const world = {
+    min: [0, 1, 2].map((a) => Math.min(...group.map((item) => item.world.min[a]))) as LayoutItem["world"]["min"],
+    max: [0, 1, 2].map((a) => Math.max(...group.map((item) => item.world.max[a]))) as LayoutItem["world"]["max"],
+  };
+  const bounds = {
+    min: [0, 1, 2].map((a) => Math.min(...group.map((item) => item.bounds.min[a]))) as LayoutItem["bounds"]["min"],
+    max: [0, 1, 2].map((a) => Math.max(...group.map((item) => item.bounds.max[a]))) as LayoutItem["bounds"]["max"],
+  };
+  return {
+    ...group[0],
+    parts: group.flatMap((item) => item.parts),
+    world,
+    bounds,
+    lift: Math.max(world.min[2], 0),
+    filaments: new Set(group.flatMap((item) => [...item.filaments])),
   };
 }
 
@@ -116,7 +142,7 @@ export type ThreeMfCheckRun = { result: ThreeMfCheckResult; zip: JSZip | null };
 /** What the site would refuse of the file, and the copy to upload instead: null when the file needs nothing, or has
  *  something only the slicer can fix. */
 export async function runThreeMfCheck(
-  input: Uint8Array | JSZip,
+  input: Uint8Array,
   rules: ThreeMfRules,
   options: ThreeMfCheckOptions = {},
 ): Promise<ThreeMfCheckRun> {
@@ -126,7 +152,8 @@ export async function runThreeMfCheck(
     result: { printer, needsPrinter, issues },
     zip: null,
   });
-  const source = input instanceof JSZip ? input : await JSZip.loadAsync(input).catch(() => null);
+  // Its own archive, read from the bytes, which the fixes then change.
+  const source = await JSZip.loadAsync(input).catch(() => null);
   if (!source || !entryNamed(source, "3D/3dmodel.model")) {
     issues.push({ check: "project", problem: "unreadable", plate: null, fix: null });
     return done(null);
@@ -217,17 +244,19 @@ export async function runThreeMfCheck(
 
   layout.plates.forEach((plate, p) => {
     const number = p + 1;
+    const candidates: { group: LayoutItem[]; issue: ThreeMfIssue }[] = [];
     if (checks.has("overlapping-objects"))
       for (const group of overlappingGroups(plate)) {
         const loses = mergeLoses(group, pkg.modelSettings, rootXml, sidePlaces);
         const tooTall = layout.height !== null && mergedTop(group) > layout.height + EDGE;
-        issues.push({
+        const issue: ThreeMfIssue = {
           check: "overlapping-objects",
           problem: "overlapping-objects",
           plate: number,
           objects: group.map((item) => item.name),
           fix: loses || tooTall ? null : "merge-objects",
-        });
+        };
+        issues.push(issue);
         if (tooTall && checks.has("off-bed"))
           issues.push({
             check: "off-bed",
@@ -236,8 +265,17 @@ export async function runThreeMfCheck(
             objects: group.map((item) => item.name),
             fix: null,
           });
-        if (!loses && !tooTall) merges.push(group);
+        if (!loses && !tooTall) candidates.push({ group, issue });
       }
+    // Merged, a part lowered with its object no longer: one that cleared the rest of the plate as an object of its
+    // own may then reach into another. A merge that would is left to the slicer.
+    const merged = new Set(candidates.flatMap(({ group }) => group));
+    const after = [...candidates.map(({ group }) => asOne(group)), ...plate.items.filter((item) => !merged.has(item))];
+    candidates.forEach(({ group, issue }, i) => {
+      const one = after[i];
+      if (after.some((other) => other !== one && solidsOverlap(one, other))) issue.fix = null;
+      else merges.push(group);
+    });
 
     if (checks.has("off-bed")) {
       const { bed, height } = layout;
@@ -272,7 +310,7 @@ export async function runThreeMfCheck(
       const [x, y] = [Number(xs[p]), Number(ys[p])];
       const placed = xs[p] !== undefined && ys[p] !== undefined && Number.isFinite(x) && Number.isFinite(y);
       if (placed && filamentsOn(plate) < 2) return;
-      const tower = towerPlate(plate, layout);
+      const tower = towerPlate(plate, layout, merges);
       const needed = tower.filaments >= 2 && (!placed || !towerClear(tower, layout.bed, sizing, x, y));
       if (!needed && placed) return;
       // A plate without a position of its own would take the first plate's, so each gets one.

@@ -151,8 +151,14 @@ export function plateFootprint(plate: LayoutPlate, bed: BedBox, exclude: Box2[])
         markTriangle(f, xy[a], xy[a + 1], xy[b], xy[b + 1], xy[c], xy[c + 1]);
       }
     }
-  for (const area of exclude)
-    for (let y = area.minY; y <= area.maxY; y += f.cell / 2) markSegment(f, area.minX, y, area.maxX, y);
+  // Each area's cells, the area clipped to the grid first, so one larger than the bed costs no more than the bed.
+  for (const area of exclude) {
+    const minC = Math.max(Math.floor((area.minX - f.x0) / f.cell), 0);
+    const maxC = Math.min(Math.floor((area.maxX - f.x0) / f.cell), f.cols - 1);
+    const minR = Math.max(Math.floor((area.minY - f.y0) / f.cell), 0);
+    const maxR = Math.min(Math.floor((area.maxY - f.y0) / f.cell), f.rows - 1);
+    for (let r = minR; r <= maxR; r++) f.taken.fill(1, r * f.cols + minC, r * f.cols + maxC + 1);
+  }
   measure(f);
   return f;
 }
@@ -198,13 +204,18 @@ export function convexHull(xy: ArrayLike<number>): [number, number][] {
   return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
-/** Whether a convex polygon and a box share any area: no axis of either separates them. */
+/** Whether a counter-clockwise convex polygon and a box share any area: no axis of either separates them. The box's
+ *  axes are its bounds; each hull edge separates them where all four corners are on or past its outer side. */
 export function hullMeetsBox(hull: [number, number][], box: Box2): boolean {
   if (!hull.length) return false;
-  const xs = hull.map(([x]) => x);
-  const ys = hull.map(([, y]) => y);
-  if (Math.max(...xs) <= box.minX || Math.min(...xs) >= box.maxX) return false;
-  if (Math.max(...ys) <= box.minY || Math.min(...ys) >= box.maxY) return false;
+  let [minX, minY, maxX, maxY] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [x, y] of hull) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  if (maxX <= box.minX || minX >= box.maxX || maxY <= box.minY || minY >= box.maxY) return false;
   const corners: [number, number][] = [
     [box.minX, box.minY],
     [box.maxX, box.minY],
@@ -214,12 +225,8 @@ export function hullMeetsBox(hull: [number, number][], box: Box2): boolean {
   for (let i = 0; i < hull.length; i++) {
     const [ax, ay] = hull[i];
     const [bx, by] = hull[(i + 1) % hull.length];
-    const [nx, ny] = [ay - by, bx - ax];
-    const hullMin = Math.min(...hull.map(([x, y]) => x * nx + y * ny));
-    const hullMax = Math.max(...hull.map(([x, y]) => x * nx + y * ny));
-    const boxMin = Math.min(...corners.map(([x, y]) => x * nx + y * ny));
-    const boxMax = Math.max(...corners.map(([x, y]) => x * nx + y * ny));
-    if (boxMax <= hullMin || boxMin >= hullMax) return false;
+    // Left of a counter-clockwise edge is inside; a corner on the edge only touches.
+    if (corners.every(([x, y]) => (bx - ax) * (y - ay) - (by - ay) * (x - ax) <= 0)) return false;
   }
   return true;
 }

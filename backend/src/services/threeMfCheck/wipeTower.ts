@@ -162,23 +162,22 @@ export function towerClear(plate: TowerPlate, bed: BedBox, s: TowerSettings, x: 
   return onBed && clearance(plate.footprint, inner) > 0;
 }
 
+/** Corners to try from lo to hi, both included: counted, not stepped through, so far from the origin, where a step
+ *  can be lost to rounding, there are still at most MAX_STEPS. */
 function steps(lo: number, hi: number): number[] {
-  if (hi <= lo) return [lo];
-  const step = Math.max(STEP, (hi - lo) / MAX_STEPS);
-  const out: number[] = [];
-  for (let v = lo; v < hi; v += step) out.push(v);
-  out.push(hi);
-  return out;
+  if (!(hi > lo)) return [lo];
+  const count = Math.min(Math.ceil((hi - lo) / STEP), MAX_STEPS);
+  return Array.from({ length: count + 1 }, (_, i) => (i === count ? hi : lo + ((hi - lo) * i) / count));
 }
 
 /** The corner of a tower sized by `s` where it keeps furthest from the plate's objects, up to CLEARANCE, and nearest
- *  the slicer's own default among those. */
-function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings): [number, number] {
+ *  the slicer's own default among those, `slack` in from the bed's edges. */
+function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLACK): [number, number] {
   const reach = towerFootprint(plate, s, 0, 0);
-  const lo: [number, number] = [bed.minX - reach.minX + SLACK, bed.minY - reach.minY + SLACK];
+  const lo: [number, number] = [bed.minX - reach.minX + slack, bed.minY - reach.minY + slack];
   const hi: [number, number] = [
-    Math.max(bed.maxX - reach.maxX - SLACK, lo[0]),
-    Math.max(bed.maxY - reach.maxY - SLACK, lo[1]),
+    Math.max(bed.maxX - reach.maxX - slack, lo[0]),
+    Math.max(bed.maxY - reach.maxY - slack, lo[1]),
   ];
   const home = [0, 1].map((axis) => {
     const [min, max] = axis ? [bed.minY, bed.maxY] : [bed.minX, bed.maxX];
@@ -208,9 +207,11 @@ export function placeTower(
   bed: BedBox,
   s: TowerSettings,
 ): { spot: [number, number]; clear: boolean } {
-  for (const sizing of [placed(s), s]) {
-    const spot = bestSpot(plate, bed, sizing);
-    if (towerClear(plate, bed, sizing, spot[0], spot[1])) return { spot, clear: true };
-  }
+  // Each size kept SLACK in from the bed's edges first, then right up to them, where a bed has no more room.
+  for (const sizing of [placed(s), s])
+    for (const slack of [SLACK, 0]) {
+      const spot = bestSpot(plate, bed, sizing, slack);
+      if (towerClear(plate, bed, sizing, spot[0], spot[1])) return { spot, clear: true };
+    }
   return { spot: bestSpot(plate, bed, s), clear: false };
 }

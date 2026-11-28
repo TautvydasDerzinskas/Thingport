@@ -23,6 +23,8 @@ export type LayoutItem = {
   objectId: string;
   /** Its place among its object's build items, which model_settings.config numbers instances by. */
   instance: number;
+  /** Its object is in a model part of its own, not the main model, which a merge can't rewrite. */
+  external: boolean;
   name: string;
   /** Into the layout's plates. */
   plate: number;
@@ -65,9 +67,18 @@ const TRIANGLE_RE = /<triangle\b([^>]*?)\/?>/g;
 const ITEM_RE = /<item\b([^>]*?)\/?>/g;
 const MAX_DEPTH = 8;
 
-/** An attribute's raw value. As writers put it, `name="value"`, found with indexOf, as a mesh has millions of tags;
- *  otherwise in any of XML's ways, single-quoted or spaced around the `=`. */
+// Each attribute of a tag in turn, a quoted value taken whole, so text inside one is never read as another.
+const ATTR_RE = /([^\s=/<>"']+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+
+/** An attribute's raw value, in any of XML's ways: double- or single-quoted, spaced around the `=` or not. */
 export function attrValue(tag: string, name: string): string | null {
+  for (const m of tag.matchAll(ATTR_RE)) if (m[1] === name) return m[2] ?? m[3];
+  return null;
+}
+
+/** A vertex's or triangle's attribute: indexOf where it's written as writers write it, as a mesh has millions of
+ *  tags, whose values are numbers and paint codes; otherwise read as any tag's. */
+function meshAttr(tag: string, name: string): string | null {
   const key = `${name}="`;
   let at = tag.indexOf(key);
   while (at > 0 && !/\s/.test(tag[at - 1])) at = tag.indexOf(key, at + 1);
@@ -76,10 +87,13 @@ export function attrValue(tag: string, name: string): string | null {
     const end = tag.indexOf('"', start);
     return end < 0 ? null : tag.slice(start, end);
   }
-  if (!tag.includes(name)) return null;
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const m = new RegExp(String.raw`(?:^|\s)${escaped}\s*=\s*(?:"([^"]*)"|'([^']*)')`).exec(tag);
-  return m ? (m[1] ?? m[2]) : null;
+  return tag.includes(name) ? attrValue(tag, name) : null;
+}
+
+/** A vertex index: a whole number of one of the mesh's vertices, else null. */
+function vertexIndex(value: string | null, count: number): number | null {
+  const n = Number(value);
+  return value !== null && value !== "" && Number.isInteger(n) && n >= 0 && n < count ? n : null;
 }
 
 function readMesh(body: string, paints: Map<string, number[]>): Mesh {
@@ -89,16 +103,16 @@ function readMesh(body: string, paints: Map<string, number[]>): Mesh {
   let m;
   const vertices = new RegExp(VERTEX_RE.source, VERTEX_RE.flags);
   while ((m = vertices.exec(body)))
-    positions.push(Number(attrValue(m[1], "x")), Number(attrValue(m[1], "y")), Number(attrValue(m[1], "z")));
+    positions.push(Number(meshAttr(m[1], "x")), Number(meshAttr(m[1], "y")), Number(meshAttr(m[1], "z")));
   const count = positions.length / 3;
   const faces = new RegExp(TRIANGLE_RE.source, TRIANGLE_RE.flags);
   while ((m = faces.exec(body))) {
-    const a = Number(attrValue(m[1], "v1"));
-    const b = Number(attrValue(m[1], "v2"));
-    const c = Number(attrValue(m[1], "v3"));
-    if (!(a < count && b < count && c < count)) continue;
+    const a = vertexIndex(meshAttr(m[1], "v1"), count);
+    const b = vertexIndex(meshAttr(m[1], "v2"), count);
+    const c = vertexIndex(meshAttr(m[1], "v3"), count);
+    if (a === null || b === null || c === null) continue;
     triangles.push(a, b, c);
-    const paint = attrValue(m[1], "paint_color");
+    const paint = meshAttr(m[1], "paint_color");
     if (!paint) continue;
     // Every filament a split triangle's pieces are in, which the tower is sized by.
     let states = paints.get(paint);
@@ -143,7 +157,14 @@ export function buildItems(rootXml: string) {
   const at = rootXml.lastIndexOf("<build");
   const build = at < 0 ? "" : rootXml.slice(at);
   const seen = new Map<string, number>();
-  const items: { objectId: string; instance: number; transform: string | null; printable: boolean }[] = [];
+  const items: {
+    objectId: string;
+    instance: number;
+    transform: string | null;
+    printable: boolean;
+    /** The model part its object is in, where it isn't the main model (the production extension's `p:path`). */
+    path: string | null;
+  }[] = [];
   const re = new RegExp(ITEM_RE.source, ITEM_RE.flags);
   let m;
   while ((m = re.exec(build))) {
@@ -155,7 +176,9 @@ export function buildItems(rootXml: string) {
       objectId,
       instance,
       transform: attrValue(m[1], "transform"),
-      printable: attrValue(m[1], "printable") !== "0",
+      // As Bambu Studio reads it: "0" and "false" are left out, anything else or nothing prints.
+      printable: !["0", "false"].includes(attrValue(m[1], "printable") ?? ""),
+      path: decodeOrNull(attrValue(m[1], "p:path")),
     });
   }
   return items;
@@ -245,8 +268,10 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
   for (const [index, item] of buildItems(rootXml).entries()) {
     if (!item.printable) continue;
     const found: { id: string; placed: PlacedMesh }[] = [];
-    await leaves(rootKey, item.objectId, parseTransform(item.transform), 0, found);
-    const object = pkg.modelSettings[item.objectId];
+    const start = item.path ? pathKey(normalizePath(item.path)) : rootKey;
+    await leaves(start, item.objectId, parseTransform(item.transform), 0, found);
+    // model_settings.config describes the main model's objects.
+    const object = item.path ? undefined : pkg.modelSettings[item.objectId];
     const listed = object?.parts ?? [];
     const parts: PlacedMesh[] = [];
     const filaments = new Set<number>();
@@ -268,6 +293,7 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
       index,
       objectId: item.objectId,
       instance: item.instance,
+      external: Boolean(item.path),
       name: object?.name || `Object ${item.objectId}`,
       plate,
       parts,
