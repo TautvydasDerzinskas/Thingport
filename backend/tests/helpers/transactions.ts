@@ -6,11 +6,12 @@ export type Dispute = { caller: string; outcome: "rolled back" | "commit unanswe
 
 /** Ends the first transaction each named function opens, in order, as its dispute says, and leaves every other
  *  transaction alone: background work in the same process opens transactions too, which a plain once-mock can catch
- *  instead. A caller is matched by its name on the stack where it opens the transaction. Restore it when done. */
+ *  instead. A caller is matched by its name on the stack where it opens the transaction. Restore it when done;
+ *  `unconsumed()` names the callers whose dispute never ran. */
 export function disputeTransactions(...disputes: Dispute[]) {
   const transaction = PrismaClient.prototype.$transaction;
   const left = [...disputes];
-  return vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementation(function (
+  const spy = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementation(function (
     this: PrismaClient,
     ...args: unknown[]
   ) {
@@ -33,4 +34,5 @@ export function disputeTransactions(...disputes: Dispute[]) {
       options,
     ]);
   } as never);
+  return Object.assign(spy, { unconsumed: () => left.map((dispute) => dispute.caller) });
 }

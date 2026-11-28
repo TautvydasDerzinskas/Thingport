@@ -21,6 +21,7 @@ export const STORAGE_SITES = [
   "path.taken",
   "move.source",
   "move.target",
+  "move.settle",
   "browser.location",
   "scan.plate",
   "repair.look",

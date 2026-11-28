@@ -5,7 +5,6 @@ import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
-import { setTimeout as delay } from "node:timers/promises";
 import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
@@ -36,7 +35,7 @@ import {
 } from "../src/services/modelAssets";
 import { MODEL_SUMMARY_SELECT, toModelSummary } from "../src/services/dashboardService";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
-import { TAG_MOSAICS } from "../src/config";
+import { STORAGE, TAG_MOSAICS } from "../src/config";
 import { track } from "./harness/lifecycle";
 import { blockedBy, sessionOf } from "./helpers/locks";
 import { disputeTransactions } from "./helpers/transactions";
@@ -246,15 +245,22 @@ describe("recoverable preview uploads", () => {
     const gate = new Promise<void>((resolve) => (open = resolve));
     let rolledBack = () => {};
     const ended = new Promise<void>((resolve) => (rolledBack = resolve));
+    // What the upload's first look at the thumbnail found.
+    let sawThumb = (_found: unknown) => {};
+    const looked = new Promise<unknown>((resolve) => (sawThumb = resolve));
     const transaction = PrismaClient.prototype.$transaction;
     let held = false;
     const holding = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementation(function (
       this: PrismaClient,
       ...args: unknown[]
     ) {
-      if (held || !(new Error().stack ?? "").includes("saveGeneratedPlateThumbnail")) {
-        return Reflect.apply(transaction, this, args);
+      const stack = new Error().stack ?? "";
+      if (stack.includes("takeOverPlateThumb")) {
+        const looking = Reflect.apply(transaction, this, args) as Promise<unknown>;
+        void looking.then(sawThumb, sawThumb);
+        return looking;
       }
+      if (held || !stack.includes("saveGeneratedPlateThumbnail")) return Reflect.apply(transaction, this, args);
       held = true;
       const [callback, options] = args as [(tx: unknown) => Promise<unknown>, unknown];
       const rolling = Reflect.apply(transaction, this, [
@@ -274,7 +280,13 @@ describe("recoverable preview uploads", () => {
       const render = track(
         saveGeneratedPlateThumbnail(print.id, plate.id, await png(60)).catch((error: Error) => error),
       );
-      await ended;
+      // A render that fails before its transaction says so here, rather than leave the test waiting.
+      await Promise.race([
+        ended,
+        render.then((result) => {
+          throw new Error(`The render ended before its rollback was held: ${String(result)}`);
+        }),
+      ]);
       const upload = track(
         Promise.resolve(
           request(app)
@@ -283,8 +295,14 @@ describe("recoverable preview uploads", () => {
             .attach("files", await png(200), "a.png"),
         ),
       );
-      // Time for the upload to reach its thumbnail while the render's outcome is still unheard.
-      await Promise.race([upload, delay(1000)]);
+      // The upload looks while the render's outcome is still unheard, and is told to wait for it.
+      const found = await Promise.race([
+        looked,
+        upload.then(() => {
+          throw new Error("The upload ended before it looked at the thumbnail");
+        }),
+      ]);
+      expect(found).toEqual({ over: expect.any(Promise) });
       open();
       expect(await render).toMatchObject({ message: "rolled back" });
       expect((await upload).status).toBe(200);
@@ -305,6 +323,8 @@ describe("recoverable preview uploads", () => {
         .set(auth())
         .attach("files", await png(200), "a.png")
         .attach("files", await png(100), "b.png");
+      // The thumbnail's transaction did fail, so the second picture was stored after it.
+      expect(failing.unconsumed()).toEqual([]);
     } finally {
       failing.mockRestore();
     }
@@ -343,6 +363,71 @@ describe("recoverable preview uploads", () => {
     // The pictures only: the cover work may be making a card-sized copy beside them.
     const pictures = (await fs.readdir(gallery)).filter((name) => name.endsWith(".jpg"));
     expect(pictures).toEqual(imageId ? [path.basename(previewImagePath(imageId, home))] : []);
+  });
+
+  const jpegs = async (folder: string) =>
+    (await fs.readdir(folder).catch(() => [] as string[])).filter((name) => name.endsWith(".jpg"));
+  const lookUp = (printId: string) =>
+    request(app)
+      .post(`/api/print/${printId}/preview-images/upload-results`)
+      .set(auth())
+      .send({ upload_ids: [randomUUID()] })
+      .expect(200);
+
+  it("leaves a rolled-back JPEG it couldn't remove for the next look", async () => {
+    const { print, gallery, uploadId } = await uploadStorage();
+    const rm = fs.rm;
+    let refused = false;
+    const removing = vi.spyOn(fs, "rm").mockImplementation((async (target: unknown, ...rest: unknown[]) => {
+      if (!refused && path.dirname(String(target)) === gallery && String(target).endsWith(".jpg")) {
+        refused = true;
+        throw Object.assign(new Error("EACCES: permission denied"), { code: "EACCES" });
+      }
+      return Reflect.apply(rm, fs, [target, ...rest]);
+    }) as never);
+    const disputed = disputeTransactions({ caller: "addPreviewImageForUpload", outcome: "rolled back" });
+    try {
+      await expect(addPreviewImageForUpload(print.id, uploadId, await png(200))).rejects.toThrow("rolled back");
+    } finally {
+      disputed.mockRestore();
+      removing.mockRestore();
+    }
+    expect(refused).toBe(true);
+    expect(await jpegs(gallery)).toHaveLength(1);
+
+    await lookUp(print.id);
+    expect(await jpegs(gallery)).toEqual([]);
+  });
+
+  it("removes each rolled-back JPEG from the folder it went to when the model's folder changed between them", async () => {
+    const { print, gallery } = await uploadStorage();
+    const lostPublication = async () => {
+      const disputed = disputeTransactions(
+        { caller: "addPreviewImageForUpload", outcome: "rolled back" },
+        { caller: "addPreviewImageForUpload", outcome: "fails" },
+      );
+      try {
+        await expect(addPreviewImageForUpload(print.id, randomUUID(), await png(200))).rejects.toThrow("rolled back");
+      } finally {
+        disputed.mockRestore();
+      }
+    };
+    const home = await ensureAssetHome(print.id);
+    const moved = `${home} moved`;
+    const movedGallery = path.dirname(assetTarget(moved, galleryImageFile("unused")));
+    try {
+      await lostPublication();
+      // The model's pictures go to another folder before the next one.
+      await prisma.print.update({ where: { id: print.id }, data: { assetsPath: moved } });
+      await lostPublication();
+      expect([...(await jpegs(gallery)), ...(await jpegs(movedGallery))]).toHaveLength(2);
+
+      await lookUp(print.id);
+      expect([...(await jpegs(gallery)), ...(await jpegs(movedGallery))]).toEqual([]);
+    } finally {
+      await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
+      await fs.rm(path.join(STORAGE, moved), { recursive: true, force: true });
+    }
   });
 
   it("keeps an upload key retryable when writing its JPEG fails", async () => {

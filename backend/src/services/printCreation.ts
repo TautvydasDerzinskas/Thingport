@@ -742,14 +742,16 @@ async function removePlateUnlocked(print: Pick<Print, "id" | "assetsPath">, plat
 export async function reorderPlates(printId: string, plateIds: string[]): Promise<void> {
   // Not while a rename moves files: their paths are rendered from the positions it read. The prepared print's facts
   // are read in the same turn, so a rename can't move the new first file while they're read.
+  // Read after every reorder, not only one that changed the first plate: an earlier one's may have failed after its
+  // order committed, and a retry or a later order can keep that first plate.
   await withPlateRenameLock(printId, async () => {
-    if (await reorderPlatesUnlocked(printId, plateIds)) await refreshAutoPreparedMetadata(printId);
+    await reorderPlatesUnlocked(printId, plateIds);
+    await refreshAutoPreparedMetadata(printId);
   });
 }
 
-/** True when the print facts are to be read again. */
-async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promise<boolean> {
-  return prisma.$transaction(async (tx) => {
+async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promise<void> {
+  await prisma.$transaction(async (tx) => {
     await lockPlateList(tx, printId);
     const plates = await tx.plate.findMany({ where: { printId }, orderBy: { position: "asc" }, select: { id: true } });
     if (new Set(plateIds).size !== plateIds.length) throw new HttpError(400, "plate_ids lists a plate twice");
@@ -758,10 +760,7 @@ async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promi
     if (plateIds.length !== plates.length || plateIds.some((id) => !known.has(id))) {
       throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids", "plate_set_changed");
     }
-    // An order already as asked may be the retry of one whose print facts failed to update after it committed.
-    const unchanged = plates.every((plate, index) => plate.id === plateIds[index]);
     await renumberPlates(tx, plateIds);
-    return unchanged || plates[0]?.id !== plateIds[0];
   });
 }
 

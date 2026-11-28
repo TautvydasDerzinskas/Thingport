@@ -90,7 +90,8 @@ regression or a bug in what it does, is a finding as usual.
   - It guards checks followed by renames, at 19 call sites in 11 files: placing files, moving a model's files when its
     folder changes (`printService.moveAllStored`), merges, the licence file, and GLB, slicer and build-plate previews.
     A move whose save failed with its outcome unread is settled under it before that file's next move picks a place
-    (`printService.settleMove`): the file goes back unless its row names the new place.
+    (`printService.settleMove`), and again as each move lists its file under the lock, which catches one recorded
+    while that move waited: the file goes back unless its row names the new place.
   - Some call sites also do database work inside it, such as merge's transaction and the licence sync.
   - The per-model locks are `withPrintLock` (repair, `importService.ts`), `perModel` (copies, `modelCopyService.ts`)
     and `withPlateRenameLock` (`printCreation.ts`). That last one is in-process and lasts beyond a transaction: a

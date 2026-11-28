@@ -307,7 +307,10 @@ export async function addPreviewImageForUpload(
   const jpeg = await encodePreviewUpload(buffer);
   const home = jpeg && (await ensureAssetHome(printId));
   const saved = jpeg && home && (await storePreviewJpeg(home, id, jpeg));
-  const discard = () => saved && fs.rm(saved.dest, { force: true }).catch(() => undefined);
+  // A file that can't be removed now waits for the gallery's next locked read, which removes it while no row names it.
+  const discard = async () => {
+    if (saved) await fs.rm(saved.dest, { force: true }).catch(() => leaveUnsettled(printId, home, [id]));
+  };
 
   for (let attempt = 0; attempt < 5; attempt++) {
     let readyToCommit = false;
@@ -400,9 +403,9 @@ async function galleryHome(tx: Prisma.TransactionClient, printId: string): Promi
   return (await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } }))?.assetsPath;
 }
 
-/** Gallery rows a transaction dropped or added without hearing whether it committed, by model, with where their files
- *  are. */
-const unsettledDrops = new Map<string, { home: AssetHome; ids: Set<string> }>();
+/** Gallery rows a transaction dropped or added without hearing whether it committed, by model, each with where its
+ *  files are. */
+const unsettledDrops = new Map<string, Map<string, AssetHome>>();
 
 /** Runs `drop`, a transaction that removes gallery rows and names them through `dropping`, then removes their files.
  *  A failed commit may still have committed: a locked read then decides which rows went, and when that read fails
@@ -430,9 +433,8 @@ async function dropGalleryRows<T>(
 }
 
 function leaveUnsettled(printId: string, home: AssetHome, ids: string[]) {
-  const unsettled = unsettledDrops.get(printId) ?? { home, ids: new Set<string>() };
-  unsettled.home = home;
-  for (const id of ids) unsettled.ids.add(id);
+  const unsettled = unsettledDrops.get(printId) ?? new Map<string, AssetHome>();
+  for (const id of ids) unsettled.set(id, home);
   unsettledDrops.set(printId, unsettled);
 }
 
@@ -440,33 +442,34 @@ function leaveUnsettled(printId: string, home: AssetHome, ids: string[]) {
 async function settleGalleryDrops(printId: string): Promise<void> {
   const unsettled = unsettledDrops.get(printId);
   if (!unsettled) return;
-  // Only the ids this read checks are settled by it; any a drop adds meanwhile wait for the next.
-  const checked = [...unsettled.ids];
+  // Only the ids this read checks are settled by it, each at the home it was left with; any added meanwhile wait.
+  const checked = [...unsettled];
   let left: Set<string>;
   try {
     left = await prisma.$transaction(async (tx) => {
       await lockPreviewGallery(tx, printId);
-      const rows = await tx.previewImage.findMany({ where: { id: { in: checked } }, select: { id: true } });
+      const ids = checked.map(([id]) => id);
+      const rows = await tx.previewImage.findMany({ where: { id: { in: ids } }, select: { id: true } });
       return new Set(rows.map((row) => row.id));
     });
   } catch (error) {
     console.error(`Couldn't settle the gallery of print ${printId} yet:`, error);
     return;
   }
-  for (const id of checked) {
+  for (const [id, home] of checked) {
     // A row that survived needs nothing; one that went is retired once its files are confirmed gone, else retried.
     if (!left.has(id)) {
       try {
-        await removeAssetOrThrow(unsettled.home, galleryImageFile(id));
-        await removeAssetOrThrow(unsettled.home, galleryThumbFile(id));
+        await removeAssetOrThrow(home, galleryImageFile(id));
+        await removeAssetOrThrow(home, galleryThumbFile(id));
       } catch (error) {
         console.error(`Couldn't remove gallery image ${id}'s files yet:`, error);
         continue;
       }
     }
-    unsettled.ids.delete(id);
+    if (unsettled.get(id) === home) unsettled.delete(id);
   }
-  if (!unsettled.ids.size && unsettledDrops.get(printId) === unsettled) unsettledDrops.delete(printId);
+  if (!unsettled.size && unsettledDrops.get(printId) === unsettled) unsettledDrops.delete(printId);
 }
 
 /** The first of `images` whose file is there, and that file, by a look that throws on any error but a missing file. */

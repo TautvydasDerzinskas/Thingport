@@ -52,14 +52,13 @@ const pictureFiles: RequestHandler = (req, res, next) =>
     if (!(err instanceof multer.MulterError)) return next(err);
     // A file under another field is a request made wrong, not one too large.
     if (err.code === "LIMIT_UNEXPECTED_FILE") return next(new HttpError(400, "Send the pictures as the files field"));
-    next(
-      new HttpError(
-        413,
-        err.code === "LIMIT_FILE_SIZE"
-          ? "A picture is larger than 8 MB"
-          : `At most ${PICTURE_UPLOAD_MAX_FILES} pictures go in one upload`,
-      ),
-    );
+    const tooMuch: Partial<Record<multer.ErrorCode, string>> = {
+      LIMIT_FILE_SIZE: "A picture is larger than 8 MB",
+      LIMIT_FILE_COUNT: `At most ${PICTURE_UPLOAD_MAX_FILES} pictures go in one upload`,
+      LIMIT_PART_COUNT: "The upload has too many form fields",
+      LIMIT_FIELD_COUNT: "The upload has too many form fields",
+    };
+    next(new HttpError(413, tooMuch[err.code] ?? "A form field of the upload is too large"));
   });
 
 router.post("/print/:id/preview-images", pictureFiles, uploadPreviews(false));

@@ -745,6 +745,17 @@ describe("plate add/remove/reorder/rename", () => {
     expect(res.body.detail).toBe("Send the pictures as the files field");
   });
 
+  it("tells too many form fields from too many pictures", async () => {
+    const picture = await sharp({ create: { width: 4, height: 4, channels: 3, background: "#cc3366" } })
+      .png()
+      .toBuffer();
+    let upload = auth(request(app).post(`/api/print/${printId}/preview-images`)).attach("files", picture, "one.png");
+    for (let at = 0; at < 60; at++) upload = upload.field("note", "x");
+    const res = await upload;
+    expect(res.status).toBe(413);
+    expect(res.body.detail).toBe("The upload has too many form fields");
+  });
+
   it("doesn't take a plate another upload's receipt names for an older server's upload", async () => {
     const uploaded = await auth(request(app).post("/api/upload")).attach(
       "files",
@@ -876,7 +887,7 @@ describe("plate add/remove/reorder/rename", () => {
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
-  it("reads a new first plate's print facts again when a reorder is retried after they failed", async () => {
+  it("reads the print facts again when a later reorder keeps the first plate whose facts failed", async () => {
     const uploaded = await auth(request(app).post("/api/upload"))
       .field("mode", "multiplate")
       .attach("files", Buffer.from("solid facts endsolid"), "facts.stl")
@@ -886,12 +897,16 @@ describe("plate add/remove/reorder/rename", () => {
           .file("Metadata/plate_1.gcode", "; printer_model = Bambu Lab X1 Carbon\nG28\n")
           .generateAsync({ type: "nodebuffer" }),
         "facts.gcode.3mf",
-      );
+      )
+      .attach("files", Buffer.from("solid more facts endsolid"), "more-facts.stl");
     const modelId: string = uploaded.body.prints[0].id;
     await trackPrint(modelId);
-    const [stl, gcode] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
-    const reorder = () =>
-      auth(request(app).post(`/api/print/${modelId}/plates/reorder`)).send({ plate_ids: [gcode.id, stl.id] });
+    const [stl, gcode, more] = await prisma.plate.findMany({
+      where: { printId: modelId },
+      orderBy: { position: "asc" },
+    });
+    const reorder = (order: string[]) =>
+      auth(request(app).post(`/api/print/${modelId}/plates/reorder`)).send({ plate_ids: order });
     const update = prisma.print.update;
     let failed = false;
     // The order commits; the print facts read from its new first plate don't.
@@ -903,15 +918,148 @@ describe("plate add/remove/reorder/rename", () => {
       return Reflect.apply(update, prisma.print, [args]);
     }) as never);
     try {
-      expect((await reorder()).status).toBe(500);
+      expect((await reorder([gcode.id, stl.id, more.id])).status).toBe(500);
     } finally {
       facts.mockRestore();
     }
     expect(failed).toBe(true);
+    const saved = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(saved.map((plate) => plate.id)).toEqual([gcode.id, stl.id, more.id]);
 
-    expect((await reorder()).status).toBe(200);
+    // Another order, with the same first plate.
+    expect((await reorder([gcode.id, more.id, stl.id])).status).toBe(200);
     const print = await prisma.print.findUniqueOrThrow({ where: { id: modelId } });
     expect(print.preparedMetadata).toMatchObject({ printer: "Bambu Lab X1 Carbon" });
+  });
+
+  it("settles a move whose outcome went unread while another move of its file waited, before that one saves", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid race a endsolid"), "race-a.stl")
+      .attach("files", Buffer.from("solid race b endsolid"), "race-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    const update = prisma.plate.update;
+    const findUnique = prisma.plate.findUnique;
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let saving = () => {};
+    const atSave = new Promise<void>((resolve) => (saving = resolve));
+    let chose = () => {};
+    const chosen = new Promise<void>((resolve) => (chose = resolve));
+    let holding = false;
+    let failRead = false;
+    // The rename moves its file, and the save of its path waits, then fails with the read that would tell.
+    const saves = vi.spyOn(prisma.plate, "update").mockImplementation((async (args: {
+      data: { storagePath?: unknown };
+    }) => {
+      if (!holding && typeof args.data.storagePath === "string" && args.data.storagePath.includes("race-c")) {
+        holding = true;
+        saving();
+        await held;
+        failRead = true;
+        throw new Error("The database went away");
+      }
+      return Reflect.apply(update, prisma.plate, [args]);
+    }) as never);
+    const reads = vi.spyOn(prisma.plate, "findUnique").mockImplementation((async (args: {
+      where: { storagePath?: string };
+    }) => {
+      if (failRead) {
+        failRead = false;
+        throw new Error("The database went away");
+      }
+      // The name change has settled what it could and is choosing where the file goes.
+      if (holding && args.where.storagePath) chose();
+      return Reflect.apply(findUnique, prisma.plate, [args]);
+    }) as never);
+    const endedFirst = (what: string) => (res: { status: number }) => {
+      throw new Error(`The ${what} ended first, with ${res.status}`);
+    };
+    try {
+      const rename = track(
+        Promise.resolve(
+          auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+            renames: [{ plate_id: a.id, filename: "race-c.stl" }],
+          }),
+        ),
+      );
+      await Promise.race([atSave, rename.then(endedFirst("rename"))]);
+      // The model's name moves its files too, without the rename's lock.
+      const named = track(
+        Promise.resolve(auth(request(app).post(`/api/print/${modelId}/meta`)).send({ name: "race renamed" })),
+      );
+      await Promise.race([chosen, named.then(endedFirst("name change"))]);
+      release();
+      expect((await rename).status).not.toBe(200);
+      expect((await named).status).toBe(200);
+    } finally {
+      release();
+      saves.mockRestore();
+      reads.mockRestore();
+    }
+
+    const plate = await prisma.plate.findUniqueOrThrow({ where: { id: a.id } });
+    expect(path.basename(plate.storagePath)).toBe("race-c.stl");
+    expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe("solid race a endsolid");
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("stops settling an unread move when its look fails, and settles it on the next try", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid settle a endsolid"), "settle-a.stl")
+      .attach("files", Buffer.from("solid settle b endsolid"), "settle-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    const original = path.join(STORAGE, a.storagePath);
+    const movedTo = path.join(path.dirname(original), "settle-c.stl");
+    const rename = () =>
+      auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [{ plate_id: a.id, filename: "settle-c.stl" }],
+      });
+    const update = prisma.plate.update;
+    const findUnique = prisma.plate.findUnique;
+    let failed = false;
+    let readFailed = false;
+    const saving = vi.spyOn(prisma.plate, "update").mockImplementation((async (args: {
+      data: { storagePath?: unknown };
+    }) => {
+      if (!failed && typeof args.data.storagePath === "string" && args.data.storagePath.includes("settle-c")) {
+        failed = true;
+        throw new Error("The database went away");
+      }
+      return Reflect.apply(update, prisma.plate, [args]);
+    }) as never);
+    const reading = vi.spyOn(prisma.plate, "findUnique").mockImplementation((async (args: unknown) => {
+      if (failed && !readFailed) {
+        readFailed = true;
+        throw new Error("The database went away");
+      }
+      return Reflect.apply(findUnique, prisma.plate, [args]);
+    }) as never);
+    try {
+      expect((await rename()).status).not.toBe(200);
+    } finally {
+      saving.mockRestore();
+      reading.mockRestore();
+    }
+    expect(readFailed).toBe(true);
+    expect([fs.existsSync(original), fs.existsSync(movedTo)]).toEqual([false, true]);
+
+    // The settling look fails: nothing is renamed, and the bytes stay where the move left them.
+    faults.at("fileState:move.settle", 1, "EIO");
+    expect((await rename()).status).not.toBe(200);
+    expect([fs.existsSync(original), fs.existsSync(movedTo)]).toEqual([false, true]);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: a.id } })).storagePath).toBe(a.storagePath);
+
+    expect((await rename()).status).toBe(200);
+    const plate = await prisma.plate.findUniqueOrThrow({ where: { id: a.id } });
+    expect(path.basename(plate.storagePath)).toBe("settle-c.stl");
+    expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe("solid settle a endsolid");
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("appends after a plate removed while the new file was being placed", async () => {

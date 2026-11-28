@@ -344,8 +344,8 @@ describe("printsApi.addPreviewImages", () => {
       "fetch",
       vi.fn(async (_url: string, init: RequestInit) => {
         const ids = (init.body as FormData).getAll("upload_ids").map(String);
-        // The first batch answers for 19 of its 20, the second for its one: 21 ids in all, one per file.
-        const answered = batch++ === 0 ? ids.slice(0, 19) : ids;
+        // The first batch answers for 19 of its 20, the second for two: 21 ids in all, as many as the files.
+        const answered = batch++ === 0 ? ids.slice(0, 19) : [...ids, "extra"];
         return new Response(
           JSON.stringify({ print: uploadPrint, added_image_ids: answered.map((id) => `image-${id}`) }),
           { status: 200 },
