@@ -54,7 +54,8 @@ export async function checkThreeMf(
 }
 
 /** The copy to upload in the file's place written to `destPath`, where it needs one Thingport can make: `written`
- *  false when the file needs nothing, or has something only the slicer can fix (an issue with no fix). */
+ *  false when the file needs nothing, or has something only the slicer can fix (an issue with no fix). `destPath`
+ *  must be new: a file already there, the checked one included, fails the call rather than being written over. */
 export async function fixThreeMf(
   srcPath: string,
   destPath: string,

@@ -51,11 +51,13 @@ function verticesOf(item: LayoutItem) {
   return out;
 }
 
-/** The item's cross-section at printed height `z`, as segments x1 y1 x2 y2. */
-function section(item: LayoutItem, printedZ: number): number[] {
+/** The item's cross-section at printed height `z`, part by part, as segments x1 y1 x2 y2. */
+function sections(item: LayoutItem, printedZ: number): number[][] {
   const z = printedZ + item.lift;
-  const segments: number[] = [];
+  const out: number[][] = [];
   for (const { positions: p, triangles: t } of verticesOf(item)) {
+    const segments: number[] = [];
+    out.push(segments);
     for (let f = 0; f < t.length; f += 3) {
       const a = t[f] * 3;
       const b = t[f + 1] * 3;
@@ -78,7 +80,26 @@ function section(item: LayoutItem, printedZ: number): number[] {
       if (points.length === 4) segments.push(points[0], points[1], points[2], points[3]);
     }
   }
-  return segments;
+  return out;
+}
+
+/** Each row's spans of the parts together: each part's by the even-odd rule, so its holes stay holes, then joined, as
+ *  parts that overlap print as one. */
+function itemSpans(parts: number[][], y0: number, rows: number): number[][] {
+  const perPart = parts.filter((segments) => segments.length).map((segments) => rowSpans(segments, y0, rows));
+  if (perPart.length <= 1) return perPart[0] ?? Array.from({ length: rows }, () => []);
+  return Array.from({ length: rows }, (_, r) => {
+    const spans: [number, number][] = [];
+    for (const part of perPart) for (let i = 0; i < part[r].length; i += 2) spans.push([part[r][i], part[r][i + 1]]);
+    spans.sort((a, b) => a[0] - b[0]);
+    const joined: number[] = [];
+    for (const [from, to] of spans) {
+      if (joined.length && from <= joined[joined.length - 1])
+        joined[joined.length - 1] = Math.max(joined[joined.length - 1], to);
+      else joined.push(from, to);
+    }
+    return joined;
+  });
 }
 
 /** Each row's spans inside the section, by the even-odd rule, as [from, to, from, to, ...]. */
@@ -132,8 +153,8 @@ export function solidsOverlap(a: LayoutItem, b: LayoutItem): boolean {
   for (let level = 0; level < levels; level++) {
     // Off the layer grid a little, so a height isn't exactly a vertex's.
     const z = z0 + ((level + 0.5) * (z1 - z0)) / levels + 1e-5;
-    const spansA = rowSpans(section(a, z), box.min[1], rows);
-    const spansB = rowSpans(section(b, z), box.min[1], rows);
+    const spansA = itemSpans(sections(a, z), box.min[1], rows);
+    const spansB = itemSpans(sections(b, z), box.min[1], rows);
     let area = 0;
     for (let r = 0; r < rows; r++) {
       area += sharedLength(spansA[r], spansB[r]) * ROW;

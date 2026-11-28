@@ -70,7 +70,24 @@ export function mainItem(group: LayoutItem[]): LayoutItem {
 function reusable(main: LayoutItem, rootXml: string): boolean {
   const object = [...rootXml.matchAll(ROOT_OBJECT_RE)].find((m) => attrValue(m[1], "id") === main.objectId);
   const instances = buildItems(rootXml).filter((item) => item.objectId === main.objectId).length;
-  return Boolean(object) && !/<mesh[\s>]/.test(object![2]) && instances === 1;
+  const component = referencesIn(rootXml).has(main.objectId);
+  return Boolean(object) && !/<mesh[\s>]/.test(object![2]) && instances === 1 && !component;
+}
+
+/** Which of the main model's objects others have as components, and which those others are. */
+function referencesIn(rootXml: string): Map<string, Set<string>> {
+  const references = new Map<string, Set<string>>();
+  for (const m of rootXml.matchAll(ROOT_OBJECT_RE)) {
+    const id = attrValue(m[1], "id");
+    if (!id) continue;
+    for (const c of m[2].matchAll(COMPONENT_RE)) {
+      const target = attrValue(c[0], "objectid");
+      if (!target || attrValue(c[0], "p:path") || attrValue(c[0], "path")) continue;
+      if (!references.has(target)) references.set(target, new Set());
+      references.get(target)!.add(id);
+    }
+  }
+  return references;
 }
 
 /** Whether merging the group would lose what's set for an object: the joining objects' own settings or anything a
@@ -119,10 +136,11 @@ export function invertTransform(m: number[]): number[] {
 
 const compose = (outer: number[], inner: number[]) => composeTransform(outer.join(" "), inner.join(" "));
 
+/** The tag with its attribute set, however the tag quoted it, or added. */
 function withAttr(tag: string, name: string, value: string): string {
-  const re = new RegExp(String.raw`(\s${name}=")[^"]*(")`);
+  const re = new RegExp(String.raw`(\s${name.replace(/[.:]/g, "\\$&")}\s*=\s*)(?:"[^"]*"|'[^']*')`);
   return re.test(tag)
-    ? tag.replace(re, `$1${escapeXml(value)}$2`)
+    ? tag.replace(re, (_whole, open: string) => `${open}"${escapeXml(value)}"`)
     : tag.replace(/(\/?>)$/, ` ${name}="${escapeXml(value)}"$1`);
 }
 
@@ -193,21 +211,26 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
         }
       }
       // Each part keeps its filament: a part on "the object's" is on its own object's.
-      const ownParts = [...entry.matchAll(PART_RE)].map(([part]) => {
+      const rows = [...entry.matchAll(PART_RE)].map(([part]) => {
+        const id = attrValue(/<part\b[^>]*>/.exec(part)?.[0] ?? "", "id");
         const value = metadataValue(part, "extruder");
-        if (value && value !== "0") return part;
-        if (value === "0") return withMetadata(part, "extruder", extruder);
-        return part
+        if (value && value !== "0") return { id, xml: part };
+        if (value === "0") return { id, xml: withMetadata(part, "extruder", extruder) };
+        const xml = part
           .replace(/(<part\b[^>]*?)\/>$/, "$1></part>")
           .replace(/<\/part>$/, `<metadata key="extruder" value="${escapeXml(extruder)}"/></part>`);
+        return { id, xml };
       });
-      if (ownParts.length) parts.push(...ownParts);
-      else
-        for (const id of leafIds)
-          parts.push(
+      // In the order of the member's own components, each with the row the slicer gives it (the one at its place,
+      // else the first with its id), so they still match once they follow the other members' parts.
+      leafIds.forEach((id, i) => {
+        const row = rows[i]?.id === id ? rows[i] : rows.find((r) => r.id === id);
+        parts.push(
+          row?.xml ??
             `<part id="${escapeXml(id)}" subtype="normal_part"><metadata key="name" value="${escapeXml(member.name)}"/>` +
               `<metadata key="extruder" value="${escapeXml(extruder)}"/></part>`,
-          );
+        );
+      });
       mergedInto.set(`${member.objectId}:${member.instance}`, member === main ? targetId : null);
       if (member === main) {
         if (!reuse) renameItem.set(member.index, targetId);
@@ -243,7 +266,17 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
   for (const body of newObjects.values())
     for (const c of body.matchAll(COMPONENT_RE))
       if (!attrValue(c[0], "p:path")) asComponents.add(attrValue(c[0], "objectid") ?? "");
+  // Nor do objects that one left in the main model has as a component.
+  const references = referencesIn(rootXml);
   const gone = new Set([...unbuilt].filter((id) => !asComponents.has(id)));
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const id of gone)
+      if ([...(references.get(id) ?? [])].some((by) => !gone.has(by))) {
+        gone.delete(id);
+        changed = true;
+      }
+  }
 
   let itemIndex = -1;
   const buildAt = rootXml.lastIndexOf("<build");

@@ -7,12 +7,12 @@ import { readBambuPackage } from "../../adapter/readers/bambuProject";
 import { asArray, firstValue, type Settings } from "../../adapter/settings";
 import { printerForName, printerSummary } from "../../printers/catalogue";
 import { printerTarget } from "../../printers/targets";
-import { plateFootprint } from "./footprint";
+import { convexHull, hullMeetsBox, plateFootprint } from "./footprint";
 import { printedHeights, readLayout, type Box2, type Layout, type LayoutItem, type LayoutPlate } from "./layout";
 import { mergeLoses, mergeObjects, SIDE_FILES, sideFilePlaces } from "./merge";
 import { overlappingGroups } from "./overlap";
 import type { ThreeMfCheckOptions, ThreeMfCheckResult, ThreeMfIssue, ThreeMfPrinter, ThreeMfRules } from "./types";
-import { towerClear, towerSettings, towerSpot, type TowerPlate } from "./wipeTower";
+import { placeTower, towerClear, towerSettings, type TowerPlate } from "./wipeTower";
 
 // Past the bed's edge or height by less than this is on it.
 const EDGE = 0.05;
@@ -78,19 +78,27 @@ const xyOf = (item: LayoutItem): Box2 => ({
   maxY: item.bounds.max[1],
 });
 
-/** Whether any of the item's vertices are on `area` of its plate. */
+/** Whether the item prints on `area` of its plate, as Bambu Studio tests it: each part's outline from above, its
+ *  convex hull, against the area. */
 function onArea(item: LayoutItem, origin: [number, number], area: Box2): boolean {
   const box = xyOf(item);
   if (box.maxX <= area.minX || box.minX >= area.maxX || box.maxY <= area.minY || box.minY >= area.maxY) return false;
-  for (const { mesh, matrix: t } of item.parts) {
+  return item.parts.some(({ mesh, matrix: t }) => {
     const p = mesh.positions;
-    for (let i = 0; i < p.length; i += 3) {
-      const x = p[i] * t[0] + p[i + 1] * t[3] + p[i + 2] * t[6] + t[9] - origin[0];
-      const y = p[i] * t[1] + p[i + 1] * t[4] + p[i + 2] * t[7] + t[10] - origin[1];
-      if (x > area.minX && x < area.maxX && y > area.minY && y < area.maxY) return true;
+    const xy = new Float64Array((p.length / 3) * 2);
+    for (let i = 0, j = 0; i < p.length; i += 3, j += 2) {
+      xy[j] = p[i] * t[0] + p[i + 1] * t[3] + p[i + 2] * t[6] + t[9] - origin[0];
+      xy[j + 1] = p[i] * t[1] + p[i + 1] * t[4] + p[i + 2] * t[7] + t[10] - origin[1];
     }
-  }
-  return false;
+    return hullMeetsBox(convexHull(xy), area);
+  });
+}
+
+/** How high a group prints once it's one object: the slicer lowers that onto the bed by its lowest point, which can
+ *  leave it taller than any of its objects was alone. */
+function mergedTop(group: LayoutItem[]): number {
+  const bottom = Math.min(...group.map((item) => item.world.min[2]));
+  return Math.max(...group.map((item) => item.world.max[2])) - Math.max(bottom, 0);
 }
 
 const filamentsOn = (plate: LayoutPlate) => new Set(plate.items.flatMap((item) => [...item.filaments])).size;
@@ -193,6 +201,11 @@ export async function runThreeMfCheck(
   }
 
   const layout = await readLayout(pkg, target.recipe.bed);
+  if (!layout.plates.some((plate) => plate.items.length)) {
+    issues.length = 0;
+    issues.push({ check: "project", problem: "unreadable", plate: null, fix: null });
+    return done(null);
+  }
   const rootXml = await pkg.root.entry.async("string");
   const sideFiles: Record<string, string> = {};
   for (const name of SIDE_FILES) {
@@ -207,14 +220,23 @@ export async function runThreeMfCheck(
     if (checks.has("overlapping-objects"))
       for (const group of overlappingGroups(plate)) {
         const loses = mergeLoses(group, pkg.modelSettings, rootXml, sidePlaces);
+        const tooTall = layout.height !== null && mergedTop(group) > layout.height + EDGE;
         issues.push({
           check: "overlapping-objects",
           problem: "overlapping-objects",
           plate: number,
           objects: group.map((item) => item.name),
-          fix: loses ? null : "merge-objects",
+          fix: loses || tooTall ? null : "merge-objects",
         });
-        if (!loses) merges.push(group);
+        if (tooTall && checks.has("off-bed"))
+          issues.push({
+            check: "off-bed",
+            problem: "off-bed",
+            plate: number,
+            objects: group.map((item) => item.name),
+            fix: null,
+          });
+        if (!loses && !tooTall) merges.push(group);
       }
 
     if (checks.has("off-bed")) {
@@ -254,18 +276,16 @@ export async function runThreeMfCheck(
       const needed = tower.filaments >= 2 && (!placed || !towerClear(tower, layout.bed, sizing, x, y));
       if (!needed && placed) return;
       // A plate without a position of its own would take the first plate's, so each gets one.
-      const [sx, sy] = towerSpot({ ...tower, filaments: Math.max(tower.filaments, 2) }, layout.bed, sizing).map(
-        (n) => Math.round(n * 1000) / 1000,
-      );
-      xs[p] = String(sx);
-      ys[p] = String(sy);
+      const { spot, clear } = placeTower({ ...tower, filaments: Math.max(tower.filaments, 2) }, layout.bed, sizing);
+      xs[p] = String(Math.round(spot[0] * 1000) / 1000);
+      ys[p] = String(Math.round(spot[1] * 1000) / 1000);
       if (!needed) return;
       issues.push({
         check: "wipe-tower",
         problem: placed ? "tower-in-the-way" : "no-tower-position",
         plate: p + 1,
         // Nowhere on the plate keeps it clear: the plate needs room made for it.
-        fix: towerClear(tower, layout.bed, sizing, sx, sy) ? "place-tower" : null,
+        fix: clear ? "place-tower" : null,
       });
       moved = true;
     });

@@ -23,7 +23,10 @@ export type TowerSettings = {
   extraRibLength: number;
   /** A tower's width without rib walls. */
   width: number;
+  /** Negative for the slicer's own, by the tower's height. */
   brim: number;
+  /** In degrees, about the tower's corner. */
+  rotation: number;
   /** Nozzles the printer has: with two, each filament on the plate takes a share. */
   nozzles: number;
 };
@@ -75,6 +78,8 @@ export function towerSettings(settings: Settings): TowerSettings {
     .filter((n) => Number.isFinite(n) && n > 0);
   const saving = firstValue(settings.prime_volume_mode) === "Saving";
   const processHeight = processNameParts(String(firstValue(settings.print_settings_id) ?? "")).height;
+  const brim = Number.parseFloat(String(firstValue(settings.prime_tower_brim_width) ?? ""));
+  const rotation = Number.parseFloat(String(firstValue(settings.wipe_tower_rotation_angle) ?? ""));
   return {
     primeVolume: saving ? 15 : volumes.length ? Math.max(...volumes) : 45,
     layerHeight: positive(settings.layer_height, processHeight ?? 0.2),
@@ -83,9 +88,17 @@ export function towerSettings(settings: Settings): TowerSettings {
     ribWidth: positive(settings.prime_tower_rib_width, 8),
     extraRibLength: Number(firstValue(settings.prime_tower_extra_rib_length)) || 0,
     width: positive(settings.prime_tower_width, 35),
-    brim: positive(settings.prime_tower_brim_width, 3),
+    brim: Number.isFinite(brim) ? brim : 3,
+    rotation: Number.isFinite(rotation) ? rotation : 0,
     nozzles: Math.max(asArray(settings.nozzle_diameter).length, 1),
   };
+}
+
+/** The brim the slicer gives the plate's tower: none at 0, and by the tower's height where it's negative
+ *  (WipeTower::get_auto_brim_by_height). */
+function brimOf(plate: TowerPlate, s: TowerSettings): number {
+  if (s.brim >= 0) return s.brim;
+  return plate.height < 100 ? (plate.height / 100) * 8 : 8;
 }
 
 /** The tower's width and depth, brim excluded. */
@@ -108,19 +121,37 @@ const placed = (s: TowerSettings): TowerSettings => ({
   primeVolume: Math.max(s.primeVolume, PLACED_PRIME_VOLUME),
 });
 
-/** The tower with its corner at (x, y), its brim included. */
-export function towerFootprint(x: number, y: number, [width, depth]: [number, number], brim: number): Box2 {
-  return { minX: x - brim, minY: y - brim, maxX: x + width + brim, maxY: y + depth + brim };
+/** What the plate's tower covers with its corner at (x, y), its brim included: the box around it, turned as the
+ *  slicer turns it (`wipe_tower_rotation_angle`, in degrees about that corner). */
+export function towerFootprint(plate: TowerPlate, s: TowerSettings, x: number, y: number): Box2 {
+  const [width, depth] = towerSize(plate, s);
+  const brim = brimOf(plate, s);
+  const corners = [
+    [-brim, -brim],
+    [width + brim, -brim],
+    [width + brim, depth + brim],
+    [-brim, depth + brim],
+  ];
+  const angle = (s.rotation * Math.PI) / 180;
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  const turned = corners.map(([cx, cy]) => [x + cx * cos - cy * sin, y + cx * sin + cy * cos]);
+  return {
+    minX: Math.min(...turned.map(([px]) => px)),
+    minY: Math.min(...turned.map(([, py]) => py)),
+    maxX: Math.max(...turned.map(([px]) => px)),
+    maxY: Math.max(...turned.map(([, py]) => py)),
+  };
 }
 
 // How far a tower may reach over what's on the bed and still be clear: the grid's cell, as it takes all of a cell an
 // object only reaches into, and the slicer only refuses lines that cross, which takes about a line's width more.
 const TOUCH = 1;
+// The most corners the search tries along each side of the bed.
+const MAX_STEPS = 400;
 
-/** Whether a tower with its corner at (x, y), as the project's settings size it, stays on the bed and off everything
- *  on the plate. */
+/** Whether a tower with its corner at (x, y), sized by `s`, stays on the bed and off everything on the plate. */
 export function towerClear(plate: TowerPlate, bed: BedBox, s: TowerSettings, x: number, y: number): boolean {
-  const tower = towerFootprint(x, y, towerSize(plate, s), s.brim);
+  const tower = towerFootprint(plate, s, x, y);
   const onBed = tower.minX >= bed.minX && tower.minY >= bed.minY && tower.maxX <= bed.maxX && tower.maxY <= bed.maxY;
   const inner = {
     minX: tower.minX + TOUCH,
@@ -133,19 +164,22 @@ export function towerClear(plate: TowerPlate, bed: BedBox, s: TowerSettings, x: 
 
 function steps(lo: number, hi: number): number[] {
   if (hi <= lo) return [lo];
+  const step = Math.max(STEP, (hi - lo) / MAX_STEPS);
   const out: number[] = [];
-  for (let v = lo; v < hi; v += STEP) out.push(v);
+  for (let v = lo; v < hi; v += step) out.push(v);
   out.push(hi);
   return out;
 }
 
-/** The corner of a tower on `plate` where it keeps furthest from the plate's objects, up to CLEARANCE, sized larger
- *  than the project's settings size it. */
-export function towerSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings): [number, number] {
-  const size = towerSize(plate, placed(s));
-  const edge = s.brim + SLACK;
-  const lo: [number, number] = [bed.minX + edge, bed.minY + edge];
-  const hi: [number, number] = [Math.max(bed.maxX - size[0] - edge, lo[0]), Math.max(bed.maxY - size[1] - edge, lo[1])];
+/** The corner of a tower sized by `s` where it keeps furthest from the plate's objects, up to CLEARANCE, and nearest
+ *  the slicer's own default among those. */
+function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings): [number, number] {
+  const reach = towerFootprint(plate, s, 0, 0);
+  const lo: [number, number] = [bed.minX - reach.minX + SLACK, bed.minY - reach.minY + SLACK];
+  const hi: [number, number] = [
+    Math.max(bed.maxX - reach.maxX - SLACK, lo[0]),
+    Math.max(bed.maxY - reach.maxY - SLACK, lo[1]),
+  ];
   const home = [0, 1].map((axis) => {
     const [min, max] = axis ? [bed.minY, bed.maxY] : [bed.minX, bed.maxX];
     return Math.min(Math.max(min + HOME[axis] * (max - min), lo[axis]), hi[axis]);
@@ -155,7 +189,7 @@ export function towerSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings): [nu
   let bestDistance = Infinity;
   for (const x of steps(lo[0], hi[0]))
     for (const y of steps(lo[1], hi[1])) {
-      const tower = towerFootprint(x, y, size, s.brim);
+      const tower = towerFootprint(plate, s, x, y);
       const score = clearance(plate.footprint, tower, CLEARANCE);
       const distance = Math.hypot(x - home[0], y - home[1]);
       if (score > bestScore + 1e-9 || (score > bestScore - 1e-9 && distance < bestDistance)) {
@@ -165,4 +199,18 @@ export function towerSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings): [nu
       }
     }
   return best;
+}
+
+/** Where to put the plate's tower: sized larger than the project's settings size it where one that large fits,
+ *  else as they size it. `clear` is false where neither fits anywhere on the plate. */
+export function placeTower(
+  plate: TowerPlate,
+  bed: BedBox,
+  s: TowerSettings,
+): { spot: [number, number]; clear: boolean } {
+  for (const sizing of [placed(s), s]) {
+    const spot = bestSpot(plate, bed, sizing);
+    if (towerClear(plate, bed, sizing, spot[0], spot[1])) return { spot, clear: true };
+  }
+  return { spot: bestSpot(plate, bed, s), clear: false };
 }

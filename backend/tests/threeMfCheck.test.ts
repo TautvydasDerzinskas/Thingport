@@ -7,8 +7,9 @@ import { readBambuPackage } from "../src/adapter/readers/bambuProject";
 import { makerworldThreeMfRules as RULES } from "../src/providers/makerworld/threeMfRules";
 import { checkThreeMf, fixThreeMf } from "../src/services/threeMfCheck";
 import { runThreeMfCheck } from "../src/services/threeMfCheck/check";
-import { readLayout, type Box3, type LayoutItem } from "../src/services/threeMfCheck/layout";
-import { towerSettings, towerSize } from "../src/services/threeMfCheck/wipeTower";
+import { plateFootprint } from "../src/services/threeMfCheck/footprint";
+import { attrValue, readLayout, type Box3, type LayoutItem } from "../src/services/threeMfCheck/layout";
+import { placeTower, towerFootprint, towerSettings, towerSize } from "../src/services/threeMfCheck/wipeTower";
 
 // Pure: no database. 3MFs a site would turn down, what the check says of each, and the copy it makes.
 
@@ -54,7 +55,21 @@ const meshXml = ({ vertices, triangles }: MeshSpec, paint?: string) =>
     .map(([a, b, c]) => `<triangle v1="${a}" v2="${b}" v3="${c}"${paint ? ` paint_color="${paint}"` : ""}/>`)
     .join("")}</triangles></mesh>`;
 
-type ObjectSpec = { name: string; mesh: MeshSpec; extruder?: number; settings?: Record<string, string> };
+type PartSpec = { name: string; mesh: MeshSpec; extruder?: number };
+type ObjectSpec = {
+  name: string;
+  /** Its one part's mesh, or its parts. */
+  mesh?: MeshSpec;
+  parts?: PartSpec[];
+  extruder?: number;
+  settings?: Record<string, string>;
+  /** Every triangle painted so. */
+  paint?: string;
+  /** Its parts' rows in model_settings.config in the reverse of their components' order. */
+  rowsReversed?: boolean;
+  /** Made of another object (by its place in `objects`), moved this far along X, rather than a mesh of its own. */
+  of?: { object: number; dx: number };
+};
 /** A build item: the object (by its place in `objects`), where its origin goes on the plate, and the plate. */
 type ItemSpec = { object: number; at: [number, number]; plate?: number };
 
@@ -77,7 +92,7 @@ const P1S_SETTINGS = {
 
 const BED_STRIDE = 256 * 1.2;
 
-/** A Bambu Studio project as it writes one: each object's mesh in its own file, a component of the object. */
+/** A Bambu Studio project as it writes one: each object's meshes in its own file, components of the object. */
 async function bambuProject(options: {
   objects: ObjectSpec[];
   items: ItemSpec[];
@@ -85,18 +100,45 @@ async function bambuProject(options: {
   app?: string;
   plates?: number;
   files?: Record<string, string>;
+  /** How the build items quote their attributes. */
+  quoting?: "single" | "spaced";
 }): Promise<Uint8Array> {
   const zip = new JSZip();
   const { objects, items } = options;
   const objectId = (i: number) => 2 * i + 2;
-  const meshId = (i: number) => 2 * i + 1;
+  // One part keeps the id Bambu Studio would give it; several get their own.
+  const meshIds = (i: number) => {
+    const parts = objects[i].parts;
+    return parts ? parts.map((_, k) => 100 * (i + 1) + k) : [2 * i + 1];
+  };
+  const partsOf = (object: ObjectSpec): PartSpec[] =>
+    object.parts ?? [{ name: object.name, mesh: object.mesh!, extruder: undefined }];
   objects.forEach((object, i) => {
+    if (object.of) return;
+    const meshes = partsOf(object)
+      .map((part, k) => `<object id="${meshIds(i)[k]}" type="model">${meshXml(part.mesh, object.paint)}</object>`)
+      .join("");
     zip.file(
       `3D/Objects/object_${i + 1}.model`,
-      `<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources><object id="${meshId(i)}" type="model">${meshXml(object.mesh)}</object></resources><build/></model>`,
+      `<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources>${meshes}</resources><build/></model>`,
     );
   });
+  const components = (object: ObjectSpec, i: number) =>
+    object.of
+      ? `<component objectid="${objectId(object.of.object)}" transform="1 0 0 0 1 0 0 0 1 ${object.of.dx} 0 0"/>`
+      : meshIds(i)
+          .map(
+            (id, k) =>
+              `<component p:path="/3D/Objects/object_${i + 1}.model" objectid="${id}" p:UUID="000${k}000${i}-b206-40ff-9872-83e8017abed1" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>`,
+          )
+          .join("");
   const plates = options.plates ?? 1;
+  const attr = (name: string, value: string) =>
+    options.quoting === "single"
+      ? `${name}='${value}'`
+      : options.quoting === "spaced"
+        ? `${name} = "${value}"`
+        : `${name}="${value}"`;
   zip.file(
     "3D/3dmodel.model",
     `<?xml version="1.0" encoding="UTF-8"?>
@@ -105,8 +147,8 @@ async function bambuProject(options: {
  <resources>
 ${objects
   .map(
-    (_, i) =>
-      `  <object id="${objectId(i)}" p:UUID="0000000${i}-61cb-4c03-9d28-80fed5dfa1dc" type="model"><components><component p:path="/3D/Objects/object_${i + 1}.model" objectid="${meshId(i)}" p:UUID="0001000${i}-b206-40ff-9872-83e8017abed1" transform="1 0 0 0 1 0 0 0 1 0 0 0"/></components></object>`,
+    (object, i) =>
+      `  <object id="${objectId(i)}" p:UUID="0000000${i}-61cb-4c03-9d28-80fed5dfa1dc" type="model"><components>${components(object, i)}</components></object>`,
   )
   .join("\n")}
  </resources>
@@ -114,7 +156,7 @@ ${objects
 ${items
   .map(({ object, at: [x, y], plate = 1 }) => {
     const [ox, oy] = [((plate - 1) % 2) * BED_STRIDE, -Math.floor((plate - 1) / 2) * BED_STRIDE];
-    return `  <item objectid="${objectId(object)}" transform="1 0 0 0 1 0 0 0 1 ${x + ox} ${y + oy} 0" printable="1"/>`;
+    return `  <item ${attr("objectid", String(objectId(object)))} ${attr("transform", `1 0 0 0 1 0 0 0 1 ${x + ox} ${y + oy} 0`)} ${attr("printable", "1")}/>`;
   })
   .join("\n")}
  </build>
@@ -130,6 +172,16 @@ ${items
       xml: `<model_instance>${meta("object_id", objectId(object))}${meta("instance_id", instance)}${meta("identify_id", 100 + instance)}</model_instance>`,
     };
   });
+  const rowsOf = (object: ObjectSpec, i: number) => {
+    const source = object.of ? object.of.object : i;
+    const rows = partsOf(objects[source]).map(
+      (part, k) =>
+        `<part id="${meshIds(source)[k]}" subtype="normal_part">${meta("name", part.name)}${
+          part.extruder ? meta("extruder", part.extruder) : ""
+        }${meta("matrix", "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1")}</part>`,
+    );
+    return (object.rowsReversed ? rows.toReversed() : rows).join("");
+  };
   zip.file(
     "Metadata/model_settings.config",
     `<?xml version="1.0" encoding="UTF-8"?>
@@ -141,9 +193,7 @@ ${objects
         object.settings ?? {},
       )
         .map(([key, value]) => meta(key, value))
-        .join(
-          "",
-        )}<part id="${meshId(i)}" subtype="normal_part">${meta("name", object.name)}${meta("matrix", "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1")}</part></object>`,
+        .join("")}${rowsOf(object, i)}</object>`,
   )
   .join("\n")}
 ${Array.from(
@@ -498,6 +548,208 @@ describe("3MF check for publishing", () => {
     expect((await fixed(converted.copy!)).issues).toEqual([]);
   });
 
+  it("tests each no-print rectangle against what's printed there, by its outline", async () => {
+    const { wipe_tower_x: _x, wipe_tower_y: _y, ...settings } = P1S_SETTINGS;
+    const bytes = await bambuProject({
+      objects: [
+        // Over the first rectangle with none of its corners in it.
+        { name: "Cover", mesh: box([-20, -20], [20, 20], 2) },
+        // Between the two, where a box around both would be.
+        { name: "Between", mesh: box([-10, -10], [10, 10], 2) },
+      ],
+      items: [
+        { object: 0, at: [110, 110] },
+        { object: 1, at: [160, 160] },
+      ],
+      settings: {
+        ...settings,
+        bed_exclude_area: ["100x100", "120x100", "120x120", "100x120", "200x200", "220x200", "220x220", "200x220"],
+      },
+    });
+    expect((await fixed(bytes)).issues).toEqual([
+      { check: "off-bed", problem: "off-bed", plate: 1, objects: ["Cover"], fix: null },
+    ]);
+  });
+
+  it("reports a 3MF whose build prints nothing", async () => {
+    const bytes = await bambuProject({ objects: [coin()], items: [] });
+    expect((await fixed(bytes)).issues).toEqual([{ check: "project", problem: "unreadable", plate: null, fix: null }]);
+  });
+
+  it("doesn't merge objects that would then print taller than the printer", async () => {
+    // Apart, the slicer lowers the body onto the bed; as one object it stays on the base, 11 mm up.
+    const bytes = await bambuProject({
+      objects: [
+        { name: "Base", mesh: box([-20, -20], [20, 20], 9) },
+        { name: "Body", mesh: box([-5, -5], [5, 5], 3, 8) },
+      ],
+      items: [
+        { object: 0, at: [120, 120] },
+        { object: 1, at: [120, 120] },
+      ],
+      settings: { ...P1S_SETTINGS, printable_height: "10" },
+    });
+    const { issues, copy } = await fixed(bytes);
+    expect(issues).toEqual([
+      { check: "overlapping-objects", problem: "overlapping-objects", plate: 1, objects: ["Base", "Body"], fix: null },
+      { check: "off-bed", problem: "off-bed", plate: 1, objects: ["Base", "Body"], fix: null },
+    ]);
+    expect(copy).toBeNull();
+  });
+
+  it("reads build items however they quote their attributes", async () => {
+    expect(attrValue(` objectid='2' transform = "1 0 0"`, "objectid")).toBe("2");
+    expect(attrValue(` objectid='2' transform = "1 0 0"`, "transform")).toBe("1 0 0");
+    for (const quoting of ["single", "spaced"] as const) {
+      const bytes = await bambuProject({
+        objects: [coin(), logo()],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 1, at: [120, 120] },
+        ],
+        quoting,
+      });
+      const { issues, copy } = await fixed(bytes);
+      expect(issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+      const model = await (await JSZip.loadAsync(copy!)).file("3D/3dmodel.model")!.async("string");
+      const items = model.match(/<item\b[^>]*>/g)!;
+      expect(items).toHaveLength(1);
+      expect(items[0].match(/objectid/g)).toHaveLength(1);
+    }
+  });
+
+  it("counts every filament a split triangle is painted in", async () => {
+    const { wipe_tower_x: _x, wipe_tower_y: _y, ...settings } = P1S_SETTINGS;
+    // "8442": a triangle split into pieces on filaments 1 and 2, mostly 1.
+    const bytes = await bambuProject({
+      objects: [{ name: "Painted", mesh: box([-10, -10], [10, 10], 2), paint: "8442" }],
+      items: [{ object: 0, at: [120, 120] }],
+      settings,
+    });
+    expect((await fixed(bytes)).issues).toEqual([
+      { check: "wipe-tower", problem: "no-tower-position", plate: 1, fix: "place-tower" },
+    ]);
+  });
+
+  it("keeps each joining object's parts on their own filaments when its rows are out of order", async () => {
+    const bytes = await bambuProject({
+      objects: [
+        coin(),
+        {
+          name: "Badge",
+          parts: [
+            { name: "Left", mesh: box([-8, -8], [0, 8], 1, 1.4), extruder: 2 },
+            { name: "Right", mesh: box([0, -8], [8, 8], 1, 1.4), extruder: 3 },
+          ],
+          rowsReversed: true,
+        },
+      ],
+      items: [
+        { object: 0, at: [120, 120] },
+        { object: 1, at: [120, 120] },
+      ],
+    });
+    const { issues, copy } = await fixed(bytes);
+    expect(issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+    const config = await (await JSZip.loadAsync(copy!)).file("Metadata/model_settings.config")!.async("string");
+    const merged = config.match(/<object id="2">[\s\S]*?<\/object>/)![0];
+    expect(
+      [...merged.matchAll(/<part id="(\d+)"[\s\S]*?key="extruder" value="(\d+)"/g)].map((m) => [m[1], m[2]]),
+    ).toEqual([
+      ["1", "1"],
+      ["200", "2"],
+      ["201", "3"],
+    ]);
+  });
+
+  it("keeps an object that another one is made of when it joins a third", async () => {
+    const bytes = await bambuProject({
+      objects: [coin(), logo(), { name: "Twin", of: { object: 1, dx: 80 } }],
+      items: [
+        { object: 0, at: [120, 120] },
+        { object: 1, at: [120, 120] },
+        { object: 2, at: [20, 200] },
+      ],
+    });
+    const { issues, copy } = await fixed(bytes);
+    expect(issues.map((issue) => [issue.problem, issue.objects])).toEqual([["overlapping-objects", ["Coin", "Logo"]]]);
+    const zip = await JSZip.loadAsync(copy!);
+    const model = await zip.file("3D/3dmodel.model")!.async("string");
+    // The logo's object stays for the twin, made of it, though the logo itself is now part of the coin.
+    expect(model).toMatch(/<object id="4"/);
+    const layout = await readLayout(await readBambuPackage(zip));
+    expect(layout.plates[0].items.map((item) => [item.name, item.parts.length])).toEqual([
+      ["Coin", 2],
+      ["Twin", 1],
+    ]);
+    expect((await fixed(copy!)).issues).toEqual([]);
+  });
+
+  it("joins an object's overlapping parts before testing it against another", async () => {
+    // Read together by the even-odd rule, the parts' shared middle would be a hole, and the pin in it unseen.
+    const bytes = await bambuProject({
+      objects: [
+        {
+          name: "Bar",
+          parts: [
+            { name: "Left", mesh: box([0, 0], [10, 10], 2) },
+            { name: "Right", mesh: box([4, 0], [14, 10], 2) },
+          ],
+        },
+        { name: "Pin", mesh: box([5, 2], [9, 8], 2) },
+      ],
+      items: [
+        { object: 0, at: [100, 100] },
+        { object: 1, at: [100, 100] },
+      ],
+    });
+    expect((await fixed(bytes)).issues).toEqual([
+      {
+        check: "overlapping-objects",
+        problem: "overlapping-objects",
+        plate: 1,
+        objects: ["Bar", "Pin"],
+        fix: "merge-objects",
+      },
+    ]);
+  });
+
+  it("sizes and places a tower as the slicer does: its brim, its turn and room for a bigger one", () => {
+    const bed = { minX: 0, minY: 0, maxX: 256, maxY: 256 };
+    const empty = (size: number) =>
+      plateFootprint({ items: [], origin: [0, 0] }, { minX: 0, minY: 0, maxX: size, maxY: size }, []);
+    const plate = { footprint: empty(256), filaments: 2, height: 50 };
+    const base = towerSettings({ layer_height: "0.2", prime_tower_rib_wall: "0" });
+    const [width, depth] = towerSize(plate, base);
+    // No brim where it's 0; one by the tower's height where it's negative (4 mm at 50 mm).
+    expect(towerFootprint(plate, { ...base, brim: 0 }, 100, 100)).toEqual({
+      minX: 100,
+      minY: 100,
+      maxX: 100 + width,
+      maxY: 100 + depth,
+    });
+    expect(towerFootprint(plate, { ...base, brim: -1 }, 100, 100).minX).toBeCloseTo(96, 5);
+    // Turned 90 degrees about its corner, it reaches back along X.
+    const turned = towerFootprint(plate, { ...base, brim: 0, rotation: 90 }, 100, 100);
+    expect(turned.minX).toBeCloseTo(100 - depth, 5);
+    expect(turned.maxY).toBeCloseTo(100 + width, 5);
+    expect(placeTower(plate, bed, base).clear).toBe(true);
+    // A bed too small for the bigger tower takes the project's own; one too small for either has no spot.
+    const rib = towerSettings({ layer_height: "0.2" });
+    expect(placeTower({ ...plate, footprint: empty(40), height: 2 }, { ...bed, maxX: 40, maxY: 40 }, rib).clear).toBe(
+      true,
+    );
+    expect(placeTower({ ...plate, footprint: empty(20), height: 2 }, { ...bed, maxX: 20, maxY: 20 }, rib).clear).toBe(
+      false,
+    );
+  });
+
+  it("keeps the grid of what's on the bed bounded, whatever bed a file names", () => {
+    const f = plateFootprint({ items: [], origin: [0, 0] }, { minX: 0, minY: 0, maxX: 100_000, maxY: 100_000 }, []);
+    expect(f.cell).toBeGreaterThan(1);
+    expect(f.taken.length).toBeLessThanOrEqual(4_000_000);
+  });
+
   describe("in a worker", () => {
     let dir: string;
     beforeAll(async () => {
@@ -523,6 +775,20 @@ describe("3MF check for publishing", () => {
       expect(result.issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
       expect(new Uint8Array(await fs.readFile(src))).toEqual(bytes);
       expect((await checkThreeMf(dest, RULES)).issues).toEqual([]);
+    });
+
+    it("never writes the copy over a file already there, the checked one least of all", async () => {
+      const src = path.join(dir, "kept.3mf");
+      const bytes = await bambuProject({
+        objects: [coin(), logo()],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 1, at: [120, 120] },
+        ],
+      });
+      await fs.writeFile(src, bytes);
+      await expect(fixThreeMf(src, src, RULES)).rejects.toThrow(/EEXIST/);
+      expect(new Uint8Array(await fs.readFile(src))).toEqual(bytes);
     });
   });
 });

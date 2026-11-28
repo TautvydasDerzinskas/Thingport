@@ -10,7 +10,7 @@ import type { ThreeMfCheckOptions, ThreeMfCheckResult, ThreeMfRules } from "./ty
 
 export type ThreeMfCheckWorkerInput = {
   srcPath: string;
-  /** Where the copy goes; null to only check. */
+  /** Where the copy goes, a path no file has yet; null to only check. */
   destPath: string | null;
   rules: ThreeMfRules;
   options: ThreeMfCheckOptions;
@@ -26,7 +26,8 @@ async function run(): Promise<void> {
     if (destPath && zip)
       await pipeline(
         zip.generateNodeStream({ type: "nodebuffer", streamFiles: true, ...ADAPT_ZIP_OPTIONS }),
-        createWriteStream(destPath),
+        // Made new, never over a file already there: least of all the one checked.
+        createWriteStream(destPath, { flags: "wx" }),
       );
     message = { status: "ok", result, written: Boolean(destPath && zip) };
   } catch (err) {

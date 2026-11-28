@@ -2,7 +2,7 @@
 // filaments they use, and their bounds on their plate. Read from the meshes, as nothing smaller says where an object
 // ends.
 
-import { decodePaintState } from "../../adapter/paint";
+import { paintStates } from "../../adapter/paint";
 import { bedBoxOf, plateColumns, plateOrigin, type BedBox } from "../../adapter/printer";
 import type { BambuPackage } from "../../adapter/readers/bambuProject";
 import { asArray, firstValue } from "../../adapter/settings";
@@ -65,18 +65,24 @@ const TRIANGLE_RE = /<triangle\b([^>]*?)\/?>/g;
 const ITEM_RE = /<item\b([^>]*?)\/?>/g;
 const MAX_DEPTH = 8;
 
-/** An attribute's raw value: indexOf rather than a regex per attribute, as a mesh has millions of tags. */
+/** An attribute's raw value. As writers put it, `name="value"`, found with indexOf, as a mesh has millions of tags;
+ *  otherwise in any of XML's ways, single-quoted or spaced around the `=`. */
 export function attrValue(tag: string, name: string): string | null {
   const key = `${name}="`;
   let at = tag.indexOf(key);
   while (at > 0 && !/\s/.test(tag[at - 1])) at = tag.indexOf(key, at + 1);
-  if (at < 0) return null;
-  const start = at + key.length;
-  const end = tag.indexOf('"', start);
-  return end < 0 ? null : tag.slice(start, end);
+  if (at >= 0) {
+    const start = at + key.length;
+    const end = tag.indexOf('"', start);
+    return end < 0 ? null : tag.slice(start, end);
+  }
+  if (!tag.includes(name)) return null;
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = new RegExp(String.raw`(?:^|\s)${escaped}\s*=\s*(?:"([^"]*)"|'([^']*)')`).exec(tag);
+  return m ? (m[1] ?? m[2]) : null;
 }
 
-function readMesh(body: string, paints: Map<string, number>): Mesh {
+function readMesh(body: string, paints: Map<string, number[]>): Mesh {
   const positions: number[] = [];
   const triangles: number[] = [];
   const painted = new Set<number>();
@@ -94,17 +100,18 @@ function readMesh(body: string, paints: Map<string, number>): Mesh {
     triangles.push(a, b, c);
     const paint = attrValue(m[1], "paint_color");
     if (!paint) continue;
-    let state = paints.get(paint);
-    if (state === undefined) {
-      state = decodePaintState(paint);
-      paints.set(paint, state);
+    // Every filament a split triangle's pieces are in, which the tower is sized by.
+    let states = paints.get(paint);
+    if (states === undefined) {
+      states = paintStates(paint);
+      paints.set(paint, states);
     }
-    if (state > 0) painted.add(state);
+    for (const state of states) painted.add(state);
   }
   return { positions: Float32Array.from(positions), triangles: Uint32Array.from(triangles), painted };
 }
 
-function readObjects(xml: string, paints: Map<string, number>): Map<string, FileObject> {
+function readObjects(xml: string, paints: Map<string, number[]>): Map<string, FileObject> {
   const objects = new Map<string, FileObject>();
   const re = new RegExp(OBJECT_RE.source, OBJECT_RE.flags);
   let m;
@@ -175,9 +182,15 @@ function extend(box: Box3, { mesh, matrix: t }: PlacedMesh) {
   }
 }
 
-/** A polygon's bounding box from a `printable_area`-style list of "XxY" points. */
-function areaBox(points: unknown): Box2 | null {
-  return asArray(points).length >= 3 ? bedBoxOf(points) : null;
+/** The bed's areas nothing may print on: Bambu Studio reads `bed_exclude_area` as rectangles of four points each. */
+function excludedAreas(points: unknown): Box2[] {
+  const list = asArray(points);
+  const areas: Box2[] = [];
+  for (let i = 0; i + 3 < list.length; i += 4) {
+    const box = bedBoxOf(list.slice(i, i + 4));
+    if (box) areas.push(box);
+  }
+  return areas;
 }
 
 /** The project's plates and what's printed on each. */
@@ -185,9 +198,9 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
   const settings = pkg.config ?? {};
   const bed = bedBoxOf(settings.printable_area) ?? fallbackBed ?? DEFAULT_BED;
   const heightValue = Number(firstValue(settings.printable_height));
-  const exclude = [areaBox(settings.bed_exclude_area)].filter((box): box is Box2 => box !== null);
+  const exclude = excludedAreas(settings.bed_exclude_area);
 
-  const paints = new Map<string, number>();
+  const paints = new Map<string, number[]>();
   const files = new Map<string, Map<string, FileObject>>();
   const rootKey = pathKey(pkg.root.relativePath);
   const objectsIn = async (key: string) => {
