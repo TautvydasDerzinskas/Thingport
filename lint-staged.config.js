@@ -33,10 +33,10 @@ module.exports = {
     "npm run printers:sync",
     "git add --all -- extension/public/printers",
   ],
-  // The file kinds page (scripts/sync-kinds.mjs), written from the kind table, is committed with it.
-  "{backend/src/files/kinds.json,scripts/sync-kinds.mjs}": () => [
-    "npm run kinds:sync",
-    "git add -- docs/features/file-kinds.md",
+  // The file kinds page and browser filename rules are committed with their sources.
+  "{backend/src/files/{kinds.json,names.ts},scripts/sync-kinds.mjs}": (files) => [
+    `npm run kinds:sync -- --staged ${files.map((file) => JSON.stringify(file)).join(" ")}`,
+    "git add -- docs/features/file-kinds.md frontend/src/utils/fileNames.generated.ts",
   ],
   "bridge/**/*.go": "gofmt -w",
   "backend/prisma/schema.prisma": () =>

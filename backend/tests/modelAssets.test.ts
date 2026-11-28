@@ -13,6 +13,7 @@ import {
   storageOutOfPlace,
 } from "../src/services/printService";
 import { currentStorageMove, resumeStorageMove } from "../src/services/storageMoveService";
+import { assetTarget, galleryImageFile, legacyAssetPath, removeAssetOrThrow } from "../src/services/modelAssets";
 
 const app = createApp();
 const stamp = Date.now();
@@ -283,4 +284,25 @@ describe("the first start after upgrading", () => {
 
     await request(app).delete(`/api/print/${print.id}`).set(auth());
   }, 90_000);
+});
+
+describe("removing a picture that has to go", () => {
+  it("takes a folder in the picture's place for no picture, and still removes the one in the old shared folder", async () => {
+    const id = `folder-in-place-${Date.now()}`;
+    const home = path.join("folder-in-place", id);
+    const file = galleryImageFile(id);
+    const target = assetTarget(home, file);
+    const legacy = legacyAssetPath(file);
+    fs.mkdirSync(target, { recursive: true });
+    fs.mkdirSync(path.dirname(legacy), { recursive: true });
+    fs.writeFileSync(legacy, "from before");
+    try {
+      await removeAssetOrThrow(home, file);
+      expect(fs.statSync(target).isDirectory()).toBe(true);
+      expect(fs.existsSync(legacy)).toBe(false);
+    } finally {
+      fs.rmSync(path.join(STORAGE, "folder-in-place"), { recursive: true, force: true });
+      fs.rmSync(legacy, { force: true });
+    }
+  });
 });

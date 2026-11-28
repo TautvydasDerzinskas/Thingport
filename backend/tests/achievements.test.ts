@@ -273,8 +273,11 @@ describe("earning", () => {
 
   it("gives nothing for a tool's model that failed while its files went in", async () => {
     const maker = await register(`Maker${stamp}`);
-    // A check comes while the model is being made, which then fails and is discarded.
-    vi.spyOn(prisma.plate, "create").mockImplementation((async () => {
+    // A check comes while the model is being made, which then fails and is discarded. Its file's row goes in through a
+    // transaction no spy reaches, so this fails the free-name lookup just before it.
+    let madeSoFar = 0;
+    vi.spyOn(prisma.plate, "findMany").mockImplementationOnce((async () => {
+      madeSoFar = await prisma.print.count({ where: { userId: maker.id } });
       await checkAchievementsNow(maker.id);
       throw new Error("No room left");
     }) as never);
@@ -287,6 +290,7 @@ describe("earning", () => {
       .field("origin", "created")
       .field("created_with_tool", "keyring-generator")
       .attach("files", Buffer.from(STL), "keyring.stl");
+    expect(madeSoFar).toBe(1);
     expect(await prisma.print.count({ where: { userId: maker.id } })).toBe(0);
     expect(await prisma.userAchievement.count({ where: { userId: maker.id } })).toBe(0);
   });

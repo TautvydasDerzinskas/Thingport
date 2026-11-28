@@ -151,7 +151,7 @@ export async function sha256OfHandle(handle: fs.FileHandle): Promise<string> {
 }
 
 /** sha256OfFile for a file we just wrote, which may have been swapped since for something else (see OPEN_FLAGS). */
-async function sha256OfRegularFile(filePath: string): Promise<string> {
+export async function sha256OfRegularFile(filePath: string): Promise<string> {
   const opened = await openRegularFile(filePath);
   if (!opened) throw new Error(`Not a regular file: ${filePath}`);
   try {

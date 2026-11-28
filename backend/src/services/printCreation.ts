@@ -1,35 +1,41 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
+import { setInterval as intervals, setTimeout as delay } from "node:timers/promises";
 import { prisma } from "../db";
 import { removeModel } from "../modelFiles/removeModel";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
+import { createKeyedLock } from "../utils/concurrency";
 import { HttpError, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
 import { LEGACY } from "../files/kinds";
-import { nameKey, normalizeFileName } from "../files/names";
+import { nameKey, normalizeFileName, preservesFileExtension } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
-import { fileStateSync, type StorageSite } from "../modelFiles/storageFs";
+import { fileState, fileStateSync, isMissingError, lockQueued, type StorageSite } from "../modelFiles/storageFs";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
   availablePlateFilename,
+  freePlateFilename,
   ensureAssetHome,
   ensurePlateThumbnail,
   managedPlatePath,
   pruneEmptyStorageDirs,
-  relocatePrint,
+  isWaitingAside,
+  relocateRenamedPlates,
   removePlatePictures,
   renderPlateStoragePath,
   saveThumbFromFile,
+  settleMove,
 } from "./printService";
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
 import { deleteAdapted3mfs } from "./adapted3mfCache";
 import { storePlateFormat } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
-import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
+import { reuseMarker, sha256OfRegularFile, shareStoredCopy, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
@@ -45,6 +51,8 @@ const IMAGE_EXTS = LEGACY.photo;
 export type NewPlateInput = {
   /** Untrusted; will be sanitized. */
   filename: string;
+  /** Stable client ID for a retryable upload; used to deduplicate uncertain requests. */
+  clientUploadId?: string;
   mime?: string | null;
   size?: number;
   /** Exactly one of tempFilePath / copyFromPath / sourcePath should be set. */
@@ -108,7 +116,6 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
           await fs.copyFile(tempFilePath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
         }
       });
-      await fs.rm(tempFilePath, { force: true });
       return destAbsPath;
     }
     if (input.copyFromPath) {
@@ -117,7 +124,7 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
       return destAbsPath;
     }
   } catch (err: any) {
-    if (err?.code === "EEXIST") throw new HttpError(409, "Another file was just saved at the same path; try again");
+    if (err?.code === "EEXIST") throw new PlatePathTakenError();
     throw err;
   }
   return input.sourcePath ?? null;
@@ -133,8 +140,6 @@ async function placePlateFile(
   if (!fromPath) return { effectivePath: await placeFile(input, destAbsPath), contentSha256: null, marker: {} };
   const { contentSha256, shared } = await shareStoredCopy(fromPath, destAbsPath, findStoredCopies);
   if (!shared) return { effectivePath: await placeFile(input, destAbsPath), contentSha256, marker: {} };
-  // The clone is in place: a temp file left behind is only clutter, not a reason to fail the import.
-  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
   return { effectivePath: destAbsPath, contentSha256, marker: await reuseMarker(destAbsPath, true, contentSha256) };
 }
 
@@ -201,11 +206,58 @@ export async function refreshAutoPreparedMetadata(printId: string): Promise<void
 }
 
 type CreatedPlate = { record: Plate; effectivePath: string | null };
+type PlateUploadClaim = { printId: string; clientUploadId: string; claimToken: string };
+
+/** Serialises every change to a model's plate list (names, positions, additions and removals), so none of them reads
+ *  another's half: a temporary position, or a name about to be taken. */
+function lockPlateList(tx: Prisma.TransactionClient, printId: string) {
+  return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('plate-names'), hashtext(${printId}))`;
+}
+
+/** Whether a committed plate of the model names this storage path, read under lockPlateList so a transaction whose
+ *  commit was in doubt has ended. True when the read fails: the file is kept rather than taken from a plate. */
+async function plateMayName(printId: string, storagePath: string): Promise<boolean> {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await lockPlateList(tx, printId);
+      return (await tx.plate.count({ where: { printId, storagePath } })) > 0;
+    });
+  } catch {
+    return true;
+  }
+}
+
+/** The name or position a plate was prepared with stopped being the model's next while its file was placed. */
+class PlateListChangedError extends Error {}
+
+/** Another save placed a file at the path this one chose, after both found it free. That file stays. */
+class PlatePathTakenError extends HttpError {
+  constructor() {
+    super(409, "Another file was just saved at the same path; try again");
+  }
+}
+
+const renameQueue = createKeyedLock();
+
+/** Held while a rename commits names and moves their files, and by anything that reads those files meanwhile. */
+function withPlateRenameLock<T>(printId: string, fn: () => Promise<T>): Promise<T> {
+  const turn = renameQueue(printId, fn);
+  lockQueued("plate.rename", printId);
+  return turn;
+}
+
+/** Through negative positions first, so no step collides with another plate's on (printId, position). The caller holds
+ *  lockPlateList. */
+async function renumberPlates(tx: Prisma.TransactionClient, ids: string[]): Promise<void> {
+  await Promise.all(ids.map((id, idx) => tx.plate.update({ where: { id }, data: { position: -(idx + 1) } })));
+  await Promise.all(ids.map((id, idx) => tx.plate.update({ where: { id }, data: { position: idx } })));
+}
 
 async function createPlateAtPosition(
   print: Pick<Print, "id" | "name" | "creator" | "tags" | "categoryId" | "userId" | "authorId" | "sourceProvider">,
   input: NewPlateInput,
   position: number,
+  claim?: PlateUploadClaim,
 ): Promise<CreatedPlate> {
   const sanitized = normalizeFileName(input.filename);
   const folder = normalizeFolder(input.folder);
@@ -218,28 +270,46 @@ async function createPlateAtPosition(
 
   let record: Plate;
   try {
-    record = await prisma.plate.create({
-      data: {
-        printId: print.id,
-        position,
-        filename: desiredFilename,
-        folder,
-        mime,
-        size,
-        storagePath,
-        sourcePath: input.sourcePath ?? null,
-        sourceInstanceId: input.sourceInstanceId ?? null,
-        profile: input.profile == null ? undefined : (input.profile as Prisma.InputJsonValue),
-        contentSha256,
-        ...marker,
-      },
+    const data: Prisma.PlateUncheckedCreateInput = {
+      printId: print.id,
+      position,
+      filename: desiredFilename,
+      folder,
+      mime,
+      size,
+      storagePath,
+      sourcePath: input.sourcePath ?? null,
+      sourceInstanceId: input.sourceInstanceId ?? null,
+      profile: input.profile == null ? undefined : (input.profile as Prisma.InputJsonValue),
+      contentSha256,
+      ...marker,
+    };
+    record = await prisma.$transaction(async (tx) => {
+      await lockPlateList(tx, print.id);
+      // The storage path was prepared outside the lock from this name and position: both must still be the model's
+      // next before they're published.
+      const last = await tx.plate.aggregate({ where: { printId: print.id }, _max: { position: true } });
+      if (
+        (last._max.position ?? -1) + 1 !== position ||
+        (await availablePlateFilename(print.id, sanitized, undefined, folder, tx)) !== desiredFilename
+      ) {
+        throw new PlateListChangedError();
+      }
+      const plate = await tx.plate.create({ data });
+      if (claim) await completePlateUpload(tx, claim, plate.id);
+      return plate;
     });
   } catch (err) {
-    // e.g. a concurrent import of the same profile won; don't orphan the placed file.
-    if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
+    // e.g. a concurrent import of the same profile won; don't orphan the placed file. A commit that failed may still
+    // have committed, so the file goes only once a locked read finds no plate naming it.
+    if (effectivePath && !input.sourcePath && !(await plateMayName(print.id, storagePath))) {
+      await fs.rm(effectivePath, { force: true }).catch(() => undefined);
+    }
     throw err;
   }
 
+  // Keep the submitted file until the row commits, so an append collision can be retried under the same claim.
+  if (input.tempFilePath) await fs.rm(input.tempFilePath, { force: true }).catch(() => undefined);
   await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
   // A print profile's facts are read once its import has settled. Loaded when used: the service reaches this file.
   if (record.sourceInstanceId) {
@@ -425,52 +495,366 @@ export async function addPlatesToPrint(
 ): Promise<Plate[]> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new Error("Print not found");
-  const maxPosition = await prisma.plate.aggregate({ where: { printId }, _max: { position: true } });
-  let nextPosition = (maxPosition._max.position ?? -1) + 1;
 
   const created: Plate[] = [];
   for (const input of plateInputs) {
-    const { record } = await createPlateAtPosition(print, input, nextPosition);
-    created.push(record);
-    nextPosition += 1;
+    created.push(
+      input.clientUploadId
+        ? await createPlateIdempotently(print, input, input.clientUploadId)
+        : await appendPlate(print, input),
+    );
   }
   return created;
 }
 
-/** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
-export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
-  const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-  const target = plates.find((p) => p.id === plateId);
-  if (!target) throw new HttpError(404, "Plate not found");
-  if (plates.length <= 1) {
-    throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
+const MAX_PLATE_APPEND_ATTEMPTS = 5;
+
+async function appendPlate(
+  print: Parameters<typeof createPlateAtPosition>[0],
+  input: NewPlateInput,
+  claim?: PlateUploadClaim,
+): Promise<Plate> {
+  for (let attempt = 0; attempt < MAX_PLATE_APPEND_ATTEMPTS; attempt++) {
+    // A replay may have waited for a request that appended other files as well as the one it was waiting for.
+    const maxPosition = await prisma.plate.aggregate({ where: { printId: print.id }, _max: { position: true } });
+    const position = (maxPosition._max.position ?? -1) + 1;
+    try {
+      return (await createPlateAtPosition(print, input, position, claim)).record;
+    } catch (error) {
+      // Each attempt chooses its name, position and path again.
+      if (error instanceof PlateListChangedError || error instanceof PlatePathTakenError) continue;
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
+      const target = error.meta?.target;
+      if (!Array.isArray(target) || !target.includes("printId") || !target.includes("position")) throw error;
+    }
+  }
+  throw new HttpError(409, "The plate name or position changed during upload; try again");
+}
+
+const UPLOAD_ATTEMPT_POLL_MS = 100;
+const UPLOAD_ATTEMPT_MAX_POLLS = 300;
+const UPLOAD_LEASE_SECONDS = 30;
+const UPLOAD_HEARTBEAT_MS = 5_000;
+
+function uploadMarker(clientUploadId: string): string {
+  return `thingport-upload-${clientUploadId}-`;
+}
+
+/** A plate an older server stored under this upload's marker with these bytes. The caller holds withPlateRenameLock,
+ *  so a rename moving these files can't make one look missing. */
+async function findPlateForUpload(
+  printId: string,
+  clientUploadId: string,
+  contentSha256: string,
+): Promise<Plate | undefined> {
+  const named = await prisma.plate.findMany({
+    where: { printId, filename: { startsWith: uploadMarker(clientUploadId) } },
+  });
+  // A plate another upload's receipt names is that upload's, whatever it's called now; one an older server saved has
+  // no receipt, and is found by its marker and bytes.
+  const owned = new Set(
+    (
+      await prisma.plateUploadAttempt.findMany({
+        where: {
+          printId,
+          status: "complete",
+          plateId: { in: named.map((plate) => plate.id) },
+          clientUploadId: { not: clientUploadId },
+        },
+        select: { plateId: true },
+      })
+    ).map((attempt) => attempt.plateId),
+  );
+  const candidates = named.filter((plate) => !owned.has(plate.id));
+  const matches: Plate[] = [];
+  for (const candidate of candidates) {
+    const stored = resolvePlateFilePath(candidate);
+    if (!stored) continue;
+    try {
+      if ((await sha256OfRegularFile(stored)) === contentSha256) matches.push(candidate);
+    } catch (error) {
+      if (!isMissingError(error)) throw error;
+    }
+  }
+  if (matches.length > 1) throw new HttpError(409, "Multiple plates match this upload attempt");
+  return matches[0];
+}
+
+function plateUploadOutcomeRecordingError(uploadError: unknown, attemptError: unknown): AggregateError {
+  return new AggregateError([uploadError, attemptError], "Failed to record the plate upload outcome", {
+    cause: uploadError,
+  });
+}
+
+async function claimPlateUpload(
+  { printId, clientUploadId, claimToken }: PlateUploadClaim,
+  contentSha256: string,
+): Promise<boolean> {
+  // The first claim records the bytes; a later one only takes over an attempt for the same bytes.
+  const count = await prisma.$executeRaw`
+    INSERT INTO "PlateUploadAttempt"
+      ("id", "printId", "clientUploadId", "status", "contentSha256", "claimToken", "leaseExpiresAt")
+    VALUES (${claimToken}, ${printId}, ${clientUploadId}, 'pending', ${contentSha256}, ${claimToken},
+            (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + make_interval(secs => ${UPLOAD_LEASE_SECONDS}::int))
+    ON CONFLICT ("printId", "clientUploadId") DO UPDATE
+      SET "status" = 'pending', "plateId" = NULL, "claimToken" = EXCLUDED."claimToken",
+          "leaseExpiresAt" = EXCLUDED."leaseExpiresAt"
+      WHERE "PlateUploadAttempt"."contentSha256" = EXCLUDED."contentSha256"
+        AND ("PlateUploadAttempt"."status" = 'failed'
+             OR ("PlateUploadAttempt"."status" = 'pending'
+                 AND ("PlateUploadAttempt"."leaseExpiresAt" IS NULL
+                      OR "PlateUploadAttempt"."leaseExpiresAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))))
+  `;
+  return count === 1;
+}
+
+async function renewPlateUploadClaim(claim: PlateUploadClaim, signal: AbortSignal): Promise<void> {
+  try {
+    for await (const _ of intervals(UPLOAD_HEARTBEAT_MS, undefined, { signal, ref: false })) {
+      try {
+        const count = await prisma.$executeRaw`
+          UPDATE "PlateUploadAttempt"
+          SET "leaseExpiresAt" = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + make_interval(secs => ${UPLOAD_LEASE_SECONDS}::int)
+          WHERE "printId" = ${claim.printId} AND "clientUploadId" = ${claim.clientUploadId}
+            AND "claimToken" = ${claim.claimToken} AND "status" = 'pending'
+            AND "leaseExpiresAt" > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+        `;
+        if (count === 0) return;
+      } catch (error) {
+        console.warn("Couldn't renew the plate upload claim:", error);
+      }
+    }
+  } catch (error) {
+    if (!signal.aborted) throw error;
+  }
+}
+
+async function completePlateUpload(db: Prisma.TransactionClient, claim: PlateUploadClaim, plateId: string) {
+  const completed = await db.plateUploadAttempt.updateMany({
+    where: { ...claim, status: "pending" },
+    data: { status: "complete", plateId, claimToken: null, leaseExpiresAt: null },
+  });
+  // A worker whose lease was reclaimed must roll back its plate insert.
+  if (completed.count !== 1) throw new HttpError(409, "The plate upload claim was lost; try again");
+}
+
+async function createClaimedPlateUpload(
+  print: Parameters<typeof createPlateAtPosition>[0],
+  input: NewPlateInput,
+  claim: PlateUploadClaim,
+  contentSha256: string,
+): Promise<Plate> {
+  const controller = new AbortController();
+  const heartbeat = renewPlateUploadClaim(claim, controller.signal);
+  try {
+    // Older servers could store the plate before recording that the attempt completed.
+    // Found and recorded under the rename lock, so a removal can't take the plate between the two.
+    const existing = await withPlateRenameLock(print.id, async () => {
+      const found = await findPlateForUpload(print.id, claim.clientUploadId, contentSha256);
+      if (found) await completePlateUpload(prisma, claim, found.id);
+      return found;
+    });
+    if (existing) return existing;
+    return await appendPlate(print, input, claim);
+  } catch (error) {
+    try {
+      await prisma.plateUploadAttempt.updateMany({
+        where: { ...claim, status: "pending" },
+        data: { status: "failed", plateId: null, claimToken: null, leaseExpiresAt: null },
+      });
+    } catch (attemptError) {
+      throw plateUploadOutcomeRecordingError(error, attemptError);
+    }
+    throw error;
+  } finally {
+    controller.abort();
+    await heartbeat;
+  }
+}
+
+async function createPlateIdempotently(
+  print: Parameters<typeof createPlateAtPosition>[0],
+  input: NewPlateInput,
+  clientUploadId: string,
+): Promise<Plate> {
+  const submitted = input.tempFilePath ?? input.copyFromPath ?? input.sourcePath;
+  if (!submitted) throw new HttpError(400, "An upload ID needs the uploaded file");
+  // Read from what was sent, never from the stored plate, which may have been edited since or be moving.
+  const contentSha256 = await sha256OfRegularFile(submitted);
+  const where = { printId_clientUploadId: { printId: print.id, clientUploadId } };
+  const claim = { ...where.printId_clientUploadId, claimToken: randomUUID() };
+
+  for (let poll = 0; poll < UPLOAD_ATTEMPT_MAX_POLLS; poll += 1) {
+    const attempt = await prisma.plateUploadAttempt.findUnique({ where });
+    // An upload ID names one file: other bytes under it are another file, which a replay would report as saved.
+    if (attempt && attempt.contentSha256 !== contentSha256) {
+      throw new HttpError(409, "This upload ID was already used for a different file");
+    }
+    if (attempt?.status === "complete") {
+      const completedPlate = attempt.plateId
+        ? await prisma.plate.findFirst({ where: { id: attempt.plateId, printId: print.id } })
+        : null;
+      if (!completedPlate) throw new HttpError(409, "The original plate upload is no longer available");
+      return completedPlate;
+    }
+
+    if (attempt && attempt.status !== "pending" && attempt.status !== "failed") {
+      throw new HttpError(409, "The plate upload attempt has an invalid status");
+    }
+
+    if (await claimPlateUpload(claim, contentSha256)) {
+      return createClaimedPlateUpload(print, input, claim, contentSha256);
+    }
+    await delay(UPLOAD_ATTEMPT_POLL_MS);
   }
 
-  const remaining = plates.filter((p) => p.id !== target.id);
-  // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
-  await prisma.plate.delete({ where: { id: target.id } });
-  await prisma.$transaction(
-    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
-  );
-  await prisma.$transaction(
-    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
-  );
+  throw new HttpError(409, "The matching plate upload is still processing");
+}
+
+/** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
+export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
+  // A rename moves its files after its names commit: held off until the file this row names is the one removed.
+  await withPlateRenameLock(print.id, () => removePlateUnlocked(print, plateId));
+}
+
+async function removePlateUnlocked(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
+  // Its file may be where an earlier move left it, unrecorded: put right first, or the row stays to try again.
+  await settleMove(`plate:${plateId}`);
+  // The removal and the renumbering commit together, so a failure leaves the plates as they were.
+  const target = await prisma.$transaction(async (tx) => {
+    await lockPlateList(tx, print.id);
+    const plates = await tx.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    const found = plates.find((p) => p.id === plateId);
+    if (!found) throw new HttpError(404, "Plate not found");
+    if (plates.length <= 1) {
+      throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
+    }
+    await tx.plate.delete({ where: { id: found.id } });
+    await renumberPlates(
+      tx,
+      plates.filter((p) => p.id !== found.id).map((p) => p.id),
+    );
+    return found;
+  });
   await deletePlateFiles(target);
   await removePlatePictures(target.id, print.assetsPath);
   if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
 }
 
-/** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
+/** Puts the model's plates in this order; `plateIds` must be exactly its plates. */
+export async function reorderPlates(printId: string, plateIds: string[]): Promise<void> {
+  // Not while a rename moves files: their paths are rendered from the positions it read. The prepared print's facts
+  // are read in the same turn, so a rename can't move the new first file while they're read.
+  // Read after every reorder, not only one that changed the first plate: an earlier one's may have failed after its
+  // order committed, and a retry or a later order can keep that first plate.
+  await withPlateRenameLock(printId, async () => {
+    await reorderPlatesUnlocked(printId, plateIds);
+    await refreshAutoPreparedMetadata(printId);
+  });
+}
+
+async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await lockPlateList(tx, printId);
+    const plates = await tx.plate.findMany({ where: { printId }, orderBy: { position: "asc" }, select: { id: true } });
+    if (new Set(plateIds).size !== plateIds.length) throw new HttpError(400, "plate_ids lists a plate twice");
+    const known = new Set(plates.map((plate) => plate.id));
+    // Coded, so the app can tell another editor's added or removed plate from a list it got wrong.
+    if (plateIds.length !== plates.length || plateIds.some((id) => !known.has(id))) {
+      throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids", "plate_set_changed");
+    }
+    await renumberPlates(tx, plateIds);
+  });
+}
+
+type PlateRename = { plate_id: string; filename: string };
+
+async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Plate[]> {
+  return withPlateRenameLock(print.id, async () => {
+    // A file an earlier move left unrecorded is put right before the look below reads its row: one that can't be
+    // leaves every name as it was. Only the plates this rename may move: the renamed ones and those waiting aside.
+    const edited = new Set(edits.map((edit) => edit.plate_id));
+    const settling = await prisma.plate.findMany({
+      where: { printId: print.id },
+      select: { id: true, storagePath: true },
+    });
+    for (const plate of settling) {
+      if (edited.has(plate.id) || isWaitingAside(plate, print.id)) await settleMove(`plate:${plate.id}`);
+    }
+    const renamed = await prisma.$transaction(async (tx) => {
+      await lockPlateList(tx, print.id);
+      const plates = await tx.plate.findMany({ where: { printId: print.id } });
+      const byId = new Map(plates.map((plate) => [plate.id, plate]));
+      const planned = edits.map(({ plate_id, filename }) => {
+        const plate = byId.get(plate_id);
+        if (!plate) throw new HttpError(404, "Plate not found", "plate_not_found");
+        if (!preservesFileExtension(plate.filename, filename)) {
+          throw new HttpError(400, "Keep the file's original extension");
+        }
+        return { plate, target: normalizeFileName(filename) };
+      });
+      // Every file the new names will move is looked at first, so a disk that can't answer stops this with no name
+      // recorded. A move that fails after the commit keeps its source readable, and the same rename again retries it.
+      for (const { plate } of planned) {
+        if (!plate.sourcePath) await fileState(managedPlatePath(plate), "rename.look");
+      }
+      // So is each plate a swap left waiting aside, which the moves after the commit may put in place.
+      const renaming = new Set(planned.map(({ plate }) => plate.id));
+      for (const plate of plates) {
+        if (!renaming.has(plate.id) && isWaitingAside(plate, print.id)) {
+          await fileState(managedPlatePath(plate), "rename.look");
+        }
+      }
+
+      const movingNames = new Set(
+        planned
+          .filter(({ plate, target }) => target.toLowerCase() !== plate.filename.toLowerCase())
+          .map(({ plate }) => plate.id),
+      );
+      const takenByFolder = new Map<string | null, Set<string>>();
+      for (const plate of plates) {
+        if (movingNames.has(plate.id)) continue;
+        const taken = takenByFolder.get(plate.folder) ?? new Set<string>();
+        taken.add(plate.filename.toLowerCase());
+        takenByFolder.set(plate.folder, taken);
+      }
+      const updated: Plate[] = [];
+      for (const { plate, target } of planned) {
+        const taken = takenByFolder.get(plate.folder) ?? new Set<string>();
+        const filename = movingNames.has(plate.id) ? freePlateFilename(target, taken) : target;
+        taken.add(filename.toLowerCase());
+        takenByFolder.set(plate.folder, taken);
+        updated.push(
+          filename === plate.filename ? plate : await tx.plate.update({ where: { id: plate.id }, data: { filename } }),
+        );
+      }
+      return updated;
+    });
+
+    // Commit logical names together. Each storage move can be retried, and a failed move keeps its source readable.
+    // A repeated request still runs relocation in case the names committed before an earlier move failed.
+    try {
+      await relocateRenamedPlates(print, renamed);
+    } catch (error) {
+      // The names are saved and some files may not have moved: coded, so the app can say so, and the same rename
+      // again finishes the moves.
+      if (error instanceof HttpError) throw new HttpError(error.status, error.message, "rename_unfinished");
+      throw error;
+    }
+    if (renamed.some((plate) => plate.position === 0)) await refreshAutoPreparedMetadata(print.id);
+    return renamed;
+  });
+}
+
+/** Renames one plate, numbering apart from a sibling already using its target name. */
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
-  const plate = await prisma.plate.findUnique({ where: { id: plateId } });
-  if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-  const nextFilename = await availablePlateFilename(print.id, normalizeFileName(filename), plate.id, plate.folder);
-  if (nextFilename !== plate.filename) {
-    await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
-    await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
-    if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
-  }
-  return nextFilename;
+  const [renamed] = await applyPlateRenames(print, [{ plate_id: plateId, filename }]);
+  return renamed.filename;
+}
+
+/** Commits dependent names together so a swap can be retried, including its storage moves. */
+export async function renamePlates(print: Print, edits: PlateRename[]): Promise<void> {
+  await applyPlateRenames(print, edits);
 }
 
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath" | "sourcePath">): Promise<void> {

@@ -2,7 +2,15 @@ import type { ThreeMfFormat } from "../adapter/format.generated";
 import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import type { SortDirection } from "../utils/sortDirection";
-import { apiBase, assertOk, readCodedError, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
+import {
+  apiBase,
+  assertOk,
+  assertOkWithMessage,
+  readCodedError,
+  readErrorMessage,
+  LastPlateError,
+  UnauthorizedError,
+} from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
 
 /** What a file is, by the server's kind table (backend/src/files/kinds.ts). */
@@ -167,6 +175,27 @@ export class ZipTooLargeError extends Error {
   }
 }
 
+export class PlateUploadOutcomeUnknownError extends Error {
+  constructor(readonly originalError: unknown) {
+    super(originalError instanceof Error ? originalError.message : "Plate upload outcome unknown");
+    this.name = "PlateUploadOutcomeUnknownError";
+  }
+}
+
+export class PlateUploadCapabilityError extends Error {
+  constructor(cause: unknown) {
+    super("Could not check plate upload retry support", { cause });
+    this.name = "PlateUploadCapabilityError";
+  }
+}
+
+export class UploadReceiptLookupError extends Error {
+  constructor(cause: unknown) {
+    super("Could not check upload receipts", { cause });
+    this.name = "UploadReceiptLookupError";
+  }
+}
+
 export type Print = {
   id: string;
   /** Set on a model a tool brought: it can be opened, downloaded and printed, not edited or deleted. */
@@ -277,6 +306,142 @@ export type License = Omit<LicenseOption, "id" | "family"> & {
   provider: string | null;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isUploadId(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function isUploadPrint(value: unknown, printId: string): value is Print {
+  return (
+    isRecord(value) &&
+    value.id === printId &&
+    typeof value.name === "string" &&
+    typeof value.created_at === "string" &&
+    Number.isFinite(value.supporting_file_count) &&
+    Number.isFinite(value.view_count) &&
+    Number.isFinite(value.print_count) &&
+    typeof value.is_favorite === "boolean" &&
+    Array.isArray(value.tags) &&
+    value.tags.every((tag) => typeof tag === "string") &&
+    Array.isArray(value.preview_images) &&
+    value.preview_images.every(
+      (image: unknown) =>
+        isRecord(image) && isUploadId(image.id) && Number.isFinite(image.position) && typeof image.url === "string",
+    ) &&
+    Array.isArray(value.plates) &&
+    value.plates.length > 0 &&
+    value.plates.every(
+      (plate: unknown) =>
+        isRecord(plate) &&
+        isUploadId(plate.id) &&
+        plate.print_id === printId &&
+        Number.isFinite(plate.position) &&
+        typeof plate.filename === "string" &&
+        typeof plate.mime === "string" &&
+        Number.isFinite(plate.size) &&
+        typeof plate.url === "string" &&
+        // An older server sends no folder.
+        (plate.folder === undefined || plate.folder === null || typeof plate.folder === "string"),
+    )
+  );
+}
+
+type UploadResultId = "plate_id" | "image_id";
+type UploadReceipt<K extends UploadResultId> = { upload_id: string } & Record<K, string | null>;
+
+async function getUploadResults<K extends UploadResultId>(
+  printId: string,
+  uploadIds: string[],
+  resource: "plates" | "preview-images",
+  resultId: K,
+): Promise<{ print: Print; upload_results: UploadReceipt<K>[] } | null> {
+  try {
+    const res = await fetch(`${apiBase()}/print/${printId}/${resource}/upload-results`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ upload_ids: uploadIds }),
+    });
+    if (res.status === 404) return null;
+    await assertOkWithMessage(res, "Could not check upload results");
+    const body: unknown = await res.json();
+    if (!isRecord(body) || !isUploadPrint(body.print, printId) || !Array.isArray(body.upload_results)) {
+      throw new Error("The server returned an invalid upload receipt response");
+    }
+    const remaining = new Set(uploadIds);
+    const receipts = body.upload_results;
+    if (
+      !receipts.every(
+        (receipt: unknown): receipt is UploadReceipt<K> =>
+          isRecord(receipt) &&
+          isUploadId(receipt.upload_id) &&
+          remaining.delete(receipt.upload_id) &&
+          (receipt[resultId] === null || isUploadId(receipt[resultId])),
+      )
+    ) {
+      throw new Error("The server returned invalid upload receipts");
+    }
+    return { print: body.print, upload_results: receipts };
+  } catch (error) {
+    if (error instanceof UnauthorizedError) throw error;
+    throw new UploadReceiptLookupError(error);
+  }
+}
+
+/** One batch of pictures, at most what the server holds in memory for one request. */
+async function addPictureBatch(
+  id: string,
+  files: File[],
+  uploadIds?: string[],
+): Promise<{ print: Print; added_image_ids?: (string | null)[] }> {
+  const fd = new FormData();
+  for (const file of files) fd.append("files", file);
+  for (const uploadId of uploadIds ?? []) fd.append("upload_ids", uploadId);
+  const suffix = uploadIds ? "/idempotent" : "";
+  const res = await fetch(`${apiBase()}/print/${id}/preview-images${suffix}`, {
+    method: "POST",
+    body: fd,
+    headers: authHeaders(),
+  });
+  if (res.status === 401) throw new UnauthorizedError();
+  if (!res.ok) throw new PrintApiError(await readErrorMessage(res, "Failed to add preview image"), res.status, null);
+  const body: unknown = await res.json();
+  if (!isRecord(body) || !isUploadPrint(body.print, id)) {
+    throw new Error("The server returned an invalid print after the preview upload");
+  }
+  const ids = body.added_image_ids;
+  // One slot per file sent, or none can be told apart from the next batch's.
+  return Array.isArray(ids) &&
+    ids.length === files.length &&
+    ids.every((imageId: unknown) => imageId === null || isUploadId(imageId))
+    ? { print: body.print, added_image_ids: ids }
+    : { print: body.print };
+}
+
+/** What a rename's answer means, past a 401 and a 404, which each endpoint reads its own way. */
+async function renamedPrint(res: Response, printId: string): Promise<{ print: Print }> {
+  // A timeout at a proxy, or a server failure, may come after the names were saved.
+  if (res.status === 408 || res.status >= 500) {
+    throw new PlateRenameResponseError(new Error(await readErrorMessage(res, `HTTP ${res.status}`)));
+  }
+  if (!res.ok) {
+    const { message, code } = await readCodedError(res, "");
+    // The names are saved and a file couldn't move yet: the same rename again finishes it.
+    if (code === "rename_unfinished") throw new PlateRenameResponseError(new Error(message));
+    // Empty only when the answer couldn't be read at all.
+    throw message ? new Error(message) : new PlateRenameResponseError();
+  }
+  try {
+    const body: unknown = await res.json();
+    if (isRecord(body) && isUploadPrint(body.print, printId)) return { print: body.print };
+  } catch (error) {
+    throw new PlateRenameResponseError(error);
+  }
+  throw new PlateRenameResponseError();
+}
+
 export type PrintLicense = { license: License | null; pending: boolean; filling: boolean; failed: boolean };
 
 export type ListPrintsResult = {
@@ -306,6 +471,42 @@ export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance" | "
 
 /** A site the library's models came from; `provider` is "thingport" for the ones uploaded here. */
 export type PrintSource = { provider: string; model_count: number };
+
+/** A batch rename whose outcome is unknown: its answer couldn't be read, or the server failed partway. The names may
+ *  be saved with their files still to move; sending the same renames again finishes them. */
+export class PlateRenameResponseError extends Error {
+  constructor(cause?: unknown) {
+    super("Could not confirm the file renames", { cause });
+    this.name = "PlateRenameResponseError";
+  }
+}
+
+/** At most this many pictures in one request: the server's limit, as it holds them in memory. */
+export const PICTURE_UPLOAD_BATCH = 20;
+
+/** A reorder whose answer couldn't be read: the order may be saved, and sending it again is the same reorder. */
+export class PlateReorderResponseError extends Error {
+  constructor(cause?: unknown) {
+    super("Could not confirm the new file order", { cause });
+    this.name = "PlateReorderResponseError";
+  }
+}
+
+/** A reorder refused because another editor added or removed a plate since the list was read. Nothing moved. */
+export class PlateSetChangedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlateSetChangedError";
+  }
+}
+
+/** A batch rename refused because a plate it names, or their model, was removed meanwhile. Nothing was renamed. */
+export class PlateRenameTargetGoneError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlateRenameTargetGoneError";
+  }
+}
 
 export class PrintApiError extends Error {
   constructor(
@@ -581,25 +782,67 @@ export const printsApi = {
     return res.json();
   },
 
-  addPlates: async (printId: string, files: File[]): Promise<{ print: Print }> => {
+  addPlates: async (printId: string, files: File[]): Promise<{ print: Print; added_plate_ids?: string[] }> => {
     const fd = new FormData();
     for (const file of files) {
       fd.append("files", file);
     }
-    const res = await fetch(`${apiBase()}/print/${printId}/plates`, {
-      method: "POST",
-      body: fd,
-      headers: authHeaders(),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plates`, {
+        method: "POST",
+        body: fd,
+        headers: authHeaders(),
+      });
+    } catch (error) {
+      throw new PlateUploadOutcomeUnknownError(error);
+    }
     if (res.status === 401) {
       throw new UnauthorizedError();
     }
     if (!res.ok) {
       const message = await readErrorMessage(res, "Failed to add plate");
-      throw new Error(message);
+      const error = new Error(message);
+      // The backend may have started saving the batch, or a conflict may refer to an earlier attempt still running.
+      if (res.status === 408 || res.status === 409 || res.status >= 500) {
+        throw new PlateUploadOutcomeUnknownError(error);
+      }
+      throw error;
     }
-    return res.json();
+    try {
+      const body: unknown = await res.json();
+      if (!isRecord(body) || !isUploadPrint(body.print, printId)) {
+        throw new Error("The server returned an invalid print after the plate upload");
+      }
+      const ids = body.added_plate_ids;
+      if (ids !== undefined && (!Array.isArray(ids) || !ids.every(isUploadId))) {
+        throw new Error("The server returned invalid plate upload IDs");
+      }
+      return ids === undefined ? { print: body.print } : { print: body.print, added_plate_ids: ids };
+    } catch (error) {
+      throw new PlateUploadOutcomeUnknownError(error);
+    }
   },
+
+  supportsIdempotentPlateUploads: async (printId: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${apiBase()}/print/${printId}/plates/upload-idempotency`, {
+        headers: authHeaders(),
+        cache: "no-store",
+      });
+      if (res.status === 404) return false;
+      await assertOkWithMessage(res, `HTTP ${res.status}`);
+      const body: unknown = await res.json();
+      if (typeof body === "object" && body !== null && "supported" in body && body.supported === true) return true;
+      throw new Error("The server returned an invalid plate upload capability");
+    } catch (error) {
+      if (error instanceof UnauthorizedError) throw error;
+      throw new PlateUploadCapabilityError(error);
+    }
+  },
+
+  getPlateUploadResults: (printId: string, uploadIds: string[]) =>
+    getUploadResults(printId, uploadIds, "plates", "plate_id"),
 
   deletePlate: async (printId: string, plateId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/plates/${plateId}`, {
@@ -618,30 +861,79 @@ export const printsApi = {
     return res.json();
   },
 
-  reorderPlates: async (printId: string, plateIds: string[]): Promise<{ print: Print }> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plates/reorder`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ plate_ids: plateIds }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to reorder plates"));
+  reorderPlates: async (printId: string, plateIds: string[]): Promise<{ print?: Print }> => {
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plates/reorder`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ plate_ids: plateIds }),
+      });
+    } catch (error) {
+      // No answer: the order may be saved.
+      throw new PlateReorderResponseError(error);
     }
-    return res.json();
+    if (res.status === 401) throw new UnauthorizedError();
+    // A timeout, or a failure the server met after saving the order (reading the print facts again).
+    if (res.status === 408 || res.status >= 500) {
+      throw new PlateReorderResponseError(new Error(await readErrorMessage(res, `HTTP ${res.status}`)));
+    }
+    if (!res.ok) {
+      const { message, code } = await readCodedError(res, "Failed to reorder plates");
+      throw code === "plate_set_changed" ? new PlateSetChangedError(message) : new Error(message);
+    }
+    let body: unknown;
+    try {
+      body = await res.json();
+    } catch (error) {
+      throw new PlateReorderResponseError(error);
+    }
+    if (!isRecord(body)) throw new PlateReorderResponseError();
+    // An older server answers without the model.
+    if (body.print === undefined) return {};
+    if (!isUploadPrint(body.print, printId)) throw new PlateReorderResponseError();
+    return { print: body.print };
   },
 
   renamePlate: async (printId: string, plateId: string, filename: string): Promise<{ print: Print }> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/rename`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ filename }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Rename failed"));
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/rename`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ filename }),
+      });
+    } catch (error) {
+      throw new PlateRenameResponseError(error);
     }
-    return res.json();
+    if (res.status === 401) throw new UnauthorizedError();
+    // The plate or its model is gone, on any server: nothing was renamed.
+    if (res.status === 404) throw new PlateRenameTargetGoneError(await readErrorMessage(res, "Plate not found"));
+    return renamedPrint(res, printId);
+  },
+
+  renamePlates: async (
+    printId: string,
+    renames: { plate_id: string; filename: string }[],
+  ): Promise<{ print: Print } | null> => {
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plates/rename`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ renames }),
+      });
+    } catch (error) {
+      throw new PlateRenameResponseError(error);
+    }
+    if (res.status === 401) throw new UnauthorizedError();
+    // Only an older server's catch-all 404 comes without a code; a gone plate or model has one.
+    if (res.status === 404) {
+      const { message, code } = await readCodedError(res, "");
+      if (!code) return null;
+      throw new PlateRenameTargetGoneError(message);
+    }
+    return renamedPrint(res, printId);
   },
 
   setTags: async (id: string, tags: string[]) => {
@@ -914,18 +1206,33 @@ export const printsApi = {
     return res.json();
   },
 
-  addPreviewImages: async (id: string, files: File[]): Promise<{ print: Print }> => {
-    const fd = new FormData();
-    for (const file of files) fd.append("files", file);
-    const res = await fetch(`${apiBase()}/print/${id}/preview-images`, {
-      method: "POST",
-      body: fd,
-      headers: authHeaders(),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to add preview image"));
-    return res.json();
+  /** `onBatchStored` is called after each batch the server stored, with how many of the files are stored so far, so a
+   *  later batch's failure can be told apart from one that stored nothing. */
+  addPreviewImages: async (
+    id: string,
+    files: File[],
+    uploadIds?: string[],
+    onBatchStored?: (storedFiles: number) => void,
+  ): Promise<{ print: Print; added_image_ids?: (string | null)[] }> => {
+    // In batches the server holds in memory; ids come back in the files' order, and a batch that fails stops the rest.
+    let last: { print: Print; added_image_ids?: (string | null)[] } | undefined;
+    const added: (string | null)[] = [];
+    let aligned = true;
+    for (let at = 0; at < files.length || !last; at += PICTURE_UPLOAD_BATCH) {
+      last = await addPictureBatch(
+        id,
+        files.slice(at, at + PICTURE_UPLOAD_BATCH),
+        uploadIds?.slice(at, at + PICTURE_UPLOAD_BATCH),
+      );
+      onBatchStored?.(Math.min(at + PICTURE_UPLOAD_BATCH, files.length));
+      if (last.added_image_ids) added.push(...last.added_image_ids);
+      else aligned = false;
+    }
+    return aligned ? { print: last.print, added_image_ids: added } : { print: last.print };
   },
+
+  getPreviewUploadResults: (printId: string, uploadIds: string[]) =>
+    getUploadResults(printId, uploadIds, "preview-images", "image_id"),
 
   deletePreviewImage: async (printId: string, imageId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/preview-images/${imageId}`, {

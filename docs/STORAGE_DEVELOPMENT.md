@@ -42,12 +42,12 @@ This code is being rebuilt in small pull requests (the supporting-files rebuild)
   Only ENOENT and ENOTDIR mean missing, and a folder isn't a file. Any other error (EIO, EACCES, ELOOP) stops the
   operation before it removes or records anything, save in the repair's sweep, which runs once the plates are in: there
   the row whose look failed stays, and the rest go on. It holds for downloads and the zip, copies, Send to, MCP's
-  `get_model_file`, partners' downloads, Migrate's export, free paths, moves, the storage browser, the missing-files scan
-  and the repair. A plate with a `sourcePath` is read there only. It doesn't hold yet for pictures and the files made
+  `get_model_file`, partners' downloads, Migrate's export, free paths, moves, a rename's look at the files it will move, the
+  storage browser, the missing-files scan and the repair. A plate with a `sourcePath` is read there only. It doesn't hold yet for pictures and the files made
   from a model's files, an upload's temporary files, the prune, a profile plate's size before it's matched and a new
   plate's recorded size: `tests/modelFiles/door.test.ts` lists every `existsSync` left with the step that removes it, and
-  fails on a new one, and on a door call site no test fails. Pinned by `tests/modelFiles/door.*.test.ts` and
-  `tests/repairKeeps.test.ts`.
+  fails on a new one, and on a door call site no test fails. Pinned by `tests/modelFiles/door.*.test.ts`,
+  `tests/repairKeeps.test.ts` and the rename cases in `tests/api.test.ts`.
 - **Fs 2: a download serves the file it opened.** A model's file is opened first; its row is read again by id, and the
   open handle is served only while the row still names that path (`utils/sendStored.ts`), else the answer is 404. Not its
   size: a file may be edited in place, and its row keeps the size it was saved with. It covers plates, supporting files,
@@ -87,11 +87,25 @@ regression or a bug in what it does, is a finding as usual.
   pulls) only reads the live one. In-process coordination is therefore enough.
 - **The storage lock.** `utils/storageLock.ts` is one process-wide promise chain, and it isn't reentrant: code holding
   it must not take it again.
-  - It guards checks followed by renames, at 15 call sites in 10 files: placing files, moving a model's files when its
+  - It guards checks followed by renames, at 19 call sites in 11 files: placing files, moving a model's files when its
     folder changes (`printService.moveAllStored`), merges, the licence file, and GLB, slicer and build-plate previews.
+    A plate's or `PrintFile`'s move (`moveStored`) whose save failed with its outcome unread is settled under it
+    before that file's next move, removal or rename reads its row (`printService.settleMove`), and again as each move
+    lists its file under the lock, which catches one recorded while that move waited: the file goes back unless its
+    row names the new place, only while it's still the one the move put there (by size and modified time), and
+    waits (409) while something else holds the old place. Until then no other record is given the place it went. A picture folder's move
+    (`relocateAssets`) records nothing to settle: when saving `assetsPath` fails, the pictures go back.
   - Some call sites also do database work inside it, such as merge's transaction and the licence sync.
-  - The only per-model locks are `withPrintLock` (repair, `importService.ts`) and `perModel` (copies,
-    `modelCopyService.ts`).
+  - The per-model locks are `withPrintLock` (repair, `importService.ts`), `perModel` (copies, `modelCopyService.ts`)
+    and `withPlateRenameLock` (`printCreation.ts`). That last one is in-process and lasts beyond a transaction: a
+    rename holds it from its name commit through its file moves, and a plate's removal, a reorder and an upload's
+    older-server lookup take it, so none of them reads or moves a file while a rename moves it. A caller queuing for
+    it reaches the checkpoint `lock:plate.rename`.
+  - Two Postgres advisory locks last only to their transaction's commit: `lockPlateList` (`printCreation.ts`), taken
+    by a plate's append, removal and reorder and by a rename's name commit, and `lockPreviewGallery`
+    (`previewImageService.ts`) for the gallery's positions, cover recovery and the thumbnails written in a
+    transaction. Repair's swap (`replaceModelPlates`, `modelFilesReplace.ts`) replaces a model's plates without
+    `lockPlateList`, inside the model's `withPrintLock`, so nothing above holds off an append or a reorder meanwhile.
 - **Writers outside the lock.** Thumbnails, gallery photos, renders and description images are written into the
   pictures folder without the lock, while a folder move may be moving that folder.
 - **Claim order.**

@@ -1,9 +1,9 @@
-// Writes docs/features/file-kinds.md from the kind table, backend/src/files/kinds.json, so the page can't drift from
-// what the code reads a file as. The page is committed, and the website renders it:
+// Writes the file kinds page and the browser copy of the server's filename rules. Both are committed:
 //
 //   npm run kinds:sync    rewrite it
 //   npm run kinds:check   fail when it's out of date (CI)
 
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,8 +12,25 @@ import * as prettier from "prettier";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const TABLE = "backend/src/files/kinds.json";
 const PAGE = "docs/features/file-kinds.md";
+const NAME_RULES = "backend/src/files/names.ts";
+const BROWSER_RULES = "frontend/src/utils/fileNames.generated.ts";
 
-const kinds = JSON.parse(readFileSync(path.join(ROOT, TABLE), "utf8"));
+const stagedAt = process.argv.indexOf("--staged");
+// The hook has already formatted these staged files. An input outside the task comes from the index.
+const formattedFiles = new Set(
+  stagedAt === -1
+    ? []
+    : process.argv
+        .slice(stagedAt + 1)
+        // Forward slashes, as the inputs are named, whatever the platform's separator.
+        .map((file) => path.relative(ROOT, path.resolve(file)).split(path.sep).join("/")),
+);
+const readInput = (file) =>
+  stagedAt >= 0 && !formattedFiles.has(file)
+    ? execFileSync("git", ["show", `:${file}`], { cwd: ROOT, encoding: "utf8" })
+    : readFileSync(path.join(ROOT, file), "utf8");
+
+const kinds = JSON.parse(readInput(TABLE));
 const code = (items) => items.map((item) => `\`${item}\``).join(", ");
 
 const rows = kinds.map(({ label, about, extensions, names }) => {
@@ -33,22 +50,35 @@ a name is read as Thingport keeps it, so \`part.STL \` with a space at the end i
 ${rows.join("\n")}
 `;
 
-const formatted = await prettier.format(page, {
-  ...(await prettier.resolveConfig(path.join(ROOT, PAGE))),
-  filepath: path.join(ROOT, PAGE),
-});
+// The model editor needs the same normalization as the rename route to identify filename conflicts.
+const compoundKinds = kinds
+  .map(({ extensions = [] }) => ({ extensions: extensions.filter((ext) => ext.split(".").length > 2) }))
+  .filter(({ extensions }) => extensions.length);
+const browserRules =
+  `// Generated from ${NAME_RULES} by scripts/sync-kinds.mjs.
+` +
+  readInput(NAME_RULES).replace('import kinds from "./kinds.json";', `const kinds = ${JSON.stringify(compoundKinds)};`);
 
-if (process.argv.includes("--check")) {
-  let current = "";
-  try {
-    current = readFileSync(path.join(ROOT, PAGE), "utf8");
-  } catch {}
-  if (current !== formatted) {
-    console.error(`${PAGE} is out of date: run npm run kinds:sync.`);
-    process.exit(1);
+const check = process.argv.includes("--check");
+for (const [file, source] of [
+  [PAGE, page],
+  [BROWSER_RULES, browserRules],
+]) {
+  const filepath = path.join(ROOT, file);
+  const formatted = await prettier.format(source, { ...(await prettier.resolveConfig(filepath)), filepath });
+  if (check) {
+    let current = "";
+    try {
+      current = readFileSync(filepath, "utf8");
+    } catch {}
+    if (current !== formatted) {
+      console.error(`${file} is out of date: run npm run kinds:sync.`);
+      process.exitCode = 1;
+    } else {
+      console.log(`${file} is up to date.`);
+    }
+  } else {
+    writeFileSync(filepath, formatted);
+    console.log(`Wrote ${file}.`);
   }
-  console.log(`${PAGE} is up to date.`);
-} else {
-  writeFileSync(path.join(ROOT, PAGE), formatted);
-  console.log(`Wrote ${PAGE}.`);
 }

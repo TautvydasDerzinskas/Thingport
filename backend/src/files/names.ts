@@ -38,15 +38,53 @@ const SYSTEM_FILES = new Set(["thumbs.db", "desktop.ini"]);
 /** What a name may not end in: the dots and spaces Windows drops, and any other whitespace. */
 const TRAILING = /[.\s]+$/;
 
-const bytes = (text: string) => Buffer.byteLength(text, "utf8");
-const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const utf8 = new TextEncoder();
+const bytes = (text: string) => utf8.encode(text).length;
+const graphemes =
+  typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : undefined;
+
+/** Without Intl.Segmenter (an older browser), the clusters a name holds, so its cut lands where the server's does: a
+ *  character with the marks, joiners and modifiers that attach to it, emoji joined by zero-width joiners, a flag's two
+ *  letters, Indic conjuncts, Hangul jamo NFC leaves apart (two leading consonants don't compose), and CR LF. Built
+ *  only here, so a browser without one of these properties falls back to code points rather than failing to load. */
+function fallbackClusters(text: string): Iterable<string> {
+  try {
+    // Thai and Lao AM are letters that Unicode attaches like spacing marks.
+    const extend = String.raw`[\p{Grapheme_Extend}\p{Emoji_Modifier}\p{Mc}\u200D\u0E33\u0EB3]`;
+    // A virama between two consonants of these six scripts joins them into one conjunct (Unicode's InCB).
+    const consonant = String.raw`[\u0915-\u0939\u0958-\u095F\u0978-\u097F\u0995-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09DC\u09DD\u09DF\u09F0\u09F1\u0A95-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0AF9\u0B15-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B5C\u0B5D\u0B5F\u0B71\u0C15-\u0C28\u0C2A-\u0C39\u0C58-\u0C5A\u0D15-\u0D3A]`;
+    const virama = String.raw`[\u094D\u09CD\u0ACD\u0B4D\u0C4D\u0D4D]`;
+    const joins = String.raw`[\p{Grapheme_Extend}\p{Emoji_Modifier}\u200D]`;
+    // Only non-virama joins before the first virama, so a long run of them is read one way, not tried at every split.
+    const conjunct = String.raw`${consonant}(?:(?:(?!${virama})${joins})*${virama}${joins}*${consonant})*`;
+    const pictograph = String.raw`\p{Extended_Pictographic}`;
+    // Pictographs joined by one zero-width joiner each, with marks or skin tones before it.
+    const emoji = String.raw`${pictograph}(?:[\p{Grapheme_Extend}\p{Emoji_Modifier}]*\u200D${pictograph})+`;
+    // Leading, vowel and trailing jamo, and the syllables with no trailing one (LV), every 28th from U+AC00.
+    const [lead, vowel, trail] = [
+      String.raw`[\u1100-\u115F\uA960-\uA97C]`,
+      String.raw`[\u1160-\u11A7\uD7B0-\uD7C6]`,
+      String.raw`[\u11A8-\u11FF\uD7CB-\uD7FB]`,
+    ];
+    const lv = `[${Array.from({ length: 399 }, (_, at) => String.fromCharCode(0xac00 + at * 28)).join("")}]`;
+    const hangul = String.raw`${lead}*(?:${vowel}+|${lv}${vowel}*|[\uAC00-\uD7A3])${trail}*|${lead}+|${trail}+`;
+    const cluster = new RegExp(
+      String.raw`\r\n|(?:${emoji}|\p{Regional_Indicator}{2}|${conjunct}|${hangul}|[^])${extend}*`,
+      "gu",
+    );
+    return text.match(cluster) ?? [];
+  } catch {
+    return text;
+  }
+}
 
 /** `text` cut to at most `maxBytes` UTF-8 bytes and `maxLength` UTF-16 units, between characters as people see
  *  them. */
 function cut(text: string, maxBytes: number, maxLength = Infinity): string {
   if (bytes(text) <= maxBytes && text.length <= maxLength) return text;
   let out = "";
-  for (const { segment } of graphemes.segment(text)) {
+  for (const part of graphemes?.segment(text) ?? fallbackClusters(text)) {
+    const segment = typeof part === "string" ? part : part.segment;
     if (bytes(out + segment) > maxBytes || out.length + segment.length > maxLength) break;
     out += segment;
   }
@@ -128,6 +166,13 @@ export function numberedFolderName(name: NormalName, n: number, maxLength = Infi
   const suffix = n > 1 ? ` (${n})` : "";
   const kept = cut(name, NAME_MAX_BYTES - bytes(suffix), maxLength - suffix.length);
   return `${kept.length < name.length ? kept.replace(TRAILING, "") : kept}${suffix}` as NormalName;
+}
+
+/** A rename keeps the original format, including compound extensions and files without one. */
+export function preservesFileExtension(original: string, renamed: string): boolean {
+  return (
+    splitName(normalizeFileName(original)).ext.toLowerCase() === splitName(normalizeFileName(renamed)).ext.toLowerCase()
+  );
 }
 
 /** What makes two names the same file in one folder of a model: case doesn't count, as on most desktops. */

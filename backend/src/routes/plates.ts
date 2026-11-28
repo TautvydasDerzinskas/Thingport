@@ -11,14 +11,19 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload, thumbnailUpload } from "../uploadMiddleware";
 import {
   addPlatesToPrint,
-  refreshAutoPreparedMetadata,
   removePlate,
   renamePlate,
+  renamePlates,
+  reorderPlates,
   resolvePlateFilePath,
   type NewPlateInput,
 } from "../services/printCreation";
-import { plateThumbPath, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
-import { addGeneratedPreviewImageIfNone, generateCardRender } from "../services/previewImageService";
+import { plateThumbPath } from "../services/printService";
+import {
+  addGeneratedPreviewImageIfNone,
+  generateCardRender,
+  saveGeneratedPlateThumbnail,
+} from "../services/previewImageService";
 import { printOutById } from "../services/printLoader";
 import { buildPlatePreview, getBuildPlateManifest } from "../services/buildPlatePreviewCache";
 import {
@@ -37,6 +42,39 @@ import { readZipEntry } from "../utils/zipReader";
 
 const router = Router();
 router.use(requireAuth);
+const CLIENT_UPLOAD_ID_PREFIX =
+  /^thingport-upload-([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})-/i;
+
+router.get(
+  "/print/:id/plates/upload-idempotency",
+  asyncHandler(async (req, res) => {
+    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    if (!print) throw new HttpError(404, "Print not found");
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ supported: true });
+  }),
+);
+
+const uploadResultsSchema = z.object({ upload_ids: z.array(z.string().min(1).max(36)) });
+router.post(
+  "/print/:id/plates/upload-results",
+  asyncHandler(async (req, res) => {
+    const { upload_ids } = parseBody(uploadResultsSchema, req.body);
+    const print = await prisma.print.findFirst({
+      where: { id: req.params.id, userId: req.userId },
+      select: { id: true },
+    });
+    if (!print) throw new HttpError(404, "Print not found");
+    const completed = await prisma.plateUploadAttempt.findMany({
+      where: { printId: print.id, status: "complete", clientUploadId: { in: upload_ids } },
+      select: { clientUploadId: true, plateId: true },
+    });
+    res.json({
+      print: await printOutById(req.userId!, print.id),
+      upload_results: completed.map((attempt) => ({ upload_id: attempt.clientUploadId, plate_id: attempt.plateId })),
+    });
+  }),
+);
 
 router.post(
   "/print/:id/plates",
@@ -50,10 +88,20 @@ router.post(
 
       const plateInputs: NewPlateInput[] = files.map((f) => {
         const safeName = normalizeFileName(f.originalname);
-        return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
+        // Read from the name as sent: the marker is the app's, and the name's cut can take its last character.
+        const uploadId = (CLIENT_UPLOAD_ID_PREFIX.exec(f.originalname) ?? CLIENT_UPLOAD_ID_PREFIX.exec(safeName))?.[1];
+        return {
+          filename: safeName,
+          clientUploadId: uploadId,
+          mime: mimeFromContentType(f.mimetype, safeName),
+          tempFilePath: f.path,
+        };
       });
-      await addPlatesToPrint(req.userId!, print.id, plateInputs);
-      res.json({ print: await printOutById(req.userId!, print.id) });
+      const addedPlates = await addPlatesToPrint(req.userId!, print.id, plateInputs);
+      res.json({
+        print: await printOutById(req.userId!, print.id),
+        added_plate_ids: addedPlates.map((plate) => plate.id),
+      });
     } finally {
       for (const f of files) {
         if (fs.existsSync(f.path)) fs.rmSync(f.path, { force: true });
@@ -79,28 +127,33 @@ router.post(
     const body = parseBody(reorderSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
-    const byId = new Map(plates.map((p) => [p.id, p]));
-    if (body.plate_ids.length !== plates.length || body.plate_ids.some((id) => !byId.has(id))) {
-      throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids");
-    }
-    const previousFirst = plates.toSorted((a, b) => a.position - b.position)[0]?.id;
-
-    await prisma.$transaction(
-      body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: -(idx + 1) } })),
-    );
-    await prisma.$transaction(
-      body.plate_ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: idx } })),
-    );
-
-    if (previousFirst !== body.plate_ids[0]) {
-      await refreshAutoPreparedMetadata(print.id);
-    }
+    await reorderPlates(print.id, body.plate_ids);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );
 
-const renameSchema = z.object({ filename: z.string().min(1) });
+const renameSchema = z.object({ filename: z.string().trim().min(1) });
+const renameBatchSchema = z.object({
+  renames: z
+    .array(renameSchema.extend({ plate_id: z.string().min(1) }))
+    .min(1)
+    .refine(
+      (renames) => new Set(renames.map((rename) => rename.plate_id)).size === renames.length,
+      "Duplicate plate IDs",
+    ),
+});
+router.post(
+  "/print/:id/plates/rename",
+  asyncHandler(async (req, res) => {
+    const { renames } = parseBody(renameBatchSchema, req.body);
+    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    // Coded, so the app can tell these 404s from an older server's catch-all for a route it doesn't have.
+    if (!print) throw new HttpError(404, "Print not found", "print_not_found");
+    await renamePlates(print, renames);
+    res.json({ print: await printOutById(req.userId!, print.id) });
+  }),
+);
+
 router.post(
   "/print/:id/plate/:plateId/rename",
   asyncHandler(async (req, res) => {
@@ -276,10 +329,9 @@ router.post(
     });
     if (!plate) throw new HttpError(404, "Not found");
     // A render that finishes after an import set the cover as the thumb mustn't replace it.
-    if (await plateThumbReplaceable(plate.id)) {
-      const ok = await saveThumbFromBytes(plate.id, file.buffer);
-      if (!ok) throw new HttpError(400, "Invalid thumbnail image");
-      await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: true } });
+    const result = await saveGeneratedPlateThumbnail(plate.printId, plate.id, file.buffer);
+    if (result === "invalid") throw new HttpError(400, "Invalid thumbnail image");
+    if (result === "saved") {
       // Only when no better preview (e.g. an imported cover) exists.
       await addGeneratedPreviewImageIfNone(plate.printId, file.buffer);
     }

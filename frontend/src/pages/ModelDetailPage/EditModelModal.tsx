@@ -34,7 +34,19 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { type LicenseFamily, type LicenseOption, type Print, printsApi } from "../../api/prints";
+import {
+  PlateUploadCapabilityError,
+  PlateUploadOutcomeUnknownError,
+  PlateRenameResponseError,
+  PlateRenameTargetGoneError,
+  PlateReorderResponseError,
+  PlateSetChangedError,
+  UploadReceiptLookupError,
+  type LicenseFamily,
+  type LicenseOption,
+  type Print,
+  printsApi,
+} from "../../api/prints";
 import { printProviderInfo } from "../../constants/importProviders";
 import LicenseMarks from "../../components/license/LicenseMarks";
 import { categoriesApi, type Category } from "../../api/categories";
@@ -51,13 +63,26 @@ import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
 import GeneratePicturesDialog from "../../components/media/GeneratePicturesDialog";
 import { canPicture } from "../../utils/scenePictures/scenes";
-
-type ImageItem =
-  { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
-
-type PlateItem =
-  | { kind: "existing"; id: string; filename: string; folder: string | null }
-  | { kind: "new"; localId: string; file: File };
+import {
+  plateFilenameError,
+  PlateRenameNumberedError,
+  PlateRenameSwapUnsupportedError,
+  PlateUploadGoneError,
+  PlateUploadRetryUnsafeError,
+  PlateUploadConfirmationError,
+  savePlateChanges,
+  type PlateItem,
+} from "./plateSave";
+import {
+  canArrangePreviewImage,
+  isPendingPreviewImage,
+  movePreviewImage,
+  previewImageNeighbourIndex,
+  PreviewUploadError,
+  savePreviewRemovals,
+  savePreviewUploads,
+  type ImageItem,
+} from "./previewImageSave";
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -123,9 +148,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       kind: "existing",
       id: p.id,
       filename: p.filename,
+      filenameEdited: false,
       folder: p.folder ?? null,
     })),
   );
+  const [removedPlateIds, setRemovedPlateIds] = useState<Set<string>>(new Set());
+  const latestPrint = useRef(print);
   const [categories, setCategories] = useState<Category[] | null>(null);
   // "source": what its source lists; "": none, for a model with no source; otherwise a licence id the owner picks.
   const initialLicense =
@@ -135,10 +163,15 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasUnconfirmedImages = images.some((image) => image.kind === "unconfirmed");
 
   const createdUrlsRef = useRef<string[]>([]);
   const addImageInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    latestPrint.current = print;
+  }, [print]);
 
   useEffect(() => {
     categoriesApi
@@ -153,7 +186,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
 
   // A new picture's preview is let go once its thumbnail is gone, and every one when the dialog closes.
   useEffect(() => {
-    const shown = new Set(images.flatMap((img) => (img.kind === "new" ? [img.previewUrl] : [])));
+    // Pictures not saved yet, or whose save is unconfirmed, are still shown by their local preview.
+    const shown = new Set(images.flatMap((img) => (img.kind === "existing" ? [] : [img.previewUrl])));
     for (const url of createdUrlsRef.current) if (!shown.has(url)) URL.revokeObjectURL(url);
     createdUrlsRef.current = createdUrlsRef.current.filter((url) => shown.has(url));
   }, [images]);
@@ -204,7 +238,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
   const removeImage = (key: string) => {
     const target = images.find((img) => imageKey(img) === key);
-    if (target?.kind === "existing") {
+    if (!target || target.kind === "unconfirmed" || isPendingPreviewImage(target)) return;
+    if (target.kind === "existing") {
       setRemovedImageIds((ids) => new Set(ids).add(target.id));
     }
     setImages((prev) => prev.filter((img) => imageKey(img) !== key));
@@ -214,13 +249,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const makeThumbnail = (key: string) => {
     setImages((prev) => {
       const target = prev.find((img) => imageKey(img) === key);
-      return target ? [target, ...prev.filter((img) => img !== target)] : prev;
+      return target && canArrangePreviewImage(target) ? [target, ...prev.filter((img) => img !== target)] : prev;
     });
     markDirty();
   };
   const moveImageBy = (key: string, dir: -1 | 1) => {
     setImages((prev) =>
-      moveItem(
+      movePreviewImage(
         prev,
         prev.findIndex((img) => imageKey(img) === key),
         dir,
@@ -235,12 +270,41 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       kind: "new",
       localId: newLocalId(),
       file,
+      filename: file.name,
     }));
     setPlateItems((prev) => [...prev, ...newItems]);
     markDirty();
   };
+  const filenameIssue = (item: PlateItem) => {
+    const original =
+      item.kind === "new"
+        ? item.file.name
+        : (print.plates.find((plate) => plate.id === item.id)?.filename ?? item.filename);
+    return plateFilenameError(item.filename, original);
+  };
+  const filenameMessage = (issue: ReturnType<typeof plateFilenameError>) =>
+    issue && t(issue === "required" ? "models:edit.fileNameRequired" : "models:edit.fileExtensionRequired");
+  // From the rows as they are, so removing a bad row clears it, apart from a failed save's own error.
+  const firstFilenameIssue = plateItems.map(filenameIssue).find(Boolean);
+  const filenameFeedback = filenameMessage(firstFilenameIssue);
+
+  const renamePlateItem = (key: string, filename: string) => {
+    setPlateItems((prev) =>
+      prev.map((item) => {
+        if (plateKey(item) !== key) return item;
+        return item.kind === "existing" ? { ...item, filename, filenameEdited: true } : { ...item, filename };
+      }),
+    );
+    markDirty();
+  };
   const removePlateItem = (key: string) => {
-    setPlateItems((prev) => (prev.length <= 1 ? prev : prev.filter((p) => plateKey(p) !== key)));
+    if (plateItems.length <= 1) return;
+    const target = plateItems.find((item) => plateKey(item) === key);
+    if (target?.kind === "new" && target.uploadAttempted) return;
+    if (target?.kind === "existing") {
+      setRemovedPlateIds((prev) => new Set(prev).add(target.id));
+    }
+    setPlateItems((prev) => prev.filter((p) => plateKey(p) !== key));
     markDirty();
   };
   const movePlateItemBy = (key: string, dir: -1 | 1) => {
@@ -268,9 +332,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
+    if (firstFilenameIssue) return;
     setSaving(true);
     setError(null);
-    let latest: Print = print;
+    let latest: Print = latestPrint.current;
     try {
       const metaRes = await printsApi.updateMeta(print.id, {
         title,
@@ -290,27 +355,33 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         latest = authorRes.print ?? latest;
       }
 
-      for (const id of removedImageIds) {
-        const res = await printsApi.deletePreviewImage(print.id, id);
-        latest = res.print ?? latest;
+      latest = await savePreviewRemovals(latest, removedImageIds, printsApi, (updated, remaining) => {
+        latest = updated;
+        latestPrint.current = updated;
+        setRemovedImageIds(remaining);
+      });
+      let stagedImages = images;
+      // A picture saved, then removed by someone else before this editor saw it: its notice stays to be read.
+      let previewGoneMeanwhile = false;
+      // Pictures an older server saved that can't be matched to these: the gallery order is left as it is.
+      let previewsUnconfirmed = false;
+      if (images.some((image) => image.kind === "new")) {
+        const result = await savePreviewUploads(latest, images, printsApi, (progress) => {
+          latest = progress.print;
+          latestPrint.current = progress.print;
+          setImages(progress.items);
+        });
+        latest = result.print;
+        stagedImages = result.items;
       }
-      const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
-      let newImageIdsInOrder: string[] = [];
-      if (newImageFiles.length) {
-        const beforeIds = new Set(latest.preview_images.map((img) => img.id));
-        const uploadRes = await printsApi.addPreviewImages(print.id, newImageFiles);
-        latest = uploadRes.print;
-        newImageIdsInOrder = latest.preview_images
-          .filter((img) => !beforeIds.has(img.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((img) => img.id);
-      }
-      if (images.length) {
-        let nextNew = 0;
+      // By the rows as they stand, so dismissing one is what clears its notice, not saving again.
+      previewsUnconfirmed = stagedImages.some((image) => image.kind === "unconfirmed");
+      previewGoneMeanwhile = stagedImages.some((image) => image.kind === "missing");
+      if (stagedImages.length && !previewsUnconfirmed) {
         // Our own render gives way to the first picture uploaded, so it may be gone by now.
         const present = new Set(latest.preview_images.map((img) => img.id));
-        const known = images
-          .map((img) => (img.kind === "existing" ? img.id : newImageIdsInOrder[nextNew++]))
+        const known = stagedImages
+          .flatMap((img) => (img.kind === "existing" ? [img.id] : []))
           .filter((id) => present.has(id));
         // Reorder needs an exhaustive id list; images this modal never saw go after, in their order.
         const knownIds = new Set(known);
@@ -325,50 +396,83 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         }
       }
 
-      // Upload before delete so a model's only file can be swapped in one save.
-      const newPlateFiles = plateItems.filter((p) => p.kind === "new").map((p) => p.file);
-      let newPlateIdsInOrder: string[] = [];
-      if (newPlateFiles.length) {
-        const beforeIds = new Set(latest.plates.map((p) => p.id));
-        const uploadRes = await printsApi.addPlates(print.id, newPlateFiles);
-        latest = uploadRes.print;
-        newPlateIdsInOrder = latest.plates
-          .filter((p) => !beforeIds.has(p.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((p) => p.id);
-      }
-      const keptPlateIds = new Set(plateItems.filter((p) => p.kind === "existing").map((p) => p.id));
-      for (const original of print.plates) {
-        if (keptPlateIds.has(original.id)) continue;
-        const res = await printsApi.deletePlate(print.id, original.id);
-        latest = res.print ?? latest;
-      }
-      // The replaced file got its " (2)" suffix from the old one; rename back now it's gone.
-      for (const [index, plateId] of newPlateIdsInOrder.entries()) {
-        const wanted = newPlateFiles[index].name;
-        const current = latest.plates.find((p) => p.id === plateId);
-        if (!current || current.filename === wanted) continue;
-        const res = await printsApi.renamePlate(print.id, plateId, wanted);
-        latest = res.print ?? latest;
-      }
-      {
-        let nextNew = 0;
-        const finalOrder = plateItems.map((p) => (p.kind === "existing" ? p.id : newPlateIdsInOrder[nextNew++]));
-        const reorderRes = await printsApi.reorderPlates(print.id, finalOrder);
-        latest = reorderRes.print ?? latest;
-      }
+      latestPrint.current = latest;
+      latest = await savePlateChanges(latest, plateItems, removedPlateIds, printsApi, (progress) => {
+        latest = progress.print;
+        latestPrint.current = progress.print;
+        setPlateItems(progress.items);
+        setRemovedPlateIds(progress.removedPlateIds);
+      });
+      latestPrint.current = latest;
 
       onUpdated(latest);
+      // The rest is saved; the editor stays open on the pictures' notice.
+      if (previewGoneMeanwhile || previewsUnconfirmed) return;
       showToast({ message: t("models:edit.updateSuccess") });
       onClose();
     } catch (err) {
+      latestPrint.current = latest;
       onUpdated(latest);
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
         return;
       }
+      if (err instanceof PlateRenameSwapUnsupportedError) {
+        setError(t("models:edit.fileSwapUnsupported"));
+        return;
+      }
+      if (err instanceof PlateRenameNumberedError) {
+        setError(
+          err.renames.length === 1
+            ? t("models:edit.renameNumbered", { requested: err.requested, saved: err.saved })
+            : t("models:edit.renameNumberedMany", { saved: err.renames.map((rename) => rename.saved).join(", ") }),
+        );
+        return;
+      }
+      if (err instanceof PlateUploadGoneError) {
+        setError(t("models:edit.uploadGone", { names: err.filenames.join(", ") }));
+        return;
+      }
+      if (err instanceof PlateUploadRetryUnsafeError) {
+        setError(t("models:edit.uploadRetryUnsafe"));
+        return;
+      }
+      if (err instanceof PreviewUploadError) {
+        setError(t(err.reason === "skipped" ? "models:edit.previewUploadSkipped" : "models:edit.previewUploadPending"));
+        return;
+      }
       console.error(err);
-      setError(err instanceof Error ? err.message : t("models:edit.updateFailed"));
+      if (err instanceof PlateRenameResponseError) {
+        setError(t("models:edit.renameUnconfirmed"));
+        return;
+      }
+      if (err instanceof PlateRenameTargetGoneError) {
+        setError(t("models:edit.renameTargetGone"));
+        return;
+      }
+      if (err instanceof PlateSetChangedError) {
+        setError(t("models:edit.plateSetChanged"));
+        return;
+      }
+      if (err instanceof PlateReorderResponseError) {
+        setError(t("models:edit.updateFailed"));
+        return;
+      }
+      if (err instanceof UploadReceiptLookupError) {
+        setError(t("models:edit.uploadReceiptLookupFailed"));
+        return;
+      }
+      if (err instanceof PlateUploadCapabilityError) {
+        setError(t("models:edit.uploadCapabilityCheckFailed"));
+        return;
+      }
+      setError(
+        err instanceof PlateUploadConfirmationError || err instanceof PlateUploadOutcomeUnknownError
+          ? t("models:edit.uploadConfirmationFailed")
+          : err instanceof Error
+            ? err.message
+            : t("models:edit.updateFailed"),
+      );
     } finally {
       setSaving(false);
     }
@@ -379,6 +483,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       <DialogTitle>{t("models:edit.title")}</DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 0.5 }}>
+          {images.some((image) => image.kind === "missing") && (
+            <Alert severity="info">{t("models:edit.previewUploadMissing")}</Alert>
+          )}
+          {hasUnconfirmedImages && <Alert severity="warning">{t("models:edit.previewUploadUnconfirmed")}</Alert>}
+          {filenameFeedback && <Alert severity="error">{filenameFeedback}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
 
           <TextField
@@ -523,7 +632,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {images.map((img, idx) => {
                 const key = imageKey(img);
                 const src = img.kind === "existing" ? printsApi.fileUrl(img.url) : img.previewUrl;
-                const isThumbnail = idx === 0;
+                const isThumbnail = canArrangePreviewImage(img) && images.findIndex(canArrangePreviewImage) === idx;
+                // Update can't save the gallery's order past a row it couldn't match, so the order stays as it is.
+                const canArrange = !hasUnconfirmedImages && canArrangePreviewImage(img);
+                const canMoveLeft = !hasUnconfirmedImages && previewImageNeighbourIndex(images, idx, -1) >= 0;
+                const canMoveRight = !hasUnconfirmedImages && previewImageNeighbourIndex(images, idx, 1) >= 0;
+                const removeLabel = t("models:edit.removeImage");
+                const moveLeftLabel = t("models:edit.moveImageLeft");
+                const moveRightLabel = t("models:edit.moveImageRight");
                 return (
                   <Box
                     key={key}
@@ -584,7 +700,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                           <span>
                             <IconButton
                               size="small"
-                              disabled={saving}
+                              disabled={saving || !canArrange}
                               aria-label={t("models:edit.useAsThumbnail")}
                               onClick={() => makeThumbnail(key)}
                               sx={overImageButtonSx}
@@ -595,36 +711,48 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                         </Tooltip>
                       </Box>
                     )}
-                    <IconButton
-                      size="small"
-                      disabled={saving}
-                      aria-label={t("models:edit.removeImage")}
-                      onClick={() => removeImage(key)}
-                      sx={{ ...overImageButtonSx, position: "absolute", top: 2, right: 2 }}
-                    >
-                      <CloseIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                    <Stack direction="row" sx={{ position: "absolute", bottom: isThumbnail ? 22 : 2, right: 2 }}>
-                      {!isThumbnail && (
+                    <Tooltip title={removeLabel}>
+                      <Box component="span" sx={{ position: "absolute", top: 2, right: 2, display: "inline-flex" }}>
                         <IconButton
                           size="small"
-                          disabled={saving}
-                          aria-label={t("models:edit.moveImageLeft")}
-                          onClick={() => moveImageBy(key, -1)}
+                          disabled={saving || img.kind === "unconfirmed" || isPendingPreviewImage(img)}
+                          aria-label={removeLabel}
+                          onClick={() => removeImage(key)}
                           sx={overImageButtonSx}
                         >
-                          <ChevronLeftIcon sx={{ fontSize: 14 }} />
+                          <CloseIcon sx={{ fontSize: 14 }} />
                         </IconButton>
+                      </Box>
+                    </Tooltip>
+                    <Stack direction="row" sx={{ position: "absolute", bottom: isThumbnail ? 22 : 2, right: 2 }}>
+                      {!isThumbnail && (
+                        <Tooltip title={moveLeftLabel}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={saving || !canMoveLeft}
+                              aria-label={moveLeftLabel}
+                              onClick={() => moveImageBy(key, -1)}
+                              sx={overImageButtonSx}
+                            >
+                              <ChevronLeftIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                       )}
-                      <IconButton
-                        size="small"
-                        disabled={saving || idx === images.length - 1}
-                        aria-label={t("models:edit.moveImageRight")}
-                        onClick={() => moveImageBy(key, 1)}
-                        sx={overImageButtonSx}
-                      >
-                        <ChevronRightIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
+                      <Tooltip title={moveRightLabel}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={saving || !canMoveRight}
+                            aria-label={moveRightLabel}
+                            onClick={() => moveImageBy(key, 1)}
+                            sx={overImageButtonSx}
+                          >
+                            <ChevronRightIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     </Stack>
                   </Box>
                 );
@@ -731,8 +859,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             <Stack spacing={1}>
               {plateItems.map((p, idx) => {
                 const key = plateKey(p);
-                const filename = p.kind === "existing" ? p.filename : p.file.name;
                 const folder = p.kind === "existing" ? p.folder : null;
+                const uploadPending = p.kind === "new" && p.uploadAttempted === true;
                 return (
                   <Stack
                     key={key}
@@ -743,9 +871,16 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                   >
                     <InsertDriveFileIcon fontSize="small" color="action" />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" noWrap title={filename}>
-                        {filename}
-                      </Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        label={t("models:edit.fileName")}
+                        value={p.filename}
+                        error={Boolean(filenameIssue(p))}
+                        helperText={filenameMessage(filenameIssue(p))}
+                        disabled={saving}
+                        onChange={(event) => renamePlateItem(key, event.target.value)}
+                      />
                       {/* Its order is the model's, across folders, so the folder is said on each file. */}
                       {folder && (
                         <Typography
@@ -774,13 +909,18 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     >
                       <ArrowDownwardIcon fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      disabled={saving || plateItems.length <= 1}
-                      onClick={() => removePlateItem(key)}
-                    >
-                      <DeleteIcon fontSize="small" color="error" />
-                    </IconButton>
+                    <Tooltip title={uploadPending ? t("models:edit.uploadPending") : t("models:edit.removeFile")}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={saving || plateItems.length <= 1 || uploadPending}
+                          aria-label={t("models:edit.removeFile")}
+                          onClick={() => removePlateItem(key)}
+                        >
+                          <DeleteIcon fontSize="small" color="error" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Stack>
                 );
               })}
@@ -814,7 +954,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving}
+          disabled={saving || Boolean(firstFilenameIssue)}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

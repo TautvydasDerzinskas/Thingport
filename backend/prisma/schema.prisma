@@ -269,7 +269,9 @@ model Print {
   // storage. Null for a model from before, whose pictures are still in the shared folders keyed by id.
   assetsPath               String?                  @unique
   plates                   Plate[]
+  plateUploadAttempts      PlateUploadAttempt[]
   previewImages            PreviewImage[]
+  previewImageUploads      PreviewImageUpload[]
   descriptionImages        DescriptionImage[]
   files                    PrintFile[]              @relation("PrintFiles")
   preparedFileId           String?                  @unique
@@ -696,6 +698,34 @@ model Plate {
   @@index([printId])
   // Finds a stored copy of a new plate's file to share (services/printCreation.ts).
   @@index([contentSha256])
+}
+
+model PlateUploadAttempt {
+  id             String    @id @default(cuid())
+  printId        String
+  print          Print     @relation(fields: [printId], references: [id], onDelete: Cascade)
+  clientUploadId String
+  status         String    @default("pending")
+  plateId        String?
+  /// SHA-256 of the bytes this upload ID was first sent with: a replay is the same upload only with the same bytes.
+  contentSha256  String
+  claimToken     String?
+  leaseExpiresAt DateTime?
+
+  @@unique([printId, clientUploadId])
+}
+
+/// The outcome of one submitted gallery file. Retained after an image is removed so a replay cannot recreate it.
+model PreviewImageUpload {
+  printId       String
+  print         Print   @relation(fields: [printId], references: [id], onDelete: Cascade)
+  uploadId      String
+  imageId       String?
+  /// SHA-256 of the bytes this upload ID was first sent with: a replay is the same picture only with the same bytes.
+  contentSha256 String
+  coverPending  Boolean @default(false)
+
+  @@id([printId, uploadId])
 }
 
 /// A photo of the finished model, stored as a normalized JPEG keyed by id. Position 0 is the

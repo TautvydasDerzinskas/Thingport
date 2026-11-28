@@ -81,6 +81,13 @@ async function pathTaken(relative: string, owner: PathOwner = {}): Promise<boole
   if (file) return file.id !== owner.printFileId;
   const assets = await prisma.print.findUnique({ where: { assetsPath: relative }, select: { id: true } });
   if (assets) return assets.id !== owner.assetsOf;
+  // Where another record's unsettled move went: its file may come back there, or be there unseen.
+  const abs = path.resolve(STORAGE, relative);
+  for (const [key, move] of unsettledMoves) {
+    if (path.resolve(move.to) === abs && key !== `plate:${owner.plateId}` && key !== `file:${owner.printFileId}`) {
+      return true;
+    }
+  }
   // Anything there is in the way, a folder too. A look that fails throws: nothing is saved over a file it couldn't see.
   return (await fileState(path.join(STORAGE, relative), "path.taken")).state !== "missing";
 }
@@ -213,8 +220,9 @@ export async function availablePlateFilename(
   desiredFilename: string,
   excludePlateId?: string,
   folder?: string | null,
+  db: Prisma.TransactionClient = prisma,
 ): Promise<string> {
-  const siblings = await prisma.plate.findMany({
+  const siblings = await db.plate.findMany({
     where: { printId, folder: folder ?? null, ...(excludePlateId ? { id: { not: excludePlateId } } : {}) },
     select: { filename: true },
   });
@@ -257,15 +265,69 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   }
 }
 
+type Committed = () => Promise<boolean | undefined>;
+
+/** Moves whose save failed with its outcome unread, by the record moved (`key`): the file is at `to`, and the record
+ *  names `from` or `to`. `placed` is the file the move put there, by size and modified time (a rename keeps both),
+ *  when a look could tell. In-process, as every move is. */
+const unsettledMoves = new Map<
+  string,
+  { from: string; to: string; committed: Committed; placed?: { size: number; mtimeNs: string } }
+>();
+
+/** Settles the record's earlier move whose outcome went unread, before a place is picked for its next one, so the
+ *  place that move went is free again unless the record names it. Every move settles under the lock as it lists too
+ *  (moveStored): one whose unread outcome was recorded after this look is settled there. */
+export async function settleMove(key: string): Promise<void> {
+  if (unsettledMoves.has(key)) await withStorageLock(() => settleMoveLocked(key));
+}
+
+/** Under the storage lock: the file the move put there goes back if the record still names the old place. A look or a
+ *  record that can't be read throws, and so does an old place something else holds now, with the move left to
+ *  settle. */
+async function settleMoveLocked(key: string): Promise<void> {
+  const unsettled = unsettledMoves.get(key);
+  if (!unsettled) return;
+  const outcome = await unsettled.committed();
+  if (outcome === true) {
+    await pruneEmptyStorageDirs(path.dirname(unsettled.from));
+  } else if (outcome === undefined) {
+    console.warn(`${key} names neither place its unsettled move had: ${unsettled.to} is left where it is`);
+  } else {
+    // Only the file the move put there goes back: one that's gone leaves nothing to bring back, and another file
+    // holding that place now stays.
+    const there = await fileState(unsettled.to, "move.settle");
+    const { placed } = unsettled;
+    const another =
+      there.state === "file" && placed && (there.size !== placed.size || there.mtimeNs !== placed.mtimeNs);
+    if (another) console.warn(`${key}'s unsettled move left nothing to bring back: ${unsettled.to} holds another file`);
+    else if (there.state === "file") {
+      if ((await fileState(unsettled.from, "move.settle")).state !== "missing") {
+        throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, unsettled.from)}`);
+      }
+      await fs.mkdir(path.dirname(unsettled.from), { recursive: true });
+      await fs.rename(unsettled.to, unsettled.from);
+      await pruneEmptyStorageDirs(path.dirname(unsettled.to));
+    }
+  }
+  unsettledMoves.delete(key);
+}
+
 /** Moves one file of a model; `save` records the new place, and the file goes back if that fails. `stored` is where its
- *  record finds it now, read under the lock. */
+ *  record finds it now, read under the lock. `key` names the record, for settleMove. */
 async function moveStored(
+  key: string,
   stored: () => Promise<string>,
   newPath: string,
   save: () => Promise<unknown>,
 ): Promise<boolean> {
+  let listedFrom: string | undefined;
   const listMove = async (): Promise<[string, string][]> => {
+    // A move of this record whose outcome went unread while this one waited for the lock: else its record would be
+    // saved here with the file still where that move left it.
+    await settleMoveLocked(key);
     const oldPath = await stored();
+    listedFrom = oldPath;
     // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
     // that file. Asked again, this one sees the place is taken and goes elsewhere. Free is nothing there; a look that
     // fails throws before anything is renamed.
@@ -274,7 +336,18 @@ async function moveStored(
     }
     return [[oldPath, newPath]];
   };
-  return (await moveAllStored(listMove, save)) > 0;
+  // After a failed save, where the record says the file is: the new place, the old one, or neither it can tell.
+  const committed = async () => {
+    const now = path.resolve(await stored());
+    if (now === path.resolve(newPath)) return true;
+    return listedFrom !== undefined && now === path.resolve(listedFrom) ? false : undefined;
+  };
+  const unread = async (from: string, to: string) => {
+    const there = await fileState(to, "move.settle").catch(() => undefined);
+    const placed = there?.state === "file" ? { size: there.size, mtimeNs: there.mtimeNs } : undefined;
+    unsettledMoves.set(key, { from, to, committed, placed });
+  };
+  return (await moveAllStored(listMove, save, committed, unread)) > 0;
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
@@ -283,6 +356,8 @@ async function moveStored(
 async function moveAllStored(
   listMoves: () => Promise<[string, string][]>,
   save: () => Promise<unknown>,
+  committed?: Committed,
+  unread?: (from: string, to: string) => Promise<void>,
 ): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
@@ -301,6 +376,17 @@ async function moveAllStored(
       }
       await save();
     } catch (err) {
+      // A save that failed may still have committed. Then the files stay where the record now says; and when the
+      // record can't be read, they stay too, until settleMove reads it.
+      const outcome = done.length && committed ? await committed().catch(() => undefined) : false;
+      if (outcome === true) {
+        for (const [oldPath] of present) await pruneEmptyStorageDirs(path.dirname(oldPath));
+        return present.length;
+      }
+      if (outcome === undefined) {
+        for (const [oldPath, newPath] of done) await unread?.(oldPath, newPath);
+        throw err;
+      }
       // Put them back, so the stored path still finds them.
       for (const [oldPath, newPath] of done.toReversed()) {
         await fs.mkdir(path.dirname(oldPath), { recursive: true });
@@ -326,10 +412,12 @@ async function relocatePrintFiles(
   const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
   let moved = 0;
   for (const file of files) {
+    await settleMove(`file:${file.id}`);
     const rendered = renderFilePath(print, template, printValues, file.filename, null, file.folder);
     const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
     if (samePath(file.storagePath, newRelative)) continue;
     const didMove = await moveStored(
+      `file:${file.id}`,
       async () => {
         const { storagePath } = (await prisma.printFile.findUnique({ where: { id: file.id } })) ?? file;
         return path.join(STORAGE, storagePath);
@@ -410,6 +498,95 @@ async function relocateAssets(
   return moved;
 }
 
+/** Moves these plates' files to where their names and the template now put them. */
+/** A plate a rename moved aside to wait for its target, in a folder of its own: `<folder>/<model id>/<plate id>/`. The
+ *  fallback a taken name gets, `<folder>/<model id>/<name>`, isn't one. */
+export function isWaitingAside(plate: Pick<Plate, "id" | "storagePath">, printId: string): boolean {
+  const parts = plate.storagePath.split(/[\\/]/);
+  return parts.length >= 3 && parts[parts.length - 2] === plate.id && parts[parts.length - 3] === printId;
+}
+
+async function relocatePlates(
+  print: PrintLike & { assetsPath?: string | null },
+  plates: Plate[],
+  safeTemplate: string,
+  printValues: Awaited<ReturnType<typeof printTemplateValues>>,
+  leaving?: ReadonlySet<string>,
+): Promise<number> {
+  let moved = 0;
+  for (const plate of plates) {
+    // A tool's plate reads the tool's file, which isn't the model's to move.
+    if (plate.sourcePath) continue;
+    await settleMove(`plate:${plate.id}`);
+    const oldPath = managedPlatePath(plate);
+    const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
+    // Where it already is counts as free, so a plate moved aside by freePlatePath stays put. A target another plate of
+    // the same rename is about to leave is waited for at a path of this plate's own, not the fallback, which an
+    // unrelated file may hold.
+    const newRelative =
+      path.resolve(oldPath) === path.resolve(STORAGE, rendered)
+        ? rendered
+        : leaving?.has(path.resolve(STORAGE, rendered))
+          ? path.join(path.dirname(rendered), print.id, plate.id, path.basename(rendered))
+          : // One waiting aside keeps waiting there while its target is still taken.
+            isWaitingAside(plate, print.id) && (await pathTaken(rendered, { plateId: plate.id }))
+            ? plate.storagePath
+            : await freePlatePath(rendered, print.id, { plateId: plate.id });
+    const newPath = path.join(STORAGE, newRelative);
+    if (path.resolve(oldPath) === path.resolve(newPath)) {
+      if (plate.storagePath !== newRelative) {
+        await prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } });
+      }
+      continue;
+    }
+    const didMove = await moveStored(
+      `plate:${plate.id}`,
+      async () => managedPlatePath((await prisma.plate.findUnique({ where: { id: plate.id } })) ?? plate),
+      newPath,
+      () => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
+    );
+    if (didMove) moved += 1;
+  }
+  return moved;
+}
+
+/** Moves only these plates' files, as a rename does: their names are all it changed, so nothing else of the model
+ *  moves, and nothing else has to be looked at before the names are recorded. */
+export async function relocateRenamedPlates(
+  print: PrintLike & { assetsPath?: string | null },
+  plates: Plate[],
+): Promise<number> {
+  const safeTemplate = validateStorageTemplate(await getStorageTemplate());
+  const printValues = await printTemplateValues(print, safeTemplate);
+  const target = (plate: Plate) =>
+    path.resolve(
+      STORAGE,
+      renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder),
+    );
+  // The paths these plates are about to leave: in a swap, a plate waits aside for its partner's.
+  const leaving = new Set(
+    plates
+      .filter((plate) => !plate.sourcePath && path.resolve(managedPlatePath(plate)) !== target(plate))
+      .map((plate) => path.resolve(managedPlatePath(plate))),
+  );
+  let moved = await relocatePlates(print, plates, safeTemplate, printValues, leaving);
+  // Once they've all moved, a second pass puts each plate that waited where its name says. A target an unrelated file
+  // holds keeps the move aside, at the fallback.
+  const ids = plates.map((plate) => plate.id);
+  const settled = await prisma.plate.findMany({ where: { id: { in: ids } } });
+  moved += await relocatePlates(print, settled, safeTemplate, printValues);
+  // A swap a failed request left halfway has a plate still waiting aside, whose way this rename of its partner may have
+  // freed. The rename looked at its file before recording any name, and a move of it that fails fails the rename.
+  const others = await prisma.plate.findMany({ where: { printId: print.id, id: { notIn: ids } } });
+  moved += await relocatePlates(
+    print,
+    others.filter((other) => isWaitingAside(other, print.id)),
+    safeTemplate,
+    printValues,
+  );
+  return moved;
+}
+
 /**
  * Moves everything of a print -- plates, supporting and prepared files, pictures -- after a change to anything its
  * storage path is built from. Returns how many files moved.
@@ -421,31 +598,7 @@ export async function relocatePrint(
 ): Promise<number> {
   const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
   const printValues = await printTemplateValues(print, safeTemplate);
-  let moved = 0;
-  for (const plate of plates) {
-    // A tool's plate reads the tool's file, which isn't the model's to move.
-    if (plate.sourcePath) continue;
-    const oldPath = managedPlatePath(plate);
-    const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
-    // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
-    const newRelative =
-      path.resolve(oldPath) === path.resolve(STORAGE, rendered)
-        ? rendered
-        : await freePlatePath(rendered, print.id, { plateId: plate.id });
-    const newPath = path.join(STORAGE, newRelative);
-    if (path.resolve(oldPath) === path.resolve(newPath)) {
-      if (plate.storagePath !== newRelative) {
-        await prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } });
-      }
-      continue;
-    }
-    const didMove = await moveStored(
-      async () => managedPlatePath((await prisma.plate.findUnique({ where: { id: plate.id } })) ?? plate),
-      newPath,
-      () => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
-    );
-    if (didMove) moved += 1;
-  }
+  let moved = await relocatePlates(print, plates, safeTemplate, printValues);
   moved += await relocatePrintFiles(print, safeTemplate, printValues);
   // A caller that only had some of the plates still moves every plate's pictures.
   const [current, allPlates] = await Promise.all([
@@ -591,23 +744,46 @@ export async function setStorageTemplate(value: string): Promise<void> {
 
 // -- Thumbnails -------------------------------------------------------------
 
-async function saveThumbBuffer(plateId: string, input: Buffer, keepExif = false): Promise<boolean> {
+type ThumbTarget = { home: string; db: Prisma.TransactionClient; placed?: (dest: string) => void };
+
+/** The plate's model's pictures folder as the transaction sees it now, else the one the caller read. */
+async function currentThumbHome(target: ThumbTarget, plateId: string): Promise<string> {
+  const plate = await target.db.plate.findUnique({
+    where: { id: plateId },
+    select: { print: { select: { assetsPath: true } } },
+  });
+  return plate?.print.assetsPath ?? target.home;
+}
+
+async function saveThumbBuffer(
+  plateId: string,
+  input: Buffer,
+  keepExif = false,
+  target?: ThumbTarget,
+): Promise<boolean> {
   let tmp: string | null = null;
+  let placed = false;
   try {
     const file = plateThumbFile(plateId);
-    const home = await ensurePlateAssetHome(plateId);
+    // Read again just before the write, so a folder move since the caller looked takes the thumbnail along.
+    const home = target ? await currentThumbHome(target, plateId) : await ensurePlateAssetHome(plateId);
     const dest = assetTarget(home, file);
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });
     await writePhotoJpeg(input, tmp, 512, 88, keepExif);
     await fs.rename(tmp, dest);
+    placed = true;
+    target?.placed?.(dest);
     // The one in the old shared folder is out of date now.
     await removeAsset(null, file);
     // Any thumb but our own render; the generated-thumbnail route marks those after saving.
-    await prisma.plate.updateMany({ where: { id: plateId, thumbGenerated: true }, data: { thumbGenerated: false } });
+    const db = target?.db ?? prisma;
+    await db.plate.updateMany({ where: { id: plateId, thumbGenerated: true }, data: { thumbGenerated: false } });
     return true;
-  } catch {
+  } catch (error) {
     if (tmp) await fs.rm(tmp, { force: true });
+    // A caller in a transaction hears of a failure after the file is in place, so its rollback can take the file back.
+    if (placed && target) throw error;
     return false;
   }
 }
@@ -621,8 +797,13 @@ export async function saveThumbFromFile(plateId: string, srcPath: string): Promi
   }
 }
 
-export async function saveThumbFromBytes(plateId: string, data: Buffer, keepExif = false): Promise<boolean> {
-  return saveThumbBuffer(plateId, data, keepExif);
+export async function saveThumbFromBytes(
+  plateId: string,
+  data: Buffer,
+  keepExif = false,
+  target?: ThumbTarget,
+): Promise<boolean> {
+  return saveThumbBuffer(plateId, data, keepExif, target);
 }
 
 const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {

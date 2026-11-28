@@ -143,6 +143,25 @@ export function assetExists(home: AssetHome, file: AssetFile): boolean {
   return fsSync.existsSync(assetPath(home, file));
 }
 
+/** Where the picture is as a file, the model's folder first and then the old shared one, for a caller that records or
+ *  removes something on the answer, or reads it: only ENOENT and ENOTDIR mean it isn't there, a folder isn't one, and
+ *  any other error is thrown. Null when it's in neither. */
+export async function findAsset(home: AssetHome, file: AssetFile): Promise<string | null> {
+  for (const place of home ? [assetTarget(home, file), legacyAssetPath(file)] : [legacyAssetPath(file)]) {
+    try {
+      if ((await fs.stat(place)).isFile()) return place;
+    } catch (error) {
+      if (!isMissingError(error)) throw error;
+    }
+  }
+  return null;
+}
+
+/** Whether findAsset finds the picture. */
+export async function assetIsThere(home: AssetHome, file: AssetFile): Promise<boolean> {
+  return (await findAsset(home, file)) !== null;
+}
+
 export async function printAssetHome(printId: string): Promise<AssetHome> {
   const print = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
   return print?.assetsPath;
@@ -160,6 +179,22 @@ export async function plateAssetHome(plateId: string): Promise<AssetHome> {
 export async function removeAsset(home: AssetHome, file: AssetFile): Promise<void> {
   if (home) await fs.rm(assetTarget(home, file), { force: true }).catch(() => undefined);
   await fs.rm(legacyAssetPath(file), { force: true }).catch(() => undefined);
+}
+
+/** removeAsset for a caller that must know it went: a file that isn't there is gone, and so is one whose place a
+ *  folder holds, which is left alone. Any other failure is thrown. */
+export async function removeAssetOrThrow(home: AssetHome, file: AssetFile): Promise<void> {
+  if (home) await removeFileOrThrow(assetTarget(home, file));
+  await removeFileOrThrow(legacyAssetPath(file));
+}
+
+async function removeFileOrThrow(file: string): Promise<void> {
+  try {
+    await fs.rm(file, { force: true });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (!isMissingError(error) && code !== "ERR_FS_EISDIR" && code !== "EISDIR") throw error;
+  }
 }
 
 /** Every file of this kind that's the plate's, of any version, in the model's folder and the old shared one (and
