@@ -373,7 +373,8 @@ what the copy changes, or no fix where only the slicer can make one.
 - `overlapping-objects`: objects whose solids print into each other, made one object with a part each. Bambu Studio
   prints each object from the bed up, so an inlay sitting in its pocket as an object of its own counts.
 - `wipe-tower`: a multi-colour plate's tower on the bed and off its objects, sized as the project's settings size it.
-  One Thingport places is sized larger and kept 10 mm clear, as MakerWorld's check builds a bigger tower.
+  One Thingport places is sized larger where that fits, as MakerWorld's check builds a bigger tower, else as the
+  project sizes it, and kept as far from what's printed as it can be, up to 10 mm.
 - `off-bed` and `sliced`: left to the slicer.
 
 Anything else the slicer refuses (a layer too thin to print) still reaches the site. Prove a new check with the site's

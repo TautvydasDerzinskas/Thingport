@@ -44,6 +44,7 @@ const ASSEMBLE_RE = tags(String.raw`<assemble_item\b(${ATTRS})\/?>\s*`);
 const ROOT_OBJECT_RE = tags(String.raw`<object\b(${ATTRS})>([\s\S]*?)<\/object>\s*`);
 const COMPONENT_RE = tags(String.raw`<component\b(${ATTRS})\/?>`);
 const ITEM_TAG_RE = tags(String.raw`<item\b(${ATTRS})\/?>\s*`);
+const MAX_RESOURCE_ID = 2_147_483_647;
 // The resources a 3MF numbers: every one's id is unique across them (3MF Core Specification, Resources).
 const RESOURCE_RE = tags(
   String.raw`<(?:[\w-]+:)?(?:object|basematerials|colorgroup|texture2d|texture2dgroup|compositematerials|multiproperties|slicestack|displacement2d|normvectorgroup|disp2dgroup)\b(${ATTRS})\/?>`,
@@ -198,7 +199,16 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
   const taken = [...rootXml.slice(0, Math.max(rootXml.lastIndexOf("<build"), 0)).matchAll(RESOURCE_RE)]
     .map((m) => Number(attrValue(m[1], "id")))
     .filter(Number.isFinite);
+  // Resource ids are positive 32-bit integers: past the largest, the lowest free one.
+  const used = new Set(taken);
   let nextId = Math.max(0, ...taken) + 1;
+  const newId = () => {
+    let id = nextId;
+    if (id > MAX_RESOURCE_ID) for (id = 1; used.has(id);) id++;
+    used.add(id);
+    nextId = id + 1;
+    return String(id);
+  };
 
   // What changes: each object rewritten or added, build items dropped or renamed, settings entries likewise.
   const newObjects = new Map<string, string>();
@@ -214,7 +224,7 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
     const mainObject = objects.get(main.objectId);
     if (!mainObject) continue;
     const reuse = reusable(main, rootXml);
-    const targetId = reuse ? main.objectId : String(nextId++);
+    const targetId = reuse ? main.objectId : newId();
     const undo = invertTransform(parseTransform(items[main.index].transform));
     if (!undo) continue;
 
@@ -241,12 +251,14 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
           leafIds.push(attrValue(tag, "objectid") ?? "");
         }
       }
-      // Each part keeps its filament: a part on "the object's" is on its own object's.
+      // Each part keeps the filament it prints in: a part on "the object's" is on its own object's, and so is an
+      // object's only volume, whatever it says, as Bambu Studio drops a lone volume's own when it loads it.
+      const single = leafIds.length === 1;
       const rows = [...entry.matchAll(PART_RE)].map(([part]) => {
         const id = attrValue(PART_OPEN_RE.exec(part)?.[0] ?? "", "id");
         const value = metadataValue(part, "extruder");
-        if (value && value !== "0") return { id, xml: part };
-        if (value === "0") return { id, xml: withMetadata(part, "extruder", extruder) };
+        if (value && value !== "0" && !single) return { id, xml: part };
+        if (value) return { id, xml: withMetadata(part, "extruder", extruder) };
         const xml = part
           .replace(new RegExp(String.raw`^(<part\b${ATTRS})\/>$`), "$1></part>")
           .replace(/<\/part>$/, `<metadata key="extruder" value="${escapeXml(extruder)}"/></part>`);
@@ -314,11 +326,8 @@ export function mergeObjects(files: ProjectFiles, groups: LayoutItem[][]): Proje
   const head = rootXml.slice(0, buildAt).replace(ROOT_OBJECT_RE, (whole, attrs: string) => {
     const id = attrValue(attrs, "id") ?? "";
     if (gone.has(id)) return "";
-    if (newObjects.has(id)) {
-      const replacement = newObjects.get(id)!;
-      newObjects.delete(id);
-      return replacement;
-    }
+    // A rewritten object goes after every resource, as its components may be objects declared after it.
+    if (newObjects.has(id)) return "";
     return whole;
   });
   const added = [...newObjects.values()].join("");

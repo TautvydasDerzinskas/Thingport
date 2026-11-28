@@ -8,7 +8,15 @@ import { asArray, firstValue, type Settings } from "../../adapter/settings";
 import { printerForName, printerSummary } from "../../printers/catalogue";
 import { printerTarget } from "../../printers/targets";
 import { convexHull, hullMeetsBox, plateFootprint } from "./footprint";
-import { printedHeights, readLayout, type Box2, type Layout, type LayoutItem, type LayoutPlate } from "./layout";
+import {
+  printedHeights,
+  readLayout,
+  withoutComments,
+  type Box2,
+  type Layout,
+  type LayoutItem,
+  type LayoutPlate,
+} from "./layout";
 import { mergeLoses, mergeObjects, SIDE_FILES, sideFilePlaces } from "./merge";
 import { overlappingGroups, solidsOverlap } from "./overlap";
 import type { ThreeMfCheckOptions, ThreeMfCheckResult, ThreeMfIssue, ThreeMfPrinter, ThreeMfRules } from "./types";
@@ -101,10 +109,22 @@ function mergedTop(group: LayoutItem[]): number {
   return Math.max(...group.map((item) => item.world.max[2])) - Math.max(bottom, 0);
 }
 
-const filamentsOn = (plate: LayoutPlate) => new Set(plate.items.flatMap((item) => [...item.filaments])).size;
+/** The filaments a plate prints with: its objects', and the supports' where the project prints supports on filaments
+ *  of their own, which the tower primes too. */
+const filamentsOn = (plate: LayoutPlate, supports: number[]) =>
+  new Set([...plate.items.flatMap((item) => [...item.filaments]), ...(plate.items.length ? supports : [])]).size;
+
+/** The filaments the project's supports print in, where it prints supports: 0 is "the object's", so none of its own. */
+function supportFilaments(settings: Settings): number[] {
+  const on = firstValue(settings.enable_support);
+  if (on === undefined || on === null || ["0", "false", 0, false].includes(on as never)) return [];
+  return [settings.support_filament, settings.support_interface_filament]
+    .map((value) => Number(firstValue(value)))
+    .filter((n) => Number.isInteger(n) && n > 0);
+}
 
 /** The plate as its tower sees it, with each group that's merged printing as one object, as tall as that makes it. */
-function towerPlate(plate: LayoutPlate, layout: Layout, merges: LayoutItem[][]): TowerPlate {
+function towerPlate(plate: LayoutPlate, layout: Layout, merges: LayoutItem[][], supports: number[]): TowerPlate {
   const merged = new Set(merges.flat());
   const tops = [
     ...plate.items.filter((item) => !merged.has(item)).map((item) => printedHeights(item)[1]),
@@ -112,7 +132,8 @@ function towerPlate(plate: LayoutPlate, layout: Layout, merges: LayoutItem[][]):
   ];
   return {
     footprint: plateFootprint(plate, layout.bed, layout.exclude),
-    filaments: filamentsOn(plate),
+    exclude: layout.exclude,
+    filaments: filamentsOn(plate, supports),
     height: Math.max(0, ...tops),
   };
 }
@@ -146,6 +167,9 @@ export async function runThreeMfCheck(
   rules: ThreeMfRules,
   options: ThreeMfCheckOptions = {},
 ): Promise<ThreeMfCheckRun> {
+  // What's read and written is Bambu Studio's layout, which only the slicers reading it can be checked for.
+  if (slicerProfile(rules.slicer)?.reads !== "bambu")
+    throw new Error(`3MF checks are for slicers reading Bambu Studio projects, not "${rules.slicer}"`);
   const checks = new Set(rules.checks);
   const issues: ThreeMfIssue[] = [];
   const done = (printer: ThreeMfPrinter | null, needsPrinter = false): ThreeMfCheckRun => ({
@@ -233,7 +257,17 @@ export async function runThreeMfCheck(
     issues.push({ check: "project", problem: "unreadable", plate: null, fix: null });
     return done(null);
   }
-  const rootXml = await pkg.root.entry.async("string");
+  // Objects whose meshes can't be placed are left out of every check, so they're said, and leave the copy to the slicer.
+  for (const plate of new Set(layout.unreadable.map(({ plate: p }) => p)))
+    issues.push({
+      check: "project",
+      problem: "unreadable",
+      plate: plate + 1,
+      objects: layout.unreadable.filter(({ plate: p }) => p === plate).map(({ name }) => name),
+      fix: null,
+    });
+  // Its comments blanked, as an XML reader skips them: a commented-out item or object is neither checked nor merged.
+  const rootXml = withoutComments(await pkg.root.entry.async("string"));
   const sideFiles: Record<string, string> = {};
   for (const name of Object.keys(SIDE_FILES)) {
     const rec = pkg.filesByKey[name.toLowerCase()];
@@ -303,14 +337,15 @@ export async function runThreeMfCheck(
 
   if (checks.has("wipe-tower") && towerEnabled(settings)) {
     const sizing = towerSettings(settings);
+    const supports = supportFilaments(settings);
     const xs = asArray(settings.wipe_tower_x).map(String);
     const ys = asArray(settings.wipe_tower_y).map(String);
     let moved = false;
     layout.plates.forEach((plate, p) => {
       const [x, y] = [Number(xs[p]), Number(ys[p])];
       const placed = xs[p] !== undefined && ys[p] !== undefined && Number.isFinite(x) && Number.isFinite(y);
-      if (placed && filamentsOn(plate) < 2) return;
-      const tower = towerPlate(plate, layout, merges);
+      if (placed && filamentsOn(plate, supports) < 2) return;
+      const tower = towerPlate(plate, layout, merges, supports);
       const needed = tower.filaments >= 2 && (!placed || !towerClear(tower, layout.bed, sizing, x, y));
       if (!needed && placed) return;
       // A plate without a position of its own would take the first plate's, so each gets one.

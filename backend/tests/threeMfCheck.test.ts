@@ -18,7 +18,13 @@ import {
   type Box3,
   type LayoutItem,
 } from "../src/services/threeMfCheck/layout";
-import { placeTower, towerFootprint, towerSettings, towerSize } from "../src/services/threeMfCheck/wipeTower";
+import {
+  placeTower,
+  towerClear,
+  towerFootprint,
+  towerSettings,
+  towerSize,
+} from "../src/services/threeMfCheck/wipeTower";
 
 // Pure: no database. 3MFs a site would turn down, what the check says of each, and the copy it makes.
 
@@ -910,29 +916,44 @@ describe("3MF check for publishing", () => {
     expect(withAttr(`<item partnumber='note objectid="7"' objectid='2'/>`, "objectid", "9")).toBe(
       `<item partnumber='note objectid="7"' objectid="9"/>`,
     );
-    const zip = await JSZip.loadAsync(
-      await bambuProject({
-        objects: [
-          coin(),
-          { name: "Logo", parts: [{ name: "Logo", mesh: box([-8, -8], [8, 8], 1, 1.4), extruder: 3 }], extruder: 2 },
-        ],
-        items: [
-          { object: 0, at: [120, 120] },
-          { object: 1, at: [120, 120] },
-        ],
-      }),
-    );
-    const config = await zip.file("Metadata/model_settings.config")!.async("string");
-    zip.file(
-      "Metadata/model_settings.config",
-      config.replace('<metadata key="extruder" value="3"/>', '<metadata value="3" key="extruder"/>'),
-    );
-    const { copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
-    const merged = await (await JSZip.loadAsync(copy!)).file("Metadata/model_settings.config")!.async("string");
-    const logoPart = merged.match(/<part id="200"[\s\S]*?<\/part>/)![0];
-    // Its own filament, 3, kept: not the object's 2 added after it.
-    expect(logoPart.match(/extruder/g)).toHaveLength(1);
-    expect(logoPart).toContain('value="3" key="extruder"');
+    const mergedLogo = async (parts: number) => {
+      const zip = await JSZip.loadAsync(
+        await bambuProject({
+          objects: [
+            coin(),
+            {
+              name: "Logo",
+              parts: Array.from({ length: parts }, (_, k) => ({
+                name: `Logo ${k}`,
+                mesh: box([-8 + k, -8], [-7 + k, 8], 1, 1.4),
+                extruder: 3,
+              })),
+              extruder: 2,
+            },
+          ],
+          items: [
+            { object: 0, at: [120, 120] },
+            { object: 1, at: [120, 120] },
+          ],
+        }),
+      );
+      const config = await zip.file("Metadata/model_settings.config")!.async("string");
+      zip.file(
+        "Metadata/model_settings.config",
+        config.replace('<metadata key="extruder" value="3"/>', '<metadata value="3" key="extruder"/>'),
+      );
+      const { copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
+      const merged = await (await JSZip.loadAsync(copy!)).file("Metadata/model_settings.config")!.async("string");
+      return merged.match(/<part id="200"[\s\S]*?<\/part>/)![0];
+    };
+    // Its own filament, 3, kept, written value first: not the object's 2 added after it.
+    const own = await mergedLogo(2);
+    expect(own.match(/extruder/g)).toHaveLength(1);
+    expect(own).toContain('value="3" key="extruder"');
+    // An object's only volume prints in the object's filament whatever it says, so it joins on that one.
+    const lone = await mergedLogo(1);
+    expect(lone.match(/extruder/g)).toHaveLength(1);
+    expect(lone).toContain('value="2" key="extruder"');
   });
 
   it("never fills the grid from an area off it, and finds a clear tower spot where the best-ranked isn't", () => {
@@ -1123,6 +1144,145 @@ describe("3MF check for publishing", () => {
     expect(big.cols * big.rows).toBeLessThanOrEqual(4_000_000);
     expect(big.cols * big.cell).toBeGreaterThanOrEqual(3000);
     expect(big.rows * big.cell).toBeGreaterThanOrEqual(2000);
+  });
+
+  it("counts the filaments a plate really prints in: supports', and no paint Bambu Studio would drop", async () => {
+    const { wipe_tower_x: _x, wipe_tower_y: _y, ...settings } = P1S_SETTINGS;
+    const one = (extra: Record<string, unknown>, paint?: string) =>
+      bambuProject({
+        objects: [{ name: "Block", mesh: box([-10, -10], [10, 10], 2), extruder: 1, paint }],
+        items: [{ object: 0, at: [120, 120] }],
+        settings: { ...settings, ...extra },
+      });
+    const tower = [{ check: "wipe-tower", problem: "no-tower-position", plate: 1, fix: "place-tower" }];
+    expect((await fixed(await one({ enable_support: "1", support_filament: "2" }))).issues).toEqual(tower);
+    expect((await fixed(await one({ enable_support: "0", support_filament: "2" }))).issues).toEqual([]);
+    // "8Z" isn't all hex: the slicer drops it, and the block prints in its own filament alone.
+    expect((await fixed(await one({}, "8Z"))).issues).toEqual([]);
+  });
+
+  it("says which objects it can't read, and leaves out build items in comments", async () => {
+    const zip = await JSZip.loadAsync(
+      await bambuProject({
+        objects: [coin(), { name: "Broken", mesh: box([-4, -4], [4, 4], 2) }],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 1, at: [40, 40] },
+        ],
+      }),
+    );
+    const part = await zip.file("3D/Objects/object_2.model")!.async("string");
+    zip.file("3D/Objects/object_2.model", part.replace(/y="-4"/g, 'y="abc"'));
+    const model = await zip.file("3D/3dmodel.model")!.async("string");
+    zip.file(
+      "3D/3dmodel.model",
+      model.replace(" </build>", ' <!-- <item objectid="2" transform="1 0 0 0 1 0 0 0 1 400 400 0"/> -->\n </build>'),
+    );
+    expect((await fixed(await zip.generateAsync({ type: "uint8array" }))).issues).toEqual([
+      { check: "project", problem: "unreadable", plate: 1, objects: ["Broken"], fix: null },
+    ]);
+  });
+
+  it("checks only for slicers that read Bambu Studio projects", async () => {
+    const bytes = await bambuProject({ objects: [coin()], items: [{ object: 0, at: [128, 128] }] });
+    await expect(runThreeMfCheck(bytes, { ...RULES, slicer: "prusaslicer" })).rejects.toThrow(/Bambu Studio projects/);
+  });
+
+  it("writes a merged object after the objects it's made of, with an id in the 3MF's range", async () => {
+    const zip = await JSZip.loadAsync(
+      await bambuProject({
+        objects: [coin(), logo()],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 0, at: [120, 120], plate: 2 },
+          { object: 1, at: [120, 120] },
+        ],
+        plates: 2,
+      }),
+    );
+    const model = await zip.file("3D/3dmodel.model")!.async("string");
+    zip.file(
+      "3D/3dmodel.model",
+      model
+        .replace(
+          " <resources>",
+          ' <resources>\n  <basematerials id="2147483647"><base name="White" displaycolor="#FFFFFF"/></basematerials>',
+        )
+        // The logo as a mesh of the main model's own, declared after the coin.
+        .replace(/<object id="4"[\s\S]*?<\/object>/, `<object id="4" type="model">${meshXml(logo().mesh)}</object>`),
+    );
+    const { issues, copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
+    expect(issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+    const out = await (await JSZip.loadAsync(copy!)).file("3D/3dmodel.model")!.async("string");
+    // Past the largest id there is, the lowest free one; and the object comes after the mesh it uses.
+    expect([...out.matchAll(/<item objectid="(\d+)"/g)].map((m) => m[1])).toEqual(["1", "2"]);
+    expect(out.indexOf('<object id="4"')).toBeLessThan(out.indexOf('<object id="1"'));
+  });
+
+  it("fills overlapping shells of one mesh, and samples the last row inside the shared band", async () => {
+    const shells = await bambuProject({
+      objects: [
+        { name: "Bar", mesh: joined(box([0, 0], [10, 10], 2), box([4, 0], [14, 10], 2)) },
+        { name: "Pin", mesh: box([5, 2], [9, 8], 2) },
+      ],
+      items: [
+        { object: 0, at: [100, 100] },
+        { object: 1, at: [100, 100] },
+      ],
+    });
+    expect((await fixed(shells)).issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+    // 2 mm by 0.13 mm shared: 0.26 mm², just over the 0.25 that counts.
+    const thin = await bambuProject({
+      objects: [
+        { name: "A", mesh: box([0, 0], [10, 10], 2) },
+        { name: "B", mesh: box([8, 9.87], [18, 20], 2) },
+      ],
+      items: [
+        { object: 0, at: [100, 100] },
+        { object: 1, at: [100, 100] },
+      ],
+    });
+    expect((await fixed(thin)).issues.map((issue) => issue.problem)).toEqual(["overlapping-objects"]);
+  });
+
+  it("sizes a two-nozzle tower with its changes, and keeps the whole tower off a no-print area", () => {
+    const plate = (bed: Box2, exclude: Box2[] = []) => ({
+      footprint: plateFootprint({ items: [], origin: [0, 0] }, bed, exclude),
+      exclude,
+      filaments: 2,
+      height: 2,
+    });
+    const bed = { minX: 0, minY: 0, maxX: 256, maxY: 256 };
+    const dual = towerSettings({
+      layer_height: "0.2",
+      prime_tower_rib_wall: "0",
+      prime_tower_brim_width: "0",
+      filament_prime_volume: ["15", "15"],
+      nozzle_diameter: ["0.4", "0.4"],
+      filament_change_length: ["20", "20"],
+      filament_diameter: ["1.75", "1.75"],
+    });
+    expect(towerSize(plate(bed), dual)[1]).toBeGreaterThan(towerSize(plate(bed), { ...dual, changeVolume: 0 })[1]);
+    // A strip at X 10-11 the whole bed deep: a brimless tower from X 10 reaches into it.
+    const strip = [{ minX: 10, minY: 0, maxX: 11, maxY: 256 }];
+    expect(towerClear(plate(bed, strip), bed, dual, 10, 100)).toBe(false);
+    // A 35.8 x 5.8 tower on a 40 x 10 bed whose edges are taken fits only at about (1.01-1.19, 1.01-1.19).
+    const small = { minX: 0, minY: 0, maxX: 40, maxY: 10 };
+    const edges = [
+      { minX: 0, minY: 0, maxX: 1.01, maxY: 10 },
+      { minX: 36.99, minY: 0, maxX: 40, maxY: 10 },
+      { minX: 0, minY: 0, maxX: 40, maxY: 1.01 },
+      { minX: 0, minY: 6.99, maxX: 40, maxY: 10 },
+    ];
+    const snug = towerSettings({
+      layer_height: "0.2",
+      prime_tower_rib_wall: "0",
+      prime_tower_brim_width: "0",
+      prime_tower_width: "35.8",
+      filament_prime_volume: ["27.69"],
+    });
+    expect(towerSize(plate(small, edges), snug)[1]).toBeCloseTo(5.8, 2);
+    expect(placeTower(plate(small, edges), small, snug).clear).toBe(true);
   });
 
   describe("in a worker", () => {

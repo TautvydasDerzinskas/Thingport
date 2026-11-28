@@ -16,7 +16,14 @@ export type Box2 = { minX: number; minY: number; maxX: number; maxY: number };
 /** A mesh as its file has it, with the filaments its painting uses. */
 /** A mesh as its file has it: the filaments its painting uses, and whether any of it is unpainted, printing in its
  *  part's own. */
-export type Mesh = { positions: Float32Array; triangles: Uint32Array; painted: Set<number>; unpainted: boolean };
+export type Mesh = {
+  positions: Float32Array;
+  triangles: Uint32Array;
+  painted: Set<number>;
+  unpainted: boolean;
+  /** A vertex has a coordinate that isn't a number, so where it prints can't be told. */
+  unreadable: boolean;
+};
 export type PlacedMesh = { mesh: Mesh; matrix: number[] };
 
 export type LayoutItem = {
@@ -57,6 +64,8 @@ export type Layout = {
   /** Areas of the bed nothing may print on. */
   exclude: Box2[];
   plates: LayoutPlate[];
+  /** Printed objects whose meshes can't be placed, by plate (0-based) and name: left out of the plates. */
+  unreadable: { plate: number; name: string }[];
 };
 
 export const DEFAULT_BED: BedBox = { minX: 0, minY: 0, maxX: 256, maxY: 256 };
@@ -122,6 +131,7 @@ function readMesh(body: string, paints: Map<string, number[]>): Mesh {
   while ((m = vertices.exec(body)))
     positions.push(Number(meshAttr(m[1], "x")), Number(meshAttr(m[1], "y")), Number(meshAttr(m[1], "z")));
   const count = positions.length / 3;
+  const unreadable = !positions.every(Number.isFinite);
   const faces = new RegExp(TRIANGLE_RE.source, TRIANGLE_RE.flags);
   while ((m = faces.exec(body))) {
     const a = vertexIndex(meshAttr(m[1], "v1"), count);
@@ -130,7 +140,8 @@ function readMesh(body: string, paints: Map<string, number[]>): Mesh {
     if (a === null || b === null || c === null) continue;
     triangles.push(a, b, c);
     const paint = meshAttr(m[1], "paint_color");
-    if (!paint) {
+    // Bambu Studio drops a paint code that isn't all hex digits, leaving the triangle unpainted.
+    if (!paint || !/^[0-9a-f]+$/i.test(paint)) {
       unpainted = true;
       continue;
     }
@@ -145,11 +156,18 @@ function readMesh(body: string, paints: Map<string, number[]>): Mesh {
       else unpainted = true;
     }
   }
-  return { positions: Float32Array.from(positions), triangles: Uint32Array.from(triangles), painted, unpainted };
+  return {
+    positions: Float32Array.from(positions),
+    triangles: Uint32Array.from(triangles),
+    painted,
+    unpainted,
+    unreadable,
+  };
 }
 
-function readObjects(xml: string, paints: Map<string, number[]>): Map<string, FileObject> {
+function readObjects(file: string, paints: Map<string, number[]>): Map<string, FileObject> {
   const objects = new Map<string, FileObject>();
+  const xml = file.includes("<!--") ? withoutComments(file) : file;
   const re = new RegExp(OBJECT_RE.source, OBJECT_RE.flags);
   let m;
   while ((m = re.exec(xml))) {
@@ -174,9 +192,14 @@ function readObjects(xml: string, paints: Map<string, number[]>): Map<string, Fi
 }
 
 /** The build's items as the main model lists them, each numbered among its object's. */
+/** The text with its comments blanked to spaces, so what an XML reader skips is skipped and every offset still holds. */
+export function withoutComments(xml: string): string {
+  return xml.replace(/<!--[\s\S]*?-->/g, (comment) => " ".repeat(comment.length));
+}
+
 export function buildItems(rootXml: string) {
   const at = rootXml.lastIndexOf("<build");
-  const build = at < 0 ? "" : rootXml.slice(at);
+  const build = at < 0 ? "" : withoutComments(rootXml.slice(at));
   const seen = new Map<string, number>();
   const items: {
     objectId: string;
@@ -243,6 +266,8 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
   const bed = bedBoxOf(settings.printable_area) ?? fallbackBed ?? DEFAULT_BED;
   const heightValue = Number(firstValue(settings.printable_height));
   const exclude = excludedAreas(settings.bed_exclude_area);
+  const filamentCount = asArray(settings.filament_settings_id).length || Infinity;
+  const unreadable: Layout["unreadable"] = [];
 
   const paints = new Map<string, number[]>();
   const files = new Map<string, Map<string, FileObject>>();
@@ -296,19 +321,27 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
     const listed = object?.parts ?? [];
     const parts: PlacedMesh[] = [];
     const filaments = new Set<number>();
+    // As Bambu Studio loads them: a filament it hasn't, or 0, is the first; an object of one volume is all its own.
+    const usable = (n: number) => (n >= 1 && n <= filamentCount ? n : 1);
+    const objectFilament = usable(object?.extruder ?? 1);
     found.forEach(({ id, placed }, i) => {
       // As the slicer matches them: the part at the same place, else the first with the mesh's id.
       const part = listed[i]?.id === id ? listed[i] : listed.find((p) => p.id === id);
       if (part && part.role !== "normal_part") return;
       parts.push(placed);
       // The part's own filament only where some of it isn't painted another.
-      if (placed.mesh.unpainted) filaments.add(part?.extruder ?? object?.extruder ?? 1);
+      const own = found.length === 1 ? objectFilament : usable(part?.extruder ?? objectFilament);
+      if (placed.mesh.unpainted) filaments.add(own);
       for (const state of placed.mesh.painted) filaments.add(state);
     });
     if (!parts.length) continue;
+    const name = object?.name || `Object ${item.objectId}`;
     const world = emptyBox();
     for (const placed of parts) extend(world, placed);
-    if (!Number.isFinite(world.min[0])) continue;
+    if (parts.some(({ mesh }) => mesh.unreadable) || !Number.isFinite(world.min[0])) {
+      unreadable.push({ plate: plateOf.get(`${item.objectId}:${item.instance}`) ?? 0, name });
+      continue;
+    }
     const plate = plateOf.get(`${item.objectId}:${item.instance}`) ?? plateAt(world, plates, bed);
     const [ox, oy] = plates[plate].origin;
     plates[plate].items.push({
@@ -317,7 +350,7 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
       instance: item.instance,
       external: Boolean(item.path),
       nested: found.some((leaf) => leaf.depth > 1),
-      name: object?.name || `Object ${item.objectId}`,
+      name,
       plate,
       parts,
       world,
@@ -329,7 +362,13 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
       filaments,
     });
   }
-  return { bed, height: Number.isFinite(heightValue) && heightValue > 0 ? heightValue : null, exclude, plates };
+  return {
+    bed,
+    height: Number.isFinite(heightValue) && heightValue > 0 ? heightValue : null,
+    exclude,
+    plates,
+    unreadable,
+  };
 }
 
 const matrixString = (m: number[]) => m.join(" ");

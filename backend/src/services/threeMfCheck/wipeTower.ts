@@ -10,7 +10,13 @@ import { clearance, type Footprint } from "./footprint";
 import type { Box2 } from "./layout";
 
 /** A plate as its tower sees it: what's on the bed, in the plate's coordinates (mm), and what the tower is sized by. */
-export type TowerPlate = { footprint: Footprint; filaments: number; height: number };
+export type TowerPlate = {
+  footprint: Footprint;
+  /** The bed's no-print areas, which the whole tower keeps off, brim and all. */
+  exclude?: Box2[];
+  filaments: number;
+  height: number;
+};
 
 /** What the slicer sizes a tower by, as the project sets it or by the slicer's defaults (PrintConfig.cpp). */
 export type TowerSettings = {
@@ -29,6 +35,8 @@ export type TowerSettings = {
   rotation: number;
   /** Nozzles the printer has: with two, each filament on the plate takes a share. */
   nozzles: number;
+  /** With two nozzles, the filament a change between them pushes through, in mm³ (filament_change_length). */
+  changeVolume: number;
 };
 
 // Its least depth by the tower's height (WipeTower::min_depth_per_height).
@@ -72,6 +80,17 @@ function flag(value: unknown, fallback: boolean): boolean {
   return !(v === "0" || v === 0 || v === false || v === "false");
 }
 
+/** The longest filament change length as a volume, over the thickest filament (1.75 mm without one). */
+function changeVolumeOf(settings: Settings): number {
+  const numbers = (value: unknown) =>
+    asArray(value)
+      .map(Number)
+      .filter((n) => Number.isFinite(n) && n > 0);
+  const length = Math.max(0, ...numbers(settings.filament_change_length));
+  const diameter = Math.max(...numbers(settings.filament_diameter), 0) || 1.75;
+  return (length * Math.PI * diameter * diameter) / 4;
+}
+
 export function towerSettings(settings: Settings): TowerSettings {
   const volumes = asArray(settings.filament_prime_volume)
     .map(Number)
@@ -91,6 +110,7 @@ export function towerSettings(settings: Settings): TowerSettings {
     brim: Number.isFinite(brim) ? brim : 3,
     rotation: Number.isFinite(rotation) ? rotation : 0,
     nozzles: Math.max(asArray(settings.nozzle_diameter).length, 1),
+    changeVolume: changeVolumeOf(settings),
   };
 }
 
@@ -104,7 +124,9 @@ function brimOf(plate: TowerPlate, s: TowerSettings): number {
 /** The tower's width and depth, brim excluded. */
 export function towerSize(plate: TowerPlate, s: TowerSettings): [number, number] {
   const changes = s.nozzles === 2 ? plate.filaments : plate.filaments - 1;
-  const volume = s.primeVolume * Math.max(changes, 1);
+  // Two nozzles also push a change's worth through for every pair of filaments (PartPlate::estimate_wipe_tower_size).
+  const volume =
+    s.primeVolume * Math.max(changes, 1) + (s.nozzles === 2 ? s.changeVolume * Math.floor(plate.filaments / 2) : 0);
   if (s.ribWall) {
     const volumeDepth = Math.sqrt((volume / s.layerHeight) * s.infillGap);
     const depth = Math.max(volumeDepth, minDepth(plate.height));
@@ -153,13 +175,17 @@ const MAX_STEPS = 400;
 export function towerClear(plate: TowerPlate, bed: BedBox, s: TowerSettings, x: number, y: number): boolean {
   const tower = towerFootprint(plate, s, x, y);
   const onBed = tower.minX >= bed.minX && tower.minY >= bed.minY && tower.maxX <= bed.maxX && tower.maxY <= bed.maxY;
+  // The no-print areas against the whole tower: they're exact, where the objects' cells are larger than the objects.
+  const offAreas = (plate.exclude ?? []).every(
+    (area) => tower.maxX <= area.minX || tower.minX >= area.maxX || tower.maxY <= area.minY || tower.minY >= area.maxY,
+  );
   const inner = {
     minX: tower.minX + TOUCH,
     minY: tower.minY + TOUCH,
     maxX: tower.maxX - TOUCH,
     maxY: tower.maxY - TOUCH,
   };
-  return onBed && clearance(plate.footprint, inner) > 0;
+  return onBed && offAreas && clearance(plate.footprint, inner) > 0;
 }
 
 /** A coordinate as the project keeps it, to a thousandth: a spot is tested as it will be written. */
@@ -173,11 +199,24 @@ function steps(lo: number, hi: number): number[] {
   return Array.from({ length: count + 1 }, (_, i) => kept(i === count ? hi : lo + ((hi - lo) * i) / count));
 }
 
-/** Corners that put the tower's edge, as towerClear tests it, on a cell's edge, for a gap narrower than a step: at most
- *  MAX_STEPS of them along an axis, within lo to hi. */
-function edgeSteps(f: Footprint, axis: 0 | 1, lo: number, hi: number, near: number, far: number): number[] {
+/** Corners that put the tower's edge on a no-print area's, or as towerClear tests it on a cell's, for a gap narrower
+ *  than a step: at most MAX_STEPS of them along an axis, within lo to hi. */
+function edgeSteps(
+  f: Footprint,
+  areas: Box2[],
+  axis: 0 | 1,
+  lo: number,
+  hi: number,
+  near: number,
+  far: number,
+): number[] {
   const [origin, cells] = axis ? [f.y0, f.rows] : [f.x0, f.cols];
   const out = new Set<number>();
+  // Right against each no-print area, which is tested exactly, on either side.
+  for (const area of areas) {
+    const [min, max] = axis ? [area.minY, area.maxY] : [area.minX, area.maxX];
+    for (const at of [max - near, min - far]) if (at >= lo && at <= hi) out.add(kept(at));
+  }
   for (let k = 0; k <= cells && out.size < MAX_STEPS; k++) {
     const edge = origin + k * f.cell;
     for (const at of [edge - near - TOUCH, edge + TOUCH - far]) if (at >= lo && at <= hi) out.add(kept(at));
@@ -204,8 +243,11 @@ function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLAC
   const spots: [number, number][] = xs.flatMap((x) => ys.map((y): [number, number] => [x, y]));
   if (edges) {
     const f = plate.footprint;
-    for (const x of edgeSteps(f, 0, lo[0], hi[0], reach.minX, reach.maxX)) for (const y of ys) spots.push([x, y]);
-    for (const y of edgeSteps(f, 1, lo[1], hi[1], reach.minY, reach.maxY)) for (const x of xs) spots.push([x, y]);
+    const areas = plate.exclude ?? [];
+    const edgeXs = edgeSteps(f, areas, 0, lo[0], hi[0], reach.minX, reach.maxX);
+    const edgeYs = edgeSteps(f, areas, 1, lo[1], hi[1], reach.minY, reach.maxY);
+    for (const x of edgeXs) for (const y of [...ys, ...edgeYs]) spots.push([x, y]);
+    for (const y of edgeYs) for (const x of xs) spots.push([x, y]);
   }
   let best: [number, number] | null = clearOnly ? null : [kept(home[0]), kept(home[1])];
   let bestScore = -Infinity;

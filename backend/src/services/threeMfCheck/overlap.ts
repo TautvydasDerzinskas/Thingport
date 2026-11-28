@@ -81,16 +81,24 @@ function sections(item: LayoutItem, printedZ: number): number[][] {
         const k = (z - zu) / (zv - zu);
         points.push(p[u] + k * (p[v] - p[u]), p[u + 1] + k * (p[v + 1] - p[u + 1]));
       }
-      if (points.length === 4) segments.push(points[0], points[1], points[2], points[3]);
+      if (points.length !== 4) continue;
+      // Each way round as the triangle faces, outward to its right, so overlapping shells add up and holes, facing
+      // in, take away: the 3MF's own fill rule, which even-odd would break for shells that overlap.
+      const nx = (p[b + 1] - p[a + 1]) * (zc - za) - (zb - za) * (p[c + 1] - p[a + 1]);
+      const ny = (zb - za) * (p[c] - p[a]) - (p[b] - p[a]) * (zc - za);
+      const [dx, dy] = [points[2] - points[0], points[3] - points[1]];
+      if (dx * ny - dy * nx > 0) segments.push(points[2], points[3], points[0], points[1]);
+      else segments.push(points[0], points[1], points[2], points[3]);
     }
   }
   return out;
 }
 
-/** Each row's spans of the parts together: each part's by the even-odd rule, so its holes stay holes, then joined, as
+/** Each row's spans of the parts together: each part's by its windings, so its holes stay holes, then joined, as
  *  parts that overlap print as one. */
-function itemSpans(parts: number[][], y0: number, rows: number, step: number): number[][] {
-  const perPart = parts.filter((segments) => segments.length).map((segments) => rowSpans(segments, y0, rows, step));
+function itemSpans(parts: number[][], band: Band): number[][] {
+  const { rows } = band;
+  const perPart = parts.filter((segments) => segments.length).map((segments) => rowSpans(segments, band));
   if (perPart.length <= 1) return perPart[0] ?? Array.from({ length: rows }, () => []);
   return Array.from({ length: rows }, (_, r) => {
     const spans: [number, number][] = [];
@@ -106,25 +114,43 @@ function itemSpans(parts: number[][], y0: number, rows: number, step: number): n
   });
 }
 
-/** Each row's spans inside the section, by the even-odd rule, as [from, to, from, to, ...]. */
-function rowSpans(segments: number[], y0: number, rows: number, step: number): number[][] {
-  const crossings: number[][] = Array.from({ length: rows }, () => []);
+/** Each row's spans inside the section, where the windings of its crossings don't cancel, as [from, to, ...]. */
+/** The rows measured across a shared band: each `step` from y0, the last only as far as the band's top. */
+type Band = { y0: number; rows: number; step: number; top: number };
+
+/** Where a row is sampled: its middle, the last's within the band. */
+const rowAt = ({ y0, rows, step, top }: Band, r: number) =>
+  r < rows - 1 ? y0 + (r + 0.5) * step : (y0 + r * step + top) / 2;
+
+function rowSpans(segments: number[], band: Band): number[][] {
+  const { y0, rows, step } = band;
+  const crossings: [number, number][][] = Array.from({ length: rows }, () => []);
   for (let s = 0; s < segments.length; s += 4) {
     const [x1, y1, x2, y2] = [segments[s], segments[s + 1], segments[s + 2], segments[s + 3]];
     if (y1 === y2) continue;
     const lo = Math.max(Math.ceil((Math.min(y1, y2) - y0) / step - 0.5), 0);
-    const hi = Math.min(Math.floor((Math.max(y1, y2) - y0) / step - 0.5), rows - 1);
+    // One more, as the last row is sampled lower than its step would put it.
+    const hi = Math.min(Math.floor((Math.max(y1, y2) - y0) / step - 0.5) + 1, rows - 1);
     for (let r = lo; r <= hi; r++) {
-      const y = y0 + (r + 0.5) * step;
+      const y = rowAt(band, r);
       if (y1 <= y === y2 <= y) continue;
-      crossings[r].push(x1 + ((y - y1) * (x2 - x1)) / (y2 - y1));
+      crossings[r].push([x1 + ((y - y1) * (x2 - x1)) / (y2 - y1), y2 > y1 ? 1 : -1]);
     }
   }
-  for (const row of crossings) {
-    row.sort((p, q) => p - q);
-    if (row.length % 2) row.pop();
-  }
-  return crossings;
+  // Inside where the windings so far don't cancel out.
+  return crossings.map((row) => {
+    row.sort((p, q) => p[0] - q[0]);
+    const spans: number[] = [];
+    let winding = 0;
+    for (const [x, w] of row) {
+      const before = winding;
+      winding += w;
+      if (before === 0 && winding !== 0) spans.push(x);
+      else if (before !== 0 && winding === 0) spans.push(x);
+    }
+    if (spans.length % 2) spans.pop();
+    return spans;
+  });
 }
 
 /** How long two rows' spans overlap. */
@@ -178,9 +204,10 @@ export function solidsOverlap(a: LayoutItem, b: LayoutItem): boolean {
   const span = box.max[1] - box.min[1];
   const step = Math.max(ROW, span / MAX_ROWS);
   const rows = Math.max(1, Math.min(Math.ceil(span / step), MAX_ROWS));
+  const band: Band = { y0: box.min[1], rows, step, top: box.max[1] };
   for (const z of levels(a, b, z0, z1, budget)) {
-    const spansA = itemSpans(sections(a, z), box.min[1], rows, step);
-    const spansB = itemSpans(sections(b, z), box.min[1], rows, step);
+    const spansA = itemSpans(sections(a, z), band);
+    const spansB = itemSpans(sections(b, z), band);
     let area = 0;
     for (let r = 0; r < rows; r++) {
       // The last row only as far as the shared band reaches.
