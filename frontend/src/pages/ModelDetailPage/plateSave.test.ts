@@ -280,18 +280,25 @@ describe("savePlateChanges", () => {
       uploadOutcomeUnknown: true,
     }));
 
-    let progress: PlateSaveProgress | undefined;
-    const save = savePlateChanges(initial, items, new Set(), api, (update) => {
-      progress = update;
-    });
+    let progress: PlateSaveProgress = { print: initial, items, removedPlateIds: new Set() };
+    const save = () =>
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, (update) => {
+        progress = update;
+      });
 
-    // The rest of the save goes through, and the lost upload is reported rather than dropped.
-    await expect(save).rejects.toBeInstanceOf(PlateUploadGoneError);
-    await expect(save).rejects.toMatchObject({ filenames: ["first.3mf"] });
+    // Reported as soon as it's found, before anything else of the save can fail and hide it.
+    const first = save();
+    await expect(first).rejects.toBeInstanceOf(PlateUploadGoneError);
+    await expect(first).rejects.toMatchObject({ filenames: ["first.3mf"] });
     expect(api.getPlateUploadResults).toHaveBeenCalledExactlyOnceWith("model", ["first", "second"]);
+    expect(api.addPlates).not.toHaveBeenCalled();
+
+    // The next save, made knowing, sends the upload that's still unconfirmed.
+    api.getPlateUploadResults.mockResolvedValue({ print: initial, upload_results: [] });
+    const result = await save();
     expect(api.addPlates).toHaveBeenCalledTimes(1);
     expect(api.addPlates.mock.calls[0][1].map((file) => file.name)).toEqual(["thingport-upload-second-second.3mf"]);
-    expect(progress?.print.plates.map((candidate) => candidate.id)).toEqual(["original", "second-plate"]);
+    expect(result.plates.map((candidate) => candidate.id)).toEqual(["original", "second-plate"]);
   });
 
   it("keeps a removal for the next save when an upload completed and lost its plate meanwhile", async () => {

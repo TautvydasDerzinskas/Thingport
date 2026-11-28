@@ -181,6 +181,12 @@ export async function removeAsset(home: AssetHome, file: AssetFile): Promise<voi
   await fs.rm(legacyAssetPath(file), { force: true }).catch(() => undefined);
 }
 
+/** removeAsset for a caller that must know it went: a file that isn't there is gone, any other failure is thrown. */
+export async function removeAssetOrThrow(home: AssetHome, file: AssetFile): Promise<void> {
+  if (home) await fs.rm(assetTarget(home, file), { force: true });
+  await fs.rm(legacyAssetPath(file), { force: true });
+}
+
 /** Every file of this kind that's the plate's, of any version, in the model's folder and the old shared one (and
  *  whatever else of the plate's is in that, such as its failure markers): named by its id, then a dot. Bytes freed. */
 export async function removePlateAssets(home: AssetHome, kind: AssetKind, plateId: string): Promise<number> {

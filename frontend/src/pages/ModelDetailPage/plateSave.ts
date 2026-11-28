@@ -143,7 +143,7 @@ export async function savePlateChanges(
   let latest = print;
   let stagedItems = items;
   const pendingRemovals = new Set(removedPlateIds);
-  // Uploads that completed and lost their plate meanwhile: reported, and no removal runs until the user has seen it.
+  // Uploads that completed and lost their plate meanwhile, reported as soon as they're found.
   const goneUploads: string[] = [];
   const reportProgress = () =>
     onProgress({ print: latest, items: stagedItems, removedPlateIds: new Set(pendingRemovals) });
@@ -157,6 +157,12 @@ export async function savePlateChanges(
     const completed = result && new Map(result.upload_results.map((upload) => [upload.upload_id, upload.plate_id]));
     stagedItems = reconcileAttemptedUploads(refreshed, stagedItems, completed ?? undefined, goneUploads);
     latest = refreshed;
+    // Said at once, before a later step's failure could hide it, and before any removal runs: the next save, made
+    // knowing, goes on without the lost rows.
+    if (goneUploads.length) {
+      reportProgress();
+      throw new PlateUploadGoneError([...goneUploads]);
+    }
     return Boolean(result);
   };
   const hasAttemptedUploads = stagedItems.some((item) => item.kind === "new" && item.uploadAttempted);
@@ -222,6 +228,7 @@ export async function savePlateChanges(
       } catch (reconciliationError) {
         reportProgress();
         if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
+        if (reconciliationError instanceof PlateUploadGoneError) throw reconciliationError;
         throw new PlateUploadConfirmationError([uploadError, reconciliationError]);
       }
       reportProgress();
@@ -262,6 +269,7 @@ export async function savePlateChanges(
         } catch (reconciliationError) {
           reportProgress();
           if (reconciliationError instanceof UnauthorizedError) throw reconciliationError;
+          if (reconciliationError instanceof PlateUploadGoneError) throw reconciliationError;
           throw new PlateUploadConfirmationError([confirmationError, reconciliationError]);
         }
         reportProgress();
@@ -271,7 +279,7 @@ export async function savePlateChanges(
     }
   }
 
-  for (const plateId of goneUploads.length ? [] : pendingRemovals) {
+  for (const plateId of pendingRemovals) {
     if (!latest.plates.some((plate) => plate.id === plateId)) {
       pendingRemovals.delete(plateId);
       reportProgress();
@@ -400,10 +408,6 @@ export async function savePlateChanges(
       latest = await api.get(print.id);
       reportProgress();
     }
-  }
-  if (goneUploads.length) {
-    reportProgress();
-    throw new PlateUploadGoneError(goneUploads);
   }
   const numbered = stagedItems.flatMap((item) =>
     item.kind === "existing" && item.numberedFrom ? [{ requested: item.numberedFrom, saved: item.filename }] : [],

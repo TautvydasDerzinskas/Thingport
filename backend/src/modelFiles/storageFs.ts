@@ -53,7 +53,12 @@ export const DOOR_CHECKPOINTS: ReadonlySet<string> = new Set([
 /** Reached once a caller has queued for a storage lock, so a test can see it waits its turn. Never holds the caller
  *  up: a pause here only marks that it was reached. */
 export function lockQueued(site: LockSite, key: string): void {
-  void Promise.resolve(checkpoint(`lock:${site}`, { path: key })).catch(() => undefined);
+  // A test's fault here, thrown at once or later, has nothing to stop: the caller is queued either way.
+  try {
+    void Promise.resolve(checkpoint(`lock:${site}`, { path: key })).catch(() => undefined);
+  } catch {
+    // Ignored, as above.
+  }
 }
 
 export type FileState =

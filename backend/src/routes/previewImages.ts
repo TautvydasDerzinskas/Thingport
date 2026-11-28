@@ -1,11 +1,12 @@
-import { Router, type Request } from "express";
+import { Router, type Request, type RequestHandler } from "express";
+import multer from "multer";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
-import { thumbnailUpload } from "../uploadMiddleware";
+import { PICTURE_UPLOAD_MAX_FILES, thumbnailUpload } from "../uploadMiddleware";
 import {
   removePreviewImage,
   reorderPreviewImages,
@@ -45,8 +46,23 @@ function uploadPreviews(keyed: boolean) {
   });
 }
 
-router.post("/print/:id/preview-images", thumbnailUpload.array("files"), uploadPreviews(false));
-router.post("/print/:id/preview-images/idempotent", thumbnailUpload.array("files"), uploadPreviews(true));
+/** The pictures of an upload, bounded before any is held in memory; past a bound the answer is 413. */
+const pictureFiles: RequestHandler = (req, res, next) =>
+  thumbnailUpload.array("files")(req, res, (err: unknown) =>
+    next(
+      err instanceof multer.MulterError
+        ? new HttpError(
+            413,
+            err.code === "LIMIT_FILE_SIZE"
+              ? "A picture is larger than 8 MB"
+              : `At most ${PICTURE_UPLOAD_MAX_FILES} pictures go in one upload`,
+          )
+        : err,
+    ),
+  );
+
+router.post("/print/:id/preview-images", pictureFiles, uploadPreviews(false));
+router.post("/print/:id/preview-images/idempotent", pictureFiles, uploadPreviews(true));
 
 router.post(
   "/print/:id/preview-images/upload-results",

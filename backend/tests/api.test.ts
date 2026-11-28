@@ -533,6 +533,11 @@ describe("plate add/remove/reorder/rename", () => {
     const replay = await upload();
     expect(replay.status).toBe(200);
     expect(replay.body.added_plate_ids).toEqual(first.body.added_plate_ids);
+    // The premise: the stored name kept its extension and lost the marker's end.
+    const stored = await prisma.plate.findUniqueOrThrow({ where: { id: first.body.added_plate_ids[0] } });
+    expect(stored.filename.endsWith(".stl")).toBe(true);
+    expect(stored.filename.startsWith(`thingport-upload-${clientUploadId}-`)).toBe(false);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("reorders only once a rename has moved its files", async () => {
@@ -586,22 +591,23 @@ describe("plate add/remove/reorder/rename", () => {
     const blockers = [path.join(folder, "unstuck.stl"), path.join(folder, modelId, "unstuck.stl")].map((relative) =>
       path.join(STORAGE, relative),
     );
-    for (const blocker of blockers) {
-      fs.mkdirSync(path.dirname(blocker), { recursive: true });
-      fs.writeFileSync(blocker, "in the way");
-    }
     const rename = () =>
       auth(request(app).post(`/api/print/${modelId}/plate/${stuck.id}/rename`)).send({ filename: "unstuck.stl" });
-
-    const unfinished = await rename();
-    expect(unfinished.status).toBe(409);
-    expect(unfinished.body.code).toBe("rename_unfinished");
-    expect(await prisma.plate.findUniqueOrThrow({ where: { id: stuck.id } })).toMatchObject({
-      filename: "unstuck.stl",
-      storagePath: stuck.storagePath,
-    });
-
-    for (const blocker of blockers) fs.rmSync(blocker, { force: true });
+    try {
+      for (const blocker of blockers) {
+        fs.mkdirSync(path.dirname(blocker), { recursive: true });
+        fs.writeFileSync(blocker, "in the way");
+      }
+      const unfinished = await rename();
+      expect(unfinished.status).toBe(409);
+      expect(unfinished.body.code).toBe("rename_unfinished");
+      expect(await prisma.plate.findUniqueOrThrow({ where: { id: stuck.id } })).toMatchObject({
+        filename: "unstuck.stl",
+        storagePath: stuck.storagePath,
+      });
+    } finally {
+      for (const blocker of blockers) fs.rmSync(blocker, { force: true });
+    }
     expect((await rename()).status).toBe(200);
     const moved = await prisma.plate.findUniqueOrThrow({ where: { id: stuck.id } });
     expect(moved.storagePath).toBe(path.join(folder, "unstuck.stl"));
@@ -682,9 +688,126 @@ describe("plate add/remove/reorder/rename", () => {
         "fall-b.stl",
         "fall-a.stl",
       ]);
+      // Each plate, by its id, still has the bytes it was uploaded with.
+      for (const [id, bytes] of [
+        [a.id, "solid fall a endsolid"],
+        [b.id, "solid fall b endsolid"],
+      ] as const) {
+        const plate = await prisma.plate.findUniqueOrThrow({ where: { id } });
+        expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe(bytes);
+      }
       expect(fs.readFileSync(blocker, "utf8")).toBe("in the way");
     } finally {
       fs.rmSync(blocker, { force: true });
+    }
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("goes on when a test's fault lands where a caller queues for the rename lock", async () => {
+    const uploaded = await auth(request(app).post("/api/upload")).attach(
+      "files",
+      Buffer.from("solid q endsolid"),
+      "q.stl",
+    );
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [plate] = await prisma.plate.findMany({ where: { printId: modelId } });
+
+    faults.at("lock:plate.rename", 1, "EIO");
+    const res = await auth(request(app).post(`/api/print/${modelId}/plate/${plate.id}/rename`)).send({
+      filename: "queued.stl",
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it("refuses more pictures in one upload than it holds in memory, before reading them all", async () => {
+    const picture = await sharp({ create: { width: 4, height: 4, channels: 3, background: "#cc3366" } })
+      .png()
+      .toBuffer();
+    let upload = auth(request(app).post(`/api/print/${printId}/preview-images`));
+    for (let at = 0; at < 21; at++) upload = upload.attach("files", picture, `picture-${at}.png`);
+    const res = await upload;
+    expect(res.status).toBe(413);
+    expect(res.body.detail).toBe("At most 20 pictures go in one upload");
+  });
+
+  it("doesn't take a plate another upload's receipt names for an older server's upload", async () => {
+    const uploaded = await auth(request(app).post("/api/upload")).attach(
+      "files",
+      Buffer.from("solid own endsolid"),
+      "own.stl",
+    );
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const bytes = Buffer.from("solid claimed endsolid");
+    const [firstId, secondId] = [randomUUID(), randomUUID()];
+    const upload = (uploadId: string) =>
+      auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        bytes,
+        `thingport-upload-${uploadId}-claimed.stl`,
+      );
+
+    const first = await upload(firstId);
+    expect(first.status).toBe(200);
+    const [claimedId] = first.body.added_plate_ids;
+    // Renamed to the second upload's marker, the name an older server's plate of that upload would have.
+    await auth(request(app).post(`/api/print/${modelId}/plate/${claimedId}/rename`))
+      .send({ filename: `thingport-upload-${secondId}-claimed.stl` })
+      .expect(200);
+
+    const second = await upload(secondId);
+    expect(second.status).toBe(200);
+    expect(second.body.added_plate_ids).toHaveLength(1);
+    expect(second.body.added_plate_ids[0]).not.toBe(claimedId);
+    expect(await prisma.plate.count({ where: { printId: modelId } })).toBe(3);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("keeps a swap's files where its rows say when a saved path's answer is lost", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid lost a endsolid"), "lost-a.stl")
+      .attach("files", Buffer.from("solid lost b endsolid"), "lost-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a, b] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    const swap = () =>
+      auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [
+          { plate_id: a.id, filename: "lost-b.stl" },
+          { plate_id: b.id, filename: "lost-a.stl" },
+        ],
+      });
+    const update = prisma.plate.update;
+    let lostOnce = false;
+    // The path saved for the plate waiting aside commits, and its answer is lost.
+    const lost = vi.spyOn(prisma.plate, "update").mockImplementation((async (args: {
+      data: { storagePath?: unknown };
+    }) => {
+      const row = await Reflect.apply(update, prisma.plate, [args]);
+      if (!lostOnce && typeof args.data.storagePath === "string" && args.data.storagePath.includes(a.id)) {
+        lostOnce = true;
+        throw new Error("Connection lost after COMMIT");
+      }
+      return row;
+    }) as never);
+    try {
+      await swap();
+    } finally {
+      lost.mockRestore();
+    }
+    expect(lostOnce).toBe(true);
+
+    // The same rename again finishes whatever is left.
+    expect((await swap()).status).toBe(200);
+    for (const [id, filename, bytes] of [
+      [a.id, "lost-b.stl", "solid lost a endsolid"],
+      [b.id, "lost-a.stl", "solid lost b endsolid"],
+    ] as const) {
+      const plate = await prisma.plate.findUniqueOrThrow({ where: { id } });
+      expect([plate.filename, path.basename(plate.storagePath)]).toEqual([filename, filename]);
+      expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe(bytes);
     }
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
@@ -767,14 +890,14 @@ describe("plate add/remove/reorder/rename", () => {
 
     const uploadId = "00000000-0000-4000-8000-000000000457";
     const filename = `thingport-upload-${uploadId}-retry.stl`;
-    const firstFile = tmpFile(filename, "solid retry endsolid");
-    const secondFile = tmpFile(filename, "solid retry endsolid");
+    const original = "solid retry endsolid";
     // Another file under the same upload ID isn't a retry, even one with the bytes the stored plate was edited to.
-    const otherFile = tmpFile(filename, "solid edits endsolid");
-    const post = (file: string) => auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", file);
+    const changed = "solid edits endsolid";
+    const post = (bytes: string) =>
+      auth(request(app).post(`/api/print/${printId}/plates`)).attach("files", Buffer.from(bytes), filename);
 
-    try {
-      const [first, second] = await Promise.all([post(firstFile), post(secondFile)]);
+    {
+      const [first, second] = await Promise.all([post(original), post(original)]);
       expect(first.status).toBe(200);
       expect(second.status).toBe(200);
       expect(first.body.added_plate_ids).toHaveLength(1);
@@ -789,19 +912,16 @@ describe("plate add/remove/reorder/rename", () => {
       );
       if (!stored) throw new Error("Expected a readable plate");
       // Same length, so the row's size still holds, as an edit in place keeps it.
-      fs.writeFileSync(stored, "solid edits endsolid");
-      const replay = await post(firstFile);
+      fs.writeFileSync(stored, changed);
+      const replay = await post(original);
       expect(replay.status).toBe(200);
       expect(replay.body.added_plate_ids).toEqual(first.body.added_plate_ids);
 
-      const other = await post(otherFile);
+      const other = await post(changed);
       expect(other.status).toBe(409);
       expect(await prisma.plate.count({ where: { printId } })).toBe(second.body.print.plates.length);
-    } finally {
-      fs.rmSync(firstFile, { force: true });
-      fs.rmSync(secondFile, { force: true });
-      fs.rmSync(otherFile, { force: true });
     }
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("retries a concurrent append position conflict with the same upload claim and bytes", async () => {
@@ -863,6 +983,7 @@ describe("plate add/remove/reorder/rename", () => {
     const plates: { position: number }[] = retry.body.print.plates;
     expect(plates).toHaveLength(first.body.print.plates.length + 1);
     expect(plates.map((plate) => plate.position)).toEqual(plates.map((_, position) => position));
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it.each([
@@ -891,6 +1012,7 @@ describe("plate add/remove/reorder/rename", () => {
     const retry = await upload();
     expect(retry.status).toBe(200);
     expect(retry.body.added_plate_ids).toEqual(res.body.added_plate_ids);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it.each([true, false])("checks legacy marker bytes before reusing a plate (same bytes: %s)", async (sameBytes) => {
@@ -913,6 +1035,7 @@ describe("plate add/remove/reorder/rename", () => {
     const file = resolvePlateFilePath(stored);
     if (!file) throw new Error("Expected the submitted plate on disk");
     expect(fs.readFileSync(file)).toEqual(submitted);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("rolls back a plate when its worker resumes after losing its lease", async () => {

@@ -207,6 +207,32 @@ describe("recoverable preview uploads", () => {
     expect(await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).toMatchObject({ thumbGenerated: true });
   });
 
+  it("puts an uploaded picture in place of a rolled-back render's leftover thumbnail", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const thumb = assetTarget(await ensureAssetHome(print.id), plateThumbFile(plate.id));
+    await fs.rm(thumb, { force: true });
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: false } });
+    const disputed = disputeTransactions(
+      { caller: "saveGeneratedPlateThumbnail", outcome: "rolled back" },
+      { caller: "takeBackRolledBackThumb", outcome: "fails" },
+    );
+    try {
+      await expect(saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).rejects.toThrow("rolled back");
+    } finally {
+      disputed.mockRestore();
+    }
+    expect(fsSync.existsSync(thumb)).toBe(true);
+
+    // An older client's upload, whose first picture takes over from our render.
+    await request(app)
+      .post(`/api/print/${print.id}/preview-images`)
+      .set(auth())
+      .attach("files", await png(200), "photo.png")
+      .expect(200);
+    expect(await redOf(thumb)).toBeGreaterThan(180);
+  });
+
   it("keeps an upload key retryable when writing its JPEG fails", async () => {
     const { print, gallery, uploadId, where } = await uploadStorage();
     const bytes = await png(200);

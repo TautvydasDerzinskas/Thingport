@@ -265,8 +265,10 @@ async function moveStored(
   newPath: string,
   save: () => Promise<unknown>,
 ): Promise<boolean> {
+  let listedFrom: string | undefined;
   const listMove = async (): Promise<[string, string][]> => {
     const oldPath = await stored();
+    listedFrom = oldPath;
     // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
     // that file. Asked again, this one sees the place is taken and goes elsewhere. Free is nothing there; a look that
     // fails throws before anything is renamed.
@@ -275,7 +277,13 @@ async function moveStored(
     }
     return [[oldPath, newPath]];
   };
-  return (await moveAllStored(listMove, save)) > 0;
+  // After a failed save, where the record says the file is: the new place, the old one, or neither it can tell.
+  const committed = async () => {
+    const now = path.resolve(await stored());
+    if (now === path.resolve(newPath)) return true;
+    return listedFrom !== undefined && now === path.resolve(listedFrom) ? false : undefined;
+  };
+  return (await moveAllStored(listMove, save, committed)) > 0;
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
@@ -284,6 +292,7 @@ async function moveStored(
 async function moveAllStored(
   listMoves: () => Promise<[string, string][]>,
   save: () => Promise<unknown>,
+  committed?: () => Promise<boolean | undefined>,
 ): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
@@ -302,6 +311,14 @@ async function moveAllStored(
       }
       await save();
     } catch (err) {
+      // A save that failed may still have committed. Then the files stay where the record now says; and when the
+      // record can't be read, they stay too, as the next move finds them gone from the old place and records the new.
+      const outcome = done.length && committed ? await committed().catch(() => undefined) : false;
+      if (outcome === true) {
+        for (const [oldPath] of present) await pruneEmptyStorageDirs(path.dirname(oldPath));
+        return present.length;
+      }
+      if (outcome === undefined) throw err;
       // Put them back, so the stored path still finds them.
       for (const [oldPath, newPath] of done.toReversed()) {
         await fs.mkdir(path.dirname(oldPath), { recursive: true });
@@ -412,6 +429,13 @@ async function relocateAssets(
 }
 
 /** Moves these plates' files to where their names and the template now put them. */
+/** A plate a rename moved aside to wait for its target, in a folder of its own: `<folder>/<model id>/<plate id>/`. The
+ *  fallback a taken name gets, `<folder>/<model id>/<name>`, isn't one. */
+export function isWaitingAside(plate: Pick<Plate, "id" | "storagePath">, printId: string): boolean {
+  const parts = plate.storagePath.split(/[\\/]/);
+  return parts.length >= 3 && parts[parts.length - 2] === plate.id && parts[parts.length - 3] === printId;
+}
+
 async function relocatePlates(
   print: PrintLike & { assetsPath?: string | null },
   plates: Plate[],
@@ -433,7 +457,10 @@ async function relocatePlates(
         ? rendered
         : leaving?.has(path.resolve(STORAGE, rendered))
           ? path.join(path.dirname(rendered), print.id, plate.id, path.basename(rendered))
-          : await freePlatePath(rendered, print.id, { plateId: plate.id });
+          : // One waiting aside keeps waiting there while its target is still taken.
+            isWaitingAside(plate, print.id) && (await pathTaken(rendered, { plateId: plate.id }))
+            ? plate.storagePath
+            : await freePlatePath(rendered, print.id, { plateId: plate.id });
     const newPath = path.join(STORAGE, newRelative);
     if (path.resolve(oldPath) === path.resolve(newPath)) {
       if (plate.storagePath !== newRelative) {
@@ -476,15 +503,15 @@ export async function relocateRenamedPlates(
   const ids = plates.map((plate) => plate.id);
   const settled = await prisma.plate.findMany({ where: { id: { in: ids } } });
   moved += await relocatePlates(print, settled, safeTemplate, printValues);
-  // A swap a failed request left halfway has a plate still waiting aside, under the model's id, whose way this rename
-  // of its partner may have freed. Best-effort: these names were recorded before, not by this rename.
-  const waiting = await prisma.plate.findMany({ where: { printId: print.id, id: { notIn: ids } } });
-  for (const plate of waiting.filter((other) => other.storagePath.split(/[\\/]/).includes(print.id))) {
-    moved += await relocatePlates(print, [plate], safeTemplate, printValues).catch((error) => {
-      console.error(`Couldn't put plate ${plate.id} where its name says yet:`, error);
-      return 0;
-    });
-  }
+  // A swap a failed request left halfway has a plate still waiting aside, whose way this rename of its partner may have
+  // freed. The rename looked at its file before recording any name, and a move of it that fails fails the rename.
+  const others = await prisma.plate.findMany({ where: { printId: print.id, id: { notIn: ids } } });
+  moved += await relocatePlates(
+    print,
+    others.filter((other) => isWaitingAside(other, print.id)),
+    safeTemplate,
+    printValues,
+  );
   return moved;
 }
 

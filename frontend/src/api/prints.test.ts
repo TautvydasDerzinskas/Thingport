@@ -3,6 +3,7 @@ import { UnauthorizedError } from "./client";
 import {
   BULK_LIMIT,
   PlateUploadCapabilityError,
+  PICTURE_UPLOAD_BATCH,
   PlateRenameResponseError,
   PlateRenameTargetGoneError,
   PlateReorderResponseError,
@@ -304,6 +305,37 @@ describe("printsApi.renamePlates", () => {
     await expect(rename()).resolves.toMatchObject({ print: { plates: [{ folder: "parts" }] } });
     respond(200, withFolder(null));
     await expect(rename()).resolves.toBeTruthy();
+  });
+});
+
+describe("printsApi.addPreviewImages", () => {
+  beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("sends more pictures than the server holds in memory in batches, ids in the files' order", async () => {
+    const sent: { files: number; ids: string[] }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const form = init.body as FormData;
+        const ids = form.getAll("upload_ids").map(String);
+        sent.push({ files: form.getAll("files").length, ids });
+        return new Response(JSON.stringify({ print: uploadPrint, added_image_ids: ids.map((id) => `image-${id}`) }), {
+          status: 200,
+        });
+      }),
+    );
+    // 20 a request, the backend's PICTURE_UPLOAD_MAX_FILES.
+    expect(PICTURE_UPLOAD_BATCH).toBe(20);
+    const files = Array.from({ length: 25 }, (_, at) => new File(["x"], `${at}.png`));
+    const keys = files.map((_, at) => `key-${at}`);
+
+    const result = await printsApi.addPreviewImages("print", files, keys);
+
+    expect(sent.map((batch) => batch.files)).toEqual([20, 5]);
+    expect(sent.flatMap((batch) => batch.ids)).toEqual(keys);
+    expect(result.added_image_ids).toEqual(keys.map((key) => `image-${key}`));
   });
 });
 

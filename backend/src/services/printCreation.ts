@@ -23,6 +23,7 @@ import {
   ensurePlateThumbnail,
   managedPlatePath,
   pruneEmptyStorageDirs,
+  isWaitingAside,
   relocateRenamedPlates,
   removePlatePictures,
   renderPlateStoragePath,
@@ -545,9 +546,25 @@ async function findPlateForUpload(
   clientUploadId: string,
   contentSha256: string,
 ): Promise<Plate | undefined> {
-  const candidates = await prisma.plate.findMany({
+  const named = await prisma.plate.findMany({
     where: { printId, filename: { startsWith: uploadMarker(clientUploadId) } },
   });
+  // A plate another upload's receipt names is that upload's, whatever it's called now; one an older server saved has
+  // no receipt, and is found by its marker and bytes.
+  const owned = new Set(
+    (
+      await prisma.plateUploadAttempt.findMany({
+        where: {
+          printId,
+          status: "complete",
+          plateId: { in: named.map((plate) => plate.id) },
+          clientUploadId: { not: clientUploadId },
+        },
+        select: { plateId: true },
+      })
+    ).map((attempt) => attempt.plateId),
+  );
+  const candidates = named.filter((plate) => !owned.has(plate.id));
   const matches: Plate[] = [];
   for (const candidate of candidates) {
     const stored = resolvePlateFilePath(candidate);
@@ -722,9 +739,12 @@ async function removePlateUnlocked(print: Pick<Print, "id" | "assetsPath">, plat
 }
 
 /** Puts the model's plates in this order; `plateIds` must be exactly its plates. True when the first one changed. */
-export async function reorderPlates(printId: string, plateIds: string[]): Promise<boolean> {
-  // Not while a rename moves files: their paths are rendered from the positions it read.
-  return withPlateRenameLock(printId, () => reorderPlatesUnlocked(printId, plateIds));
+export async function reorderPlates(printId: string, plateIds: string[]): Promise<void> {
+  // Not while a rename moves files: their paths are rendered from the positions it read. The prepared print's facts
+  // are read in the same turn, so a rename can't move the new first file while they're read.
+  await withPlateRenameLock(printId, async () => {
+    if (await reorderPlatesUnlocked(printId, plateIds)) await refreshAutoPreparedMetadata(printId);
+  });
 }
 
 async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promise<boolean> {
@@ -762,6 +782,13 @@ async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Pl
       // recorded. A move that fails after the commit keeps its source readable, and the same rename again retries it.
       for (const { plate } of planned) {
         if (!plate.sourcePath) await fileState(managedPlatePath(plate), "rename.look");
+      }
+      // So is each plate a swap left waiting aside, which the moves after the commit may put in place.
+      const renaming = new Set(planned.map(({ plate }) => plate.id));
+      for (const plate of plates) {
+        if (!renaming.has(plate.id) && isWaitingAside(plate, print.id)) {
+          await fileState(managedPlatePath(plate), "rename.look");
+        }
       }
 
       const movingNames = new Set(

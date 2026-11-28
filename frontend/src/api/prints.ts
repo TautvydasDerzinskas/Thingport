@@ -390,6 +390,33 @@ async function getUploadResults<K extends UploadResultId>(
   }
 }
 
+/** One batch of pictures, at most what the server holds in memory for one request. */
+async function addPictureBatch(
+  id: string,
+  files: File[],
+  uploadIds?: string[],
+): Promise<{ print: Print; added_image_ids?: (string | null)[] }> {
+  const fd = new FormData();
+  for (const file of files) fd.append("files", file);
+  for (const uploadId of uploadIds ?? []) fd.append("upload_ids", uploadId);
+  const suffix = uploadIds ? "/idempotent" : "";
+  const res = await fetch(`${apiBase()}/print/${id}/preview-images${suffix}`, {
+    method: "POST",
+    body: fd,
+    headers: authHeaders(),
+  });
+  if (res.status === 401) throw new UnauthorizedError();
+  if (!res.ok) throw new PrintApiError(await readErrorMessage(res, "Failed to add preview image"), res.status, null);
+  const body: unknown = await res.json();
+  if (!isRecord(body) || !isUploadPrint(body.print, id)) {
+    throw new Error("The server returned an invalid print after the preview upload");
+  }
+  const ids = body.added_image_ids;
+  return Array.isArray(ids) && ids.every((imageId: unknown) => imageId === null || isUploadId(imageId))
+    ? { print: body.print, added_image_ids: ids }
+    : { print: body.print };
+}
+
 /** What a rename's answer means, past a 401 and a 404, which each endpoint reads its own way. */
 async function renamedPrint(res: Response, printId: string): Promise<{ print: Print }> {
   // A timeout at a proxy, or a server failure, may come after the names were saved.
@@ -452,6 +479,9 @@ export class PlateRenameResponseError extends Error {
 }
 
 /** A reorder whose answer couldn't be read: the order may be saved, and sending it again is the same reorder. */
+/** At most this many pictures in one request: the server's limit, as it holds them in memory. */
+export const PICTURE_UPLOAD_BATCH = 20;
+
 export class PlateReorderResponseError extends Error {
   constructor(cause?: unknown) {
     super("Could not confirm the new file order", { cause });
@@ -1168,25 +1198,20 @@ export const printsApi = {
     files: File[],
     uploadIds?: string[],
   ): Promise<{ print: Print; added_image_ids?: (string | null)[] }> => {
-    const fd = new FormData();
-    for (const file of files) fd.append("files", file);
-    for (const uploadId of uploadIds ?? []) fd.append("upload_ids", uploadId);
-    const suffix = uploadIds ? "/idempotent" : "";
-    const res = await fetch(`${apiBase()}/print/${id}/preview-images${suffix}`, {
-      method: "POST",
-      body: fd,
-      headers: authHeaders(),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new PrintApiError(await readErrorMessage(res, "Failed to add preview image"), res.status, null);
-    const body: unknown = await res.json();
-    if (!isRecord(body) || !isUploadPrint(body.print, id)) {
-      throw new Error("The server returned an invalid print after the preview upload");
+    // In batches the server holds in memory; ids come back in the files' order, and a batch that fails stops the rest.
+    let last: { print: Print; added_image_ids?: (string | null)[] } | undefined;
+    const added: (string | null)[] = [];
+    let aligned = true;
+    for (let at = 0; at < files.length || !last; at += PICTURE_UPLOAD_BATCH) {
+      last = await addPictureBatch(
+        id,
+        files.slice(at, at + PICTURE_UPLOAD_BATCH),
+        uploadIds?.slice(at, at + PICTURE_UPLOAD_BATCH),
+      );
+      if (last.added_image_ids) added.push(...last.added_image_ids);
+      else aligned = false;
     }
-    const ids = body.added_image_ids;
-    return Array.isArray(ids) && ids.every((imageId: unknown) => imageId === null || isUploadId(imageId))
-      ? { print: body.print, added_image_ids: ids }
-      : { print: body.print };
+    return aligned ? { print: last.print, added_image_ids: added } : { print: last.print };
   },
 
   getPreviewUploadResults: (printId: string, uploadIds: string[]) =>

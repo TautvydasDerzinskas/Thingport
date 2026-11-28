@@ -20,6 +20,7 @@ import {
   plateThumbFile,
   printAssetHome,
   removeAsset,
+  removeAssetOrThrow,
   type AssetHome,
 } from "./modelAssets";
 import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
@@ -229,8 +230,9 @@ export async function saveGeneratedPlateThumbnail(
   buffer: Buffer,
 ): Promise<"saved" | "skipped" | "invalid"> {
   await ensureAssetHome(printId);
-  // Whether this attempt writes the plate's first thumbnail.
-  let first = false;
+  // This attempt's record when it writes the plate's first thumbnail, while whose that is isn't settled. Only that
+  // record is cleared: once the lock is let go, another attempt on the plate may have set its own.
+  let mine: { file: string; failedAt?: number } | undefined;
   try {
     const outcome = await prisma.$transaction(async (tx) => {
       await lockPreviewGallery(tx, printId);
@@ -244,24 +246,22 @@ export async function saveGeneratedPlateThumbnail(
       const had = await assetIsThere(home, plateThumbFile(plateId));
       if (!plate.thumbGenerated && had) return "skipped";
       if (!had) {
-        first = true;
-        unsettledThumbs.set(plateId, { file: assetTarget(home, plateThumbFile(plateId)) });
+        mine = { file: assetTarget(home, plateThumbFile(plateId)) };
+        unsettledThumbs.set(plateId, mine);
       }
       // Where the file really went, which the folder a move gave the model since can change.
       const placed = (dest: string) => {
-        const unsettled = unsettledThumbs.get(plateId);
-        if (first && unsettled) unsettled.file = dest;
+        if (mine) mine.file = dest;
       };
       if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx, placed }))) return "invalid";
       await tx.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
       return "saved";
     });
-    if (first) unsettledThumbs.delete(plateId);
+    if (mine && unsettledThumbs.get(plateId) === mine) unsettledThumbs.delete(plateId);
     return outcome;
   } catch (error) {
-    const unsettled = first ? unsettledThumbs.get(plateId) : undefined;
-    if (unsettled) {
-      unsettled.failedAt = Date.now();
+    if (mine && unsettledThumbs.get(plateId) === mine) {
+      mine.failedAt = Date.now();
       await takeBackRolledBackThumb(printId, plateId);
     }
     throw error;
@@ -441,9 +441,20 @@ async function settleGalleryDrops(printId: string): Promise<void> {
     console.error(`Couldn't settle the gallery of print ${printId} yet:`, error);
     return;
   }
-  for (const id of checked) unsettled.ids.delete(id);
+  for (const id of checked) {
+    // A row that survived needs nothing; one that went is retired once its files are confirmed gone, else retried.
+    if (!left.has(id)) {
+      try {
+        await removeAssetOrThrow(unsettled.home, galleryImageFile(id));
+        await removeAssetOrThrow(unsettled.home, galleryThumbFile(id));
+      } catch (error) {
+        console.error(`Couldn't remove gallery image ${id}'s files yet:`, error);
+        continue;
+      }
+    }
+    unsettled.ids.delete(id);
+  }
   if (!unsettled.ids.size && unsettledDrops.get(printId) === unsettled) unsettledDrops.delete(printId);
-  for (const id of checked) if (!left.has(id)) await removeGalleryFiles(unsettled.home, id);
 }
 
 /** The first of `images` whose file is there, and that file, by a look that throws on any error but a missing file. */
@@ -533,6 +544,9 @@ export async function preferImageOverRenders(
     });
     const home = plate?.print.assetsPath;
     if (!plate || !home) return;
+    await settleThumb(tx, plateId);
+    // A render's save may still take back the file it wrote: whose thumbnail it is waits for that.
+    if (unsettledThumbs.has(plateId)) return;
     if (!plate.thumbGenerated && (await assetIsThere(home, plateThumbFile(plateId)))) return;
     await saveThumbFromBytes(plateId, buffer, keepExif, { home, db: tx });
   });
@@ -648,7 +662,9 @@ async function adoptRenderAsThumb(
   });
   if (!plate) return null;
   const home = await plateAssetHome(plateId);
-  const had = plateThumbExists(plateId, home);
+  // A rolled-back render's leftover isn't a thumbnail: the save below, under the lock, takes it back first.
+  const leftover = unsettledThumbs.get(plateId)?.failedAt !== undefined;
+  const had = !leftover && plateThumbExists(plateId, home);
   if (had && !(plate.thumbGenerated && (await writtenBefore(plateThumbPath(plateId, home), renderPath)))) return null;
   const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   // An upload or an import may have put its picture in meanwhile, which stays.

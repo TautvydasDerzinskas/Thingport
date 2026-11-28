@@ -11,7 +11,6 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload, thumbnailUpload } from "../uploadMiddleware";
 import {
   addPlatesToPrint,
-  refreshAutoPreparedMetadata,
   removePlate,
   renamePlate,
   renamePlates,
@@ -128,7 +127,7 @@ router.post(
     const body = parseBody(reorderSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    if (await reorderPlates(print.id, body.plate_ids)) await refreshAutoPreparedMetadata(print.id);
+    await reorderPlates(print.id, body.plate_ids);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );
