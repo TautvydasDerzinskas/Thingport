@@ -12,6 +12,7 @@ import {
   plateFilenameError,
   PlateRenameNumberedError,
   PlateUploadConfirmationError,
+  PlateUploadRetryUnsafeError,
   savePlateChanges,
   type PlateItem,
   type PlateSaveApi,
@@ -144,9 +145,10 @@ describe("savePlateChanges", () => {
       savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
     ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
 
+    // The server can't say which files it saved nor take the file again safely: checking the model's files settles it.
     await expect(
       savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress),
-    ).rejects.toBeInstanceOf(PlateUploadConfirmationError);
+    ).rejects.toBeInstanceOf(PlateUploadRetryUnsafeError);
     expect(api.addPlates).toHaveBeenCalledTimes(1);
 
     await savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, onProgress);
@@ -730,6 +732,47 @@ describe("renames another editor's changes get in the way of", () => {
     await expect(save()).rejects.toMatchObject({ requested: "c.stl", saved: "c (2).stl" });
     await expect(save()).resolves.toBeDefined();
     expect(api.renamePlate).toHaveBeenCalledOnce();
+  });
+
+  it("asks for a name again when the server numbered it but its holder has gone since", async () => {
+    const { api, set } = numberingServer([plate("a", "a.stl", 0)]);
+    // The server numbered the name apart from a plate that another editor renamed away before the answer was read.
+    api.renamePlate.mockImplementationOnce(async () => {
+      const answer = print(plate("a", "c (2).stl", 0));
+      set(answer);
+      return { print: answer };
+    });
+
+    const result = await savePlateChanges(
+      print(plate("a", "a.stl", 0)),
+      [edited("a", "c.stl")],
+      new Set(),
+      api,
+      () => {},
+    );
+
+    expect(api.renamePlate).toHaveBeenCalledTimes(2);
+    expect(result.plates.map((candidate) => candidate.filename)).toEqual(["c.stl"]);
+  });
+
+  it("reports every numbered name of one save together", async () => {
+    const plates = [plate("a", "a.stl", 0), plate("b", "b.stl", 1), plate("x", "c.stl", 2), plate("y", "d.stl", 3)];
+    const { api } = numberingServer(plates);
+
+    const save = savePlateChanges(
+      print(...plates),
+      [edited("a", "c.stl"), edited("b", "d.stl")],
+      new Set(),
+      api,
+      () => {},
+    );
+
+    await expect(save).rejects.toMatchObject({
+      renames: [
+        { requested: "c.stl", saved: "c (2).stl" },
+        { requested: "d.stl", saved: "d (2).stl" },
+      ],
+    });
   });
 
   it("puts the draft's order onto the plates there are now when another editor added one", async () => {

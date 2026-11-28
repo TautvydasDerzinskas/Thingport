@@ -281,6 +281,8 @@ describe("printsApi.renamePlates", () => {
     await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
     respond(408, { detail: "Request timed out" });
     await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+    respond(409, { detail: "Storage path already exists: a/other.stl", code: "rename_unfinished" });
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
     await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("not json", { status: 200 })));
@@ -302,6 +304,31 @@ describe("printsApi.renamePlates", () => {
     await expect(rename()).resolves.toMatchObject({ print: { plates: [{ folder: "parts" }] } });
     respond(200, withFolder(null));
     await expect(rename()).resolves.toBeTruthy();
+  });
+});
+
+describe("printsApi.renamePlate", () => {
+  beforeEach(() => vi.stubGlobal("window", { localStorage: { getItem: () => null } }));
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  const respond = (status: number, body: unknown) =>
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status })));
+  const rename = () => printsApi.renamePlate("print", "plate", "other.stl");
+
+  it("reads its answer as the batch rename does", async () => {
+    respond(200, {});
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+    respond(404, { detail: "Plate not found" });
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameTargetGoneError);
+    respond(409, { detail: "Storage path already exists: a/other.stl", code: "rename_unfinished" });
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+    respond(400, { detail: "Keep the file's original extension" });
+    const refused = rename();
+    await expect(refused).rejects.toThrow("Keep the file's original extension");
+    await expect(refused).rejects.not.toBeInstanceOf(PlateRenameResponseError);
+    respond(200, { print: uploadPrint });
+    await expect(rename()).resolves.toEqual({ print: uploadPrint });
   });
 });
 

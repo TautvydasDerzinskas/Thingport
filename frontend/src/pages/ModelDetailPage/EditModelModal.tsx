@@ -67,6 +67,7 @@ import {
   plateFilenameError,
   PlateRenameNumberedError,
   PlateRenameSwapUnsupportedError,
+  PlateUploadRetryUnsafeError,
   PlateUploadConfirmationError,
   savePlateChanges,
   type PlateItem,
@@ -362,6 +363,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       let stagedImages = images;
       // A picture saved, then removed by someone else before this editor saw it: its notice stays to be read.
       let previewGoneMeanwhile = false;
+      // Pictures an older server saved that can't be matched to these: the gallery order is left as it is.
+      let previewsUnconfirmed = false;
       if (images.some((image) => image.kind === "new")) {
         const result = await savePreviewUploads(latest, images, printsApi, (progress) => {
           latest = progress.print;
@@ -370,13 +373,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         });
         latest = result.print;
         stagedImages = result.items;
-        if (stagedImages.some((image) => image.kind === "unconfirmed")) {
-          onUpdated(latest);
-          return;
-        }
+        previewsUnconfirmed = stagedImages.some((image) => image.kind === "unconfirmed");
         previewGoneMeanwhile = stagedImages.some((image) => image.kind === "missing");
       }
-      if (stagedImages.length) {
+      if (stagedImages.length && !previewsUnconfirmed) {
         // Our own render gives way to the first picture uploaded, so it may be gone by now.
         const present = new Set(latest.preview_images.map((img) => img.id));
         const known = stagedImages
@@ -405,8 +405,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       latestPrint.current = latest;
 
       onUpdated(latest);
-      // The rest is saved; the editor stays open until the missing picture's notice is dismissed.
-      if (previewGoneMeanwhile) return;
+      // The rest is saved; the editor stays open on the pictures' notice.
+      if (previewGoneMeanwhile || previewsUnconfirmed) return;
       showToast({ message: t("models:edit.updateSuccess") });
       onClose();
     } catch (err) {
@@ -421,7 +421,15 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         return;
       }
       if (err instanceof PlateRenameNumberedError) {
-        setError(t("models:edit.renameNumbered", { requested: err.requested, saved: err.saved }));
+        setError(
+          err.renames.length === 1
+            ? t("models:edit.renameNumbered", { requested: err.requested, saved: err.saved })
+            : t("models:edit.renameNumberedMany", { saved: err.renames.map((rename) => rename.saved).join(", ") }),
+        );
+        return;
+      }
+      if (err instanceof PlateUploadRetryUnsafeError) {
+        setError(t("models:edit.uploadRetryUnsafe"));
         return;
       }
       if (err instanceof PreviewUploadError) {

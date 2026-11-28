@@ -6839,6 +6839,8 @@
       "renameUnconfirmed": "Impossible de confirmer les nouveaux noms de fichiers. Enregistrez à nouveau pour terminer le renommage.",
       "renameTargetGone": "Un fichier renommé, ou son modèle, a été supprimé entre-temps. Rechargez le modèle pour voir ses fichiers.",
       "renameNumbered": "Un autre fichier s’appelle déjà {{requested}} : celui-ci a donc été enregistré sous {{saved}}.",
+      "renameNumberedMany": "D’autres fichiers portent déjà certains des noms demandés : ceux-ci ont donc été enregistrés avec un numéro ajouté : {{saved}}.",
+      "uploadRetryUnsafe": "Ce serveur ne peut pas réessayer l’envoi en toute sécurité. Fermez puis rouvrez l’éditeur, vérifiez quels fichiers ont été enregistrés et ajoutez seulement ceux qui manquent.",
       "plateSetChanged": "Quelqu’un d’autre a ajouté ou supprimé des fichiers pendant l’enregistrement. Enregistrez à nouveau pour appliquer votre ordre.",
       "fileNameRequired": "Le nom du fichier est obligatoire.",
       "uploadReceiptLookupFailed": "Impossible de vérifier quels fichiers ont été enregistrés. Sélectionnez de nouveau Mettre à jour.",

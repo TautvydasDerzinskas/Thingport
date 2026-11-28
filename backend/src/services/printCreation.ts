@@ -630,13 +630,13 @@ async function createClaimedPlateUpload(
   const heartbeat = renewPlateUploadClaim(claim, controller.signal);
   try {
     // Older servers could store the plate before recording that the attempt completed.
-    const existing = await withPlateRenameLock(print.id, () =>
-      findPlateForUpload(print.id, claim.clientUploadId, contentSha256),
-    );
-    if (existing) {
-      await completePlateUpload(prisma, claim, existing.id);
-      return existing;
-    }
+    // Found and recorded under the rename lock, so a removal can't take the plate between the two.
+    const existing = await withPlateRenameLock(print.id, async () => {
+      const found = await findPlateForUpload(print.id, claim.clientUploadId, contentSha256);
+      if (found) await completePlateUpload(prisma, claim, found.id);
+      return found;
+    });
+    if (existing) return existing;
     return await appendPlate(print, input, claim);
   } catch (error) {
     try {
@@ -723,6 +723,11 @@ async function removePlateUnlocked(print: Pick<Print, "id" | "assetsPath">, plat
 
 /** Puts the model's plates in this order; `plateIds` must be exactly its plates. True when the first one changed. */
 export async function reorderPlates(printId: string, plateIds: string[]): Promise<boolean> {
+  // Not while a rename moves files: their paths are rendered from the positions it read.
+  return withPlateRenameLock(printId, () => reorderPlatesUnlocked(printId, plateIds));
+}
+
+async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
     await lockPlateList(tx, printId);
     const plates = await tx.plate.findMany({ where: { printId }, orderBy: { position: "asc" }, select: { id: true } });
@@ -786,7 +791,14 @@ async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Pl
 
     // Commit logical names together. Each storage move can be retried, and a failed move keeps its source readable.
     // A repeated request still runs relocation in case the names committed before an earlier move failed.
-    await relocateRenamedPlates(print, renamed);
+    try {
+      await relocateRenamedPlates(print, renamed);
+    } catch (error) {
+      // The names are saved and some files may not have moved: coded, so the app can say so, and the same rename
+      // again finishes the moves.
+      if (error instanceof HttpError) throw new HttpError(error.status, error.message, "rename_unfinished");
+      throw error;
+    }
     if (renamed.some((plate) => plate.position === 0)) await refreshAutoPreparedMetadata(print.id);
     return renamed;
   });

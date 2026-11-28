@@ -6581,6 +6581,8 @@
       "renameUnconfirmed": "Could not confirm the new file names. Save again to finish renaming.",
       "renameTargetGone": "A file you renamed, or its model, was removed in the meantime. Reload the model to see its files.",
       "renameNumbered": "Another file is already named {{requested}}, so this one was saved as {{saved}}.",
+      "renameNumberedMany": "Other files already have some of the names asked for, so these were saved with a number added: {{saved}}.",
+      "uploadRetryUnsafe": "This server can’t safely retry the upload. Close and reopen the editor, check which files were saved, and add only the missing ones.",
       "plateSetChanged": "Someone else added or removed files while this saved. Save again to apply your order.",
       "fileNameRequired": "File name is required.",
       "uploadReceiptLookupFailed": "Could not check which files were saved. Select Update again.",

@@ -198,6 +198,10 @@ export function lockPreviewGallery(tx: Prisma.TransactionClient, printId: string
   return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('preview-gallery'), hashtext(${printId}))`;
 }
 
+/** Plates whose first thumbnail a generated save has written and not yet kept or taken back: whose that file is isn't
+ *  settled, and cover recovery leaves it alone until it is. In-process, as every writer of a thumbnail is. */
+const unsettledThumbs = new Set<string>();
+
 /** Generated thumbnails and recovered covers must read and update the same thumbnail under the gallery lock. */
 export async function saveGeneratedPlateThumbnail(
   printId: string,
@@ -218,7 +222,10 @@ export async function saveGeneratedPlateThumbnail(
       if (!plate || !home) return "skipped";
       const had = await assetIsThere(home, plateThumbFile(plateId));
       if (!plate.thumbGenerated && had) return "skipped";
-      if (!had) firstThumb = assetTarget(home, plateThumbFile(plateId));
+      if (!had) {
+        firstThumb = assetTarget(home, plateThumbFile(plateId));
+        unsettledThumbs.add(plateId);
+      }
       if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx }))) return "invalid";
       await tx.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
       return "saved";
@@ -226,6 +233,8 @@ export async function saveGeneratedPlateThumbnail(
   } catch (error) {
     if (firstThumb) await takeBackRolledBackThumb(printId, plateId, firstThumb, Date.now());
     throw error;
+  } finally {
+    if (firstThumb) unsettledThumbs.delete(plateId);
   }
 }
 
@@ -343,14 +352,68 @@ async function removeGeneratedRows(
 
 /** Drops our own renders, so the images that replace them start at position 0. */
 export async function removeGeneratedPreviewImages(printId: string): Promise<void> {
-  const generated = await prisma.$transaction(async (tx) => {
-    await lockPreviewGallery(tx, printId);
-    const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
-    return removeGeneratedRows(tx, images);
-  });
-  if (!generated.length) return;
-  const home = await printAssetHome(printId);
-  for (const id of generated) await removeGalleryFiles(home, id);
+  await dropGalleryRows(printId, (dropping) =>
+    prisma.$transaction(async (tx) => {
+      await lockPreviewGallery(tx, printId);
+      const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+      const generated = await removeGeneratedRows(tx, images);
+      if (generated.length) dropping(await galleryHome(tx, printId), generated);
+    }),
+  );
+}
+
+async function galleryHome(tx: Prisma.TransactionClient, printId: string): Promise<AssetHome> {
+  return (await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } }))?.assetsPath;
+}
+
+/** Gallery rows a transaction dropped without hearing whether it committed, by model, with where their files are. */
+const unsettledDrops = new Map<string, { home: AssetHome; ids: Set<string> }>();
+
+/** Runs `drop`, a transaction that removes gallery rows and names them through `dropping`, then removes their files.
+ *  A failed commit may still have committed: a locked read then decides which rows went, and when that read fails
+ *  too, the model's next cover work does. */
+async function dropGalleryRows<T>(
+  printId: string,
+  drop: (dropping: (home: AssetHome, ids: string[]) => void) => Promise<T>,
+): Promise<T> {
+  const dropped: { home: AssetHome; ids: string[] } = { home: undefined, ids: [] };
+  let result: T;
+  try {
+    result = await drop((home, ids) => {
+      dropped.home = home;
+      dropped.ids = ids;
+    });
+  } catch (error) {
+    if (dropped.ids.length) {
+      const unsettled = unsettledDrops.get(printId) ?? { home: dropped.home, ids: new Set<string>() };
+      unsettled.home = dropped.home;
+      for (const id of dropped.ids) unsettled.ids.add(id);
+      unsettledDrops.set(printId, unsettled);
+      await settleGalleryDrops(printId);
+    }
+    throw error;
+  }
+  for (const id of dropped.ids) await removeGalleryFiles(dropped.home, id);
+  return result;
+}
+
+/** Removes the files of rows a disputed commit dropped, once a locked read finds those rows gone. */
+async function settleGalleryDrops(printId: string): Promise<void> {
+  const unsettled = unsettledDrops.get(printId);
+  if (!unsettled) return;
+  let left: Set<string>;
+  try {
+    left = await prisma.$transaction(async (tx) => {
+      await lockPreviewGallery(tx, printId);
+      const rows = await tx.previewImage.findMany({ where: { id: { in: [...unsettled.ids] } }, select: { id: true } });
+      return new Set(rows.map((row) => row.id));
+    });
+  } catch (error) {
+    console.error(`Couldn't settle the gallery of print ${printId} yet:`, error);
+    return;
+  }
+  unsettledDrops.delete(printId);
+  for (const id of unsettled.ids) if (!left.has(id)) await removeGalleryFiles(unsettled.home, id);
 }
 
 /** The first of `images` whose file is there, and that file, by a look that throws on any error but a missing file. */
@@ -376,12 +439,18 @@ export async function resumePreviewUploadCoverQuietly(printId: string): Promise<
 /** Finishes the first uploaded photo's cover work on upload or receipt lookup. A new cover choice, a removed
  *  photo, or a different first manual photo supersedes the pending receipt. */
 export async function resumePreviewUploadCover(printId: string): Promise<void> {
+  await settleGalleryDrops(printId);
   const pending = { printId, coverPending: true };
   if (!(await prisma.previewImageUpload.findFirst({ where: pending, select: { uploadId: true } }))) return;
-  const result = await prisma.$transaction(async (tx) => {
+  await dropGalleryRows(printId, (dropping) => resumeCoverWork(printId, dropping));
+}
+
+async function resumeCoverWork(printId: string, dropping: (home: AssetHome, ids: string[]) => void): Promise<void> {
+  const pending = { printId, coverPending: true };
+  await prisma.$transaction(async (tx) => {
     await lockPreviewGallery(tx, printId);
     const receipts = await tx.previewImageUpload.findMany({ where: pending });
-    if (!receipts.length) return null;
+    if (!receipts.length) return;
     const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
     const home = (await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } }))?.assetsPath;
     // A look that fails throws, so the pending work stays for when the disk answers again.
@@ -392,26 +461,24 @@ export async function resumePreviewUploadCover(printId: string): Promise<void> {
     const receipt = receipts.find((upload) => upload.imageId === found?.image.id);
     if (!home || !found || !receipt) {
       await tx.previewImageUpload.updateMany({ where: pending, data: { coverPending: false } });
-      return null;
+      return;
     }
 
     const plate = await tx.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
     let thumbnailReady = true;
-    if (plate && (plate.thumbGenerated || !(await assetIsThere(home, plateThumbFile(plate.id))))) {
+    // A render's save may still take back the file it wrote: whose thumbnail it is waits, and so does this receipt.
+    if (plate && unsettledThumbs.has(plate.id)) thumbnailReady = false;
+    else if (plate && (plate.thumbGenerated || !(await assetIsThere(home, plateThumbFile(plate.id))))) {
       // The file the look found, which a folder at the model's own path can't stand in for.
       const jpeg = await fs.readFile(found.file);
       thumbnailReady = await saveThumbFromBytes(plate.id, jpeg, true, { home, db: tx });
     }
-    const generated = await removeGeneratedRows(tx, images);
+    dropping(home, await removeGeneratedRows(tx, images));
     await tx.previewImageUpload.updateMany({
       where: thumbnailReady ? pending : { ...pending, uploadId: { not: receipt.uploadId } },
       data: { coverPending: false },
     });
-    return { home, generated };
   });
-  if (result) {
-    for (const id of result.generated) await removeGalleryFiles(result.home, id);
-  }
 }
 
 /** Call once a real image is added: it takes over from our own render, as the cover and, when the plate's thumb is
@@ -460,17 +527,19 @@ async function renumberPreviewImages(tx: Prisma.TransactionClient, ids: string[]
 
 /** Removes one of the model's gallery images; the next one up becomes the cover if it was. */
 export async function removePreviewImage(printId: string, imageId: string): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    await lockPreviewGallery(tx, printId);
-    const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
-    if (!images.some((img) => img.id === imageId)) throw new HttpError(404, "Preview image not found");
-    await tx.previewImage.delete({ where: { id: imageId } });
-    await renumberPreviewImages(
-      tx,
-      images.filter((img) => img.id !== imageId).map((img) => img.id),
-    );
-  });
-  await removePreviewImageFile(printId, imageId);
+  await dropGalleryRows(printId, (dropping) =>
+    prisma.$transaction(async (tx) => {
+      await lockPreviewGallery(tx, printId);
+      const images = await tx.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+      if (!images.some((img) => img.id === imageId)) throw new HttpError(404, "Preview image not found");
+      await tx.previewImage.delete({ where: { id: imageId } });
+      await renumberPreviewImages(
+        tx,
+        images.filter((img) => img.id !== imageId).map((img) => img.id),
+      );
+      dropping(await galleryHome(tx, printId), [imageId]);
+    }),
+  );
 }
 
 /** Puts the model's gallery in this order; `ids` must be exactly its images, bar those whose file is gone, which no one

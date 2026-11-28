@@ -46,17 +46,27 @@ export class PlateUploadConfirmationError extends Error {
   }
 }
 
+/** An upload whose outcome is unknown on a server that can neither say which files it saved nor take the same file
+ *  again safely: trying again here can't settle it, and checking the model's files can. */
+export class PlateUploadRetryUnsafeError extends PlateUploadConfirmationError {
+  constructor() {
+    super();
+    this.name = "PlateUploadRetryUnsafeError";
+  }
+}
+
 export class PlateRenameSwapUnsupportedError extends Error {}
 
-/** A file saved under a numbered name, as one this save doesn't rename keeps the name asked for. Everything else in
- *  the save went through. */
+/** Files saved under numbered names, as ones this save doesn't rename keep the names asked for. Everything else in
+ *  the save went through. `requested` and `saved` are the first of them. */
 export class PlateRenameNumberedError extends Error {
-  constructor(
-    readonly requested: string,
-    readonly saved: string,
-  ) {
-    super(`Saved as ${saved}: another file is named ${requested}`);
+  readonly requested: string;
+  readonly saved: string;
+  constructor(readonly renames: { requested: string; saved: string }[]) {
+    super(`Saved as ${renames.map((rename) => rename.saved).join(", ")}: other files have the names asked for`);
     this.name = "PlateRenameNumberedError";
+    this.requested = renames[0].requested;
+    this.saved = renames[0].saved;
   }
 }
 
@@ -146,7 +156,7 @@ export async function savePlateChanges(
     }
     const hasUnconfirmedUploads = stagedItems.some((item) => item.kind === "new" && item.uploadAttempted);
     if (hasUnconfirmedUploads && !hasReceipts && !(await api.supportsIdempotentPlateUploads(print.id))) {
-      throw new PlateUploadConfirmationError();
+      throw new PlateUploadRetryUnsafeError();
     }
   } else if (pendingRemovals.size) {
     // A previous DELETE may have committed before its response reached the editor.
@@ -269,6 +279,8 @@ export async function savePlateChanges(
   );
   // Asked again once, after the plate that held its name has moved away.
   const askedAgain = new Set<string>();
+  const sameName = (plate: Plate, name: string) =>
+    plateNameKey(plate.folder, plate.filename) === plateNameKey(plate.folder, name);
   /** The other plate in `plate`'s folder holding `name`, which the server numbered `plate`'s name apart from. */
   const holderOf = (plate: Plate, name: string) =>
     plateNameKey(plate.folder, plate.filename) === plateNameKey(plate.folder, name)
@@ -316,7 +328,7 @@ export async function savePlateChanges(
         if (staged.kind !== "existing" || !target) return staged;
         const renamed = latest.plates.find((current) => current.id === staged.id);
         if (!renamed) return staged;
-        const numberedFrom = holderOf(renamed, target.normalized) ? target.normalized : undefined;
+        const numberedFrom = sameName(renamed, target.normalized) ? undefined : target.normalized;
         return { ...staged, filename: renamed.filename, filenameEdited: false, numberedFrom };
       });
       reportProgress();
@@ -326,16 +338,18 @@ export async function savePlateChanges(
     const res = await api.renamePlate(print.id, plate.id, filename);
     latest = res.print;
     const renamed = latest.plates.find((current) => current.id === plate.id);
-    const holder = renamed && holderOf(renamed, normalized);
-    // Numbered because a plate this save renames away still had the name, as another editor gave it since this
-    // snapshot: asked again once that one has moved.
-    if (holder && movesAway(holder) && !askedAgain.has(plate.id)) {
+    // Saved under another name than asked: the server numbered it apart from a plate that held the name.
+    const differs = renamed !== undefined && !sameName(renamed, normalized);
+    const holder = renamed && differs ? holderOf(renamed, normalized) : undefined;
+    // Asked again once when the name may be free by then: its holder has gone since, or is a plate this save renames
+    // away (another editor gave it the name after this snapshot), which goes first.
+    if (differs && (!holder || movesAway(holder)) && !askedAgain.has(plate.id)) {
       askedAgain.add(plate.id);
       reportProgress();
       continue;
     }
     // Kept on the item, so a later step failing doesn't lose it: the save that finishes reports it.
-    const numberedFrom = renamed && holder ? normalized : undefined;
+    const numberedFrom = differs ? normalized : undefined;
     stagedItems = stagedItems.map((staged) =>
       staged.kind === "existing" && staged.id === plate.id
         ? { ...staged, filename: renamed?.filename ?? filename, filenameEdited: false, numberedFrom }
@@ -374,16 +388,18 @@ export async function savePlateChanges(
       reportProgress();
     }
   }
-  const numbered = stagedItems.find((item) => item.kind === "existing" && item.numberedFrom);
-  if (numbered?.kind === "existing" && numbered.numberedFrom) {
-    // Reported once: the next save goes through quietly.
+  const numbered = stagedItems.flatMap((item) =>
+    item.kind === "existing" && item.numberedFrom ? [{ requested: item.numberedFrom, saved: item.filename }] : [],
+  );
+  if (numbered.length) {
+    // All reported at once, and once: the next save goes through quietly.
     stagedItems = stagedItems.map((item) => {
       if (item.kind !== "existing" || !item.numberedFrom) return item;
       const { numberedFrom: _reported, ...rest } = item;
       return rest;
     });
     reportProgress();
-    throw new PlateRenameNumberedError(numbered.numberedFrom, numbered.filename);
+    throw new PlateRenameNumberedError(numbered);
   }
   reportProgress();
   return latest;

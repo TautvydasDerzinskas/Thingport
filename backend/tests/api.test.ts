@@ -8,7 +8,7 @@ import os from "node:os";
 import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
-import { BUNDLES } from "../src/config";
+import { BUNDLES, STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
 import { resolvePlateFilePath } from "../src/services/printCreation";
@@ -379,6 +379,8 @@ describe("plate add/remove/reorder/rename", () => {
     const moved = await prisma.plate.findUniqueOrThrow({ where: { id: first.id } });
     expect(path.basename(moved.storagePath)).toBe("swap-b.stl");
     expect(fs.readFileSync(resolvePlateFilePath(moved) ?? "", "utf8")).toBe("solid first endsolid");
+    // Neither attempt left a copy behind.
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("records no name when a file a rename would move can't be looked at", async () => {
@@ -500,6 +502,109 @@ describe("plate add/remove/reorder/rename", () => {
       "solid pair a endsolid",
       "solid pair b endsolid",
     ]);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("keeps an upload's ID when the name's cut takes the marker's last character", async () => {
+    const uploaded = await auth(request(app).post("/api/upload")).attach(
+      "files",
+      Buffer.from("solid own endsolid"),
+      "own.stl",
+    );
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const clientUploadId = randomUUID();
+    // Combining marks join the marker's last hyphen into one character, which the byte limit cuts whole.
+    const filename = `thingport-upload-${clientUploadId}-${"\u0301".repeat(100)}part.stl`;
+    const upload = () =>
+      auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        Buffer.from("solid marked endsolid"),
+        filename,
+      );
+
+    const first = await upload();
+    expect(first.status).toBe(200);
+    expect(
+      await prisma.plateUploadAttempt.findUnique({
+        where: { printId_clientUploadId: { printId: modelId, clientUploadId } },
+      }),
+    ).toMatchObject({ status: "complete", plateId: first.body.added_plate_ids[0] });
+    const replay = await upload();
+    expect(replay.status).toBe(200);
+    expect(replay.body.added_plate_ids).toEqual(first.body.added_plate_ids);
+  });
+
+  it("reorders only once a rename has moved its files", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid order a endsolid"), "order-a.stl")
+      .attach("files", Buffer.from("solid order b endsolid"), "order-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a, b] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+
+    const move = pauseAt("fileState:move.source");
+    const rename = track(
+      Promise.resolve(
+        auth(request(app).post(`/api/print/${modelId}/plate/${a.id}/rename`)).send({ filename: "order-c.stl" }),
+      ),
+    );
+    await move.reachedBy(rename);
+    const queued = pauseAt("lock:plate.rename");
+    const reorder = track(
+      Promise.resolve(
+        auth(request(app).post(`/api/print/${modelId}/plates/reorder`)).send({ plate_ids: [b.id, a.id] }),
+      ),
+    );
+    try {
+      // Queued behind the rename, which renders its file's path from the position it read: nothing has moved yet.
+      await queued.reachedBy(reorder);
+      expect((await prisma.plate.findUniqueOrThrow({ where: { id: a.id } })).position).toBe(0);
+    } finally {
+      queued.release();
+      move.release();
+    }
+
+    expect((await rename).status).toBe(200);
+    expect((await reorder).status).toBe(200);
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.id)).toEqual([b.id, a.id]);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("says a rename is unfinished when its names are saved and a file couldn't move", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid stuck endsolid"), "stuck.stl")
+      .attach("files", Buffer.from("solid other endsolid"), "other.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [stuck] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    // Files no plate owns at the new name's place and at the place a taken one falls back to.
+    const folder = path.dirname(stuck.storagePath);
+    const blockers = [path.join(folder, "unstuck.stl"), path.join(folder, modelId, "unstuck.stl")].map((relative) =>
+      path.join(STORAGE, relative),
+    );
+    for (const blocker of blockers) {
+      fs.mkdirSync(path.dirname(blocker), { recursive: true });
+      fs.writeFileSync(blocker, "in the way");
+    }
+    const rename = () =>
+      auth(request(app).post(`/api/print/${modelId}/plate/${stuck.id}/rename`)).send({ filename: "unstuck.stl" });
+
+    const unfinished = await rename();
+    expect(unfinished.status).toBe(409);
+    expect(unfinished.body.code).toBe("rename_unfinished");
+    expect(await prisma.plate.findUniqueOrThrow({ where: { id: stuck.id } })).toMatchObject({
+      filename: "unstuck.stl",
+      storagePath: stuck.storagePath,
+    });
+
+    for (const blocker of blockers) fs.rmSync(blocker, { force: true });
+    expect((await rename()).status).toBe(200);
+    const moved = await prisma.plate.findUniqueOrThrow({ where: { id: stuck.id } });
+    expect(moved.storagePath).toBe(path.join(folder, "unstuck.stl"));
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
@@ -650,6 +755,8 @@ describe("plate add/remove/reorder/rename", () => {
       const file = resolvePlateFilePath(saved);
       if (!file) throw new Error("Expected a stored plate after the position retry");
       expect(fs.readFileSync(file)).toEqual(firstBytes);
+      // The attempt that lost the position took its file back.
+      expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
     } finally {
       firstPlacement.release();
     }

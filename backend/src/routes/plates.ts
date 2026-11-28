@@ -89,7 +89,8 @@ router.post(
 
       const plateInputs: NewPlateInput[] = files.map((f) => {
         const safeName = normalizeFileName(f.originalname);
-        const uploadId = CLIENT_UPLOAD_ID_PREFIX.exec(safeName)?.[1];
+        // Read from the name as sent: the marker is the app's, and the name's cut can take its last character.
+        const uploadId = (CLIENT_UPLOAD_ID_PREFIX.exec(f.originalname) ?? CLIENT_UPLOAD_ID_PREFIX.exec(safeName))?.[1];
         return {
           filename: safeName,
           clientUploadId: uploadId,

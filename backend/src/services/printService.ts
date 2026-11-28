@@ -621,6 +621,15 @@ export async function setStorageTemplate(value: string): Promise<void> {
 
 type ThumbTarget = { home: string; db: Prisma.TransactionClient };
 
+/** The plate's model's pictures folder as the transaction sees it now, else the one the caller read. */
+async function currentThumbHome(target: ThumbTarget, plateId: string): Promise<string> {
+  const plate = await target.db.plate.findUnique({
+    where: { id: plateId },
+    select: { print: { select: { assetsPath: true } } },
+  });
+  return plate?.print.assetsPath ?? target.home;
+}
+
 async function saveThumbBuffer(
   plateId: string,
   input: Buffer,
@@ -631,7 +640,8 @@ async function saveThumbBuffer(
   let placed = false;
   try {
     const file = plateThumbFile(plateId);
-    const home = target?.home ?? (await ensurePlateAssetHome(plateId));
+    // Read again just before the write, so a folder move since the caller looked takes the thumbnail along.
+    const home = target ? await currentThumbHome(target, plateId) : await ensurePlateAssetHome(plateId);
     const dest = assetTarget(home, file);
     tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
     await fs.mkdir(path.dirname(dest), { recursive: true });

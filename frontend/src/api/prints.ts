@@ -390,6 +390,28 @@ async function getUploadResults<K extends UploadResultId>(
   }
 }
 
+/** What a rename's answer means, past a 401 and a 404, which each endpoint reads its own way. */
+async function renamedPrint(res: Response, printId: string): Promise<{ print: Print }> {
+  // A timeout at a proxy, or a server failure, may come after the names were saved.
+  if (res.status === 408 || res.status >= 500) {
+    throw new PlateRenameResponseError(new Error(await readErrorMessage(res, `HTTP ${res.status}`)));
+  }
+  if (!res.ok) {
+    const { message, code } = await readCodedError(res, "");
+    // The names are saved and a file couldn't move yet: the same rename again finishes it.
+    if (code === "rename_unfinished") throw new PlateRenameResponseError(new Error(message));
+    // Empty only when the answer couldn't be read at all.
+    throw message ? new Error(message) : new PlateRenameResponseError();
+  }
+  try {
+    const body: unknown = await res.json();
+    if (isRecord(body) && isUploadPrint(body.print, printId)) return { print: body.print };
+  } catch (error) {
+    throw new PlateRenameResponseError(error);
+  }
+  throw new PlateRenameResponseError();
+}
+
 export type PrintLicense = { license: License | null; pending: boolean; filling: boolean; failed: boolean };
 
 export type ListPrintsResult = {
@@ -831,16 +853,20 @@ export const printsApi = {
   },
 
   renamePlate: async (printId: string, plateId: string, filename: string): Promise<{ print: Print }> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/rename`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ filename }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Rename failed"));
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/rename`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ filename }),
+      });
+    } catch (error) {
+      throw new PlateRenameResponseError(error);
     }
-    return res.json();
+    if (res.status === 401) throw new UnauthorizedError();
+    // The plate or its model is gone, on any server: nothing was renamed.
+    if (res.status === 404) throw new PlateRenameTargetGoneError(await readErrorMessage(res, "Plate not found"));
+    return renamedPrint(res, printId);
   },
 
   renamePlates: async (
@@ -864,22 +890,7 @@ export const printsApi = {
       if (!code) return null;
       throw new PlateRenameTargetGoneError(message);
     }
-    // A timeout at a proxy, or a server failure, may come after the names were saved.
-    if (res.status === 408 || res.status >= 500) {
-      throw new PlateRenameResponseError(new Error(await readErrorMessage(res, `HTTP ${res.status}`)));
-    }
-    if (!res.ok) {
-      // Empty only when the answer couldn't be read at all.
-      const message = await readErrorMessage(res, "");
-      throw message ? new Error(message) : new PlateRenameResponseError();
-    }
-    try {
-      const body: unknown = await res.json();
-      if (isRecord(body) && isUploadPrint(body.print, printId)) return { print: body.print };
-    } catch (error) {
-      throw new PlateRenameResponseError(error);
-    }
-    throw new PlateRenameResponseError();
+    return renamedPrint(res, printId);
   },
 
   setTags: async (id: string, tags: string[]) => {

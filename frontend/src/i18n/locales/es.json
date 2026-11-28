@@ -6826,6 +6826,8 @@
       "renameUnconfirmed": "No se pudieron confirmar los nuevos nombres de archivo. Guarda de nuevo para terminar de renombrarlos.",
       "renameTargetGone": "Un archivo que renombraste, o su modelo, se eliminó mientras tanto. Vuelve a cargar el modelo para ver sus archivos.",
       "renameNumbered": "Otro archivo ya se llama {{requested}}, así que este se guardó como {{saved}}.",
+      "renameNumberedMany": "Otros archivos ya tienen algunos de los nombres pedidos, así que estos se guardaron con un número añadido: {{saved}}.",
+      "uploadRetryUnsafe": "Este servidor no puede reintentar la subida de forma segura. Cierra y vuelve a abrir el editor, comprueba qué archivos se guardaron y añade solo los que falten.",
       "plateSetChanged": "Otra persona añadió o eliminó archivos mientras se guardaba. Guarda de nuevo para aplicar tu orden.",
       "fileNameRequired": "El nombre del archivo es obligatorio.",
       "uploadReceiptLookupFailed": "No se pudo comprobar qué archivos se guardaron. Selecciona Actualizar de nuevo.",

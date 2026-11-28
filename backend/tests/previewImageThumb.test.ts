@@ -312,6 +312,97 @@ describe("recoverable preview uploads", () => {
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: true });
   });
 
+  it("removes our renders' files when the cover work's commit answer was lost", async () => {
+    const { print, generated, lookup, where } = await interruptedCover();
+    const generatedFile = previewImagePath(generated.id, await printAssetHome(print.id));
+    expect(fsSync.existsSync(generatedFile)).toBe(true);
+    const transaction = PrismaClient.prototype.$transaction;
+    // The cover work commits and its answer is lost, as when the connection drops at COMMIT.
+    const lost = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
+      this: PrismaClient,
+      ...args: unknown[]
+    ) {
+      await Reflect.apply(transaction, this, args);
+      throw new Error("Connection lost after COMMIT");
+    } as never);
+    try {
+      await lookup();
+    } finally {
+      lost.mockRestore();
+    }
+
+    expect(await prisma.previewImage.findUnique({ where: { id: generated.id } })).toBeNull();
+    expect(fsSync.existsSync(generatedFile)).toBe(false);
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
+  });
+
+  it("leaves the cover work pending while a render's rolled-back thumbnail is still to be taken back", async () => {
+    const { print, plate, lookup, uploadId, where, thumb } = await interruptedCover();
+    // The plate has no thumbnail yet, so a render's save writes its first.
+    await fs.rm(thumb, { force: true });
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: false } });
+    let locked!: (pid: number) => void;
+    let release!: () => void;
+    const holding = new Promise<number>((resolve) => (locked = resolve));
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const holder = track(
+      prisma.$transaction(
+        async (tx) => {
+          await lockPreviewGallery(tx, print.id);
+          locked(await sessionOf(tx));
+          await released;
+        },
+        { timeout: 15_000 },
+      ),
+    );
+    const transaction = PrismaClient.prototype.$transaction;
+    let rolledBack: { mockRestore(): void } | undefined;
+    try {
+      const pid = await holding;
+      // The render's transaction writes its thumbnail and then rolls back.
+      rolledBack = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
+        this: PrismaClient,
+        callback: unknown,
+        options: unknown,
+      ) {
+        const fn = callback as (tx: unknown) => Promise<unknown>;
+        return Reflect.apply(transaction, this, [
+          async (tx: unknown) => {
+            await fn(tx);
+            throw new Error("rolled back");
+          },
+          options,
+        ]);
+      } as never);
+      const render = track(
+        saveGeneratedPlateThumbnail(print.id, plate.id, await png(60)).catch((error: Error) => error),
+      );
+      await blockedBy(pid);
+      // Cover recovery queues next, ahead of the render's clean-up once it has rolled back.
+      const recovery = track(
+        Promise.resolve(
+          request(app)
+            .post(`/api/print/${print.id}/preview-images/upload-results`)
+            .set(auth())
+            .send({ upload_ids: [uploadId] }),
+        ),
+      );
+      await blockedBy(pid, 2);
+      release();
+      await holder;
+      expect(await render).toMatchObject({ message: "rolled back" });
+      expect((await recovery).status).toBe(200);
+    } finally {
+      release();
+      rolledBack?.mockRestore();
+    }
+
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: true });
+    await lookup();
+    expect(await redOf(thumb)).toBeGreaterThan(180);
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
+  });
+
   it("keeps the cover work pending while the pictures can't be looked at", async () => {
     const { print, generated, imageId, uploadId, lookup, where, thumb } = await interruptedCover();
     const home = await printAssetHome(print.id);

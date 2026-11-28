@@ -90,8 +90,15 @@ regression or a bug in what it does, is a finding as usual.
   - It guards checks followed by renames, at 15 call sites in 10 files: placing files, moving a model's files when its
     folder changes (`printService.moveAllStored`), merges, the licence file, and GLB, slicer and build-plate previews.
   - Some call sites also do database work inside it, such as merge's transaction and the licence sync.
-  - The only per-model locks are `withPrintLock` (repair, `importService.ts`) and `perModel` (copies,
-    `modelCopyService.ts`).
+  - The per-model locks are `withPrintLock` (repair, `importService.ts`), `perModel` (copies, `modelCopyService.ts`)
+    and `withPlateRenameLock` (`printCreation.ts`). That last one is in-process and lasts beyond a transaction: a
+    rename holds it from its name commit through its file moves, and a plate's removal, a reorder and an upload's
+    older-server lookup take it, so none of them reads or moves a file while a rename moves it. A caller queuing for
+    it reaches the checkpoint `lock:plate.rename`.
+  - Two Postgres advisory locks last only to their transaction's commit: `lockPlateList` (`printCreation.ts`) for
+    every change to a model's plate list (names, positions, additions and removals), and `lockPreviewGallery`
+    (`previewImageService.ts`) for the gallery's positions, cover recovery and the thumbnails written in a
+    transaction.
 - **Writers outside the lock.** Thumbnails, gallery photos, renders and description images are written into the
   pictures folder without the lock, while a folder move may be moving that folder.
 - **Claim order.**
