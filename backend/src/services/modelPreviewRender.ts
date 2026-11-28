@@ -224,15 +224,18 @@ type BuildItem = { objectId: string; transform: number[] | null; plateId: number
 export type PlateSummary = { index: number; name: string | null; objectCount: number };
 export type ThreeMfBuildPlate = Omit<PlateSummary, "index"> & { index: number | null; thumbnail: boolean };
 
+/** A part of an object as model_settings.config lists it: its mesh's id, 0-based filament, name, and whether it prints
+ *  (not a modifier or a support or negative volume). */
+type PartSettings = { id: string; extruder: number | null; name: string | null; printed: boolean };
+
 type StructuralData = {
   extruderMapById: Map<string, number>;
-  partExtruderMap: Map<string, number>;
-  partNameMap: Map<string, string>;
+  /** Each object's parts, in the order the slicer makes them. */
+  partsByObject: Map<string, PartSettings[]>;
   objectNameById: Map<string, string>;
   plateAssignmentsByObjectId: Map<string, number>;
   plateAssignmentsByInstance: Map<string, number>;
   plateIds: Set<number>;
-  nonModelParts: Set<string>;
   plateNames: Map<number, string>;
   plateOffsets: Map<number, { offsetX: number; offsetY: number }>;
   bedCenterOffset: [number, number];
@@ -241,13 +244,11 @@ type StructuralData = {
 function parseModelSettingsConfig(xml: string): StructuralData {
   const data: StructuralData = {
     extruderMapById: new Map(),
-    partExtruderMap: new Map(),
-    partNameMap: new Map(),
+    partsByObject: new Map(),
     objectNameById: new Map(),
     plateAssignmentsByObjectId: new Map(),
     plateAssignmentsByInstance: new Map(),
     plateIds: new Set(),
-    nonModelParts: new Set(),
     plateNames: new Map(),
     plateOffsets: new Map(),
     bedCenterOffset: [0, 0],
@@ -275,18 +276,21 @@ function parseModelSettingsConfig(xml: string): StructuralData {
     const nameVal = $obj.children('metadata[key="name"]').first().attr("value");
     if (nameVal) data.objectNameById.set(objectId, nameVal);
 
+    const parts: PartSettings[] = [];
     $obj.find("part").each((_j, partEl) => {
       const $part = $(partEl);
       const partId = $part.attr("id");
       if (!partId) return;
       const role = $part.attr("subtype");
-      if (role && role !== "normal_part") data.nonModelParts.add(`${objectId}:${partId}`);
       const partExtruderVal = $part.children('metadata[key="extruder"]').first().attr("value");
-      if (partExtruderVal)
-        data.partExtruderMap.set(`${objectId}:${partId}`, Math.max(0, parseInt(partExtruderVal, 10) - 1));
-      const partName = $part.children('metadata[key="name"]').first().attr("value");
-      if (partName) data.partNameMap.set(`${objectId}:${partId}`, partName);
+      parts.push({
+        id: partId,
+        extruder: partExtruderVal ? Math.max(0, parseInt(partExtruderVal, 10) - 1) : null,
+        name: $part.children('metadata[key="name"]').first().attr("value") || null,
+        printed: !role || role === "normal_part",
+      });
     });
+    data.partsByObject.set(objectId, parts);
   });
 
   $("plate").each((_i, plateEl) => {
@@ -366,7 +370,7 @@ type InternalComponentRef = {
 
 const MAX_COMPONENT_DEPTH = 8;
 
-type MainComponent = { attrs: string; objectId: string | null; path: string | null };
+type MainComponent = { attrs: string; objectId: string | null; path: string | null; part: PartSettings | null };
 type MainObject = { attrs: string; inner: string; components: MainComponent[] };
 type MainPlacement = BuildItem & { attrs: string; instance: number };
 
@@ -374,16 +378,30 @@ function readObjectName(structural: StructuralData, objectId: string, attrs = ""
   return structural.objectNameById.get(objectId) ?? (decodeXml(getAttr(attrs, "name") ?? "") || null);
 }
 
-function readMainObjects(xml: string, nonModelParts?: Set<string>): Map<string, MainObject> {
+/** A component's part, as Bambu Studio matches them: the one at its place, else the first with its mesh's id. Part
+ *  files number their meshes apart, so two components can name the same id. */
+function partAt(parts: PartSettings[] | undefined, index: number, objectId: string | null): PartSettings | null {
+  if (!parts || !objectId) return null;
+  return parts[index]?.id === objectId ? parts[index] : (parts.find((part) => part.id === objectId) ?? null);
+}
+
+/** The main model's objects; `printedOnly` leaves out the components that don't print, as Studio brings in none. */
+function readMainObjects(xml: string, structural: StructuralData, printedOnly = false): Map<string, MainObject> {
   const objects = new Map<string, MainObject>();
   for (const [, attrs, inner] of xml.matchAll(OBJECT_RE)) {
     const id = getAttr(attrs, "id");
     if (!id) continue;
     const components: MainComponent[] = [];
-    for (const [, component] of inner.matchAll(COMPONENT_RE)) {
+    for (const [index, [, component]] of [...inner.matchAll(COMPONENT_RE)].entries()) {
       const objectId = getAttr(component, "objectid");
-      if (objectId && nonModelParts?.has(`${id}:${objectId}`)) continue;
-      components.push({ attrs: component, objectId, path: getAttr(component, "p:path") ?? getAttr(component, "path") });
+      const part = partAt(structural.partsByObject.get(id), index, objectId);
+      if (printedOnly && part && !part.printed) continue;
+      components.push({
+        attrs: component,
+        objectId,
+        path: getAttr(component, "p:path") ?? getAttr(component, "path"),
+        part,
+      });
     }
     objects.set(id, { attrs, inner, components });
   }
@@ -650,14 +668,14 @@ async function parseMainModel(
     const meshes = extractMeshesFast(inner, defaultExtruder, objectTriangleSlot(attrs, inner, colors) ?? undefined);
     if (objectSlot != null) for (const mesh of meshes) mesh.ownColor = true;
 
-    for (const [index, { attrs: cAttrs, path: extPath, objectId: compObjectId }] of components.entries()) {
+    for (const [
+      index,
+      { attrs: cAttrs, path: extPath, objectId: compObjectId, part: settings },
+    ] of components.entries()) {
       const transform = parseTransform3MF(getAttr(cAttrs, "transform"));
-      const partKey = compObjectId ? `${objectId}:${compObjectId}` : null;
-      const compExtruder = partKey ? (structural.partExtruderMap.get(partKey) ?? defaultExtruder) : defaultExtruder;
-      const part = {
-        key: partKey ?? `${objectId}#${index}`,
-        name: (partKey && structural.partNameMap.get(partKey)) || null,
-      };
+      const compExtruder = settings?.extruder ?? defaultExtruder;
+      // Each component is a part of its own, even of the same mesh as another.
+      const part = { key: `${objectId}#${index}`, name: settings?.name ?? null };
 
       if (extPath) {
         for (const mesh of await partFiles.meshes(extPath, compObjectId)) {
@@ -813,7 +831,7 @@ async function readThreeMfStructure(srcPath: string, forStudio: boolean, include
       }
     } catch {}
   }
-  const allObjects = readMainObjects(mainModelXml, forStudio ? structural.nonModelParts : undefined);
+  const allObjects = readMainObjects(mainModelXml, structural, forStudio);
   const placements = readMainPlacements(mainModelXml, forStudio);
   for (const item of placements) {
     const objectAttrs = allObjects.get(item.objectId)?.attrs;

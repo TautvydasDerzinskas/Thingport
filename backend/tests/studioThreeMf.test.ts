@@ -115,6 +115,44 @@ describe("Studio's 3MF objects", () => {
     }
   });
 
+  it("tells apart parts whose meshes have the same id in different part files", async () => {
+    const mesh = (x: number) => `<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter"><resources><object id="1" type="model"><mesh>
+ <vertices><vertex x="${x}" y="0" z="0"/><vertex x="${x + 10}" y="0" z="0"/><vertex x="${x}" y="10" z="0"/><vertex x="${x}" y="0" z="10"/></vertices>
+ <triangles><triangle v1="0" v2="2" v3="1"/><triangle v1="0" v2="1" v3="3"/><triangle v1="0" v2="3" v3="2"/><triangle v1="1" v2="2" v3="3"/></triangles>
+</mesh></object></resources><build/></model>`;
+    const zip = new JSZip();
+    zip.file("3D/Objects/left.model", mesh(0));
+    zip.file("3D/Objects/right.model", mesh(20));
+    zip.file(
+      "3D/3dmodel.model",
+      `<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" unit="millimeter" requiredextensions="p">
+ <resources><object id="2" type="model"><components>
+  <component p:path="/3D/Objects/left.model" objectid="1"/><component p:path="/3D/Objects/right.model" objectid="1"/>
+ </components></object></resources>
+ <build><item objectid="2"/></build>
+</model>`,
+    );
+    zip.file(
+      "Metadata/model_settings.config",
+      `<config><object id="2"><metadata key="name" value="Pair"/><metadata key="extruder" value="1"/>
+<part id="1" subtype="normal_part"><metadata key="name" value="Left"/><metadata key="extruder" value="1"/></part>
+<part id="1" subtype="normal_part"><metadata key="name" value="Right"/><metadata key="extruder" value="2"/></part>
+</object></config>`,
+    );
+    zip.file("Metadata/project_settings.config", JSON.stringify({ filament_colour: ["#FF0000", "#0000FF"] }));
+    const file = path.join(dir, "same-ids.3mf");
+    await fs.writeFile(file, await zip.generateAsync({ type: "uint8array" }));
+
+    const project = await loadStudioThreeMf(file, 10, 10);
+    if (typeof project === "string") throw new Error(project);
+    expect(project.plates[0].parts.map(({ name, color }) => [name, color?.toLowerCase()])).toEqual([
+      ["Left", "#ff0000"],
+      ["Right", "#0000ff"],
+    ]);
+  });
+
   it("keeps an object whose faces are painted in several colours as one body", async () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter">
