@@ -23,13 +23,7 @@ import {
 } from "./modelAssets";
 import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
-import {
-  ensureAssetHome,
-  plateThumbExists,
-  plateThumbPath,
-  plateThumbReplaceable,
-  saveThumbFromBytes,
-} from "./printService";
+import { ensureAssetHome, plateThumbExists, plateThumbPath, saveThumbFromBytes } from "./printService";
 import { Prisma, type PreviewImage } from "@prisma/client";
 
 /** `home` is the image's model's Print.assetsPath. */
@@ -429,7 +423,21 @@ export async function preferImageOverRenders(
   keepExif = false,
 ): Promise<void> {
   await removeGeneratedPreviewImages(printId);
-  if (plateId && (await plateThumbReplaceable(plateId))) await saveThumbFromBytes(plateId, buffer, keepExif);
+  if (!plateId) return;
+  await ensureAssetHome(printId);
+  // Under the gallery lock, as cover recovery and our own renders write the thumbnail, so none of them lands between
+  // the look and the write.
+  await prisma.$transaction(async (tx) => {
+    await lockPreviewGallery(tx, printId);
+    const plate = await tx.plate.findFirst({
+      where: { id: plateId, printId },
+      select: { thumbGenerated: true, print: { select: { assetsPath: true } } },
+    });
+    const home = plate?.print.assetsPath;
+    if (!plate || !home) return;
+    if (!plate.thumbGenerated && (await assetIsThere(home, plateThumbFile(plateId)))) return;
+    await saveThumbFromBytes(plateId, buffer, keepExif, { home, db: tx });
+  });
 }
 
 export async function deleteAllPreviewImages(printId: string): Promise<void> {
@@ -491,9 +499,17 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
     ) {
       throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
     }
-    const cover = (await firstImageThere(images, print?.assetsPath))?.image;
-    await renumberPreviewImages(tx, [...ids, ...unseen]);
-    if (cover?.id !== ids[0]) {
+    // The cover in view before and after: a picture listed first whose file is gone isn't one.
+    const before = (await firstImageThere(images, print?.assetsPath))?.image.id;
+    const order = [...ids, ...unseen];
+    const after = (
+      await firstImageThere(
+        order.map((id) => ({ id })),
+        print?.assetsPath,
+      )
+    )?.image.id;
+    await renumberPreviewImages(tx, order);
+    if (before !== after) {
       await tx.previewImageUpload.updateMany({ where: { printId, coverPending: true }, data: { coverPending: false } });
     }
   });

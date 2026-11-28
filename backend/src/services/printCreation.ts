@@ -13,7 +13,7 @@ import { LEGACY } from "../files/kinds";
 import { nameKey, normalizeFileName, preservesFileExtension } from "../files/names";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
-import { fileState, fileStateSync, isMissingError, type StorageSite } from "../modelFiles/storageFs";
+import { fileState, fileStateSync, isMissingError, lockQueued, type StorageSite } from "../modelFiles/storageFs";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
   availableModelName,
@@ -122,7 +122,7 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
       return destAbsPath;
     }
   } catch (err: any) {
-    if (err?.code === "EEXIST") throw new HttpError(409, "Another file was just saved at the same path; try again");
+    if (err?.code === "EEXIST") throw new PlatePathTakenError();
     throw err;
   }
   return input.sourcePath ?? null;
@@ -228,8 +228,21 @@ async function plateMayName(printId: string, storagePath: string): Promise<boole
 /** The name or position a plate was prepared with stopped being the model's next while its file was placed. */
 class PlateListChangedError extends Error {}
 
+/** Another save placed a file at the path this one chose, after both found it free. That file stays. */
+class PlatePathTakenError extends HttpError {
+  constructor() {
+    super(409, "Another file was just saved at the same path; try again");
+  }
+}
+
+const renameQueue = createKeyedLock();
+
 /** Held while a rename commits names and moves their files, and by anything that reads those files meanwhile. */
-const withPlateRenameLock = createKeyedLock();
+function withPlateRenameLock<T>(printId: string, fn: () => Promise<T>): Promise<T> {
+  const turn = renameQueue(printId, fn);
+  lockQueued("plate.rename", printId);
+  return turn;
+}
 
 /** Through negative positions first, so no step collides with another plate's on (printId, position). The caller holds
  *  lockPlateList. */
@@ -506,7 +519,8 @@ async function appendPlate(
     try {
       return (await createPlateAtPosition(print, input, position, claim)).record;
     } catch (error) {
-      if (error instanceof PlateListChangedError) continue;
+      // Each attempt chooses its name, position and path again.
+      if (error instanceof PlateListChangedError || error instanceof PlatePathTakenError) continue;
       if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
       const target = error.meta?.target;
       if (!Array.isArray(target) || !target.includes("printId") || !target.includes("position")) throw error;

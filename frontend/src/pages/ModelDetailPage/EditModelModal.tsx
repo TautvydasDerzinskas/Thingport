@@ -39,6 +39,7 @@ import {
   PlateUploadOutcomeUnknownError,
   PlateRenameResponseError,
   PlateRenameTargetGoneError,
+  PlateReorderResponseError,
   PlateSetChangedError,
   UploadReceiptLookupError,
   type LicenseFamily,
@@ -359,6 +360,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         setRemovedImageIds(remaining);
       });
       let stagedImages = images;
+      // A picture saved, then removed by someone else before this editor saw it: its notice stays to be read.
+      let previewGoneMeanwhile = false;
       if (images.some((image) => image.kind === "new")) {
         const result = await savePreviewUploads(latest, images, printsApi, (progress) => {
           latest = progress.print;
@@ -371,6 +374,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           onUpdated(latest);
           return;
         }
+        previewGoneMeanwhile = stagedImages.some((image) => image.kind === "missing");
       }
       if (stagedImages.length) {
         // Our own render gives way to the first picture uploaded, so it may be gone by now.
@@ -401,6 +405,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       latestPrint.current = latest;
 
       onUpdated(latest);
+      // The rest is saved; the editor stays open until the missing picture's notice is dismissed.
+      if (previewGoneMeanwhile) return;
       showToast({ message: t("models:edit.updateSuccess") });
       onClose();
     } catch (err) {
@@ -433,6 +439,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       if (err instanceof PlateSetChangedError) {
         setError(t("models:edit.plateSetChanged"));
+        return;
+      }
+      if (err instanceof PlateReorderResponseError) {
+        setError(t("models:edit.updateFailed"));
         return;
       }
       if (err instanceof UploadReceiptLookupError) {

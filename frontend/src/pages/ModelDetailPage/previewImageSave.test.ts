@@ -96,10 +96,11 @@ describe("savePreviewUploads", () => {
     api.getPreviewUploadResults.mockResolvedValue({ print: printWithImages(), upload_results: [] });
     api.addPreviewImages.mockImplementationOnce(async (_printId, _files, ids) => {
       if (!ids) throw new Error("Expected upload IDs");
-      api.getPreviewUploadResults.mockResolvedValue({
+      const firstKey = ids[0];
+      api.getPreviewUploadResults.mockImplementation(async (_lookedUp, keys) => ({
         print: firstAdded,
-        upload_results: [{ upload_id: ids[0], image_id: "first-saved" }],
-      });
+        upload_results: keys.includes(firstKey) ? [{ upload_id: firstKey, image_id: "first-saved" }] : [],
+      }));
       throw new Error("Response lost");
     });
     api.addPreviewImages.mockResolvedValueOnce({ print: bothAdded, added_image_ids: ["second-saved"] });
@@ -114,7 +115,14 @@ describe("savePreviewUploads", () => {
     expect(api.addPreviewImages).toHaveBeenCalledTimes(2);
     const [, resentFiles, resentIds] = api.addPreviewImages.mock.calls[1];
     expect(resentFiles.map((file) => file.name)).toEqual(["second.png"]);
-    expect(resentIds).toEqual([api.addPreviewImages.mock.calls[0][2]?.[1]]);
+    const [firstKey, secondKey] = api.addPreviewImages.mock.calls[0][2] ?? [];
+    expect(resentIds).toEqual([secondKey]);
+    // Each lookup asks only for the keys still pending.
+    expect(api.getPreviewUploadResults.mock.calls.map(([, keys]) => keys)).toEqual([
+      [],
+      [firstKey, secondKey],
+      [secondKey],
+    ]);
   });
 
   it("keeps the original key across a lost response and a temporary receipt outage", async () => {

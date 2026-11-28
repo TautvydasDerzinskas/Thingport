@@ -205,6 +205,15 @@ describe("a name cut without Intl.Segmenter", () => {
     expect((await withoutSegmenter())(name)).toBe(normalizeFileName(name));
   });
 
+  it("reads a long run of viramas one way, not at every split", async () => {
+    const fallback = await withoutSegmenter();
+    const name = `क${"्".repeat(50_000)}.stl`;
+    const started = performance.now();
+    expect(fallback(name)).toBe(normalizeFileName(name));
+    // Linear, it's milliseconds; tried at every split, it took seconds.
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+
   it("cuts between the same clusters as the server", async () => {
     const fallback = await withoutSegmenter();
     fc.assert(

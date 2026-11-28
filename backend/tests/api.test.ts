@@ -421,23 +421,85 @@ describe("plate add/remove/reorder/rename", () => {
       ),
     );
     await move.reachedBy(rename);
-    let removed = false;
+    const queued = pauseAt("lock:plate.rename");
     const removal = track(Promise.resolve(auth(request(app).delete(`/api/print/${modelId}/plates/${moving.id}`))));
-    removal.then(
-      () => (removed = true),
-      () => (removed = true),
-    );
     try {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      // Held off while the rename, its names committed, still moves the file.
-      expect(removed).toBe(false);
+      // Queued behind the rename, whose names are committed and whose file is still moving: nothing of it ran yet.
+      await queued.reachedBy(removal);
+      expect(await prisma.plate.findUnique({ where: { id: moving.id } })).not.toBeNull();
     } finally {
+      queued.release();
       move.release();
     }
 
     expect((await rename).status).toBe(200);
     expect((await removal).status).toBe(200);
     expect(await prisma.plate.findUnique({ where: { id: moving.id } })).toBeNull();
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("numbers the second of two uploads of a name that both found the same path free", async () => {
+    const uploaded = await auth(request(app).post("/api/upload")).attach(
+      "files",
+      Buffer.from("solid base endsolid"),
+      "base.stl",
+    );
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const firstLook = pauseAt("fileState:path.taken");
+    const secondLook = pauseAt("fileState:path.taken", 2);
+    const post = (bytes: string) =>
+      track(
+        Promise.resolve(
+          auth(request(app).post(`/api/print/${modelId}/plates`)).attach("files", Buffer.from(bytes), "bracket.stl"),
+        ),
+      );
+    const first = post("solid first bracket endsolid");
+    const second = post("solid second bracket endsolid");
+    try {
+      await firstLook.reachedBy(first);
+      await secondLook.reachedBy(second);
+    } finally {
+      firstLook.release();
+      secondLook.release();
+    }
+
+    expect((await first).status).toBe(200);
+    expect((await second).status).toBe(200);
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.filename).toSorted()).toEqual(["base.stl", "bracket (2).stl", "bracket.stl"]);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("puts both files of a swap where their new names say, in one request", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid pair a endsolid"), "pair-a.stl")
+      .attach("files", Buffer.from("solid pair b endsolid"), "pair-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a, b] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+      renames: [
+        { plate_id: a.id, filename: "pair-b.stl" },
+        { plate_id: b.id, filename: "pair-a.stl" },
+      ],
+    });
+    expect(res.status).toBe(200);
+    const stored = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(stored.map((plate) => [plate.filename, path.basename(plate.storagePath)])).toEqual([
+      ["pair-b.stl", "pair-b.stl"],
+      ["pair-a.stl", "pair-a.stl"],
+    ]);
+    // Both in the model's folder: a move left aside while its target was held sits under the model's id.
+    const [folderA, folderB] = stored.map((plate) => path.dirname(plate.storagePath));
+    expect(folderA).toBe(folderB);
+    expect(path.basename(folderA)).not.toBe(modelId);
+    expect(stored.map((plate) => fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8"))).toEqual([
+      "solid pair a endsolid",
+      "solid pair b endsolid",
+    ]);
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 

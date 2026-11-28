@@ -55,7 +55,8 @@ function fallbackClusters(text: string): Iterable<string> {
     const consonant = String.raw`[\u0915-\u0939\u0958-\u095F\u0978-\u097F\u0995-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09DC\u09DD\u09DF\u09F0\u09F1\u0A95-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0AF9\u0B15-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B5C\u0B5D\u0B5F\u0B71\u0C15-\u0C28\u0C2A-\u0C39\u0C58-\u0C5A\u0D15-\u0D3A]`;
     const virama = String.raw`[\u094D\u09CD\u0ACD\u0B4D\u0C4D\u0D4D]`;
     const joins = String.raw`[\p{Grapheme_Extend}\p{Emoji_Modifier}\u200D]`;
-    const conjunct = String.raw`${consonant}(?:${joins}*${virama}${joins}*${consonant})*`;
+    // Only non-virama joins before the first virama, so a long run of them is read one way, not tried at every split.
+    const conjunct = String.raw`${consonant}(?:(?:(?!${virama})${joins})*${virama}${joins}*${consonant})*`;
     const pictograph = String.raw`\p{Extended_Pictographic}`;
     // Pictographs joined by one zero-width joiner each, with marks or skin tones before it.
     const emoji = String.raw`${pictograph}(?:[\p{Grapheme_Extend}\p{Emoji_Modifier}]*\u200D${pictograph})+`;

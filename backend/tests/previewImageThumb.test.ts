@@ -298,6 +298,20 @@ describe("recoverable preview uploads", () => {
     }
   });
 
+  it("keeps the cover work pending when a reorder leaves the same picture first in view", async () => {
+    const { print, generated, imageId, where } = await interruptedCover();
+    // The uploaded picture's file went away after the editor read the gallery, which still lists it first.
+    await fs.rm(previewImagePath(imageId, await printAssetHome(print.id)), { force: true });
+
+    await request(app)
+      .post(`/api/print/${print.id}/preview-images/reorder`)
+      .set(auth())
+      .send({ image_ids: [imageId, generated.id] })
+      .expect(200);
+
+    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: true });
+  });
+
   it("keeps the cover work pending while the pictures can't be looked at", async () => {
     const { print, generated, imageId, uploadId, lookup, where, thumb } = await interruptedCover();
     const home = await printAssetHome(print.id);

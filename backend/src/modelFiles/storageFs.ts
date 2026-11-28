@@ -33,12 +33,28 @@ export const STORAGE_SITES = [
 ] as const;
 export type StorageSite = (typeof STORAGE_SITES)[number];
 
-/** The checkpoints the door reaches: before each look, before each open, once a file is open, and before each removal. */
+/** Locks that serialise storage work, each with a checkpoint a caller reaches as it queues for the lock. */
+export const LOCK_SITES = ["plate.rename"] as const;
+export type LockSite = (typeof LOCK_SITES)[number];
+
+/** The checkpoints the door reaches: before each look, before each open, once a file is open, and before each removal;
+ *  and where a caller has queued for a storage lock. */
 export type DoorCheckpoint =
-  `fileState:${StorageSite}` | `open:${StorageSite}` | `opened:${StorageSite}` | `remove:${StorageSite}`;
-export const DOOR_CHECKPOINTS: ReadonlySet<string> = new Set(
-  STORAGE_SITES.flatMap((site) => [`fileState:${site}`, `open:${site}`, `opened:${site}`, `remove:${site}`]),
-);
+  | `fileState:${StorageSite}`
+  | `open:${StorageSite}`
+  | `opened:${StorageSite}`
+  | `remove:${StorageSite}`
+  | `lock:${LockSite}`;
+export const DOOR_CHECKPOINTS: ReadonlySet<string> = new Set([
+  ...STORAGE_SITES.flatMap((site) => [`fileState:${site}`, `open:${site}`, `opened:${site}`, `remove:${site}`]),
+  ...LOCK_SITES.map((site) => `lock:${site}`),
+]);
+
+/** Reached once a caller has queued for a storage lock, so a test can see it waits its turn. Never holds the caller
+ *  up: a pause here only marks that it was reached. */
+export function lockQueued(site: LockSite, key: string): void {
+  void Promise.resolve(checkpoint(`lock:${site}`, { path: key })).catch(() => undefined);
+}
 
 export type FileState =
   { state: "file"; size: number; mtimeNs: string } | { state: "missing" } | { state: "not-a-file" };

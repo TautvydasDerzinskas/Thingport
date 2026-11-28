@@ -453,7 +453,13 @@ export async function relocateRenamedPlates(
   plates: Plate[],
 ): Promise<number> {
   const safeTemplate = validateStorageTemplate(await getStorageTemplate());
-  return relocatePlates(print, plates, safeTemplate, await printTemplateValues(print, safeTemplate));
+  const printValues = await printTemplateValues(print, safeTemplate);
+  let moved = await relocatePlates(print, plates, safeTemplate, printValues);
+  // In a swap, a move whose target another of these plates still held settles aside; once they've all moved, its
+  // target is free, and a second pass puts it there. A target an unrelated file holds keeps the move aside.
+  const settled = await prisma.plate.findMany({ where: { id: { in: plates.map((plate) => plate.id) } } });
+  moved += await relocatePlates(print, settled, safeTemplate, printValues);
+  return moved;
 }
 
 /**

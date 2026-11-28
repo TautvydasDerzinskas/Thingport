@@ -5,6 +5,7 @@ import {
   PlateUploadCapabilityError,
   PlateRenameResponseError,
   PlateRenameTargetGoneError,
+  PlateReorderResponseError,
   PlateSetChangedError,
   PlateUploadOutcomeUnknownError,
   printsApi,
@@ -290,6 +291,18 @@ describe("printsApi.renamePlates", () => {
     respond(200, { print: uploadPrint });
     await expect(rename()).resolves.toEqual({ print: uploadPrint });
   });
+
+  it("reads a plate's folder only as a name, none, or absent, as an older server sends", async () => {
+    const withFolder = (folder: unknown) => ({
+      print: { ...uploadPrint, plates: [{ ...uploadPrint.plates[0], folder }] },
+    });
+    respond(200, withFolder(42));
+    await expect(rename()).rejects.toBeInstanceOf(PlateRenameResponseError);
+    respond(200, withFolder("parts"));
+    await expect(rename()).resolves.toMatchObject({ print: { plates: [{ folder: "parts" }] } });
+    respond(200, withFolder(null));
+    await expect(rename()).resolves.toBeTruthy();
+  });
 });
 
 describe("printsApi.reorderPlates", () => {
@@ -299,6 +312,15 @@ describe("printsApi.reorderPlates", () => {
 
   const respond = (status: number, body: unknown) =>
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status })));
+
+  it("can't confirm a reorder whose model it can't read, and takes an older server's answer without one", async () => {
+    respond(200, { print: {} });
+    await expect(printsApi.reorderPlates("print", ["plate"])).rejects.toBeInstanceOf(PlateReorderResponseError);
+    respond(200, {});
+    await expect(printsApi.reorderPlates("print", ["plate"])).resolves.toEqual({});
+    respond(200, { print: uploadPrint });
+    await expect(printsApi.reorderPlates("print", ["plate"])).resolves.toEqual({ print: uploadPrint });
+  });
 
   it("tells another editor's added or removed plate from a list it got wrong", async () => {
     const detail = "plate_ids must contain exactly the print's current plate ids";

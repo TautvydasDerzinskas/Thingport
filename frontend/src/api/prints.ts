@@ -342,7 +342,9 @@ function isUploadPrint(value: unknown, printId: string): value is Print {
         typeof plate.filename === "string" &&
         typeof plate.mime === "string" &&
         Number.isFinite(plate.size) &&
-        typeof plate.url === "string",
+        typeof plate.url === "string" &&
+        // An older server sends no folder.
+        (plate.folder === undefined || plate.folder === null || typeof plate.folder === "string"),
     )
   );
 }
@@ -424,6 +426,14 @@ export class PlateRenameResponseError extends Error {
   constructor(cause?: unknown) {
     super("Could not confirm the file renames", { cause });
     this.name = "PlateRenameResponseError";
+  }
+}
+
+/** A reorder whose answer couldn't be read: the order may be saved, and sending it again is the same reorder. */
+export class PlateReorderResponseError extends Error {
+  constructor(cause?: unknown) {
+    super("Could not confirm the new file order", { cause });
+    this.name = "PlateReorderResponseError";
   }
 }
 
@@ -796,7 +806,7 @@ export const printsApi = {
     return res.json();
   },
 
-  reorderPlates: async (printId: string, plateIds: string[]): Promise<{ print: Print }> => {
+  reorderPlates: async (printId: string, plateIds: string[]): Promise<{ print?: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/plates/reorder`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -807,7 +817,17 @@ export const printsApi = {
       const { message, code } = await readCodedError(res, "Failed to reorder plates");
       throw code === "plate_set_changed" ? new PlateSetChangedError(message) : new Error(message);
     }
-    return res.json();
+    let body: unknown;
+    try {
+      body = await res.json();
+    } catch (error) {
+      throw new PlateReorderResponseError(error);
+    }
+    if (!isRecord(body)) throw new PlateReorderResponseError();
+    // An older server answers without the model.
+    if (body.print === undefined) return {};
+    if (!isUploadPrint(body.print, printId)) throw new PlateReorderResponseError();
+    return { print: body.print };
   },
 
   renamePlate: async (printId: string, plateId: string, filename: string): Promise<{ print: Print }> => {
