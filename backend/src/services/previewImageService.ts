@@ -106,9 +106,10 @@ async function storePreviewJpeg(
 ): Promise<{ dest: string; size: number; contentSha256: string | null } & ReuseMarker> {
   const dest = assetTarget(home, galleryImageFile(id));
   const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+  // Before staging: a folder that can't be made leaves no staging file to clean up.
+  await fs.mkdir(path.dirname(dest), { recursive: true });
   let placed = false;
   try {
-    await fs.mkdir(path.dirname(dest), { recursive: true });
     const { contentSha256, shared } = await shareStoredBytes(jpeg, tmp, findStoredCopies, plainWriteMode());
     if (!shared) await fs.writeFile(tmp, jpeg, { flag: "wx" });
     await fs.rename(tmp, dest);

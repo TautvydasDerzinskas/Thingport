@@ -92,7 +92,8 @@ regression or a bug in what it does, is a finding as usual.
     A plate's or `PrintFile`'s move (`moveStored`) whose save failed with its outcome unread is settled under it
     before that file's next move, removal or rename reads its row (`printService.settleMove`), and again as each move
     lists its file under the lock, which catches one recorded while that move waited: the file goes back unless its
-    row names the new place, and waits (409) while something else holds the old one. A picture folder's move
+    row names the new place, only while it's still the one the move put there (by size and modified time), and
+    waits (409) while something else holds the old place. Until then no other record is given the place it went. A picture folder's move
     (`relocateAssets`) records nothing to settle: when saving `assetsPath` fails, the pictures go back.
   - Some call sites also do database work inside it, such as merge's transaction and the licence sync.
   - The per-model locks are `withPrintLock` (repair, `importService.ts`), `perModel` (copies, `modelCopyService.ts`)

@@ -772,9 +772,15 @@ type PlateRename = { plate_id: string; filename: string };
 async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Plate[]> {
   return withPlateRenameLock(print.id, async () => {
     // A file an earlier move left unrecorded is put right before the look below reads its row: one that can't be
-    // leaves every name as it was.
-    const plateIds = await prisma.plate.findMany({ where: { printId: print.id }, select: { id: true } });
-    for (const { id } of plateIds) await settleMove(`plate:${id}`);
+    // leaves every name as it was. Only the plates this rename may move: the renamed ones and those waiting aside.
+    const edited = new Set(edits.map((edit) => edit.plate_id));
+    const settling = await prisma.plate.findMany({
+      where: { printId: print.id },
+      select: { id: true, storagePath: true },
+    });
+    for (const plate of settling) {
+      if (edited.has(plate.id) || isWaitingAside(plate, print.id)) await settleMove(`plate:${plate.id}`);
+    }
     const renamed = await prisma.$transaction(async (tx) => {
       await lockPlateList(tx, print.id);
       const plates = await tx.plate.findMany({ where: { printId: print.id } });

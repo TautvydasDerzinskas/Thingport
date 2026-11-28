@@ -81,6 +81,13 @@ async function pathTaken(relative: string, owner: PathOwner = {}): Promise<boole
   if (file) return file.id !== owner.printFileId;
   const assets = await prisma.print.findUnique({ where: { assetsPath: relative }, select: { id: true } });
   if (assets) return assets.id !== owner.assetsOf;
+  // Where another record's unsettled move went: its file may come back there, or be there unseen.
+  const abs = path.resolve(STORAGE, relative);
+  for (const [key, move] of unsettledMoves) {
+    if (path.resolve(move.to) === abs && key !== `plate:${owner.plateId}` && key !== `file:${owner.printFileId}`) {
+      return true;
+    }
+  }
   // Anything there is in the way, a folder too. A look that fails throws: nothing is saved over a file it couldn't see.
   return (await fileState(path.join(STORAGE, relative), "path.taken")).state !== "missing";
 }
@@ -261,8 +268,12 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
 type Committed = () => Promise<boolean | undefined>;
 
 /** Moves whose save failed with its outcome unread, by the record moved (`key`): the file is at `to`, and the record
- *  names `from` or `to`. In-process, as every move is. */
-const unsettledMoves = new Map<string, { from: string; to: string; committed: Committed }>();
+ *  names `from` or `to`. `placed` is the file the move put there, by size and modified time (a rename keeps both),
+ *  when a look could tell. In-process, as every move is. */
+const unsettledMoves = new Map<
+  string,
+  { from: string; to: string; committed: Committed; placed?: { size: number; mtimeNs: string } }
+>();
 
 /** Settles the record's earlier move whose outcome went unread, before a place is picked for its next one, so the
  *  place that move went is free again unless the record names it. Every move settles under the lock as it lists too
@@ -271,14 +282,26 @@ export async function settleMove(key: string): Promise<void> {
   if (unsettledMoves.has(key)) await withStorageLock(() => settleMoveLocked(key));
 }
 
-/** Under the storage lock: the file goes back if the record still names the old place. A look or a record that can't
- *  be read throws, and so does an old place something else holds now, with the move left to settle. */
+/** Under the storage lock: the file the move put there goes back if the record still names the old place. A look or a
+ *  record that can't be read throws, and so does an old place something else holds now, with the move left to
+ *  settle. */
 async function settleMoveLocked(key: string): Promise<void> {
   const unsettled = unsettledMoves.get(key);
   if (!unsettled) return;
   const outcome = await unsettled.committed();
-  if (outcome === false) {
-    if ((await fileState(unsettled.to, "move.settle")).state === "file") {
+  if (outcome === true) {
+    await pruneEmptyStorageDirs(path.dirname(unsettled.from));
+  } else if (outcome === undefined) {
+    console.warn(`${key} names neither place its unsettled move had: ${unsettled.to} is left where it is`);
+  } else {
+    // Only the file the move put there goes back: one that's gone leaves nothing to bring back, and another file
+    // holding that place now stays.
+    const there = await fileState(unsettled.to, "move.settle");
+    const { placed } = unsettled;
+    const another =
+      there.state === "file" && placed && (there.size !== placed.size || there.mtimeNs !== placed.mtimeNs);
+    if (another) console.warn(`${key}'s unsettled move left nothing to bring back: ${unsettled.to} holds another file`);
+    else if (there.state === "file") {
       if ((await fileState(unsettled.from, "move.settle")).state !== "missing") {
         throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, unsettled.from)}`);
       }
@@ -286,10 +309,6 @@ async function settleMoveLocked(key: string): Promise<void> {
       await fs.rename(unsettled.to, unsettled.from);
       await pruneEmptyStorageDirs(path.dirname(unsettled.to));
     }
-  } else if (outcome === true) {
-    await pruneEmptyStorageDirs(path.dirname(unsettled.from));
-  } else {
-    console.warn(`${key} names neither place its unsettled move had: ${unsettled.to} is left where it is`);
   }
   unsettledMoves.delete(key);
 }
@@ -323,7 +342,11 @@ async function moveStored(
     if (now === path.resolve(newPath)) return true;
     return listedFrom !== undefined && now === path.resolve(listedFrom) ? false : undefined;
   };
-  const unread = (from: string, to: string) => unsettledMoves.set(key, { from, to, committed });
+  const unread = async (from: string, to: string) => {
+    const there = await fileState(to, "move.settle").catch(() => undefined);
+    const placed = there?.state === "file" ? { size: there.size, mtimeNs: there.mtimeNs } : undefined;
+    unsettledMoves.set(key, { from, to, committed, placed });
+  };
   return (await moveAllStored(listMove, save, committed, unread)) > 0;
 }
 
@@ -334,7 +357,7 @@ async function moveAllStored(
   listMoves: () => Promise<[string, string][]>,
   save: () => Promise<unknown>,
   committed?: Committed,
-  unread?: (from: string, to: string) => void,
+  unread?: (from: string, to: string) => Promise<void>,
 ): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
@@ -361,7 +384,7 @@ async function moveAllStored(
         return present.length;
       }
       if (outcome === undefined) {
-        for (const [oldPath, newPath] of done) unread?.(oldPath, newPath);
+        for (const [oldPath, newPath] of done) await unread?.(oldPath, newPath);
         throw err;
       }
       // Put them back, so the stored path still finds them.

@@ -415,15 +415,50 @@ describe("recoverable preview uploads", () => {
   });
 
   it("adds a replacement cover only while the image it replaces is still the only one", async () => {
-    const print = await uploadStl();
-    const render = await addPreviewImage(print.id, await png(30), { generated: true });
-    if (!render) throw new Error("Expected the render to be stored");
-    const redrawn = await addPreviewImage(print.id, await png(35), { generated: true, replacing: render.id });
-    expect(redrawn).not.toBeNull();
-    // A picture uploaded while the next one was drawn: the replacement goes nowhere.
-    expect(await addPreviewImage(print.id, await png(200))).not.toBeNull();
-    expect(await addPreviewImage(print.id, await png(40), { generated: true, replacing: render.id })).toBeNull();
-    expect(await prisma.previewImage.count({ where: { printId: print.id, generated: true } })).toBe(2);
+    const renderOnly = async () => {
+      const print = await uploadStl();
+      const render = await addPreviewImage(print.id, await png(30), { generated: true });
+      if (!render) throw new Error("Expected the render to be stored");
+      expect((await prisma.previewImage.findMany({ where: { printId: print.id } })).map((image) => image.id)).toEqual([
+        render.id,
+      ]);
+      return { print, render };
+    };
+    // The render is the gallery's only image: its replacement goes in.
+    const current = await renderOnly();
+    expect(
+      await addPreviewImage(current.print.id, await png(35), { generated: true, replacing: current.render.id }),
+    ).not.toBeNull();
+
+    // A picture uploaded while the replacement was drawn: it goes nowhere.
+    const overtaken = await renderOnly();
+    expect(await addPreviewImage(overtaken.print.id, await png(200))).not.toBeNull();
+    expect(
+      await addPreviewImage(overtaken.print.id, await png(40), { generated: true, replacing: overtaken.render.id }),
+    ).toBeNull();
+    expect(await prisma.previewImage.count({ where: { printId: overtaken.print.id, generated: true } })).toBe(1);
+  });
+
+  it("leaves no staging file to clean up when the gallery folder can't be made", async () => {
+    const { print, gallery, uploadId } = await uploadStorage();
+    // A file where the gallery folder goes.
+    await fs.rm(gallery, { recursive: true, force: true });
+    await fs.writeFile(gallery, "not a folder");
+    try {
+      await expect(addPreviewImageForUpload(print.id, uploadId, await png(200))).rejects.toMatchObject({
+        code: expect.stringMatching(/^(EEXIST|ENOTDIR)$/),
+      });
+    } finally {
+      await fs.rm(gallery, { force: true });
+      await fs.mkdir(gallery, { recursive: true });
+    }
+    const rm = vi.spyOn(fs, "rm");
+    try {
+      await lookUp(print.id);
+      expect(rm.mock.calls.filter(([target]) => String(target).endsWith(".tmp"))).toEqual([]);
+    } finally {
+      rm.mockRestore();
+    }
   });
 
   it("leaves a rolled-back JPEG it couldn't remove for the next look", async () => {

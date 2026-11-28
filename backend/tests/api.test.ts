@@ -12,6 +12,7 @@ import { BUNDLES, STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
 import { resolvePlateFilePath } from "../src/services/printCreation";
+import { printFilePathFree } from "../src/services/printService";
 import { checkLibraryInvariants } from "./harness";
 import { faults, pauseAt, track } from "./harness/lifecycle";
 import { disputeTransactions } from "./helpers/transactions";
@@ -1127,8 +1128,8 @@ describe("plate add/remove/reorder/rename", () => {
       .attach("files", Buffer.from(`solid ${prefix} b endsolid`), `${prefix}-b.stl`);
     const modelId: string = uploaded.body.prints[0].id;
     await trackPrint(modelId);
-    const [a] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
-    return { modelId, a, original: path.join(STORAGE, a.storagePath) };
+    const [a, b] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    return { modelId, a, b, original: path.join(STORAGE, a.storagePath) };
   }
 
   it("puts back a file an unread move left before removing its plate", async () => {
@@ -1143,7 +1144,7 @@ describe("plate add/remove/reorder/rename", () => {
   });
 
   it("keeps an unread move waiting while something else holds the place its file came from", async () => {
-    const { modelId, a, original } = await twoPlateModel("held");
+    const { modelId, a, b, original } = await twoPlateModel("held");
     const movedTo = path.join(path.dirname(original), "held-c.stl");
     await leaveUnreadMove(modelId, a.id, "held-c.stl");
     const rename = () =>
@@ -1155,6 +1156,11 @@ describe("plate add/remove/reorder/rename", () => {
       expect((await rename()).status).toBe(409);
       expect(fs.readFileSync(movedTo, "utf8")).toBe("solid held a endsolid");
       expect((await prisma.plate.findUniqueOrThrow({ where: { id: a.id } })).storagePath).toBe(a.storagePath);
+      // Renaming the other plate, which this rename doesn't move, isn't held up by it.
+      const other = await auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [{ plate_id: b.id, filename: "held-d.stl" }],
+      });
+      expect(other.status).toBe(200);
     } finally {
       fs.rmSync(original, { recursive: true, force: true });
     }
@@ -1166,6 +1172,33 @@ describe("plate add/remove/reorder/rename", () => {
     expect(plate.storagePath).not.toContain(modelId);
     expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe("solid held a endsolid");
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("gives no other file the place an unread move went until it's settled", async () => {
+    const { modelId, a, original } = await twoPlateModel("claimed");
+    const movedTo = path.join(path.dirname(original), "claimed-c.stl");
+    await leaveUnreadMove(modelId, a.id, "claimed-c.stl");
+    // Even with its bytes gone from there, the place stays the unsettled move's.
+    fs.rmSync(movedTo);
+    expect(await printFilePathFree(path.relative(STORAGE, movedTo), "another-file")).toBe(false);
+    expect((await auth(request(app).delete(`/api/print/${modelId}/plates/${a.id}`))).status).toBe(200);
+    expect(await printFilePathFree(path.relative(STORAGE, movedTo), "another-file")).toBe(true);
+  });
+
+  it("brings back only the file an unread move put in its place, not another one there now", async () => {
+    const { modelId, a, original } = await twoPlateModel("swapped");
+    const movedTo = path.join(path.dirname(original), "swapped-c.stl");
+    await leaveUnreadMove(modelId, a.id, "swapped-c.stl");
+    // What the move put there went, and another file is there now.
+    fs.rmSync(movedTo);
+    fs.writeFileSync(movedTo, "solid someone else's endsolid");
+    try {
+      expect((await auth(request(app).delete(`/api/print/${modelId}/plates/${a.id}`))).status).toBe(200);
+      expect(fs.readFileSync(movedTo, "utf8")).toBe("solid someone else's endsolid");
+      expect(fs.existsSync(original)).toBe(false);
+    } finally {
+      fs.rmSync(movedTo, { force: true });
+    }
   });
 
   it("appends after a plate removed while the new file was being placed", async () => {
