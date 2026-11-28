@@ -10,7 +10,7 @@ import { randomUUID } from "node:crypto";
 import type { ObjectSettings } from "../../adapter/readers/bambuProject";
 import { composeTransform, formatTransform, parseTransform } from "../../adapter/transform";
 import { escapeXml } from "../../adapter/xml";
-import { attrValue, buildItems, type LayoutItem } from "./layout";
+import { attrValue, buildItems, withAttr, type LayoutItem } from "./layout";
 
 export type ProjectFiles = {
   rootXml: string;
@@ -146,22 +146,19 @@ export function invertTransform(m: number[]): number[] | null {
 
 const compose = (outer: number[], inner: number[]) => composeTransform(outer.join(" "), inner.join(" "));
 
-/** The tag with its attribute set, however the tag quoted it, or added. */
-function withAttr(tag: string, name: string, value: string): string {
-  const re = new RegExp(String.raw`(\s${name.replace(/[.:]/g, "\\$&")}\s*=\s*)(?:"[^"]*"|'[^']*')`);
-  return re.test(tag)
-    ? tag.replace(re, (_whole, open: string) => `${open}"${escapeXml(value)}"`)
-    : tag.replace(/(\/?>)$/, ` ${name}="${escapeXml(value)}"$1`);
-}
+const METADATA_TAG_RE = /<metadata\b[^>]*>/g;
 
+/** A metadata entry's value by its key, as Bambu Studio's reader takes it: its attributes in any order, the last entry
+ *  with that key. */
 function metadataValue(xml: string, key: string): string | null {
-  const m = new RegExp(String.raw`<metadata\b[^>]*\bkey="${key}"[^>]*\bvalue="([^"]*)"`).exec(xml);
-  return m ? m[1] : null;
+  let value: string | null = null;
+  for (const [tag] of xml.matchAll(METADATA_TAG_RE)) if (attrValue(tag, "key") === key) value = attrValue(tag, "value");
+  return value;
 }
 
+/** The entries with that key given `value`. */
 function withMetadata(xml: string, key: string, value: string): string {
-  const re = new RegExp(String.raw`(<metadata\b[^>]*\bkey="${key}"[^>]*\bvalue=")[^"]*(")`);
-  return re.test(xml) ? xml.replace(re, `$1${escapeXml(value)}$2`) : xml;
+  return xml.replace(METADATA_TAG_RE, (tag) => (attrValue(tag, "key") === key ? withAttr(tag, "value", value) : tag));
 }
 
 /** The project with each group made one object. Groups are of one plate's items, and none loses anything

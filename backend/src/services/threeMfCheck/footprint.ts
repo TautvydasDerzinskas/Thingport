@@ -157,6 +157,8 @@ export function plateFootprint(plate: LayoutPlate, bed: BedBox, exclude: Box2[])
     const maxC = Math.min(Math.floor((area.maxX - f.x0) / f.cell), f.cols - 1);
     const minR = Math.max(Math.floor((area.minY - f.y0) / f.cell), 0);
     const maxR = Math.min(Math.floor((area.maxY - f.y0) / f.cell), f.rows - 1);
+    // An area off the grid clips to nothing, which fill would take from the array's end.
+    if (minC > maxC || minR > maxR) continue;
     for (let r = minR; r <= maxR; r++) f.taken.fill(1, r * f.cols + minC, r * f.cols + maxC + 1);
   }
   measure(f);

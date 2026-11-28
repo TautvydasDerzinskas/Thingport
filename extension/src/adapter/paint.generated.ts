@@ -76,8 +76,8 @@ export function decodePaintState(hex: string): number {
   return decodeNode();
 }
 
-/** Every extruder state a TriangleSelector paint string's pieces name, unpainted (0) left out: a split triangle can be
- *  in several. */
+/** Every extruder state a TriangleSelector paint string's pieces name, a split triangle's several: 0 for pieces left
+ *  unpainted, which print in their part's own filament. */
 export function paintStates(hex: string): number[] {
   if (!hex) return [];
   const bits = hexToBitstream(hex);
@@ -107,7 +107,7 @@ export function paintStates(hex: string): number[] {
         state += nibble;
       } while (nibble === 15 && pos < bits.length);
     }
-    if (state > 0) states.add(state);
+    states.add(state);
   }
   return [...states];
 }

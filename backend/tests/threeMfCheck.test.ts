@@ -10,7 +10,7 @@ import { checkThreeMf, fixThreeMf } from "../src/services/threeMfCheck";
 import { runThreeMfCheck } from "../src/services/threeMfCheck/check";
 import { invertTransform } from "../src/services/threeMfCheck/merge";
 import { plateFootprint } from "../src/services/threeMfCheck/footprint";
-import { attrValue, readLayout, type Box3, type LayoutItem } from "../src/services/threeMfCheck/layout";
+import { attrValue, readLayout, withAttr, type Box3, type LayoutItem } from "../src/services/threeMfCheck/layout";
 import { placeTower, towerFootprint, towerSettings, towerSize } from "../src/services/threeMfCheck/wipeTower";
 
 // Pure: no database. 3MFs a site would turn down, what the check says of each, and the copy it makes.
@@ -888,6 +888,64 @@ describe("3MF check for publishing", () => {
     expect(placeTower(farPlate, far, flat).clear).toBe(false);
   });
 
+  it("counts a part's own filament only where some of it isn't painted another", async () => {
+    const { wipe_tower_x: _x, wipe_tower_y: _y, ...settings } = P1S_SETTINGS;
+    // On filament 1, every triangle painted 2: one filament, no tower.
+    const bytes = await bambuProject({
+      objects: [{ name: "Painted", mesh: box([-10, -10], [10, 10], 2), paint: "8", extruder: 1 }],
+      items: [{ object: 0, at: [120, 120] }],
+      settings,
+    });
+    expect((await fixed(bytes)).issues).toEqual([]);
+  });
+
+  it("rewrites only the attribute it means, and reads metadata in either order", async () => {
+    expect(withAttr(`<item partnumber='note objectid="7"' objectid='2'/>`, "objectid", "9")).toBe(
+      `<item partnumber='note objectid="7"' objectid="9"/>`,
+    );
+    const zip = await JSZip.loadAsync(
+      await bambuProject({
+        objects: [
+          coin(),
+          { name: "Logo", parts: [{ name: "Logo", mesh: box([-8, -8], [8, 8], 1, 1.4), extruder: 3 }], extruder: 2 },
+        ],
+        items: [
+          { object: 0, at: [120, 120] },
+          { object: 1, at: [120, 120] },
+        ],
+      }),
+    );
+    const config = await zip.file("Metadata/model_settings.config")!.async("string");
+    zip.file(
+      "Metadata/model_settings.config",
+      config.replace('<metadata key="extruder" value="3"/>', '<metadata value="3" key="extruder"/>'),
+    );
+    const { copy } = await fixed(await zip.generateAsync({ type: "uint8array" }));
+    const merged = await (await JSZip.loadAsync(copy!)).file("Metadata/model_settings.config")!.async("string");
+    const logoPart = merged.match(/<part id="200"[\s\S]*?<\/part>/)![0];
+    // Its own filament, 3, kept: not the object's 2 added after it.
+    expect(logoPart.match(/extruder/g)).toHaveLength(1);
+    expect(logoPart).toContain('value="3" key="extruder"');
+  });
+
+  it("never fills the grid from an area off it, and finds a clear tower spot where the best-ranked isn't", () => {
+    const bed = { minX: 0, minY: 0, maxX: 35, maxY: 30 };
+    const off = plateFootprint({ items: [], origin: [0, 0] }, bed, [{ minX: -20, minY: 0, maxX: -10, maxY: 10 }]);
+    expect(off.taken.every((cell) => cell === 0)).toBe(true);
+    // Taken: a sliver down the left edge, which every spot touches, and a block at the back.
+    const footprint = plateFootprint({ items: [], origin: [0, 0] }, bed, [
+      { minX: 0, minY: 0, maxX: 0.9, maxY: 30 },
+      { minX: 10, minY: 25, maxX: 20, maxY: 30 },
+    ]);
+    const flat = towerSettings({
+      layer_height: "0.2",
+      prime_tower_rib_wall: "0",
+      prime_tower_brim_width: "0",
+      filament_prime_volume: ["10"],
+    });
+    expect(placeTower({ footprint, filaments: 2, height: 2 }, bed, flat).clear).toBe(true);
+  });
+
   describe("in a worker", () => {
     let dir: string;
     beforeAll(async () => {
@@ -927,6 +985,8 @@ describe("3MF check for publishing", () => {
       await fs.writeFile(src, bytes);
       await expect(fixThreeMf(src, src, RULES)).rejects.toThrow(/EEXIST/);
       expect(new Uint8Array(await fs.readFile(src))).toEqual(bytes);
+      // What the worker wrote it to first is gone either way.
+      expect((await fs.readdir(dir)).filter((name) => name.endsWith(".part"))).toEqual([]);
     });
   });
 });

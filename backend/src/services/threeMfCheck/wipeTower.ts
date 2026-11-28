@@ -172,7 +172,7 @@ function steps(lo: number, hi: number): number[] {
 
 /** The corner of a tower sized by `s` where it keeps furthest from the plate's objects, up to CLEARANCE, and nearest
  *  the slicer's own default among those, `slack` in from the bed's edges. */
-function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLACK): [number, number] {
+function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLACK, clearOnly = false) {
   const reach = towerFootprint(plate, s, 0, 0);
   const lo: [number, number] = [bed.minX - reach.minX + slack, bed.minY - reach.minY + slack];
   const hi: [number, number] = [
@@ -183,11 +183,13 @@ function bestSpot(plate: TowerPlate, bed: BedBox, s: TowerSettings, slack = SLAC
     const [min, max] = axis ? [bed.minY, bed.maxY] : [bed.minX, bed.maxX];
     return Math.min(Math.max(min + HOME[axis] * (max - min), lo[axis]), hi[axis]);
   });
-  let best: [number, number] = [home[0], home[1]];
+  let best: [number, number] | null = clearOnly ? null : [home[0], home[1]];
   let bestScore = -Infinity;
   let bestDistance = Infinity;
   for (const x of steps(lo[0], hi[0]))
     for (const y of steps(lo[1], hi[1])) {
+      // Ranked by the whole tower's clearance, a spot can come first and still not be clear by towerClear's test.
+      if (clearOnly && !towerClear(plate, bed, s, x, y)) continue;
       const tower = towerFootprint(plate, s, x, y);
       const score = clearance(plate.footprint, tower, CLEARANCE);
       const distance = Math.hypot(x - home[0], y - home[1]);
@@ -207,11 +209,12 @@ export function placeTower(
   bed: BedBox,
   s: TowerSettings,
 ): { spot: [number, number]; clear: boolean } {
-  // Each size kept SLACK in from the bed's edges first, then right up to them, where a bed has no more room.
+  // Each size kept SLACK in from the bed's edges first, then right up to them, where a bed has no more room; the
+  // best of the clear spots each time.
   for (const sizing of [placed(s), s])
     for (const slack of [SLACK, 0]) {
-      const spot = bestSpot(plate, bed, sizing, slack);
-      if (towerClear(plate, bed, sizing, spot[0], spot[1])) return { spot, clear: true };
+      const spot = bestSpot(plate, bed, sizing, slack, true);
+      if (spot) return { spot, clear: true };
     }
-  return { spot: bestSpot(plate, bed, s), clear: false };
+  return { spot: bestSpot(plate, bed, s) ?? [bed.minX, bed.minY], clear: false };
 }

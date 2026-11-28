@@ -7,14 +7,16 @@ import { bedBoxOf, plateColumns, plateOrigin, type BedBox } from "../../adapter/
 import type { BambuPackage } from "../../adapter/readers/bambuProject";
 import { asArray, firstValue } from "../../adapter/settings";
 import { composeTransform, parseTransform } from "../../adapter/transform";
-import { decodeXml, normalizePath, pathKey } from "../../adapter/xml";
+import { decodeXml, escapeXml, normalizePath, pathKey } from "../../adapter/xml";
 
 export type Vec3 = [number, number, number];
 export type Box3 = { min: Vec3; max: Vec3 };
 export type Box2 = { minX: number; minY: number; maxX: number; maxY: number };
 
 /** A mesh as its file has it, with the filaments its painting uses. */
-export type Mesh = { positions: Float32Array; triangles: Uint32Array; painted: Set<number> };
+/** A mesh as its file has it: the filaments its painting uses, and whether any of it is unpainted, printing in its
+ *  part's own. */
+export type Mesh = { positions: Float32Array; triangles: Uint32Array; painted: Set<number>; unpainted: boolean };
 export type PlacedMesh = { mesh: Mesh; matrix: number[] };
 
 export type LayoutItem = {
@@ -76,6 +78,15 @@ export function attrValue(tag: string, name: string): string | null {
   return null;
 }
 
+/** The tag with its attribute set to `value`, read as attrValue reads it, so only that attribute changes; added
+ *  before the tag's end where it has none. */
+export function withAttr(tag: string, name: string, value: string): string {
+  const written = `${name}="${escapeXml(value)}"`;
+  for (const m of tag.matchAll(ATTR_RE))
+    if (m[1] === name) return tag.slice(0, m.index) + written + tag.slice(m.index + m[0].length);
+  return tag.replace(/(\/?>)$/, ` ${written}$1`);
+}
+
 /** A vertex's or triangle's attribute: indexOf where it's written as writers write it, as a mesh has millions of
  *  tags, whose values are numbers and paint codes; otherwise read as any tag's. */
 function meshAttr(tag: string, name: string): string | null {
@@ -100,6 +111,7 @@ function readMesh(body: string, paints: Map<string, number[]>): Mesh {
   const positions: number[] = [];
   const triangles: number[] = [];
   const painted = new Set<number>();
+  let unpainted = false;
   let m;
   const vertices = new RegExp(VERTEX_RE.source, VERTEX_RE.flags);
   while ((m = vertices.exec(body)))
@@ -113,16 +125,22 @@ function readMesh(body: string, paints: Map<string, number[]>): Mesh {
     if (a === null || b === null || c === null) continue;
     triangles.push(a, b, c);
     const paint = meshAttr(m[1], "paint_color");
-    if (!paint) continue;
+    if (!paint) {
+      unpainted = true;
+      continue;
+    }
     // Every filament a split triangle's pieces are in, which the tower is sized by.
     let states = paints.get(paint);
     if (states === undefined) {
       states = paintStates(paint);
       paints.set(paint, states);
     }
-    for (const state of states) painted.add(state);
+    for (const state of states) {
+      if (state > 0) painted.add(state);
+      else unpainted = true;
+    }
   }
-  return { positions: Float32Array.from(positions), triangles: Uint32Array.from(triangles), painted };
+  return { positions: Float32Array.from(positions), triangles: Uint32Array.from(triangles), painted, unpainted };
 }
 
 function readObjects(xml: string, paints: Map<string, number[]>): Map<string, FileObject> {
@@ -280,7 +298,8 @@ export async function readLayout(pkg: BambuPackage, fallbackBed?: BedBox | null)
       const part = listed[i]?.id === id ? listed[i] : listed.find((p) => p.id === id);
       if (part && part.role !== "normal_part") return;
       parts.push(placed);
-      filaments.add(part?.extruder ?? object?.extruder ?? 1);
+      // The part's own filament only where some of it isn't painted another.
+      if (placed.mesh.unpainted) filaments.add(part?.extruder ?? object?.extruder ?? 1);
       for (const state of placed.mesh.painted) filaments.add(state);
     });
     if (!parts.length) continue;

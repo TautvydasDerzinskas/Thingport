@@ -1,6 +1,10 @@
 // Checking a 3MF before it's published to a site, and the fixed copy that's uploaded in its place (check.ts). Run in a
 // worker, as it reads every mesh: the same limits as the adapter's copies.
 
+import { randomUUID } from "node:crypto";
+import { constants } from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { ADAPT_3MF_TIMEOUT_SECONDS, MODEL_PREVIEW_MAX_MEMORY_MB } from "../../config";
 import { workerBootstrap } from "../../utils/workerBootstrap";
@@ -62,6 +66,14 @@ export async function fixThreeMf(
   rules: ThreeMfRules,
   options: ThreeMfCheckOptions = {},
 ): Promise<ThreeMfCheckResult & { written: boolean }> {
-  const { result, written } = await run({ srcPath, destPath, rules, options });
-  return { ...result, written };
+  // The worker writes beside it under a name of its own, and the copy goes in place only once it's whole and only
+  // where nothing is yet. A worker stopped part way (its time up) leaves just that file, which goes either way.
+  const staging = path.join(path.dirname(destPath), `.${path.basename(destPath)}.${randomUUID()}.part`);
+  try {
+    const { result, written } = await run({ srcPath, destPath: staging, rules, options });
+    if (written) await fs.copyFile(staging, destPath, constants.COPYFILE_EXCL);
+    return { ...result, written };
+  } finally {
+    await fs.rm(staging, { force: true });
+  }
 }
