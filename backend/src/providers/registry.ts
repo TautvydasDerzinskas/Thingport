@@ -172,6 +172,7 @@ import {
 } from "./makerworld/session";
 import { isMakerworldCaptchaFailure, liftCaptchaCooloffByHand } from "./makerworld/captcha";
 import { makerworldProfileFacts } from "./makerworld/profileFacts";
+import { makerworldThreeMfRules } from "./makerworld/threeMfRules";
 import { snapmakerProfileFacts } from "./snapmaker/profileFacts";
 import { makeronlineProfileFacts } from "./makeronline/profileFacts";
 import { crealitycloudProfileFacts } from "./crealitycloud/profileFacts";
@@ -191,6 +192,7 @@ import { readToymakr3dLicense } from "./toymakr3d/license";
 import { readCgtraderLicense } from "./cgtrader/license";
 import { readGrabcadLicense } from "./grabcad/license";
 import type { ProviderLicense } from "../services/licenseCatalog";
+import type { ThreeMfRules } from "../services/threeMfCheck/types";
 
 /** A provider's ids for the starter categories, by their path ("Parent/Child"). */
 export type StarterCategories = Readonly<Record<string, readonly (number | string)[]>>;
@@ -259,6 +261,9 @@ export type ProviderBackend = {
   liftHolds?(): void;
   /** Tests the instance's own credential, for a provider with one (an admin's App Token or API key). */
   instanceHealth?(): Promise<InstanceHealth>;
+  /** What a 3MF must be for the site to take it as a print profile: the checks publishing runs on one, and fixes in
+   *  the copy it uploads (services/threeMfCheck/). */
+  publishThreeMf?: ThreeMfRules;
 };
 
 /** Imports waiting for Thingport Grab, as GrabQueue's provider keeps them. */
@@ -355,6 +360,7 @@ export const PROVIDERS = {
     license: readMakerworldLicense,
     profileFacts: makerworldProfileFacts,
     profileUrls: listMakerworldProfileUrls,
+    publishThreeMf: makerworldThreeMfRules,
     // Loaded when it runs: the import runner it shares reaches this registry.
     profilesJob: async (jobId, userId, body) =>
       (await import("./makerworld/jobs")).runMakerworldProfilesJob(jobId, userId, body),
