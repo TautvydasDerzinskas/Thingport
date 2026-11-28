@@ -6589,6 +6589,7 @@
       "renameNumbered": "Eine andere Datei heißt bereits {{requested}}, daher wurde diese als {{saved}} gespeichert.",
       "renameNumberedMany": "Einige der gewünschten Namen tragen bereits andere Dateien, daher wurden diese mit angehängter Nummer gespeichert: {{saved}}.",
       "uploadRetryUnsafe": "Dieser Server kann den Upload nicht sicher wiederholen. Schließen und öffnen Sie den Editor erneut, prüfen Sie, welche Dateien gespeichert wurden, und fügen Sie nur die fehlenden hinzu.",
+      "uploadGone": "Diese hochgeladenen Dateien wurden gespeichert, aber von jemand anderem entfernt, bevor dieses Speichern fertig war: {{names}}. Prüfen Sie die Dateien des Modells, bevor Sie erneut speichern.",
       "plateSetChanged": "Jemand anderes hat beim Speichern Dateien hinzugefügt oder entfernt. Speichern Sie erneut, um Ihre Reihenfolge zu übernehmen.",
       "fileNameRequired": "Dateiname erforderlich.",
       "uploadReceiptLookupFailed": "Es konnte nicht geprüft werden, welche Dateien gespeichert wurden. Klicken Sie erneut auf „Aktualisieren“.",

@@ -6,7 +6,6 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import sharp from "sharp";
-import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
@@ -38,6 +37,7 @@ import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
 import { track } from "./harness/lifecycle";
 import { blockedBy, sessionOf } from "./helpers/locks";
+import { disputeTransactions } from "./helpers/transactions";
 
 const app = createApp();
 let token: string;
@@ -146,6 +146,9 @@ describe("recoverable preview uploads", () => {
     const valid = await image[format]().toBuffer();
     const damaged = Buffer.from(valid);
     for (let at = Math.floor(valid.length * 0.4); at < valid.length; at++) damaged[at] = (damaged[at] * 7 + 13) & 255;
+    // The premise: the header still reads, and the pixels fail in the format's own reader.
+    await expect(sharp(damaged).metadata()).resolves.toMatchObject({ format });
+    await expect(sharp(damaged).raw().toBuffer()).rejects.toThrow(format === "webp" ? /^webp2vips: / : /^tiff2vips: /);
 
     expect(await addPreviewImageForUpload(print.id, uploadId, damaged)).toBeNull();
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ imageId: null });
@@ -170,21 +173,7 @@ describe("recoverable preview uploads", () => {
     const thumb = assetTarget(home, plateThumbFile(plate.id));
     await fs.rm(thumb, { force: true });
     await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: false } });
-    const transaction = PrismaClient.prototype.$transaction;
-    const rolledBack = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
-      this: PrismaClient,
-      callback: unknown,
-      options: unknown,
-    ) {
-      const fn = callback as (tx: unknown) => Promise<unknown>;
-      return Reflect.apply(transaction, this, [
-        async (tx: unknown) => {
-          await fn(tx);
-          throw new Error("rolled back");
-        },
-        options,
-      ]);
-    } as never);
+    const rolledBack = disputeTransactions({ caller: "saveGeneratedPlateThumbnail", outcome: "rolled back" });
     try {
       await expect(saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).rejects.toThrow("rolled back");
     } finally {
@@ -194,6 +183,28 @@ describe("recoverable preview uploads", () => {
     expect(await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).toMatchObject({ thumbGenerated: false });
 
     expect(await saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).toBe("saved");
+  });
+
+  it("takes back a rolled-back first thumbnail before the next render when its own clean-up couldn't", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const thumb = assetTarget(await ensureAssetHome(print.id), plateThumbFile(plate.id));
+    await fs.rm(thumb, { force: true });
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: false } });
+    const disputed = disputeTransactions(
+      { caller: "saveGeneratedPlateThumbnail", outcome: "rolled back" },
+      { caller: "takeBackRolledBackThumb", outcome: "fails" },
+    );
+    try {
+      await expect(saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).rejects.toThrow("rolled back");
+    } finally {
+      disputed.mockRestore();
+    }
+    // Its clean-up failed too: the file is still there, with no flag to say it's our render.
+    expect(fsSync.existsSync(thumb)).toBe(true);
+
+    expect(await saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).toBe("saved");
+    expect(await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).toMatchObject({ thumbGenerated: true });
   });
 
   it("keeps an upload key retryable when writing its JPEG fails", async () => {
@@ -316,15 +327,8 @@ describe("recoverable preview uploads", () => {
     const { print, generated, lookup, where } = await interruptedCover();
     const generatedFile = previewImagePath(generated.id, await printAssetHome(print.id));
     expect(fsSync.existsSync(generatedFile)).toBe(true);
-    const transaction = PrismaClient.prototype.$transaction;
     // The cover work commits and its answer is lost, as when the connection drops at COMMIT.
-    const lost = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
-      this: PrismaClient,
-      ...args: unknown[]
-    ) {
-      await Reflect.apply(transaction, this, args);
-      throw new Error("Connection lost after COMMIT");
-    } as never);
+    const lost = disputeTransactions({ caller: "resumeCoverWork", outcome: "commit unanswered" });
     try {
       await lookup();
     } finally {
@@ -336,7 +340,7 @@ describe("recoverable preview uploads", () => {
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });
   });
 
-  it("leaves the cover work pending while a render's rolled-back thumbnail is still to be taken back", async () => {
+  it("never takes a render's rolled-back thumbnail for the owner's when recovering a cover", async () => {
     const { print, plate, lookup, uploadId, where, thumb } = await interruptedCover();
     // The plate has no thumbnail yet, so a render's save writes its first.
     await fs.rm(thumb, { force: true });
@@ -355,25 +359,27 @@ describe("recoverable preview uploads", () => {
         { timeout: 15_000 },
       ),
     );
-    const transaction = PrismaClient.prototype.$transaction;
-    let rolledBack: { mockRestore(): void } | undefined;
+    // The render's transaction writes its thumbnail and then rolls back.
+    const rolledBack = disputeTransactions({ caller: "saveGeneratedPlateThumbnail", outcome: "rolled back" });
     try {
-      const pid = await holding;
-      // The render's transaction writes its thumbnail and then rolls back.
-      rolledBack = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
-        this: PrismaClient,
-        callback: unknown,
-        options: unknown,
-      ) {
-        const fn = callback as (tx: unknown) => Promise<unknown>;
-        return Reflect.apply(transaction, this, [
-          async (tx: unknown) => {
-            await fn(tx);
-            throw new Error("rolled back");
+      // A holder that ends before it has the lock fails the test with its own error, instead of leaving it waiting.
+      let hasLock = false;
+      const pid = await Promise.race([
+        holding.then((session) => {
+          hasLock = true;
+          return session;
+        }),
+        holder.then(
+          () => {
+            if (!hasLock) throw new Error("The holder ended before it took the gallery lock");
+            return -1;
           },
-          options,
-        ]);
-      } as never);
+          (error: unknown) => {
+            if (!hasLock) throw error;
+            return -1;
+          },
+        ),
+      ]);
       const render = track(
         saveGeneratedPlateThumbnail(print.id, plate.id, await png(60)).catch((error: Error) => error),
       );
@@ -394,10 +400,11 @@ describe("recoverable preview uploads", () => {
       expect((await recovery).status).toBe(200);
     } finally {
       release();
-      rolledBack?.mockRestore();
+      rolledBack.mockRestore();
     }
 
-    expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: true });
+    // Recovery took the leftover back itself, or left its work pending while the render's save was still settling:
+    // either way the next lookup finds the uploaded picture as the thumbnail, never the render's left-over file.
     await lookup();
     expect(await redOf(thumb)).toBeGreaterThan(180);
     expect(await prisma.previewImageUpload.findUnique({ where })).toMatchObject({ coverPending: false });

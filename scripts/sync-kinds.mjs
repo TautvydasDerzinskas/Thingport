@@ -18,7 +18,12 @@ const BROWSER_RULES = "frontend/src/utils/fileNames.generated.ts";
 const stagedAt = process.argv.indexOf("--staged");
 // The hook has already formatted these staged files. An input outside the task comes from the index.
 const formattedFiles = new Set(
-  stagedAt === -1 ? [] : process.argv.slice(stagedAt + 1).map((file) => path.relative(ROOT, path.resolve(file))),
+  stagedAt === -1
+    ? []
+    : process.argv
+        .slice(stagedAt + 1)
+        // Forward slashes, as the inputs are named, whatever the platform's separator.
+        .map((file) => path.relative(ROOT, path.resolve(file)).split(path.sep).join("/")),
 );
 const readInput = (file) =>
   stagedAt >= 0 && !formattedFiles.has(file)

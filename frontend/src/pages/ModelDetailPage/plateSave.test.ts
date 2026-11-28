@@ -12,6 +12,7 @@ import {
   plateFilenameError,
   PlateRenameNumberedError,
   PlateUploadConfirmationError,
+  PlateUploadGoneError,
   PlateUploadRetryUnsafeError,
   savePlateChanges,
   type PlateItem,
@@ -279,12 +280,60 @@ describe("savePlateChanges", () => {
       uploadOutcomeUnknown: true,
     }));
 
-    const result = await savePlateChanges(initial, items, new Set(), api, () => {});
+    let progress: PlateSaveProgress | undefined;
+    const save = savePlateChanges(initial, items, new Set(), api, (update) => {
+      progress = update;
+    });
 
+    // The rest of the save goes through, and the lost upload is reported rather than dropped.
+    await expect(save).rejects.toBeInstanceOf(PlateUploadGoneError);
+    await expect(save).rejects.toMatchObject({ filenames: ["first.3mf"] });
     expect(api.getPlateUploadResults).toHaveBeenCalledExactlyOnceWith("model", ["first", "second"]);
     expect(api.addPlates).toHaveBeenCalledTimes(1);
     expect(api.addPlates.mock.calls[0][1].map((file) => file.name)).toEqual(["thingport-upload-second-second.3mf"]);
-    expect(result.plates.map((candidate) => candidate.id)).toEqual(["original", "second-plate"]);
+    expect(progress?.print.plates.map((candidate) => candidate.id)).toEqual(["original", "second-plate"]);
+  });
+
+  it("keeps a removal for the next save when an upload completed and lost its plate meanwhile", async () => {
+    const initial = print(plate("original", "base.3mf", 0));
+    const api = {
+      get: vi.fn<PlateSaveApi["get"]>().mockResolvedValue(initial),
+      getPlateUploadResults: vi.fn<NonNullable<PlateSaveApi["getPlateUploadResults"]>>().mockResolvedValue({
+        print: initial,
+        upload_results: [{ upload_id: "replacement", plate_id: "removed-plate" }],
+      }),
+      addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+      supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>().mockResolvedValue({ print: print() }),
+      renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(),
+      reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: initial }),
+    };
+    let progress: PlateSaveProgress = {
+      print: initial,
+      items: [
+        {
+          kind: "new",
+          localId: "replacement",
+          file: new File(["mesh"], "replacement.3mf"),
+          filename: "replacement.3mf",
+          uploadAttempted: true,
+          uploadOutcomeUnknown: true,
+        },
+      ],
+      removedPlateIds: new Set(["original"]),
+    };
+    const save = () =>
+      savePlateChanges(progress.print, progress.items, progress.removedPlateIds, api, (update) => {
+        progress = update;
+      });
+
+    // The replacement for the original went in and was removed by someone else: the original stays until the user knows.
+    await expect(save()).rejects.toMatchObject({ filenames: ["replacement.3mf"] });
+    expect(api.deletePlate).not.toHaveBeenCalled();
+    expect(progress.removedPlateIds).toEqual(new Set(["original"]));
+
+    await save().catch(() => undefined);
+    expect(api.deletePlate).toHaveBeenCalledExactlyOnceWith("model", "original");
   });
 
   it.each(["a lost response", "an acknowledgement without the uploaded plate"])(

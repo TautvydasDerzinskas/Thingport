@@ -57,6 +57,15 @@ export class PlateUploadRetryUnsafeError extends PlateUploadConfirmationError {
 
 export class PlateRenameSwapUnsupportedError extends Error {}
 
+/** Uploads that completed, then lost their plate to another editor before the save finished. The save went through
+ *  without them, keeping any removals for the next save, which the user makes knowing. */
+export class PlateUploadGoneError extends Error {
+  constructor(readonly filenames: string[]) {
+    super(`Saved, then removed by someone else: ${filenames.join(", ")}`);
+    this.name = "PlateUploadGoneError";
+  }
+}
+
 /** Files saved under numbered names, as ones this save doesn't rename keep the names asked for. Everything else in
  *  the save went through. `requested` and `saved` are the first of them. */
 export class PlateRenameNumberedError extends Error {
@@ -102,14 +111,16 @@ function asExisting(item: NewPlateItem, plate: Plate): PlateItem {
 function reconcileAttemptedUploads(
   print: Print,
   items: PlateItem[],
-  completed?: Map<string, string | null>,
+  completed: Map<string, string | null> | undefined,
+  gone: string[],
 ): PlateItem[] {
   return items.flatMap((item) => {
     if (item.kind !== "new" || !item.uploadAttempted) return [item];
     const recordedId = completed?.get(item.localId);
     if (recordedId !== undefined) {
       const plate = print.plates.find((candidate) => candidate.id === recordedId);
-      // A completed upload remains complete when another editor removes its plate.
+      // A completed upload remains complete when another editor removes its plate, and the save says so.
+      if (!plate) gone.push(item.filename);
       return plate ? [asExisting(item, plate)] : [];
     }
     const uploaded = completed ? undefined : storedUpload(print, uploadMarker(item));
@@ -132,6 +143,8 @@ export async function savePlateChanges(
   let latest = print;
   let stagedItems = items;
   const pendingRemovals = new Set(removedPlateIds);
+  // Uploads that completed and lost their plate meanwhile: reported, and no removal runs until the user has seen it.
+  const goneUploads: string[] = [];
   const reportProgress = () =>
     onProgress({ print: latest, items: stagedItems, removedPlateIds: new Set(pendingRemovals) });
 
@@ -142,7 +155,7 @@ export async function savePlateChanges(
     const result = await api.getPlateUploadResults?.(print.id, uploadIds);
     const refreshed = result?.print ?? (await api.get(print.id));
     const completed = result && new Map(result.upload_results.map((upload) => [upload.upload_id, upload.plate_id]));
-    stagedItems = reconcileAttemptedUploads(refreshed, stagedItems, completed ?? undefined);
+    stagedItems = reconcileAttemptedUploads(refreshed, stagedItems, completed ?? undefined, goneUploads);
     latest = refreshed;
     return Boolean(result);
   };
@@ -258,7 +271,7 @@ export async function savePlateChanges(
     }
   }
 
-  for (const plateId of pendingRemovals) {
+  for (const plateId of goneUploads.length ? [] : pendingRemovals) {
     if (!latest.plates.some((plate) => plate.id === plateId)) {
       pendingRemovals.delete(plateId);
       reportProgress();
@@ -387,6 +400,10 @@ export async function savePlateChanges(
       latest = await api.get(print.id);
       reportProgress();
     }
+  }
+  if (goneUploads.length) {
+    reportProgress();
+    throw new PlateUploadGoneError(goneUploads);
   }
   const numbered = stagedItems.flatMap((item) =>
     item.kind === "existing" && item.numberedFrom ? [{ requested: item.numberedFrom, saved: item.filename }] : [],

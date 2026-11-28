@@ -417,6 +417,7 @@ async function relocatePlates(
   plates: Plate[],
   safeTemplate: string,
   printValues: Awaited<ReturnType<typeof printTemplateValues>>,
+  leaving?: ReadonlySet<string>,
 ): Promise<number> {
   let moved = 0;
   for (const plate of plates) {
@@ -424,11 +425,15 @@ async function relocatePlates(
     if (plate.sourcePath) continue;
     const oldPath = managedPlatePath(plate);
     const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
-    // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
+    // Where it already is counts as free, so a plate moved aside by freePlatePath stays put. A target another plate of
+    // the same rename is about to leave is waited for at a path of this plate's own, not the fallback, which an
+    // unrelated file may hold.
     const newRelative =
       path.resolve(oldPath) === path.resolve(STORAGE, rendered)
         ? rendered
-        : await freePlatePath(rendered, print.id, { plateId: plate.id });
+        : leaving?.has(path.resolve(STORAGE, rendered))
+          ? path.join(path.dirname(rendered), print.id, plate.id, path.basename(rendered))
+          : await freePlatePath(rendered, print.id, { plateId: plate.id });
     const newPath = path.join(STORAGE, newRelative);
     if (path.resolve(oldPath) === path.resolve(newPath)) {
       if (plate.storagePath !== newRelative) {
@@ -454,11 +459,32 @@ export async function relocateRenamedPlates(
 ): Promise<number> {
   const safeTemplate = validateStorageTemplate(await getStorageTemplate());
   const printValues = await printTemplateValues(print, safeTemplate);
-  let moved = await relocatePlates(print, plates, safeTemplate, printValues);
-  // In a swap, a move whose target another of these plates still held settles aside; once they've all moved, its
-  // target is free, and a second pass puts it there. A target an unrelated file holds keeps the move aside.
-  const settled = await prisma.plate.findMany({ where: { id: { in: plates.map((plate) => plate.id) } } });
+  const target = (plate: Plate) =>
+    path.resolve(
+      STORAGE,
+      renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder),
+    );
+  // The paths these plates are about to leave: in a swap, a plate waits aside for its partner's.
+  const leaving = new Set(
+    plates
+      .filter((plate) => !plate.sourcePath && path.resolve(managedPlatePath(plate)) !== target(plate))
+      .map((plate) => path.resolve(managedPlatePath(plate))),
+  );
+  let moved = await relocatePlates(print, plates, safeTemplate, printValues, leaving);
+  // Once they've all moved, a second pass puts each plate that waited where its name says. A target an unrelated file
+  // holds keeps the move aside, at the fallback.
+  const ids = plates.map((plate) => plate.id);
+  const settled = await prisma.plate.findMany({ where: { id: { in: ids } } });
   moved += await relocatePlates(print, settled, safeTemplate, printValues);
+  // A swap a failed request left halfway has a plate still waiting aside, under the model's id, whose way this rename
+  // of its partner may have freed. Best-effort: these names were recorded before, not by this rename.
+  const waiting = await prisma.plate.findMany({ where: { printId: print.id, id: { notIn: ids } } });
+  for (const plate of waiting.filter((other) => other.storagePath.split(/[\\/]/).includes(print.id))) {
+    moved += await relocatePlates(print, [plate], safeTemplate, printValues).catch((error) => {
+      console.error(`Couldn't put plate ${plate.id} where its name says yet:`, error);
+      return 0;
+    });
+  }
   return moved;
 }
 
@@ -619,7 +645,7 @@ export async function setStorageTemplate(value: string): Promise<void> {
 
 // -- Thumbnails -------------------------------------------------------------
 
-type ThumbTarget = { home: string; db: Prisma.TransactionClient };
+type ThumbTarget = { home: string; db: Prisma.TransactionClient; placed?: (dest: string) => void };
 
 /** The plate's model's pictures folder as the transaction sees it now, else the one the caller read. */
 async function currentThumbHome(target: ThumbTarget, plateId: string): Promise<string> {
@@ -648,6 +674,7 @@ async function saveThumbBuffer(
     await writePhotoJpeg(input, tmp, 512, 88, keepExif);
     await fs.rename(tmp, dest);
     placed = true;
+    target?.placed?.(dest);
     // The one in the old shared folder is out of date now.
     await removeAsset(null, file);
     // Any thumb but our own render; the generated-thumbnail route marks those after saving.

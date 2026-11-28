@@ -6,7 +6,6 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import sharp from "sharp";
-import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
 import { BUNDLES, STORAGE } from "../src/config";
 import { prisma } from "../src/db";
@@ -14,6 +13,7 @@ import { listZipEntries } from "../src/utils/zipReader";
 import { resolvePlateFilePath } from "../src/services/printCreation";
 import { checkLibraryInvariants } from "./harness";
 import { faults, pauseAt, track } from "./harness/lifecycle";
+import { disputeTransactions } from "./helpers/transactions";
 
 const app = createApp();
 
@@ -608,6 +608,87 @@ describe("plate add/remove/reorder/rename", () => {
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
+  it("finishes a swap a failed request left halfway when its files are then renamed one at a time", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid half a endsolid"), "half-a.stl")
+      .attach("files", Buffer.from("solid half b endsolid"), "half-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a, b] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    const bPath = resolvePlateFilePath(b);
+    const rename = fsPromises.rename;
+    const failMove = vi.spyOn(fsPromises, "rename").mockImplementation(async (from, to) => {
+      if (String(from) === bPath) throw new Error("Storage move failed");
+      return rename(from, to);
+    });
+    try {
+      const swap = await auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [
+          { plate_id: a.id, filename: "half-b.stl" },
+          { plate_id: b.id, filename: "half-a.stl" },
+        ],
+      });
+      expect(swap.status).toBe(500);
+    } finally {
+      failMove.mockRestore();
+    }
+
+    // The names are saved, so the editor's next save finds no swap and renames each file on its own.
+    for (const [plate, filename] of [
+      [a, "half-b.stl"],
+      [b, "half-a.stl"],
+    ] as const) {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plate/${plate.id}/rename`)).send({ filename });
+      expect(res.status).toBe(200);
+    }
+    const stored = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(stored.map((plate) => [plate.filename, path.basename(plate.storagePath)])).toEqual([
+      ["half-b.stl", "half-b.stl"],
+      ["half-a.stl", "half-a.stl"],
+    ]);
+    const [folderA, folderB] = stored.map((plate) => path.dirname(plate.storagePath));
+    expect(folderA).toBe(folderB);
+    expect(path.basename(folderA)).not.toBe(modelId);
+    expect(stored.map((plate) => fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8"))).toEqual([
+      "solid half a endsolid",
+      "solid half b endsolid",
+    ]);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("swaps two files when the place a taken name falls back to is held too", async () => {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid fall a endsolid"), "fall-a.stl")
+      .attach("files", Buffer.from("solid fall b endsolid"), "fall-b.stl");
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a, b] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    // A file no plate owns where the first move's taken name would fall back to.
+    const blocker = path.join(STORAGE, path.dirname(a.storagePath), modelId, "fall-b.stl");
+    fs.mkdirSync(path.dirname(blocker), { recursive: true });
+    fs.writeFileSync(blocker, "in the way");
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [
+          { plate_id: a.id, filename: "fall-b.stl" },
+          { plate_id: b.id, filename: "fall-a.stl" },
+        ],
+      });
+      expect(res.status).toBe(200);
+      const stored = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+      expect(stored.map((plate) => path.relative(path.dirname(a.storagePath), plate.storagePath))).toEqual([
+        "fall-b.stl",
+        "fall-a.stl",
+      ]);
+      expect(fs.readFileSync(blocker, "utf8")).toBe("in the way");
+    } finally {
+      fs.rmSync(blocker, { force: true });
+    }
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
   it("appends after a plate removed while the new file was being placed", async () => {
     const uploaded = await auth(request(app).post("/api/upload"))
       .field("mode", "multiplate")
@@ -888,15 +969,8 @@ describe("plate add/remove/reorder/rename", () => {
         Buffer.from("solid committed endsolid"),
         filename,
       );
-    const transaction = PrismaClient.prototype.$transaction;
     // The plate's transaction commits and its acknowledgement is lost, as when the connection drops at COMMIT.
-    const lost = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
-      this: PrismaClient,
-      ...args: unknown[]
-    ) {
-      await Reflect.apply(transaction, this, args);
-      throw new Error("Connection lost after COMMIT");
-    } as never);
+    const lost = disputeTransactions({ caller: "createPlateAtPosition", outcome: "commit unanswered" });
     try {
       expect((await upload()).status).toBe(500);
     } finally {

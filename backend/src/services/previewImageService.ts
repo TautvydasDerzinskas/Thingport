@@ -4,6 +4,7 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
+import { isMissingError } from "../modelFiles/storageFs";
 import { generateModelImage } from "./modelPreviewCache";
 import { photoJpeg, renderThumbShade } from "./imageProcessing";
 import {
@@ -198,9 +199,28 @@ export function lockPreviewGallery(tx: Prisma.TransactionClient, printId: string
   return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('preview-gallery'), hashtext(${printId}))`;
 }
 
-/** Plates whose first thumbnail a generated save has written and not yet kept or taken back: whose that file is isn't
- *  settled, and cover recovery leaves it alone until it is. In-process, as every writer of a thumbnail is. */
-const unsettledThumbs = new Set<string>();
+/** Plates whose first thumbnail a generated save has written and not yet kept or taken back, with where it went and,
+ *  once the save failed, when: whose that file is isn't settled, so cover recovery leaves it alone, and the next writer
+ *  under the gallery lock takes it back first. In-process, as every writer of a thumbnail is. */
+const unsettledThumbs = new Map<string, { file: string; failedAt?: number }>();
+
+/** Takes back the first thumbnail a failed save left, under the caller's gallery lock: only while the flag shows the
+ *  save didn't commit, and only the file that attempt wrote. A look that fails keeps it recorded for the next try. */
+async function settleThumb(tx: Prisma.TransactionClient, plateId: string): Promise<void> {
+  const unsettled = unsettledThumbs.get(plateId);
+  if (unsettled?.failedAt === undefined) return;
+  const plate = await tx.plate.findFirst({ where: { id: plateId }, select: { thumbGenerated: true } });
+  if (plate && !plate.thumbGenerated) {
+    let written: fsSync.Stats | null = null;
+    try {
+      written = await fs.stat(unsettled.file);
+    } catch (error) {
+      if (!isMissingError(error)) throw error;
+    }
+    if (written?.isFile() && written.mtimeMs <= unsettled.failedAt) await fs.rm(unsettled.file, { force: true });
+  }
+  unsettledThumbs.delete(plateId);
+}
 
 /** Generated thumbnails and recovered covers must read and update the same thumbnail under the gallery lock. */
 export async function saveGeneratedPlateThumbnail(
@@ -209,11 +229,12 @@ export async function saveGeneratedPlateThumbnail(
   buffer: Buffer,
 ): Promise<"saved" | "skipped" | "invalid"> {
   await ensureAssetHome(printId);
-  // Where this attempt writes the plate's first thumbnail, when it had none.
-  let firstThumb: string | null = null;
+  // Whether this attempt writes the plate's first thumbnail.
+  let first = false;
   try {
-    return await prisma.$transaction(async (tx) => {
+    const outcome = await prisma.$transaction(async (tx) => {
       await lockPreviewGallery(tx, printId);
+      await settleThumb(tx, plateId);
       const plate = await tx.plate.findFirst({
         where: { id: plateId, printId },
         select: { thumbGenerated: true, print: { select: { assetsPath: true } } },
@@ -223,33 +244,39 @@ export async function saveGeneratedPlateThumbnail(
       const had = await assetIsThere(home, plateThumbFile(plateId));
       if (!plate.thumbGenerated && had) return "skipped";
       if (!had) {
-        firstThumb = assetTarget(home, plateThumbFile(plateId));
-        unsettledThumbs.add(plateId);
+        first = true;
+        unsettledThumbs.set(plateId, { file: assetTarget(home, plateThumbFile(plateId)) });
       }
-      if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx }))) return "invalid";
+      // Where the file really went, which the folder a move gave the model since can change.
+      const placed = (dest: string) => {
+        const unsettled = unsettledThumbs.get(plateId);
+        if (first && unsettled) unsettled.file = dest;
+      };
+      if (!(await saveThumbFromBytes(plateId, buffer, false, { home, db: tx, placed }))) return "invalid";
       await tx.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
       return "saved";
     });
+    if (first) unsettledThumbs.delete(plateId);
+    return outcome;
   } catch (error) {
-    if (firstThumb) await takeBackRolledBackThumb(printId, plateId, firstThumb, Date.now());
+    const unsettled = first ? unsettledThumbs.get(plateId) : undefined;
+    if (unsettled) {
+      unsettled.failedAt = Date.now();
+      await takeBackRolledBackThumb(printId, plateId);
+    }
     throw error;
-  } finally {
-    if (firstThumb) unsettledThumbs.delete(plateId);
   }
 }
 
-/** Removes a first thumbnail a failed save wrote, once a locked read confirms its flag rolled back: left in place, later
- *  renders would take it for one the owner chose. Kept when that read fails, or when the file changed since. */
-async function takeBackRolledBackThumb(printId: string, plateId: string, file: string, failedAt: number) {
+/** Takes back a first thumbnail a failed save wrote, once a locked read confirms its flag rolled back: left in place,
+ *  later renders would take it for one the owner chose. When this fails too, the next writer under the lock does it. */
+async function takeBackRolledBackThumb(printId: string, plateId: string) {
   await prisma
     .$transaction(async (tx) => {
       await lockPreviewGallery(tx, printId);
-      const plate = await tx.plate.findFirst({ where: { id: plateId, printId }, select: { thumbGenerated: true } });
-      if (!plate || plate.thumbGenerated) return;
-      const written = await fs.stat(file).catch(() => null);
-      if (written?.isFile() && written.mtimeMs <= failedAt) await fs.rm(file, { force: true });
+      await settleThumb(tx, plateId);
     })
-    .catch((error) => console.error(`Couldn't take back plate ${plateId}'s thumbnail:`, error));
+    .catch((error) => console.error(`Couldn't take back plate ${plateId}'s thumbnail yet:`, error));
 }
 
 /** Publishes the stored image and receipt together. Each worker writes under its own image id so a concurrent
@@ -401,19 +428,22 @@ async function dropGalleryRows<T>(
 async function settleGalleryDrops(printId: string): Promise<void> {
   const unsettled = unsettledDrops.get(printId);
   if (!unsettled) return;
+  // Only the ids this read checks are settled by it; any a drop adds meanwhile wait for the next.
+  const checked = [...unsettled.ids];
   let left: Set<string>;
   try {
     left = await prisma.$transaction(async (tx) => {
       await lockPreviewGallery(tx, printId);
-      const rows = await tx.previewImage.findMany({ where: { id: { in: [...unsettled.ids] } }, select: { id: true } });
+      const rows = await tx.previewImage.findMany({ where: { id: { in: checked } }, select: { id: true } });
       return new Set(rows.map((row) => row.id));
     });
   } catch (error) {
     console.error(`Couldn't settle the gallery of print ${printId} yet:`, error);
     return;
   }
-  unsettledDrops.delete(printId);
-  for (const id of unsettled.ids) if (!left.has(id)) await removeGalleryFiles(unsettled.home, id);
+  for (const id of checked) unsettled.ids.delete(id);
+  if (!unsettled.ids.size && unsettledDrops.get(printId) === unsettled) unsettledDrops.delete(printId);
+  for (const id of checked) if (!left.has(id)) await removeGalleryFiles(unsettled.home, id);
 }
 
 /** The first of `images` whose file is there, and that file, by a look that throws on any error but a missing file. */
@@ -466,6 +496,7 @@ async function resumeCoverWork(printId: string, dropping: (home: AssetHome, ids:
 
     const plate = await tx.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
     let thumbnailReady = true;
+    if (plate) await settleThumb(tx, plate.id);
     // A render's save may still take back the file it wrote: whose thumbnail it is waits, and so does this receipt.
     if (plate && unsettledThumbs.has(plate.id)) thumbnailReady = false;
     else if (plate && (plate.thumbGenerated || !(await assetIsThere(home, plateThumbFile(plate.id))))) {
@@ -556,11 +587,10 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
     });
     const known = new Set(images.map((img) => img.id));
     const listed = new Set(ids);
-    const unseen: string[] = [];
-    for (const img of images) {
-      if (!listed.has(img.id) && !(await assetIsThere(print?.assetsPath, galleryImageFile(img.id))))
-        unseen.push(img.id);
-    }
+    // Each picture's file is looked at once, and every decision below goes by that one look.
+    const there = new Map<string, boolean>();
+    for (const img of images) there.set(img.id, await assetIsThere(print?.assetsPath, galleryImageFile(img.id)));
+    const unseen = images.filter((img) => !listed.has(img.id) && !there.get(img.id)).map((img) => img.id);
     if (
       ids.length + unseen.length !== images.length ||
       listed.size !== ids.length ||
@@ -569,14 +599,9 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
       throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
     }
     // The cover in view before and after: a picture listed first whose file is gone isn't one.
-    const before = (await firstImageThere(images, print?.assetsPath))?.image.id;
+    const before = images.find((img) => there.get(img.id))?.id;
     const order = [...ids, ...unseen];
-    const after = (
-      await firstImageThere(
-        order.map((id) => ({ id })),
-        print?.assetsPath,
-      )
-    )?.image.id;
+    const after = order.find((id) => there.get(id));
     await renumberPreviewImages(tx, order);
     if (before !== after) {
       await tx.previewImageUpload.updateMany({ where: { printId, coverPending: true }, data: { coverPending: false } });

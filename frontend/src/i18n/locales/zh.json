@@ -6342,6 +6342,7 @@
       "renameNumbered": "另一个文件已命名为 {{requested}}，因此此文件已保存为 {{saved}}。",
       "renameNumberedMany": "其他文件已使用部分所请求的名称，因此这些文件已加上编号保存：{{saved}}。",
       "uploadRetryUnsafe": "此服务器无法安全地重试上传。请关闭并重新打开编辑器，检查哪些文件已保存，然后只添加缺少的文件。",
+      "uploadGone": "这些已上传的文件已保存，但在本次保存完成前被他人删除：{{names}}。再次保存前，请检查模型的文件。",
       "plateSetChanged": "其他人在保存期间添加或删除了文件。请再次保存以应用你的排序。",
       "fileNameRequired": "文件名为必填项。",
       "uploadReceiptLookupFailed": "无法确认哪些文件已保存。请再次选择“更新”。",

@@ -6841,6 +6841,7 @@
       "renameNumbered": "Un autre fichier s’appelle déjà {{requested}} : celui-ci a donc été enregistré sous {{saved}}.",
       "renameNumberedMany": "D’autres fichiers portent déjà certains des noms demandés : ceux-ci ont donc été enregistrés avec un numéro ajouté : {{saved}}.",
       "uploadRetryUnsafe": "Ce serveur ne peut pas réessayer l’envoi en toute sécurité. Fermez puis rouvrez l’éditeur, vérifiez quels fichiers ont été enregistrés et ajoutez seulement ceux qui manquent.",
+      "uploadGone": "Ces fichiers envoyés ont été enregistrés, puis supprimés par quelqu’un d’autre avant la fin de cet enregistrement : {{names}}. Vérifiez les fichiers du modèle avant d’enregistrer à nouveau.",
       "plateSetChanged": "Quelqu’un d’autre a ajouté ou supprimé des fichiers pendant l’enregistrement. Enregistrez à nouveau pour appliquer votre ordre.",
       "fileNameRequired": "Le nom du fichier est obligatoire.",
       "uploadReceiptLookupFailed": "Impossible de vérifier quels fichiers ont été enregistrés. Sélectionnez de nouveau Mettre à jour.",

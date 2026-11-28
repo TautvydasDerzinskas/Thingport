@@ -6964,6 +6964,7 @@
       "renameNumbered": "Kitas failas jau pavadintas {{requested}}, todėl šis išsaugotas kaip {{saved}}.",
       "renameNumberedMany": "Kai kuriais prašytais pavadinimais jau pavadinti kiti failai, todėl šie išsaugoti su pridėtu numeriu: {{saved}}.",
       "uploadRetryUnsafe": "Šis serveris negali saugiai pakartoti įkėlimo. Uždarykite ir vėl atidarykite redaktorių, patikrinkite, kurie failai išsaugoti, ir pridėkite tik trūkstamus.",
+      "uploadGone": "Šie įkelti failai buvo išsaugoti, bet kažkas juos pašalino, kol šis išsaugojimas nebuvo baigtas: {{names}}. Prieš išsaugodami dar kartą, patikrinkite modelio failus.",
       "plateSetChanged": "Kažkas kitas pridėjo arba pašalino failų, kol buvo išsaugoma. Išsaugokite dar kartą, kad būtų pritaikyta jūsų tvarka.",
       "fileNameRequired": "Failo pavadinimas privalomas.",
       "uploadReceiptLookupFailed": "Nepavyko patikrinti, kurie failai išsaugoti. Dar kartą pasirinkite „Atnaujinti“.",

@@ -67,6 +67,7 @@ import {
   plateFilenameError,
   PlateRenameNumberedError,
   PlateRenameSwapUnsupportedError,
+  PlateUploadGoneError,
   PlateUploadRetryUnsafeError,
   PlateUploadConfirmationError,
   savePlateChanges,
@@ -163,7 +164,6 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasUnconfirmedImages = images.some((image) => image.kind === "unconfirmed");
-  const previewSaveBlocked = hasUnconfirmedImages && !images.some(isPendingPreviewImage);
 
   const createdUrlsRef = useRef<string[]>([]);
   const addImageInputRef = useRef<HTMLInputElement>(null);
@@ -332,7 +332,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   };
 
   const handleUpdate = async () => {
-    if (previewSaveBlocked || firstFilenameIssue) return;
+    if (firstFilenameIssue) return;
     setSaving(true);
     setError(null);
     let latest: Print = latestPrint.current;
@@ -373,9 +373,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         });
         latest = result.print;
         stagedImages = result.items;
-        previewsUnconfirmed = stagedImages.some((image) => image.kind === "unconfirmed");
-        previewGoneMeanwhile = stagedImages.some((image) => image.kind === "missing");
       }
+      // By the rows as they stand, so dismissing one is what clears its notice, not saving again.
+      previewsUnconfirmed = stagedImages.some((image) => image.kind === "unconfirmed");
+      previewGoneMeanwhile = stagedImages.some((image) => image.kind === "missing");
       if (stagedImages.length && !previewsUnconfirmed) {
         // Our own render gives way to the first picture uploaded, so it may be gone by now.
         const present = new Set(latest.preview_images.map((img) => img.id));
@@ -426,6 +427,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             ? t("models:edit.renameNumbered", { requested: err.requested, saved: err.saved })
             : t("models:edit.renameNumberedMany", { saved: err.renames.map((rename) => rename.saved).join(", ") }),
         );
+        return;
+      }
+      if (err instanceof PlateUploadGoneError) {
+        setError(t("models:edit.uploadGone", { names: err.filenames.join(", ") }));
         return;
       }
       if (err instanceof PlateUploadRetryUnsafeError) {
@@ -948,7 +953,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving || previewSaveBlocked || Boolean(firstFilenameIssue)}
+          disabled={saving || Boolean(firstFilenameIssue)}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}
