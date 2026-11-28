@@ -52,8 +52,8 @@ const MODEL_REL = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"
 const meta = (key: string, value: string | number) => `<metadata key="${key}" value="${escapeXml(String(value))}"/>`;
 const number = (value: number) => String(Number(value.toFixed(7)));
 
-function objectModel(part: Part, id: number) {
-  const { positions, indices } = part.body.mesh;
+/** One object's file: a mesh per part, each with its colour group. */
+function objectModel(children: { part: Part; id: number }[]) {
   const lines = [
     XML,
     `<model unit="millimeter" ${CORE} ${NS} ${BAMBU}
@@ -61,21 +61,60 @@ function objectModel(part: Part, id: number) {
     META,
     "<resources>",
   ];
-  const propertyId = id + 1;
-  if (part.color)
-    lines.push(`<m:colorgroup id="${propertyId}"><m:color color="${part.color.toUpperCase()}FF"/></m:colorgroup>`);
-  const properties = part.color ? ` pid="${propertyId}" pindex="0"` : "";
-  lines.push(
-    `<object id="${id}" p:UUID="${randomUUID()}" name="${escapeXml(part.name)}" type="model"${properties}><mesh><vertices>`,
-  );
-  for (let i = 0; i < positions.length; i += 3)
-    lines.push(`<vertex x="${number(positions[i])}" y="${number(positions[i + 1])}" z="${number(positions[i + 2])}"/>`);
-  lines.push("</vertices><triangles>");
-  for (let i = 0; i < indices.length; i += 3)
-    lines.push(`<triangle v1="${indices[i]}" v2="${indices[i + 1]}" v3="${indices[i + 2]}"/>`);
-  lines.push("</triangles></mesh></object></resources><build/></model>");
+  for (const { part, id } of children) {
+    const { positions, indices } = part.body.mesh;
+    const propertyId = id + 1;
+    if (part.color)
+      lines.push(`<m:colorgroup id="${propertyId}"><m:color color="${part.color.toUpperCase()}FF"/></m:colorgroup>`);
+    const properties = part.color ? ` pid="${propertyId}" pindex="0"` : "";
+    lines.push(
+      `<object id="${id}" p:UUID="${randomUUID()}" name="${escapeXml(part.name)}" type="model"${properties}><mesh><vertices>`,
+    );
+    for (let i = 0; i < positions.length; i += 3)
+      lines.push(
+        `<vertex x="${number(positions[i])}" y="${number(positions[i + 1])}" z="${number(positions[i + 2])}"/>`,
+      );
+    lines.push("</vertices><triangles>");
+    for (let i = 0; i < indices.length; i += 3)
+      lines.push(`<triangle v1="${indices[i]}" v2="${indices[i + 1]}" v3="${indices[i + 2]}"/>`);
+    lines.push("</triangles></mesh></object>");
+  }
+  lines.push("</resources><build/></model>");
   return lines.join("\n");
 }
+
+// Bounds this close count as touching.
+const TOUCH = 0.01;
+
+const touches = (a: EvaluatedBody["bounds"], b: EvaluatedBody["bounds"]) =>
+  [0, 1, 2].every((axis) => a.min[axis] <= b.max[axis] + TOUCH && b.min[axis] <= a.max[axis] + TOUCH);
+
+/**
+ * The parts as the objects they're written as: those on a plate whose bounds touch or overlap make one object, a
+ * part each, as slicers keep a multi-colour model. As separate objects an inlay and what it sits in are sliced
+ * apart and print into each other; the Bambu family refuses that as a G-code path conflict.
+ */
+function objectGroups(parts: Part[]): Part[][] {
+  const parent = parts.map((_, i) => i);
+  const root = (i: number): number => (parent[i] === i ? i : (parent[i] = root(parent[i])));
+  for (let i = 0; i < parts.length; i++)
+    for (let j = i + 1; j < parts.length; j++)
+      if (parts[i].plateId === parts[j].plateId && touches(parts[i].body.bounds, parts[j].body.bounds))
+        parent[root(j)] = root(i);
+  const groups = new Map<number, Part[]>();
+  parts.forEach((part, i) => {
+    const group = groups.get(root(i));
+    if (group) group.push(part);
+    else groups.set(root(i), [part]);
+  });
+  return [...groups.values()];
+}
+
+const boxVolume = ({ min, max }: EvaluatedBody["bounds"]) => (max[0] - min[0]) * (max[1] - min[1]) * (max[2] - min[2]);
+
+/** A body's transform as a 3MF writes it, moved by `dx`, `dy`. */
+const placed = (m: number[], dx: number, dy: number) =>
+  formatTransform([m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10], m[12] + dx, m[13] + dy, m[14]]);
 
 export function studioThreeMfBed(target?: StudioExportTarget, setup?: StudioPrintSetup) {
   const recipe = target?.printer?.recipe;
@@ -138,37 +177,37 @@ export async function writeStudioThreeMf(
   const zip = new JSZip();
   const add = (path: string, data: string | Uint8Array) => zip.file(path, data, { createFolders: false });
 
-  parts.forEach((part, index) => {
-    const id = index * 3 + 1;
-    const childId = id + 1;
+  let nextId = 1;
+  objectGroups(parts).forEach((group, index) => {
+    const id = nextId++;
+    // Each part's mesh id, then its colour group's.
+    const children = group.map((part) => ({ part, id: (nextId += 2) - 2, slot: byColor.get(colorOf(part))! }));
     const file = `/3D/Objects/object_${id}.model`;
-    const slot = byColor.get(colorOf(part))!;
-    const plate = plates.findIndex((entry) => entry.id === part.plateId);
+    const plate = plates.findIndex((entry) => entry.id === group[0].plateId);
     const [px, py] = plateOrigin(plate, columns, layoutBed);
-    const m = part.body.matrix;
-    const transform = formatTransform([
-      m[0],
-      m[1],
-      m[2],
-      m[4],
-      m[5],
-      m[6],
-      m[8],
-      m[9],
-      m[10],
-      m[12] + cx + px,
-      m[13] + cy + py,
-      m[14],
-    ]);
-    add(file.slice(1), objectModel(part, childId));
+    // A lone body's transform goes on its object; parts of one object keep theirs and the object is only moved.
+    const lone = children.length === 1;
+    const transform = lone
+      ? placed(group[0].body.matrix, cx + px, cy + py)
+      : formatTransform([1, 0, 0, 0, 1, 0, 0, 0, 1, cx + px, cy + py, 0]);
+    const main = children.reduce((a, b) => (boxVolume(b.part.body.bounds) > boxVolume(a.part.body.bounds) ? b : a));
+    add(file.slice(1), objectModel(children));
     relationships.push(`<Relationship Target="${file}" Id="rel-${id}" Type="${MODEL_REL}"/>`);
+    const components = children.map(
+      ({ part, id: childId }) =>
+        `<component p:path="${file}" objectid="${childId}" p:UUID="${randomUUID()}" transform="${lone ? IDENTITY : placed(part.body.matrix, 0, 0)}"/>`,
+    );
     objects.push(`<object id="${id}" p:UUID="${randomUUID()}" type="model"><components>
-      <component p:path="${file}" objectid="${childId}" p:UUID="${randomUUID()}" transform="${IDENTITY}"/>
+      ${components.join("\n      ")}
       </components></object>`);
     build.push(`<item objectid="${id}" p:UUID="${randomUUID()}" transform="${transform}" printable="1"/>`);
-    settings.push(`<object id="${id}">${meta("name", part.name)}${meta("extruder", slot)}
-      <part id="${childId}" subtype="normal_part">${meta("name", part.name)}${meta("extruder", slot)}
-      ${meta("matrix", "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1")}</part></object>`);
+    const partSettings = children.map(
+      ({ part, id: childId, slot }) =>
+        `<part id="${childId}" subtype="normal_part">${meta("name", part.name)}${meta("extruder", slot)}
+      ${meta("matrix", "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1")}</part>`,
+    );
+    settings.push(`<object id="${id}">${meta("name", main.part.name)}${meta("extruder", main.slot)}
+      ${partSettings.join("\n      ")}</object>`);
     instances[plate].push(`<model_instance>${meta("object_id", id)}${meta("instance_id", 0)}
       ${meta("identify_id", index + 1000)}</model_instance>`);
   });

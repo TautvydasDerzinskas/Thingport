@@ -103,6 +103,8 @@ type FastMesh = {
   /** The file said what colour this is -- its faces did, or the object they belong to -- so nothing placing
    *  the mesh may say otherwise. */
   ownColor?: boolean;
+  /** The part of its object this mesh is, or a piece of when its faces were split by colour. */
+  part?: { key: string; name: string | null };
 };
 
 function placeMesh(mesh: FastMesh, transform: number[] | null): FastMesh {
@@ -222,14 +224,18 @@ type BuildItem = { objectId: string; transform: number[] | null; plateId: number
 export type PlateSummary = { index: number; name: string | null; objectCount: number };
 export type ThreeMfBuildPlate = Omit<PlateSummary, "index"> & { index: number | null; thumbnail: boolean };
 
+/** A part of an object as model_settings.config lists it: its mesh's id, 0-based filament, name, and whether it prints
+ *  (not a modifier or a support or negative volume). */
+type PartSettings = { id: string; extruder: number | null; name: string | null; printed: boolean };
+
 type StructuralData = {
   extruderMapById: Map<string, number>;
-  partExtruderMap: Map<string, number>;
+  /** Each object's parts, in the order the slicer makes them. */
+  partsByObject: Map<string, PartSettings[]>;
   objectNameById: Map<string, string>;
   plateAssignmentsByObjectId: Map<string, number>;
   plateAssignmentsByInstance: Map<string, number>;
   plateIds: Set<number>;
-  nonModelParts: Set<string>;
   plateNames: Map<number, string>;
   plateOffsets: Map<number, { offsetX: number; offsetY: number }>;
   bedCenterOffset: [number, number];
@@ -238,12 +244,11 @@ type StructuralData = {
 function parseModelSettingsConfig(xml: string): StructuralData {
   const data: StructuralData = {
     extruderMapById: new Map(),
-    partExtruderMap: new Map(),
+    partsByObject: new Map(),
     objectNameById: new Map(),
     plateAssignmentsByObjectId: new Map(),
     plateAssignmentsByInstance: new Map(),
     plateIds: new Set(),
-    nonModelParts: new Set(),
     plateNames: new Map(),
     plateOffsets: new Map(),
     bedCenterOffset: [0, 0],
@@ -271,16 +276,21 @@ function parseModelSettingsConfig(xml: string): StructuralData {
     const nameVal = $obj.children('metadata[key="name"]').first().attr("value");
     if (nameVal) data.objectNameById.set(objectId, nameVal);
 
+    const parts: PartSettings[] = [];
     $obj.find("part").each((_j, partEl) => {
       const $part = $(partEl);
       const partId = $part.attr("id");
       if (!partId) return;
       const role = $part.attr("subtype");
-      if (role && role !== "normal_part") data.nonModelParts.add(`${objectId}:${partId}`);
       const partExtruderVal = $part.children('metadata[key="extruder"]').first().attr("value");
-      if (partExtruderVal)
-        data.partExtruderMap.set(`${objectId}:${partId}`, Math.max(0, parseInt(partExtruderVal, 10) - 1));
+      parts.push({
+        id: partId,
+        extruder: partExtruderVal ? Math.max(0, parseInt(partExtruderVal, 10) - 1) : null,
+        name: $part.children('metadata[key="name"]').first().attr("value") || null,
+        printed: !role || role === "normal_part",
+      });
     });
+    data.partsByObject.set(objectId, parts);
   });
 
   $("plate").each((_i, plateEl) => {
@@ -351,11 +361,16 @@ const OBJECT_RE = /<object\b([^>]*)>([\s\S]*?)<\/object>/g;
 const COMPONENT_RE = /<component\b([^>]*)\/?>/g;
 const ITEM_RE = /<item\b([^>]*)\/?>/g;
 
-type InternalComponentRef = { refId: string; transform: number[] | null; extruder: number };
+type InternalComponentRef = {
+  refId: string;
+  transform: number[] | null;
+  extruder: number;
+  part: FastMesh["part"];
+};
 
 const MAX_COMPONENT_DEPTH = 8;
 
-type MainComponent = { attrs: string; objectId: string | null; path: string | null };
+type MainComponent = { attrs: string; objectId: string | null; path: string | null; part: PartSettings | null };
 type MainObject = { attrs: string; inner: string; components: MainComponent[] };
 type MainPlacement = BuildItem & { attrs: string; instance: number };
 
@@ -363,16 +378,30 @@ function readObjectName(structural: StructuralData, objectId: string, attrs = ""
   return structural.objectNameById.get(objectId) ?? (decodeXml(getAttr(attrs, "name") ?? "") || null);
 }
 
-function readMainObjects(xml: string, nonModelParts?: Set<string>): Map<string, MainObject> {
+/** A component's part, as Bambu Studio matches them: the one at its place, else the first with its mesh's id. Part
+ *  files number their meshes apart, so two components can name the same id. */
+function partAt(parts: PartSettings[] | undefined, index: number, objectId: string | null): PartSettings | null {
+  if (!parts || !objectId) return null;
+  return parts[index]?.id === objectId ? parts[index] : (parts.find((part) => part.id === objectId) ?? null);
+}
+
+/** The main model's objects; `printedOnly` leaves out the components that don't print, as Studio brings in none. */
+function readMainObjects(xml: string, structural: StructuralData, printedOnly = false): Map<string, MainObject> {
   const objects = new Map<string, MainObject>();
   for (const [, attrs, inner] of xml.matchAll(OBJECT_RE)) {
     const id = getAttr(attrs, "id");
     if (!id) continue;
     const components: MainComponent[] = [];
-    for (const [, component] of inner.matchAll(COMPONENT_RE)) {
+    for (const [index, [, component]] of [...inner.matchAll(COMPONENT_RE)].entries()) {
       const objectId = getAttr(component, "objectid");
-      if (objectId && nonModelParts?.has(`${id}:${objectId}`)) continue;
-      components.push({ attrs: component, objectId, path: getAttr(component, "p:path") ?? getAttr(component, "path") });
+      const part = partAt(structural.partsByObject.get(id), index, objectId);
+      if (printedOnly && part && !part.printed) continue;
+      components.push({
+        attrs: component,
+        objectId,
+        path: getAttr(component, "p:path") ?? getAttr(component, "path"),
+        part,
+      });
     }
     objects.set(id, { attrs, inner, components });
   }
@@ -639,10 +668,14 @@ async function parseMainModel(
     const meshes = extractMeshesFast(inner, defaultExtruder, objectTriangleSlot(attrs, inner, colors) ?? undefined);
     if (objectSlot != null) for (const mesh of meshes) mesh.ownColor = true;
 
-    for (const { attrs: cAttrs, path: extPath, objectId: compObjectId } of components) {
+    for (const [
+      index,
+      { attrs: cAttrs, path: extPath, objectId: compObjectId, part: settings },
+    ] of components.entries()) {
       const transform = parseTransform3MF(getAttr(cAttrs, "transform"));
-      const partKey = compObjectId ? `${objectId}:${compObjectId}` : null;
-      const compExtruder = partKey ? (structural.partExtruderMap.get(partKey) ?? defaultExtruder) : defaultExtruder;
+      const compExtruder = settings?.extruder ?? defaultExtruder;
+      // Each component is a part of its own, even of the same mesh as another.
+      const part = { key: `${objectId}#${index}`, name: settings?.name ?? null };
 
       if (extPath) {
         for (const mesh of await partFiles.meshes(extPath, compObjectId)) {
@@ -650,11 +683,12 @@ async function parseMainModel(
             ...placeMesh(mesh, transform),
             // A mesh whose own faces named their colours keeps them; the part's filament is for the rest.
             extruder: mesh.ownColor ? mesh.extruder : compExtruder,
+            part,
           });
         }
       } else if (compObjectId) {
         if (!internalRefsByObjectId.has(objectId)) internalRefsByObjectId.set(objectId, []);
-        internalRefsByObjectId.get(objectId)!.push({ refId: compObjectId, transform, extruder: compExtruder });
+        internalRefsByObjectId.get(objectId)!.push({ refId: compObjectId, transform, extruder: compExtruder, part });
       }
     }
 
@@ -677,6 +711,8 @@ async function parseMainModel(
         resolved.push({
           ...placeMesh(mesh, ref.transform),
           extruder: mesh.ownColor ? mesh.extruder : ref.extruder,
+          // The component it's directly under: each level overwrites the one below.
+          part: ref.part,
         });
       }
     }
@@ -795,7 +831,7 @@ async function readThreeMfStructure(srcPath: string, forStudio: boolean, include
       }
     } catch {}
   }
-  const allObjects = readMainObjects(mainModelXml, forStudio ? structural.nonModelParts : undefined);
+  const allObjects = readMainObjects(mainModelXml, structural, forStudio);
   const placements = readMainPlacements(mainModelXml, forStudio);
   for (const item of placements) {
     const objectAttrs = allObjects.get(item.objectId)?.attrs;
@@ -1023,34 +1059,55 @@ export async function loadStudioThreeMf(
 
   const groups = new Map<number | null, StudioThreeMfPart[]>();
   let mixedColors = false;
+  let bodyCount = 0;
+  const colorOf = (mesh: FastMesh) =>
+    (mesh.ownColor || mesh.extruder < parsed.projectFilaments ? parsed.filamentColors[mesh.extruder] : "") || undefined;
   for (const item of items) {
     const object = parsed.objects.get(item.objectId)!;
-    const indexCount = object.meshes.reduce((sum, mesh) => sum + mesh.triangles.length, 0);
-    if (indexCount / 3 > maxBodyTriangles) return "body-too-complex";
-    const triangles = new Float32Array(indexCount * 3);
-    const colors = new Set<string | undefined>();
     const flip = item.transform && mirrors(item.transform);
-    let at = 0;
-    for (const mesh of object.meshes) {
-      const vertices = item.transform ? applyAffineToVertices(mesh.vertices, item.transform) : mesh.vertices;
-      const indices = mesh.triangles;
-      for (let i = 0; i < indices.length; i += 3) {
-        for (let corner = 0; corner < 3; corner++) {
-          const vertex = 3 * indices[i + (flip && corner !== 0 ? 3 - corner : corner)];
-          for (let axis = 0; axis < 3; axis++) triangles[at++] = vertices[vertex + axis] * parsed.unitMm;
+    const body = (meshes: FastMesh[], name: string | null): StudioThreeMfPart | "body-too-complex" | "unsupported" => {
+      const indexCount = meshes.reduce((sum, mesh) => sum + mesh.triangles.length, 0);
+      if (indexCount / 3 > maxBodyTriangles) return "body-too-complex";
+      const triangles = new Float32Array(indexCount * 3);
+      const colors = new Set(meshes.map(colorOf));
+      let at = 0;
+      for (const mesh of meshes) {
+        const vertices = item.transform ? applyAffineToVertices(mesh.vertices, item.transform) : mesh.vertices;
+        const indices = mesh.triangles;
+        for (let i = 0; i < indices.length; i += 3) {
+          for (let corner = 0; corner < 3; corner++) {
+            const vertex = 3 * indices[i + (flip && corner !== 0 ? 3 - corner : corner)];
+            for (let axis = 0; axis < 3; axis++) triangles[at++] = vertices[vertex + axis] * parsed.unitMm;
+          }
         }
       }
-      const color =
-        mesh.ownColor || mesh.extruder < parsed.projectFilaments ? parsed.filamentColors[mesh.extruder] : "";
-      colors.add(color || undefined);
+      if (!triangles.every(Number.isFinite)) return "unsupported";
+      if (colors.size > 1) mixedColors = true;
+      return { name, color: colors.size === 1 ? colors.values().next().value : undefined, triangles };
+    };
+    // An object of several parts, each one colour, comes in as those parts, each its colour: how a multi-colour
+    // model is kept, and how Studio writes bodies that touch, which come back as the bodies they were (each within
+    // the body limit, as it was exported). Faces painted another colour stay on their body.
+    const byPart = new Map<string | undefined, FastMesh[]>();
+    for (const mesh of object.meshes) {
+      const meshes = byPart.get(mesh.part?.key);
+      if (meshes) meshes.push(mesh);
+      else byPart.set(mesh.part?.key, [mesh]);
     }
-    if (!triangles.every(Number.isFinite)) return "unsupported";
-    if (colors.size > 1) mixedColors = true;
-    const part = { name: object.name, color: colors.size === 1 ? colors.values().next().value : undefined, triangles };
-    const group = groups.get(item.plateId);
-    if (group) group.push(part);
-    else groups.set(item.plateId, [part]);
+    const partColors = [...byPart.values()].map((meshes) => new Set(meshes.map(colorOf)));
+    const split = partColors.length > 1 && partColors.every((colors) => colors.size === 1);
+    const bodies = split
+      ? [...byPart.values()].map((meshes) => body(meshes, meshes[0].part?.name ?? object.name))
+      : [body(object.meshes, object.name)];
+    for (const part of bodies) {
+      if (typeof part === "string") return part;
+      const group = groups.get(item.plateId);
+      if (group) group.push(part);
+      else groups.set(item.plateId, [part]);
+    }
+    bodyCount += bodies.length;
   }
+  if (bodyCount > maxObjects) return "too-complex";
 
   const plateIds = [...new Set([...parsed.plateIds, ...groups.keys()])]
     .filter((id) => id !== null)

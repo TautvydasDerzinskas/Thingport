@@ -45,7 +45,13 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   `load_source_plate` prepares its bodies and records the result as a revision. The same command serves Studio, Ask AI
   and MCP. Exports can prepare pending plates with temporary mesh assets. The viewport evaluates the active plate's
   bodies and any features they depend on. `import_model` with `all_files` opens the model's importable files as separate
-  profiles in one revision. Each 3MF keeps its build plates and any compatible process settings.
+  profiles in one revision. Each 3MF keeps its build plates and any compatible process settings. An object of
+  several parts, each one colour, comes in as a body per part (`loadStudioThreeMf`), so touching bodies Studio wrote
+  as one object come back as they were.
+- **3MFs Studio writes** (`services/studioThreeMf.ts`) put bodies on a plate whose bounds touch into one object, a
+  part each, as slicers keep a multi-colour model: as separate objects an inlay and what it sits in print into each
+  other, which Bambu Studio refuses as a G-code path conflict. What one provider needs beyond a correct 3MF belongs
+  in its publish step, not here.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly in a web worker
   (`StudioPage/geometry.worker.ts`) and the backend from its package (`services/studioWorker.ts`, in a worker thread
   with a timeout). Each body is made once per evaluation, failures included. `prepareMesh` turns an imported file's

@@ -74,6 +74,42 @@ export function decodePaintState(hex: string): number {
   return decodeNode();
 }
 
+/** Every extruder state a TriangleSelector paint string's pieces name, a split triangle's several: 0 for pieces left
+ *  unpainted, which print in their part's own filament. */
+export function paintStates(hex: string): number[] {
+  if (!hex) return [];
+  const bits = hexToBitstream(hex);
+  let pos = 0;
+  const read2 = () => (bits[pos++] ? 1 : 0) | (bits[pos++] ? 2 : 0);
+  const read4 = () => {
+    let n = 0;
+    for (let i = 0; i < 4; i++) if (bits[pos++]) n |= 1 << i;
+    return n;
+  };
+  const states = new Set<number>();
+  // The tree is written depth first, so its nodes are read in turn: a split one adds its children to those to read.
+  let pending = 1;
+  while (pending > 0 && pos < bits.length) {
+    pending--;
+    const splitSides = read2();
+    if (splitSides !== 0) {
+      read2();
+      pending += splitSides + 1;
+      continue;
+    }
+    let state = read2();
+    if (state === 3) {
+      let nibble;
+      do {
+        nibble = read4();
+        state += nibble;
+      } while (nibble === 15 && pos < bits.length);
+    }
+    states.add(state);
+  }
+  return [...states];
+}
+
 export function stateToMaterialIndex(state: number, defaultExtruder: number, colorCount: number): number {
   let idx = !state || state <= 0 ? Math.max(0, (defaultExtruder || 1) - 1) : state - 1;
   if (colorCount > 0) idx = Math.min(idx, colorCount - 1);

@@ -39,7 +39,8 @@ design, and **Export as STL** in its own menu still downloads it.
 Select a body and use **Move to plate** in Properties to change its plate while keeping its position and orientation.
 You can select several bodies to move or color them together. Set **Body color** and choose **Apply** to use that
 color in the viewport and the 3MF. Each plate with visible bodies gets a thumbnail in the 3MF. Hidden bodies and
-empty plates are skipped during export.
+empty plates are skipped during export. Bodies that touch, such as an inlay and what it sits in, go into the 3MF as one
+object with a part for each, so a slicer prints them together rather than into each other.
 
 Use **Export** in the design menu to download a single **3MF** for all populated plates, or choose **STL** to
 download a ZIP with one STL per populated plate. From a plate's menu, **Export as STL** downloads that plate's STL directly.
@@ -93,7 +94,8 @@ A design is a list of features, built in order:
   Thingport Studio**, on a model's page and on its right-click menu in any grid of models, takes you straight to Studio
   after you choose the file. For a new 3MF design, Studio prepares the first build plate and shows its progress. Click
   any other plate in **Objects / Plates** to prepare its bodies. Studio keeps its own copy at the source dimensions.
-  Each printable object comes in as a body, keeping its plate placement and any uniform object color. When inserting
+  Each printable object comes in as a body, keeping its plate placement and any uniform object color. An object made
+  of several parts, each one color, comes in as a body for each part, in its color. When inserting
   into an existing design, Studio imports all the plates, with the first populated one going into the active plate.
   Studio uses a single color per body, so face painting and slicer modifiers stay in the original file. A mesh with
   gaps can be moved, scaled and exported. Use **Separate** to turn loose pieces within a single body into individual

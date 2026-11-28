@@ -358,6 +358,28 @@ a LICENSE.txt can go beside its files (`services/licenseService.ts`, `licenseFil
 
 `authStopText` and `stopTexts` explain why a batch stopped.
 
+### What a site needs of a 3MF
+
+A site that takes 3MFs as print profiles (MakerWorld) says what it needs of one in `publishThreeMf` on its `PROVIDERS`
+entry (`ThreeMfRules`, `services/threeMfCheck/types.ts`): the slicer it opens uploads in, the brand its profiles are for,
+and the checks that find what it would turn down. `checkThreeMf` runs them on a file, and `fixThreeMf` writes the copy
+that's uploaded in its place; the file itself never changes. Each issue names its plate, the objects it's about and
+what the copy changes, or no fix where only the slicer can make one.
+
+- `project`: a project of the site's slicer for one of the brand's printers. The 3MF adapter makes it one where it isn't:
+  a PrusaSlicer project converted, an OrcaSlicer one retagged, another printer's moved onto Bambu's preset. A file for
+  none of the brand's printers waits for one to be picked (`needsPrinter`).
+- `nozzle`: names its nozzle (`printer_variant`, `nozzle_diameter`). Bambu Studio's command line crashes without it.
+- `overlapping-objects`: objects whose solids print into each other, made one object with a part each. Bambu Studio
+  prints each object from the bed up, so an inlay sitting in its pocket as an object of its own counts.
+- `wipe-tower`: a multi-colour plate's tower on the bed and off its objects, sized as the project's settings size it.
+  One Thingport places is sized larger where that fits, as MakerWorld's check builds a bigger tower, else as the
+  project sizes it, and kept as far from what's printed as it can be, up to 10 mm.
+- `off-bed` and `sliced`: left to the slicer.
+
+Anything else the slicer refuses (a layer too thin to print) still reaches the site. Prove a new check with the site's
+own slicer on real files, not only `backend/tests/threeMfCheck.test.ts`.
+
 ### Choosing for a new site
 
 1. Find what the site's own pages call, and which calls need a sign-in. Record real responses for the contract test.
@@ -395,6 +417,8 @@ Open an issue first, then:
 9. If it serves a GET that a dashboard app would read, give it an API token scope (`services/apiTokenScopes.ts`).
 10. **Its licences** in `backend/src/providers/<id>/license.ts`, set on `meta.license` (see [Licences](#licences)), with
     a test of the site's whole table in `backend/tests/providers/<id>License.test.ts`.
+11. If the site takes 3MFs as print profiles, **what it needs of one** in `publishThreeMf` (see
+    [What a site needs of a 3MF](#what-a-site-needs-of-a-3mf)).
 
 ## What never changes
 
