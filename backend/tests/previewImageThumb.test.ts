@@ -5,7 +5,9 @@ import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
+import { setTimeout as delay } from "node:timers/promises";
 import sharp from "sharp";
+import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
@@ -231,6 +233,116 @@ describe("recoverable preview uploads", () => {
       .attach("files", await png(200), "photo.png")
       .expect(200);
     expect(await redOf(thumb)).toBeGreaterThan(180);
+  });
+
+  it("waits for a render's thumbnail to settle before an older client's picture takes its place", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const thumb = assetTarget(await ensureAssetHome(print.id), plateThumbFile(plate.id));
+    await fs.rm(thumb, { force: true });
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: false } });
+    // The render's save rolls back, and the rejection is held: until it's heard, whose the file is isn't settled.
+    let open = () => {};
+    const gate = new Promise<void>((resolve) => (open = resolve));
+    let rolledBack = () => {};
+    const ended = new Promise<void>((resolve) => (rolledBack = resolve));
+    const transaction = PrismaClient.prototype.$transaction;
+    let held = false;
+    const holding = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementation(function (
+      this: PrismaClient,
+      ...args: unknown[]
+    ) {
+      if (held || !(new Error().stack ?? "").includes("saveGeneratedPlateThumbnail")) {
+        return Reflect.apply(transaction, this, args);
+      }
+      held = true;
+      const [callback, options] = args as [(tx: unknown) => Promise<unknown>, unknown];
+      const rolling = Reflect.apply(transaction, this, [
+        async (tx: unknown) => {
+          await callback(tx);
+          throw new Error("rolled back");
+        },
+        options,
+      ]) as Promise<unknown>;
+      return rolling.catch(async (error: unknown) => {
+        rolledBack();
+        await gate;
+        throw error;
+      });
+    } as never);
+    try {
+      const render = track(
+        saveGeneratedPlateThumbnail(print.id, plate.id, await png(60)).catch((error: Error) => error),
+      );
+      await ended;
+      const upload = track(
+        Promise.resolve(
+          request(app)
+            .post(`/api/print/${print.id}/preview-images`)
+            .set(auth())
+            .attach("files", await png(200), "a.png"),
+        ),
+      );
+      // Time for the upload to reach its thumbnail while the render's outcome is still unheard.
+      await Promise.race([upload, delay(1000)]);
+      open();
+      expect(await render).toMatchObject({ message: "rolled back" });
+      expect((await upload).status).toBe(200);
+    } finally {
+      open();
+      holding.mockRestore();
+    }
+    expect(await redOf(thumb)).toBeGreaterThan(180);
+  });
+
+  it("stores the rest of an older client's pictures when the first one's thumbnail fails", async () => {
+    const print = await uploadStl();
+    const failing = disputeTransactions({ caller: "takeOverPlateThumb", outcome: "rolled back" });
+    let res: request.Response;
+    try {
+      res = await request(app)
+        .post(`/api/print/${print.id}/preview-images`)
+        .set(auth())
+        .attach("files", await png(200), "a.png")
+        .attach("files", await png(100), "b.png");
+    } finally {
+      failing.mockRestore();
+    }
+    expect(res.status).toBe(200);
+    expect(res.body.added_image_ids).toEqual([expect.any(String), expect.any(String)]);
+    expect(await prisma.previewImage.count({ where: { printId: print.id, generated: false } })).toBe(2);
+  });
+
+  it.each([
+    ["rolled back", false],
+    ["commit unanswered", true],
+  ] as const)("settles a JPEG whose publication %s and whose check failed at the next look", async (outcome, kept) => {
+    const { print, gallery, uploadId, where } = await uploadStorage();
+    const disputed = disputeTransactions(
+      { caller: "addPreviewImageForUpload", outcome },
+      { caller: "addPreviewImageForUpload", outcome: "fails" },
+    );
+    try {
+      await expect(addPreviewImageForUpload(print.id, uploadId, await png(200))).rejects.toThrow(
+        outcome === "rolled back" ? "rolled back" : "Connection lost after COMMIT",
+      );
+    } finally {
+      disputed.mockRestore();
+    }
+    // Neither discarded nor confirmed yet.
+    expect(await fs.readdir(gallery)).toHaveLength(1);
+
+    await request(app)
+      .post(`/api/print/${print.id}/preview-images/upload-results`)
+      .set(auth())
+      .send({ upload_ids: [uploadId] })
+      .expect(200);
+    const imageId = (await prisma.previewImageUpload.findUnique({ where }))?.imageId;
+    expect(Boolean(imageId)).toBe(kept);
+    const home = await printAssetHome(print.id);
+    // The pictures only: the cover work may be making a card-sized copy beside them.
+    const pictures = (await fs.readdir(gallery)).filter((name) => name.endsWith(".jpg"));
+    expect(pictures).toEqual(imageId ? [path.basename(previewImagePath(imageId, home))] : []);
   });
 
   it("keeps an upload key retryable when writing its JPEG fails", async () => {

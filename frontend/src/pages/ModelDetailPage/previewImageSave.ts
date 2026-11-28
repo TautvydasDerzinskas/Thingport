@@ -139,11 +139,13 @@ export async function savePreviewUploads(
   if (!submitted.length) return latest;
   report({ ...latest, items: uploads });
 
+  let batchStored = false;
   try {
     const result = await api.addPreviewImages(
       print.id,
       submitted.map((image) => image.file),
       hasReceipts ? submitted.filter(isPendingPreviewImage).map((image) => image.pendingUploadId) : undefined,
+      () => (batchStored = true),
     );
     const ids = result.added_image_ids;
     if (
@@ -158,11 +160,12 @@ export async function savePreviewUploads(
       items: reconcilePreviewUploads(latest.items, result.print.preview_images, result.added_image_ids),
     });
   } catch (error) {
-    // Validation and auth errors reject this request before storing a file.
-    if (
+    // Validation and auth errors reject a batch before it stores a file. Refused first, nothing was stored; refused
+    // later, the batches before it were, and are matched up before the refusal is reported.
+    const refused =
       error instanceof UnauthorizedError ||
-      (error instanceof PrintApiError && [400, 403, 404, 413, 415, 422].includes(error.status))
-    ) {
+      (error instanceof PrintApiError && [400, 403, 404, 413, 415, 422].includes(error.status));
+    if (refused && !batchStored) {
       report(beforeUpload);
       throw error;
     }
@@ -178,6 +181,7 @@ export async function savePreviewUploads(
       }
       throw new PreviewUploadError("pending", lookupError);
     }
+    if (refused) throw error;
     if (latest.items.some(isPendingPreviewImage)) throw new PreviewUploadError("pending", error);
   }
 

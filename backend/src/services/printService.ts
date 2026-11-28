@@ -258,9 +258,40 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   }
 }
 
+type Committed = () => Promise<boolean | undefined>;
+
+/** Moves whose save failed with its outcome unread, by the record moved (`key`): the file is at `to`, and the record
+ *  names `from` or `to`. In-process, as every move is. */
+const unsettledMoves = new Map<string, { from: string; to: string; committed: Committed }>();
+
+/** Settles the record's earlier move whose outcome went unread, before another place is picked for it: the place it
+ *  went holds its file. The file goes back if the record still names the old place. A record still unread throws. */
+async function settleMove(key: string): Promise<void> {
+  const unsettled = unsettledMoves.get(key);
+  if (!unsettled) return;
+  await withStorageLock(async () => {
+    if (unsettledMoves.get(key) !== unsettled) return;
+    const outcome = await unsettled.committed();
+    if (outcome === false) {
+      const back = (await fileState(unsettled.from, "move.source")).state === "missing";
+      if (back && (await fileState(unsettled.to, "move.source")).state === "file") {
+        await fs.mkdir(path.dirname(unsettled.from), { recursive: true });
+        await fs.rename(unsettled.to, unsettled.from);
+        await pruneEmptyStorageDirs(path.dirname(unsettled.to));
+      }
+    } else if (outcome === true) {
+      await pruneEmptyStorageDirs(path.dirname(unsettled.from));
+    } else {
+      console.warn(`${key} names neither place its unsettled move had: ${unsettled.to} is left where it is`);
+    }
+    unsettledMoves.delete(key);
+  });
+}
+
 /** Moves one file of a model; `save` records the new place, and the file goes back if that fails. `stored` is where its
- *  record finds it now, read under the lock. */
+ *  record finds it now, read under the lock. `key` names the record, for settleMove. */
 async function moveStored(
+  key: string,
   stored: () => Promise<string>,
   newPath: string,
   save: () => Promise<unknown>,
@@ -283,7 +314,8 @@ async function moveStored(
     if (now === path.resolve(newPath)) return true;
     return listedFrom !== undefined && now === path.resolve(listedFrom) ? false : undefined;
   };
-  return (await moveAllStored(listMove, save, committed)) > 0;
+  const unread = (from: string, to: string) => unsettledMoves.set(key, { from, to, committed });
+  return (await moveAllStored(listMove, save, committed, unread)) > 0;
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
@@ -292,7 +324,8 @@ async function moveStored(
 async function moveAllStored(
   listMoves: () => Promise<[string, string][]>,
   save: () => Promise<unknown>,
-  committed?: () => Promise<boolean | undefined>,
+  committed?: Committed,
+  unread?: (from: string, to: string) => void,
 ): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
@@ -312,13 +345,16 @@ async function moveAllStored(
       await save();
     } catch (err) {
       // A save that failed may still have committed. Then the files stay where the record now says; and when the
-      // record can't be read, they stay too, as the next move finds them gone from the old place and records the new.
+      // record can't be read, they stay too, until settleMove reads it.
       const outcome = done.length && committed ? await committed().catch(() => undefined) : false;
       if (outcome === true) {
         for (const [oldPath] of present) await pruneEmptyStorageDirs(path.dirname(oldPath));
         return present.length;
       }
-      if (outcome === undefined) throw err;
+      if (outcome === undefined) {
+        for (const [oldPath, newPath] of done) unread?.(oldPath, newPath);
+        throw err;
+      }
       // Put them back, so the stored path still finds them.
       for (const [oldPath, newPath] of done.toReversed()) {
         await fs.mkdir(path.dirname(oldPath), { recursive: true });
@@ -344,10 +380,12 @@ async function relocatePrintFiles(
   const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
   let moved = 0;
   for (const file of files) {
+    await settleMove(`file:${file.id}`);
     const rendered = renderFilePath(print, template, printValues, file.filename, null, file.folder);
     const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
     if (samePath(file.storagePath, newRelative)) continue;
     const didMove = await moveStored(
+      `file:${file.id}`,
       async () => {
         const { storagePath } = (await prisma.printFile.findUnique({ where: { id: file.id } })) ?? file;
         return path.join(STORAGE, storagePath);
@@ -447,6 +485,7 @@ async function relocatePlates(
   for (const plate of plates) {
     // A tool's plate reads the tool's file, which isn't the model's to move.
     if (plate.sourcePath) continue;
+    await settleMove(`plate:${plate.id}`);
     const oldPath = managedPlatePath(plate);
     const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
     // Where it already is counts as free, so a plate moved aside by freePlatePath stays put. A target another plate of
@@ -469,6 +508,7 @@ async function relocatePlates(
       continue;
     }
     const didMove = await moveStored(
+      `plate:${plate.id}`,
       async () => managedPlatePath((await prisma.plate.findUnique({ where: { id: plate.id } })) ?? plate),
       newPath,
       () => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),

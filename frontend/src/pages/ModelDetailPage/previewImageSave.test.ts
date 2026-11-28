@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PreviewImage, Print } from "../../api/prints";
+import { PrintApiError, type PreviewImage, type Print } from "../../api/prints";
 import {
   isPendingPreviewImage,
   movePreviewImage,
@@ -125,6 +125,43 @@ describe("savePreviewUploads", () => {
     ]);
   });
 
+  it("keeps the stored batches' images when a later batch is refused, and sends only the refused ones again", async () => {
+    const items = Array.from({ length: 21 }, (_, at) => pendingImage(`p${at}`));
+    const { api, save, progress } = previewSaveFixture(...items);
+    const refused = new PrintApiError("A picture is larger than 8 MB", 413, null);
+    api.getPreviewUploadResults.mockResolvedValue({ print: printWithImages(), upload_results: [] });
+    api.addPreviewImages.mockImplementationOnce(async (_printId, _files, ids, onBatchStored) => {
+      if (!ids) throw new Error("Expected upload IDs");
+      // The first 20 are stored, then the last batch is refused.
+      const stored = ids.slice(0, 20);
+      onBatchStored?.();
+      api.getPreviewUploadResults.mockImplementation(async (_lookedUp, keys) => ({
+        print: printWithImages(...stored.map((key, at) => storedImage(`saved-${key}`, at))),
+        upload_results: keys
+          .filter((key) => stored.includes(key))
+          .map((key) => ({ upload_id: key, image_id: `saved-${key}` })),
+      }));
+      throw refused;
+    });
+    api.addPreviewImages.mockRejectedValueOnce(refused);
+
+    await expect(save()).rejects.toBe(refused);
+    const [firstKeys] = api.addPreviewImages.mock.calls[0].slice(2) as [string[]];
+    expect(
+      progress()
+        .items.slice(0, 20)
+        .map((image) => image.kind),
+    ).toEqual(Array(20).fill("existing"));
+    expect(progress().items[20]).toMatchObject({ kind: "new", pendingUploadId: firstKeys[20] });
+
+    // Refused on its own, nothing more was stored: the last one keeps its ID for the next try.
+    await expect(save()).rejects.toBe(refused);
+    const [, resentFiles, resentIds] = api.addPreviewImages.mock.calls[1];
+    expect(resentFiles.map((file) => file.name)).toEqual(["p20.png"]);
+    expect(resentIds).toEqual([firstKeys[20]]);
+    expect(progress().items[20]).toMatchObject({ kind: "new", pendingUploadId: firstKeys[20] });
+  });
+
   it("keeps the original key across a lost response and a temporary receipt outage", async () => {
     const { api, save, progress } = previewSaveFixture(pendingImage("first"));
     const initial = printWithImages();
@@ -149,7 +186,12 @@ describe("savePreviewUploads", () => {
     expect(progress().items[0]).toMatchObject({ kind: "new", pendingUploadId: originalKey });
 
     await expect(save()).resolves.toMatchObject({ print: updated });
-    expect(api.addPreviewImages).toHaveBeenLastCalledWith("model", [expect.any(File)], originalIds);
+    expect(api.addPreviewImages).toHaveBeenLastCalledWith(
+      "model",
+      [expect.any(File)],
+      originalIds,
+      expect.any(Function),
+    );
   });
 
   it.each([
@@ -203,7 +245,12 @@ describe("savePreviewUploads", () => {
         { kind: "existing", id: "second-saved", url: "/second-saved.jpg" },
       ],
     });
-    expect(api.addPreviewImages).toHaveBeenCalledExactlyOnceWith("model", [second.file], ["second-key"]);
+    expect(api.addPreviewImages).toHaveBeenCalledExactlyOnceWith(
+      "model",
+      [second.file],
+      ["second-key"],
+      expect.any(Function),
+    );
   });
 
   it("stops on a skipped image, keeps successful rows, and retries the skipped file with a new ID", async () => {
@@ -239,7 +286,12 @@ describe("savePreviewUploads", () => {
       print: current,
       items: [{ kind: "unconfirmed", localId: "first", previewUrl: "blob:first" }],
     });
-    expect(api.addPreviewImages).toHaveBeenCalledExactlyOnceWith("model", [expect.any(File)], undefined);
+    expect(api.addPreviewImages).toHaveBeenCalledExactlyOnceWith(
+      "model",
+      [expect.any(File)],
+      undefined,
+      expect.any(Function),
+    );
   });
 });
 

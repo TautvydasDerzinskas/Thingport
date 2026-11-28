@@ -87,8 +87,10 @@ regression or a bug in what it does, is a finding as usual.
   pulls) only reads the live one. In-process coordination is therefore enough.
 - **The storage lock.** `utils/storageLock.ts` is one process-wide promise chain, and it isn't reentrant: code holding
   it must not take it again.
-  - It guards checks followed by renames, at 15 call sites in 10 files: placing files, moving a model's files when its
+  - It guards checks followed by renames, at 19 call sites in 11 files: placing files, moving a model's files when its
     folder changes (`printService.moveAllStored`), merges, the licence file, and GLB, slicer and build-plate previews.
+    A move whose save failed with its outcome unread is settled under it before that file's next move picks a place
+    (`printService.settleMove`): the file goes back unless its row names the new place.
   - Some call sites also do database work inside it, such as merge's transaction and the licence sync.
   - The per-model locks are `withPrintLock` (repair, `importService.ts`), `perModel` (copies, `modelCopyService.ts`)
     and `withPlateRenameLock` (`printCreation.ts`). That last one is in-process and lasts beyond a transaction: a

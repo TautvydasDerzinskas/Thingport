@@ -337,6 +337,48 @@ describe("printsApi.addPreviewImages", () => {
     expect(sent.flatMap((batch) => batch.ids)).toEqual(keys);
     expect(result.added_image_ids).toEqual(keys.map((key) => `image-${key}`));
   });
+
+  it("gives no ids when a batch answers for fewer pictures than it sent", async () => {
+    let batch = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const ids = (init.body as FormData).getAll("upload_ids").map(String);
+        // The first batch answers for 19 of its 20, the second for its one: 21 ids in all, one per file.
+        const answered = batch++ === 0 ? ids.slice(0, 19) : ids;
+        return new Response(
+          JSON.stringify({ print: uploadPrint, added_image_ids: answered.map((id) => `image-${id}`) }),
+          { status: 200 },
+        );
+      }),
+    );
+    const files = Array.from({ length: 21 }, (_, at) => new File(["x"], `${at}.png`));
+
+    const result = await printsApi.addPreviewImages(
+      "print",
+      files,
+      files.map((_, at) => `key-${at}`),
+    );
+
+    expect(result).toEqual({ print: uploadPrint });
+  });
+
+  it("says when each batch is stored", async () => {
+    let batch = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        batch++ === 0
+          ? new Response(JSON.stringify({ print: uploadPrint, added_image_ids: [] }), { status: 200 })
+          : new Response(JSON.stringify({ detail: "A picture is larger than 8 MB" }), { status: 413 }),
+      ),
+    );
+    const files = Array.from({ length: 21 }, (_, at) => new File(["x"], `${at}.png`));
+    const stored = vi.fn<() => void>();
+
+    await expect(printsApi.addPreviewImages("print", files, undefined, stored)).rejects.toMatchObject({ status: 413 });
+    expect(stored).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("printsApi.renamePlate", () => {

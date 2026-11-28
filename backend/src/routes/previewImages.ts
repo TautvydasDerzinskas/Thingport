@@ -48,18 +48,19 @@ function uploadPreviews(keyed: boolean) {
 
 /** The pictures of an upload, bounded before any is held in memory; past a bound the answer is 413. */
 const pictureFiles: RequestHandler = (req, res, next) =>
-  thumbnailUpload.array("files")(req, res, (err: unknown) =>
+  thumbnailUpload.array("files")(req, res, (err: unknown) => {
+    if (!(err instanceof multer.MulterError)) return next(err);
+    // A file under another field is a request made wrong, not one too large.
+    if (err.code === "LIMIT_UNEXPECTED_FILE") return next(new HttpError(400, "Send the pictures as the files field"));
     next(
-      err instanceof multer.MulterError
-        ? new HttpError(
-            413,
-            err.code === "LIMIT_FILE_SIZE"
-              ? "A picture is larger than 8 MB"
-              : `At most ${PICTURE_UPLOAD_MAX_FILES} pictures go in one upload`,
-          )
-        : err,
-    ),
-  );
+      new HttpError(
+        413,
+        err.code === "LIMIT_FILE_SIZE"
+          ? "A picture is larger than 8 MB"
+          : `At most ${PICTURE_UPLOAD_MAX_FILES} pictures go in one upload`,
+      ),
+    );
+  });
 
 router.post("/print/:id/preview-images", pictureFiles, uploadPreviews(false));
 router.post("/print/:id/preview-images/idempotent", pictureFiles, uploadPreviews(true));

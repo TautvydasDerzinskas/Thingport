@@ -738,7 +738,7 @@ async function removePlateUnlocked(print: Pick<Print, "id" | "assetsPath">, plat
   if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
 }
 
-/** Puts the model's plates in this order; `plateIds` must be exactly its plates. True when the first one changed. */
+/** Puts the model's plates in this order; `plateIds` must be exactly its plates. */
 export async function reorderPlates(printId: string, plateIds: string[]): Promise<void> {
   // Not while a rename moves files: their paths are rendered from the positions it read. The prepared print's facts
   // are read in the same turn, so a rename can't move the new first file while they're read.
@@ -747,6 +747,7 @@ export async function reorderPlates(printId: string, plateIds: string[]): Promis
   });
 }
 
+/** True when the print facts are to be read again. */
 async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promise<boolean> {
   return prisma.$transaction(async (tx) => {
     await lockPlateList(tx, printId);
@@ -757,8 +758,10 @@ async function reorderPlatesUnlocked(printId: string, plateIds: string[]): Promi
     if (plateIds.length !== plates.length || plateIds.some((id) => !known.has(id))) {
       throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids", "plate_set_changed");
     }
+    // An order already as asked may be the retry of one whose print facts failed to update after it committed.
+    const unchanged = plates.every((plate, index) => plate.id === plateIds[index]);
     await renumberPlates(tx, plateIds);
-    return plates[0]?.id !== plateIds[0];
+    return unchanged || plates[0]?.id !== plateIds[0];
   });
 }
 
