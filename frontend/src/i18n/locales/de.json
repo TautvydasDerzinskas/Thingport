@@ -6597,7 +6597,7 @@
       "previewUploadSkipped": "Einige Bilder wurden nicht gespeichert. Entfernen Sie sie oder versuchen Sie den Upload erneut.",
       "previewUploadPending": "Der Bildupload konnte nicht bestätigt werden. Klicken Sie erneut auf „Aktualisieren“, um zu prüfen, welche Bilder gespeichert wurden.",
       "previewUploadMissing": "Ein hochgeladenes Bild wurde aus dem Modell entfernt. Sie können seine Vorschau ausblenden.",
-      "previewUploadUnconfirmed": "Die ausgewählten Bilder konnten den gespeicherten Bildern nicht zugeordnet werden. Schließen Sie den Editor und öffnen Sie ihn erneut, um die gespeicherten Bilder zu sehen.",
+      "previewUploadUnconfirmed": "Die ausgewählten Bilder konnten den gespeicherten Bildern nicht zugeordnet werden. Schließen Sie den Editor und öffnen Sie ihn erneut, um die gespeicherten Bilder zu sehen und ihre Reihenfolge zu ändern.",
       "uploadConfirmationFailed": "Es konnte nicht bestätigt werden, welche Modelldateien gespeichert wurden. Bitte versuchen Sie es erneut.",
       "uploadPending": "Der Uploadstatus wird noch bestätigt. Versuchen Sie erneut, das Modell zu aktualisieren, bevor Sie diese Datei entfernen.",
       "removeFile": "Modelldatei entfernen",

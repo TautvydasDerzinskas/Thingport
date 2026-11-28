@@ -1,4 +1,5 @@
 import {
+  PlateRenameTargetGoneError,
   PlateSetChangedError,
   PlateUploadOutcomeUnknownError,
   printsApi,
@@ -317,8 +318,15 @@ export async function savePlateChanges(
       plateNameKey(holder.folder, target.normalized) !== plateNameKey(holder.folder, holder.filename)
     );
   };
+  // A plate renamed here that another editor removed meanwhile is said, not dropped, so Update doesn't report a rename
+  // that never ran. What saved before it is kept.
+  const targetGone = () => {
+    reportProgress();
+    return new PlateRenameTargetGoneError("A plate to rename was removed meanwhile");
+  };
   while (renameTargets.size) {
     const currentPlates = new Map(latest.plates.map((current) => [current.id, current]));
+    if ([...renameTargets.keys()].some((id) => !currentPlates.has(id))) throw targetGone();
     const pending = [...renameTargets].flatMap(([id, target]) => {
       const current = currentPlates.get(id);
       return current ? [{ plate: current, ...target }] : [];
@@ -352,6 +360,7 @@ export async function savePlateChanges(
         const numberedFrom = sameName(renamed, target.normalized) ? undefined : target.normalized;
         return { ...staged, filename: renamed.filename, filenameEdited: false, numberedFrom };
       });
+      if (pending.some((edit) => !latest.plates.some((current) => current.id === edit.plate.id))) throw targetGone();
       reportProgress();
       break;
     }
@@ -359,6 +368,7 @@ export async function savePlateChanges(
     const res = await api.renamePlate(print.id, plate.id, filename);
     latest = res.print;
     const renamed = latest.plates.find((current) => current.id === plate.id);
+    if (!renamed) throw targetGone();
     // Saved under another name than asked: the server numbered it apart from a plate that held the name.
     const differs = renamed !== undefined && !sameName(renamed, normalized);
     const holder = renamed && differs ? holderOf(renamed, normalized) : undefined;

@@ -181,10 +181,20 @@ export async function removeAsset(home: AssetHome, file: AssetFile): Promise<voi
   await fs.rm(legacyAssetPath(file), { force: true }).catch(() => undefined);
 }
 
-/** removeAsset for a caller that must know it went: a file that isn't there is gone, any other failure is thrown. */
+/** removeAsset for a caller that must know it went: a file that isn't there is gone, and so is one whose place a
+ *  folder holds, which is left alone. Any other failure is thrown. */
 export async function removeAssetOrThrow(home: AssetHome, file: AssetFile): Promise<void> {
-  if (home) await fs.rm(assetTarget(home, file), { force: true });
-  await fs.rm(legacyAssetPath(file), { force: true });
+  if (home) await removeFileOrThrow(assetTarget(home, file));
+  await removeFileOrThrow(legacyAssetPath(file));
+}
+
+async function removeFileOrThrow(file: string): Promise<void> {
+  try {
+    await fs.rm(file, { force: true });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (!isMissingError(error) && code !== "ERR_FS_EISDIR" && code !== "EISDIR") throw error;
+  }
 }
 
 /** Every file of this kind that's the plate's, of any version, in the model's folder and the old shared one (and

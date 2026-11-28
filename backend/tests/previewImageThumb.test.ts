@@ -177,6 +177,7 @@ describe("recoverable preview uploads", () => {
     const rolledBack = disputeTransactions({ caller: "saveGeneratedPlateThumbnail", outcome: "rolled back" });
     try {
       await expect(saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).rejects.toThrow("rolled back");
+      expect(rolledBack.unconsumed()).toEqual([]);
     } finally {
       rolledBack.mockRestore();
     }
@@ -198,6 +199,7 @@ describe("recoverable preview uploads", () => {
     );
     try {
       await expect(saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).rejects.toThrow("rolled back");
+      expect(disputed.unconsumed()).toEqual([]);
     } finally {
       disputed.mockRestore();
     }
@@ -220,6 +222,7 @@ describe("recoverable preview uploads", () => {
     );
     try {
       await expect(saveGeneratedPlateThumbnail(print.id, plate.id, await png(60))).rejects.toThrow("rolled back");
+      expect(disputed.unconsumed()).toEqual([]);
     } finally {
       disputed.mockRestore();
     }
@@ -346,6 +349,7 @@ describe("recoverable preview uploads", () => {
       await expect(addPreviewImageForUpload(print.id, uploadId, await png(200))).rejects.toThrow(
         outcome === "rolled back" ? "rolled back" : "Connection lost after COMMIT",
       );
+      expect(disputed.unconsumed()).toEqual([]);
     } finally {
       disputed.mockRestore();
     }
@@ -365,14 +369,62 @@ describe("recoverable preview uploads", () => {
     expect(pictures).toEqual(imageId ? [path.basename(previewImagePath(imageId, home))] : []);
   });
 
-  const jpegs = async (folder: string) =>
-    (await fs.readdir(folder).catch(() => [] as string[])).filter((name) => name.endsWith(".jpg"));
+  // A folder that isn't there holds none; any other failure to read it fails the test.
+  const jpegs = async (folder: string) => {
+    try {
+      return (await fs.readdir(folder)).filter((name) => name.endsWith(".jpg"));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
+  };
   const lookUp = (printId: string) =>
     request(app)
       .post(`/api/print/${printId}/preview-images/upload-results`)
       .set(auth())
       .send({ upload_ids: [randomUUID()] })
       .expect(200);
+
+  it("removes a staging file a failed write couldn't, at the next look", async () => {
+    const { print, gallery, uploadId } = await uploadStorage();
+    const rename = fs.rename;
+    const rm = fs.rm;
+    const full = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      if (path.dirname(String(to)) === gallery) throw Object.assign(new Error("Disk is full"), { code: "ENOSPC" });
+      return rename(from, to);
+    });
+    let kept = false;
+    const stuck = vi.spyOn(fs, "rm").mockImplementation((async (target: unknown, ...rest: unknown[]) => {
+      if (!kept && path.dirname(String(target)) === gallery && String(target).endsWith(".tmp")) {
+        kept = true;
+        throw Object.assign(new Error("EACCES: permission denied"), { code: "EACCES" });
+      }
+      return Reflect.apply(rm, fs, [target, ...rest]);
+    }) as never);
+    try {
+      await expect(addPreviewImageForUpload(print.id, uploadId, await png(200))).rejects.toThrow("Disk is full");
+    } finally {
+      full.mockRestore();
+      stuck.mockRestore();
+    }
+    expect(kept).toBe(true);
+    expect((await fs.readdir(gallery)).filter((name) => name.endsWith(".tmp"))).toHaveLength(1);
+
+    await lookUp(print.id);
+    expect(await fs.readdir(gallery)).toEqual([]);
+  });
+
+  it("adds a replacement cover only while the image it replaces is still the only one", async () => {
+    const print = await uploadStl();
+    const render = await addPreviewImage(print.id, await png(30), { generated: true });
+    if (!render) throw new Error("Expected the render to be stored");
+    const redrawn = await addPreviewImage(print.id, await png(35), { generated: true, replacing: render.id });
+    expect(redrawn).not.toBeNull();
+    // A picture uploaded while the next one was drawn: the replacement goes nowhere.
+    expect(await addPreviewImage(print.id, await png(200))).not.toBeNull();
+    expect(await addPreviewImage(print.id, await png(40), { generated: true, replacing: render.id })).toBeNull();
+    expect(await prisma.previewImage.count({ where: { printId: print.id, generated: true } })).toBe(2);
+  });
 
   it("leaves a rolled-back JPEG it couldn't remove for the next look", async () => {
     const { print, gallery, uploadId } = await uploadStorage();
@@ -388,6 +440,7 @@ describe("recoverable preview uploads", () => {
     const disputed = disputeTransactions({ caller: "addPreviewImageForUpload", outcome: "rolled back" });
     try {
       await expect(addPreviewImageForUpload(print.id, uploadId, await png(200))).rejects.toThrow("rolled back");
+      expect(disputed.unconsumed()).toEqual([]);
     } finally {
       disputed.mockRestore();
       removing.mockRestore();
@@ -408,6 +461,7 @@ describe("recoverable preview uploads", () => {
       );
       try {
         await expect(addPreviewImageForUpload(print.id, randomUUID(), await png(200))).rejects.toThrow("rolled back");
+        expect(disputed.unconsumed()).toEqual([]);
       } finally {
         disputed.mockRestore();
       }
@@ -554,6 +608,7 @@ describe("recoverable preview uploads", () => {
     const lost = disputeTransactions({ caller: "resumeCoverWork", outcome: "commit unanswered" });
     try {
       await lookup();
+      expect(lost.unconsumed()).toEqual([]);
     } finally {
       lost.mockRestore();
     }

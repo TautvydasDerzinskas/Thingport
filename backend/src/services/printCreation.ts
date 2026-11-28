@@ -28,6 +28,7 @@ import {
   removePlatePictures,
   renderPlateStoragePath,
   saveThumbFromFile,
+  settleMove,
 } from "./printService";
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
@@ -717,6 +718,8 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
 }
 
 async function removePlateUnlocked(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
+  // Its file may be where an earlier move left it, unrecorded: put right first, or the row stays to try again.
+  await settleMove(`plate:${plateId}`);
   // The removal and the renumbering commit together, so a failure leaves the plates as they were.
   const target = await prisma.$transaction(async (tx) => {
     await lockPlateList(tx, print.id);
@@ -768,6 +771,10 @@ type PlateRename = { plate_id: string; filename: string };
 
 async function applyPlateRenames(print: Print, edits: PlateRename[]): Promise<Plate[]> {
   return withPlateRenameLock(print.id, async () => {
+    // A file an earlier move left unrecorded is put right before the look below reads its row: one that can't be
+    // leaves every name as it was.
+    const plateIds = await prisma.plate.findMany({ where: { printId: print.id }, select: { id: true } });
+    for (const { id } of plateIds) await settleMove(`plate:${id}`);
     const renamed = await prisma.$transaction(async (tx) => {
       await lockPlateList(tx, print.id);
       const plates = await tx.plate.findMany({ where: { printId: print.id } });

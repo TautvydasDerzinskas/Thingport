@@ -125,16 +125,12 @@ describe("savePreviewUploads", () => {
     ]);
   });
 
-  it("keeps the stored batches' images when a later batch is refused, and sends only the refused ones again", async () => {
-    const items = Array.from({ length: 21 }, (_, at) => pendingImage(`p${at}`));
-    const { api, save, progress } = previewSaveFixture(...items);
-    const refused = new PrintApiError("A picture is larger than 8 MB", 413, null);
-    api.getPreviewUploadResults.mockResolvedValue({ print: printWithImages(), upload_results: [] });
+  // The first 20 of the batch are stored, then the batch after is refused.
+  function refuseSecondBatch(api: ReturnType<typeof previewSaveFixture>["api"], refused: PrintApiError) {
     api.addPreviewImages.mockImplementationOnce(async (_printId, _files, ids, onBatchStored) => {
       if (!ids) throw new Error("Expected upload IDs");
-      // The first 20 are stored, then the last batch is refused.
       const stored = ids.slice(0, 20);
-      onBatchStored?.();
+      onBatchStored?.(20);
       api.getPreviewUploadResults.mockImplementation(async (_lookedUp, keys) => ({
         print: printWithImages(...stored.map((key, at) => storedImage(`saved-${key}`, at))),
         upload_results: keys
@@ -143,6 +139,14 @@ describe("savePreviewUploads", () => {
       }));
       throw refused;
     });
+  }
+
+  it("keeps the stored batches' images when a later batch is refused, and lets the refused one be removed", async () => {
+    const items = Array.from({ length: 21 }, (_, at) => pendingImage(`p${at}`));
+    const { api, save, progress } = previewSaveFixture(...items);
+    const refused = new PrintApiError("A picture is larger than 8 MB", 413, null);
+    api.getPreviewUploadResults.mockResolvedValue({ print: printWithImages(), upload_results: [] });
+    refuseSecondBatch(api, refused);
     api.addPreviewImages.mockRejectedValueOnce(refused);
 
     await expect(save()).rejects.toBe(refused);
@@ -152,14 +156,29 @@ describe("savePreviewUploads", () => {
         .items.slice(0, 20)
         .map((image) => image.kind),
     ).toEqual(Array(20).fill("existing"));
-    expect(progress().items[20]).toMatchObject({ kind: "new", pendingUploadId: firstKeys[20] });
+    // Never stored, it holds no key, so Remove takes it.
+    expect(progress().items[20]).toMatchObject({ kind: "new", localId: "p20" });
+    expect(isPendingPreviewImage(progress().items[20])).toBe(false);
 
-    // Refused on its own, nothing more was stored: the last one keeps its ID for the next try.
+    // Sent again on its own, as new.
     await expect(save()).rejects.toBe(refused);
     const [, resentFiles, resentIds] = api.addPreviewImages.mock.calls[1];
     expect(resentFiles.map((file) => file.name)).toEqual(["p20.png"]);
-    expect(resentIds).toEqual([firstKeys[20]]);
-    expect(progress().items[20]).toMatchObject({ kind: "new", pendingUploadId: firstKeys[20] });
+    expect(resentIds).toHaveLength(1);
+    expect(resentIds).not.toEqual([firstKeys[20]]);
+    expect(isPendingPreviewImage(progress().items[20])).toBe(false);
+  });
+
+  it("keeps the key of a picture whose earlier try is still unknown when a later batch is refused", async () => {
+    const earlier = { ...pendingImage("p20"), pendingUploadId: "earlier-key" };
+    const items = [...Array.from({ length: 20 }, (_, at) => pendingImage(`p${at}`)), earlier];
+    const { api, save, progress } = previewSaveFixture(...items);
+    const refused = new PrintApiError("A picture is larger than 8 MB", 413, null);
+    api.getPreviewUploadResults.mockResolvedValue({ print: printWithImages(), upload_results: [] });
+    refuseSecondBatch(api, refused);
+
+    await expect(save()).rejects.toBe(refused);
+    expect(progress().items[20]).toMatchObject({ kind: "new", pendingUploadId: "earlier-key" });
   });
 
   it("keeps the original key across a lost response and a temporary receipt outage", async () => {

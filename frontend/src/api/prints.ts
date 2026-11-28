@@ -862,12 +862,22 @@ export const printsApi = {
   },
 
   reorderPlates: async (printId: string, plateIds: string[]): Promise<{ print?: Print }> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plates/reorder`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ plate_ids: plateIds }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${apiBase()}/print/${printId}/plates/reorder`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ plate_ids: plateIds }),
+      });
+    } catch (error) {
+      // No answer: the order may be saved.
+      throw new PlateReorderResponseError(error);
+    }
     if (res.status === 401) throw new UnauthorizedError();
+    // A timeout, or a failure the server met after saving the order (reading the print facts again).
+    if (res.status === 408 || res.status >= 500) {
+      throw new PlateReorderResponseError(new Error(await readErrorMessage(res, `HTTP ${res.status}`)));
+    }
     if (!res.ok) {
       const { message, code } = await readCodedError(res, "Failed to reorder plates");
       throw code === "plate_set_changed" ? new PlateSetChangedError(message) : new Error(message);
@@ -1196,13 +1206,13 @@ export const printsApi = {
     return res.json();
   },
 
-  /** `onBatchStored` is called after each batch the server stored, so a later batch's failure can be told apart from
-   *  one that stored nothing. */
+  /** `onBatchStored` is called after each batch the server stored, with how many of the files are stored so far, so a
+   *  later batch's failure can be told apart from one that stored nothing. */
   addPreviewImages: async (
     id: string,
     files: File[],
     uploadIds?: string[],
-    onBatchStored?: () => void,
+    onBatchStored?: (storedFiles: number) => void,
   ): Promise<{ print: Print; added_image_ids?: (string | null)[] }> => {
     // In batches the server holds in memory; ids come back in the files' order, and a batch that fails stops the rest.
     let last: { print: Print; added_image_ids?: (string | null)[] } | undefined;
@@ -1214,7 +1224,7 @@ export const printsApi = {
         files.slice(at, at + PICTURE_UPLOAD_BATCH),
         uploadIds?.slice(at, at + PICTURE_UPLOAD_BATCH),
       );
-      onBatchStored?.();
+      onBatchStored?.(Math.min(at + PICTURE_UPLOAD_BATCH, files.length));
       if (last.added_image_ids) added.push(...last.added_image_ids);
       else aligned = false;
     }

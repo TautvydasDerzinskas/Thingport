@@ -115,8 +115,22 @@ async function storePreviewJpeg(
     placed = true;
     return { dest, size: jpeg.length, contentSha256, ...(await reuseMarker(dest, shared, contentSha256)) };
   } catch (error) {
-    await fs.rm(placed ? dest : tmp, { force: true }).catch(() => undefined);
+    if (placed) await fs.rm(dest, { force: true }).catch(() => undefined);
+    else await fs.rm(tmp, { force: true }).catch(() => strayStaging.add(tmp));
     throw error;
+  }
+}
+
+/** Staging files a failed write couldn't remove, for the next gallery settlement: each is named for its own attempt,
+ *  so nothing else ever names it. In-process, as every writer is. */
+const strayStaging = new Set<string>();
+
+async function removeStrayStaging(): Promise<void> {
+  for (const file of strayStaging) {
+    await fs.rm(file, { force: true }).then(
+      () => strayStaging.delete(file),
+      () => undefined,
+    );
   }
 }
 
@@ -145,12 +159,21 @@ async function encodePreviewUpload(buffer: Buffer): Promise<Buffer | null> {
  * our own card render of the first plate finishes and takes the cover (see adoptRenderAsThumb), and an upload is
  * the same. The loser reads the position again rather than failing the import that was only adding a picture.
  */
-async function createPreviewImageRow(printId: string, generated: boolean): Promise<PreviewImage | null> {
+async function createPreviewImageRow(
+  printId: string,
+  generated: boolean,
+  replacing?: string,
+): Promise<PreviewImage | null> {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       // Under the gallery lock, so a renumbering can't run between the position read and the insert.
       return await prisma.$transaction(async (tx) => {
         await lockPreviewGallery(tx, printId);
+        // A replacement goes in only while the image it replaces is still the gallery's only one.
+        if (replacing) {
+          const images = await tx.previewImage.findMany({ where: { printId }, select: { id: true } });
+          if (images.length !== 1 || images[0].id !== replacing) return null;
+        }
         const last = await tx.previewImage.findFirst({ where: { printId }, orderBy: { position: "desc" } });
         return tx.previewImage.create({ data: { printId, position: last ? last.position + 1 : 0, generated } });
       });
@@ -166,9 +189,18 @@ async function createPreviewImageRow(printId: string, generated: boolean): Promi
 export async function addPreviewImage(
   printId: string,
   buffer: Buffer,
-  { generated = false, keepExif = false }: { generated?: boolean; keepExif?: boolean } = {},
+  {
+    generated = false,
+    keepExif = false,
+    replacing,
+  }: {
+    generated?: boolean;
+    keepExif?: boolean;
+    /** Added only while this id is the gallery's only image. */
+    replacing?: string;
+  } = {},
 ): Promise<PreviewImage | null> {
-  const row = await createPreviewImageRow(printId, generated);
+  const row = await createPreviewImageRow(printId, generated, replacing);
   if (!row) return null;
   const saved = await photoJpeg(buffer, 1600, 90, keepExif)
     .then(async (jpeg) => storePreviewJpeg(await ensureAssetHome(printId), row.id, jpeg))
@@ -405,7 +437,7 @@ async function galleryHome(tx: Prisma.TransactionClient, printId: string): Promi
 
 /** Gallery rows a transaction dropped or added without hearing whether it committed, by model, each with where its
  *  files are. */
-const unsettledDrops = new Map<string, Map<string, AssetHome>>();
+const unsettledDrops = new Map<string, Map<string, { home: AssetHome }>>();
 
 /** Runs `drop`, a transaction that removes gallery rows and names them through `dropping`, then removes their files.
  *  A failed commit may still have committed: a locked read then decides which rows went, and when that read fails
@@ -433,13 +465,15 @@ async function dropGalleryRows<T>(
 }
 
 function leaveUnsettled(printId: string, home: AssetHome, ids: string[]) {
-  const unsettled = unsettledDrops.get(printId) ?? new Map<string, AssetHome>();
-  for (const id of ids) unsettled.set(id, home);
+  const unsettled = unsettledDrops.get(printId) ?? new Map<string, { home: AssetHome }>();
+  // A new entry each time, so a read that began before it doesn't retire it.
+  for (const id of ids) unsettled.set(id, { home });
   unsettledDrops.set(printId, unsettled);
 }
 
 /** Removes the files of rows a disputed commit dropped or never added, once a locked read finds those rows absent. */
 async function settleGalleryDrops(printId: string): Promise<void> {
+  await removeStrayStaging();
   const unsettled = unsettledDrops.get(printId);
   if (!unsettled) return;
   // Only the ids this read checks are settled by it, each at the home it was left with; any added meanwhile wait.
@@ -456,18 +490,18 @@ async function settleGalleryDrops(printId: string): Promise<void> {
     console.error(`Couldn't settle the gallery of print ${printId} yet:`, error);
     return;
   }
-  for (const [id, home] of checked) {
+  for (const [id, entry] of checked) {
     // A row that survived needs nothing; one that went is retired once its files are confirmed gone, else retried.
     if (!left.has(id)) {
       try {
-        await removeAssetOrThrow(home, galleryImageFile(id));
-        await removeAssetOrThrow(home, galleryThumbFile(id));
+        await removeAssetOrThrow(entry.home, galleryImageFile(id));
+        await removeAssetOrThrow(entry.home, galleryThumbFile(id));
       } catch (error) {
         console.error(`Couldn't remove gallery image ${id}'s files yet:`, error);
         continue;
       }
     }
-    if (unsettled.get(id) === home) unsettled.delete(id);
+    if (unsettled.get(id) === entry) unsettled.delete(id);
   }
   if (!unsettled.size && unsettledDrops.get(printId) === unsettled) unsettledDrops.delete(printId);
 }
@@ -733,7 +767,8 @@ async function replaceGeneratedCover(
   const current = previewImagePath(images[0].id, await plateAssetHome(plateId));
   if (!drawn && !(await writtenBefore(current, renderPath))) return;
   const cover = colorPath ? await fs.readFile(colorPath) : await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
-  const added = await addPreviewImage(plate.printId, cover, { generated: true });
+  // A picture uploaded while this was drawn has taken over: then nothing goes in.
+  const added = await addPreviewImage(plate.printId, cover, { generated: true, replacing: images[0].id });
   if (added) await removePreviewImage(plate.printId, images[0].id);
 }
 

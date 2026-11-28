@@ -6972,7 +6972,7 @@
       "previewUploadSkipped": "Nepavyko išsaugoti kai kurių vaizdų. Pašalinkite juos arba bandykite įkelti dar kartą.",
       "previewUploadPending": "Nepavyko patvirtinti vaizdų įkėlimo. Dar kartą pasirinkite „Atnaujinti“, kad patikrintumėte, kurie vaizdai išsaugoti.",
       "previewUploadMissing": "Įkelta nuotrauka pašalinta iš modelio. Galite užverti jos peržiūrą.",
-      "previewUploadUnconfirmed": "Nepavyko susieti pasirinktų vaizdų su išsaugotais. Uždarykite ir vėl atidarykite redaktorių, kad pamatytumėte, kurie vaizdai išsaugoti.",
+      "previewUploadUnconfirmed": "Nepavyko susieti pasirinktų vaizdų su išsaugotais. Uždarykite ir vėl atidarykite redaktorių, kad pamatytumėte, kurie vaizdai išsaugoti, ir pakeistumėte jų tvarką.",
       "uploadConfirmationFailed": "Nepavyko patvirtinti, kurie modelio failai buvo išsaugoti. Bandykite dar kartą.",
       "uploadPending": "Įkėlimo būsena dar tikrinama. Prieš pašalindami šį failą, dar kartą pabandykite atnaujinti.",
       "removeFile": "Pašalinti modelio failą",

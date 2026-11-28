@@ -623,10 +623,15 @@ describe("plate add/remove/reorder/rename", () => {
     const modelId: string = uploaded.body.prints[0].id;
     await trackPrint(modelId);
     const [a, b] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    const aPath = resolvePlateFilePath(a);
     const bPath = resolvePlateFilePath(b);
     const rename = fsPromises.rename;
+    let refused = false;
     const failMove = vi.spyOn(fsPromises, "rename").mockImplementation(async (from, to) => {
-      if (String(from) === bPath) throw new Error("Storage move failed");
+      if (String(from) === bPath) {
+        refused = true;
+        throw new Error("Storage move failed");
+      }
       return rename(from, to);
     });
     try {
@@ -640,6 +645,12 @@ describe("plate add/remove/reorder/rename", () => {
     } finally {
       failMove.mockRestore();
     }
+    // Halfway: the first file moved aside to wait for the second's place, and the second never left it.
+    expect(refused).toBe(true);
+    expect([fs.existsSync(aPath ?? ""), fs.existsSync(bPath ?? "")]).toEqual([false, true]);
+    const aside = await prisma.plate.findUniqueOrThrow({ where: { id: a.id } });
+    expect(path.dirname(aside.storagePath).split(path.sep).slice(-2)).toEqual([modelId, a.id]);
+    expect(fs.readFileSync(resolvePlateFilePath(aside) ?? "", "utf8")).toBe("solid half a endsolid");
 
     // The names are saved, so the editor's next save finds no swap and renames each file on its own.
     for (const [plate, filename] of [
@@ -719,6 +730,10 @@ describe("plate add/remove/reorder/rename", () => {
       filename: "queued.stl",
     });
     expect(res.status).toBe(200);
+    const renamed = await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } });
+    expect([renamed.filename, path.basename(renamed.storagePath)]).toEqual(["queued.stl", "queued.stl"]);
+    expect(fs.readFileSync(resolvePlateFilePath(renamed) ?? "", "utf8")).toBe("solid q endsolid");
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
   it("refuses more pictures in one upload than it holds in memory, before reading them all", async () => {
@@ -1049,16 +1064,107 @@ describe("plate add/remove/reorder/rename", () => {
     expect(readFailed).toBe(true);
     expect([fs.existsSync(original), fs.existsSync(movedTo)]).toEqual([false, true]);
 
-    // The settling look fails: nothing is renamed, and the bytes stay where the move left them.
+    // A rename to another name whose settling look fails: no name is recorded, nothing is renamed, and the bytes stay
+    // where the move left them.
+    const renameTo = (filename: string) =>
+      auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [{ plate_id: a.id, filename }],
+      });
     faults.at("fileState:move.settle", 1, "EIO");
-    expect((await rename()).status).not.toBe(200);
+    expect((await renameTo("settle-d.stl")).status).not.toBe(200);
     expect([fs.existsSync(original), fs.existsSync(movedTo)]).toEqual([false, true]);
-    expect((await prisma.plate.findUniqueOrThrow({ where: { id: a.id } })).storagePath).toBe(a.storagePath);
+    expect(await prisma.plate.findUniqueOrThrow({ where: { id: a.id } })).toMatchObject({
+      filename: "settle-c.stl",
+      storagePath: a.storagePath,
+    });
 
+    expect((await renameTo("settle-d.stl")).status).toBe(200);
+    const plate = await prisma.plate.findUniqueOrThrow({ where: { id: a.id } });
+    expect([plate.filename, path.basename(plate.storagePath)]).toEqual(["settle-d.stl", "settle-d.stl"]);
+    expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe("solid settle a endsolid");
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  /** Renames the plate with the save of its new path failing, and the read that would tell failing too: its file
+   *  waits where the move left it, with the row still naming the old place. */
+  async function leaveUnreadMove(modelId: string, plateId: string, filename: string) {
+    const update = prisma.plate.update;
+    const findUnique = prisma.plate.findUnique;
+    let failed = false;
+    let readFailed = false;
+    const saving = vi.spyOn(prisma.plate, "update").mockImplementation((async (args: {
+      data: { storagePath?: unknown };
+    }) => {
+      if (!failed && typeof args.data.storagePath === "string" && args.data.storagePath.endsWith(filename)) {
+        failed = true;
+        throw new Error("The database went away");
+      }
+      return Reflect.apply(update, prisma.plate, [args]);
+    }) as never);
+    const reading = vi.spyOn(prisma.plate, "findUnique").mockImplementation((async (args: unknown) => {
+      if (failed && !readFailed) {
+        readFailed = true;
+        throw new Error("The database went away");
+      }
+      return Reflect.apply(findUnique, prisma.plate, [args]);
+    }) as never);
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [{ plate_id: plateId, filename }],
+      });
+      expect(res.status).not.toBe(200);
+    } finally {
+      saving.mockRestore();
+      reading.mockRestore();
+    }
+    expect(readFailed).toBe(true);
+  }
+
+  async function twoPlateModel(prefix: string) {
+    const uploaded = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from(`solid ${prefix} a endsolid`), `${prefix}-a.stl`)
+      .attach("files", Buffer.from(`solid ${prefix} b endsolid`), `${prefix}-b.stl`);
+    const modelId: string = uploaded.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a] = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    return { modelId, a, original: path.join(STORAGE, a.storagePath) };
+  }
+
+  it("puts back a file an unread move left before removing its plate", async () => {
+    const { modelId, a, original } = await twoPlateModel("gone");
+    const movedTo = path.join(path.dirname(original), "gone-c.stl");
+    await leaveUnreadMove(modelId, a.id, "gone-c.stl");
+    expect([fs.existsSync(original), fs.existsSync(movedTo)]).toEqual([false, true]);
+
+    expect((await auth(request(app).delete(`/api/print/${modelId}/plates/${a.id}`))).status).toBe(200);
+    expect([fs.existsSync(original), fs.existsSync(movedTo)]).toEqual([false, false]);
+    expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
+  });
+
+  it("keeps an unread move waiting while something else holds the place its file came from", async () => {
+    const { modelId, a, original } = await twoPlateModel("held");
+    const movedTo = path.join(path.dirname(original), "held-c.stl");
+    await leaveUnreadMove(modelId, a.id, "held-c.stl");
+    const rename = () =>
+      auth(request(app).post(`/api/print/${modelId}/plates/rename`)).send({
+        renames: [{ plate_id: a.id, filename: "held-c.stl" }],
+      });
+    fs.mkdirSync(original);
+    try {
+      expect((await rename()).status).toBe(409);
+      expect(fs.readFileSync(movedTo, "utf8")).toBe("solid held a endsolid");
+      expect((await prisma.plate.findUniqueOrThrow({ where: { id: a.id } })).storagePath).toBe(a.storagePath);
+    } finally {
+      fs.rmSync(original, { recursive: true, force: true });
+    }
+
+    // With the old place free again, the same rename finishes.
     expect((await rename()).status).toBe(200);
     const plate = await prisma.plate.findUniqueOrThrow({ where: { id: a.id } });
-    expect(path.basename(plate.storagePath)).toBe("settle-c.stl");
-    expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe("solid settle a endsolid");
+    expect(path.basename(plate.storagePath)).toBe("held-c.stl");
+    expect(plate.storagePath).not.toContain(modelId);
+    expect(fs.readFileSync(resolvePlateFilePath(plate) ?? "", "utf8")).toBe("solid held a endsolid");
     expect(await checkLibraryInvariants({ userIds: [userId] })).toEqual([]);
   });
 
@@ -1346,6 +1452,7 @@ describe("plate add/remove/reorder/rename", () => {
     const lost = disputeTransactions({ caller: "createPlateAtPosition", outcome: "commit unanswered" });
     try {
       expect((await upload()).status).toBe(500);
+      expect(lost.unconsumed()).toEqual([]);
     } finally {
       lost.mockRestore();
     }

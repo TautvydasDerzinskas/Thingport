@@ -46,8 +46,8 @@ const graphemes =
 
 /** Without Intl.Segmenter (an older browser), the clusters a name holds, so its cut lands where the server's does: a
  *  character with the marks, joiners and modifiers that attach to it, emoji joined by zero-width joiners, a flag's two
- *  letters, Indic conjuncts, and CR LF. Names are NFC by then, so Hangul comes as syllables. Built only here, so a
- *  browser without one of these properties falls back to code points rather than failing to load. */
+ *  letters, Indic conjuncts, Hangul jamo NFC leaves apart (two leading consonants don't compose), and CR LF. Built
+ *  only here, so a browser without one of these properties falls back to code points rather than failing to load. */
 function fallbackClusters(text: string): Iterable<string> {
   try {
     // Thai and Lao AM are letters that Unicode attaches like spacing marks.
@@ -61,7 +61,18 @@ function fallbackClusters(text: string): Iterable<string> {
     const pictograph = String.raw`\p{Extended_Pictographic}`;
     // Pictographs joined by one zero-width joiner each, with marks or skin tones before it.
     const emoji = String.raw`${pictograph}(?:[\p{Grapheme_Extend}\p{Emoji_Modifier}]*\u200D${pictograph})+`;
-    const cluster = new RegExp(String.raw`\r\n|(?:${emoji}|\p{Regional_Indicator}{2}|${conjunct}|[^])${extend}*`, "gu");
+    // Leading, vowel and trailing jamo, and the syllables with no trailing one (LV), every 28th from U+AC00.
+    const [lead, vowel, trail] = [
+      String.raw`[\u1100-\u115F\uA960-\uA97C]`,
+      String.raw`[\u1160-\u11A7\uD7B0-\uD7C6]`,
+      String.raw`[\u11A8-\u11FF\uD7CB-\uD7FB]`,
+    ];
+    const lv = `[${Array.from({ length: 399 }, (_, at) => String.fromCharCode(0xac00 + at * 28)).join("")}]`;
+    const hangul = String.raw`${lead}*(?:${vowel}+|${lv}${vowel}*|[\uAC00-\uD7A3])${trail}*|${lead}+|${trail}+`;
+    const cluster = new RegExp(
+      String.raw`\r\n|(?:${emoji}|\p{Regional_Indicator}{2}|${conjunct}|${hangul}|[^])${extend}*`,
+      "gu",
+    );
     return text.match(cluster) ?? [];
   } catch {
     return text;

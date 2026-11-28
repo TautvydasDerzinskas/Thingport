@@ -267,19 +267,21 @@ const unsettledMoves = new Map<string, { from: string; to: string; committed: Co
 /** Settles the record's earlier move whose outcome went unread, before a place is picked for its next one, so the
  *  place that move went is free again unless the record names it. Every move settles under the lock as it lists too
  *  (moveStored): one whose unread outcome was recorded after this look is settled there. */
-async function settleMove(key: string): Promise<void> {
+export async function settleMove(key: string): Promise<void> {
   if (unsettledMoves.has(key)) await withStorageLock(() => settleMoveLocked(key));
 }
 
 /** Under the storage lock: the file goes back if the record still names the old place. A look or a record that can't
- *  be read throws, with the move left to settle. */
+ *  be read throws, and so does an old place something else holds now, with the move left to settle. */
 async function settleMoveLocked(key: string): Promise<void> {
   const unsettled = unsettledMoves.get(key);
   if (!unsettled) return;
   const outcome = await unsettled.committed();
   if (outcome === false) {
-    const back = (await fileState(unsettled.from, "move.settle")).state === "missing";
-    if (back && (await fileState(unsettled.to, "move.settle")).state === "file") {
+    if ((await fileState(unsettled.to, "move.settle")).state === "file") {
+      if ((await fileState(unsettled.from, "move.settle")).state !== "missing") {
+        throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, unsettled.from)}`);
+      }
       await fs.mkdir(path.dirname(unsettled.from), { recursive: true });
       await fs.rename(unsettled.to, unsettled.from);
       await pruneEmptyStorageDirs(path.dirname(unsettled.to));

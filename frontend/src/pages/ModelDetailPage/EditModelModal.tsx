@@ -632,10 +632,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {images.map((img, idx) => {
                 const key = imageKey(img);
                 const src = img.kind === "existing" ? printsApi.fileUrl(img.url) : img.previewUrl;
-                const canArrange = canArrangePreviewImage(img);
-                const isThumbnail = canArrange && images.findIndex(canArrangePreviewImage) === idx;
-                const canMoveLeft = previewImageNeighbourIndex(images, idx, -1) >= 0;
-                const canMoveRight = previewImageNeighbourIndex(images, idx, 1) >= 0;
+                const isThumbnail = canArrangePreviewImage(img) && images.findIndex(canArrangePreviewImage) === idx;
+                // Update can't save the gallery's order past a row it couldn't match, so the order stays as it is.
+                const canArrange = !hasUnconfirmedImages && canArrangePreviewImage(img);
+                const canMoveLeft = !hasUnconfirmedImages && previewImageNeighbourIndex(images, idx, -1) >= 0;
+                const canMoveRight = !hasUnconfirmedImages && previewImageNeighbourIndex(images, idx, 1) >= 0;
                 const removeLabel = t("models:edit.removeImage");
                 const moveLeftLabel = t("models:edit.moveImageLeft");
                 const moveRightLabel = t("models:edit.moveImageRight");

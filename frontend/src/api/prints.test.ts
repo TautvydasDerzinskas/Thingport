@@ -374,10 +374,10 @@ describe("printsApi.addPreviewImages", () => {
       ),
     );
     const files = Array.from({ length: 21 }, (_, at) => new File(["x"], `${at}.png`));
-    const stored = vi.fn<() => void>();
+    const stored = vi.fn<(storedFiles: number) => void>();
 
     await expect(printsApi.addPreviewImages("print", files, undefined, stored)).rejects.toMatchObject({ status: 413 });
-    expect(stored).toHaveBeenCalledTimes(1);
+    expect(stored).toHaveBeenCalledExactlyOnceWith(20);
   });
 });
 
@@ -431,5 +431,15 @@ describe("printsApi.reorderPlates", () => {
     const wrong = printsApi.reorderPlates("print", ["plate", "plate"]);
     await expect(wrong).rejects.toThrow("plate_ids lists a plate twice");
     await expect(wrong).rejects.not.toBeInstanceOf(PlateSetChangedError);
+    await expect(wrong).rejects.not.toBeInstanceOf(PlateReorderResponseError);
+  });
+
+  it("can't confirm a reorder that met a failure or a timeout, or got no answer", async () => {
+    for (const status of [500, 502, 408]) {
+      respond(status, { detail: "Something went wrong" });
+      await expect(printsApi.reorderPlates("print", ["plate"])).rejects.toBeInstanceOf(PlateReorderResponseError);
+    }
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+    await expect(printsApi.reorderPlates("print", ["plate"])).rejects.toBeInstanceOf(PlateReorderResponseError);
   });
 });

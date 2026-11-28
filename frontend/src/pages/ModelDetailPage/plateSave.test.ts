@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { LastPlateError } from "../../api/client";
 import {
+  PlateRenameTargetGoneError,
   PlateSetChangedError,
   PlateUploadCapabilityError,
   PlateUploadOutcomeUnknownError,
@@ -311,7 +313,10 @@ describe("savePlateChanges", () => {
       }),
       addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
       supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
-      deletePlate: vi.fn<PlateSaveApi["deletePlate"]>().mockResolvedValue({ print: print() }),
+      // The model's only plate: the server refuses its removal.
+      deletePlate: vi
+        .fn<PlateSaveApi["deletePlate"]>()
+        .mockRejectedValue(new LastPlateError("Cannot remove the only plate of a print; delete the print instead.")),
       renamePlate: vi.fn<PlateSaveApi["renamePlate"]>(),
       reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: initial }),
     };
@@ -339,9 +344,37 @@ describe("savePlateChanges", () => {
     expect(api.deletePlate).not.toHaveBeenCalled();
     expect(progress.removedPlateIds).toEqual(new Set(["original"]));
 
-    await save().catch(() => undefined);
+    await expect(save()).rejects.toBeInstanceOf(LastPlateError);
     expect(api.deletePlate).toHaveBeenCalledExactlyOnceWith("model", "original");
+    expect(progress.removedPlateIds).toEqual(new Set(["original"]));
   });
+
+  it.each(["before this save read the model", "while the rename was sent"])(
+    "says a renamed plate another editor removed %s, rather than report the save done",
+    async (when) => {
+      const kept = plate("kept", "kept.3mf", 0);
+      const gone = plate("gone", "gone.3mf", 1);
+      const api = {
+        get: vi.fn<PlateSaveApi["get"]>(),
+        addPlates: vi.fn<PlateSaveApi["addPlates"]>(),
+        supportsIdempotentPlateUploads: vi.fn<PlateSaveApi["supportsIdempotentPlateUploads"]>(),
+        deletePlate: vi.fn<PlateSaveApi["deletePlate"]>(),
+        renamePlate: vi.fn<PlateSaveApi["renamePlate"]>().mockResolvedValue({ print: print(kept) }),
+        reorderPlates: vi.fn<PlateSaveApi["reorderPlates"]>().mockResolvedValue({ print: print(kept) }),
+      };
+      const items: PlateItem[] = [
+        { kind: "existing", id: "kept", filename: "kept.3mf", filenameEdited: false, folder: null },
+        { kind: "existing", id: "gone", filename: "renamed.3mf", filenameEdited: true, folder: null },
+      ];
+      const current = when === "before this save read the model" ? print(kept) : print(kept, gone);
+
+      await expect(savePlateChanges(current, items, new Set(), api, () => undefined)).rejects.toBeInstanceOf(
+        PlateRenameTargetGoneError,
+      );
+      expect(api.renamePlate).toHaveBeenCalledTimes(when === "before this save read the model" ? 0 : 1);
+      expect(api.reorderPlates).not.toHaveBeenCalled();
+    },
+  );
 
   it.each(["a lost response", "an acknowledgement without the uploaded plate"])(
     "continues the same update when a receipt confirms the upload after %s",

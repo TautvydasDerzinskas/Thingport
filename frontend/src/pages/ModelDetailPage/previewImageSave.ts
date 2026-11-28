@@ -139,13 +139,14 @@ export async function savePreviewUploads(
   if (!submitted.length) return latest;
   report({ ...latest, items: uploads });
 
-  let batchStored = false;
+  // How many of the submitted files the batches stored before one failed.
+  let storedFiles = 0;
   try {
     const result = await api.addPreviewImages(
       print.id,
       submitted.map((image) => image.file),
       hasReceipts ? submitted.filter(isPendingPreviewImage).map((image) => image.pendingUploadId) : undefined,
-      () => (batchStored = true),
+      (stored) => (storedFiles = stored),
     );
     const ids = result.added_image_ids;
     if (
@@ -165,7 +166,7 @@ export async function savePreviewUploads(
     const refused =
       error instanceof UnauthorizedError ||
       (error instanceof PrintApiError && [400, 403, 404, 413, 415, 422].includes(error.status));
-    if (refused && !batchStored) {
+    if (refused && !storedFiles) {
       report(beforeUpload);
       throw error;
     }
@@ -181,7 +182,21 @@ export async function savePreviewUploads(
       }
       throw new PreviewUploadError("pending", lookupError);
     }
-    if (refused) throw error;
+    if (refused) {
+      // The refused batch and any after it stored nothing: a key this save gave them goes, so they can be removed and
+      // go as new next time. A key that was pending before this save stays, as its first try is still unknown.
+      const unsent = new Set(submitted.slice(storedFiles).map((image) => image.localId));
+      const pendingBefore = new Set(beforeUpload.items.filter(isPendingPreviewImage).map((image) => image.localId));
+      report({
+        ...latest,
+        items: latest.items.map((image) =>
+          isPendingPreviewImage(image) && unsent.has(image.localId) && !pendingBefore.has(image.localId)
+            ? { ...image, pendingUploadId: undefined }
+            : image,
+        ),
+      });
+      throw error;
+    }
     if (latest.items.some(isPendingPreviewImage)) throw new PreviewUploadError("pending", error);
   }
 

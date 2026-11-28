@@ -6591,7 +6591,7 @@
       "previewUploadSkipped": "Some images could not be saved. Remove them or try uploading them again.",
       "previewUploadPending": "Could not confirm the image upload. Select Update again to check which images were saved.",
       "previewUploadMissing": "An uploaded image was removed from the model. You can dismiss its preview.",
-      "previewUploadUnconfirmed": "Could not match the selected images to the saved images. Close and reopen the editor to see which images were saved.",
+      "previewUploadUnconfirmed": "Could not match the selected images to the saved images. Close and reopen the editor to see which images were saved and to change their order.",
       "uploadConfirmationFailed": "Could not confirm which model files were saved. Please try again.",
       "uploadPending": "Upload status is still being confirmed. Try Update again before removing this file.",
       "removeFile": "Remove model file",

@@ -193,6 +193,10 @@ describe("a name cut without Intl.Segmenter", () => {
     "ி",
     "ຳ",
     "가",
+    "각",
+    "\u1100",
+    "\u1161",
+    "\u11A8",
     "ٌ",
     "ద",
     "్",
@@ -202,6 +206,11 @@ describe("a name cut without Intl.Segmenter", () => {
 
   it("keeps a combining mark with its letter", async () => {
     const name = "界".repeat(76) + "aa.gcode\u0338x.3mf";
+    expect((await withoutSegmenter())(name)).toBe(normalizeFileName(name));
+  });
+
+  it("keeps leading Hangul consonants together, which NFC leaves apart", async () => {
+    const name = "界".repeat(75) + "aa.gcode\u1100\u1100.3mf";
     expect((await withoutSegmenter())(name)).toBe(normalizeFileName(name));
   });
 

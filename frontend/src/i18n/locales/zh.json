@@ -6350,7 +6350,7 @@
       "previewUploadSkipped": "部分图片未能保存。请移除这些图片或重新上传。",
       "previewUploadPending": "无法确认图片是否已上传。请再次选择“更新”，查看已保存的图片。",
       "previewUploadMissing": "一张已上传的图片已从模型中移除。你可以关闭它的预览。",
-      "previewUploadUnconfirmed": "无法将所选图片与已保存的图片对应。请关闭并重新打开编辑器，查看已保存的图片。",
+      "previewUploadUnconfirmed": "无法将所选图片与已保存的图片对应。请关闭并重新打开编辑器，查看已保存的图片并调整顺序。",
       "uploadConfirmationFailed": "无法确认哪些模型文件已保存。请重试。",
       "uploadPending": "上传状态仍在确认中。请再次更新后再删除此文件。",
       "removeFile": "移除模型文件",
