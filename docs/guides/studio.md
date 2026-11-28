@@ -95,7 +95,7 @@ A design is a list of features, built in order:
   after you choose the file. For a new 3MF design, Studio prepares the first build plate and shows its progress. Click
   any other plate in **Objects / Plates** to prepare its bodies. Studio keeps its own copy at the source dimensions.
   Each printable object comes in as a body, keeping its plate placement and any uniform object color. An object made
-  of parts in different colors, each part one color, comes in as a body for each part, in its color. When inserting
+  of several parts, each one color, comes in as a body for each part, in its color. When inserting
   into an existing design, Studio imports all the plates, with the first populated one going into the active plate.
   Studio uses a single color per body, so face painting and slicer modifiers stay in the original file. A mesh with
   gaps can be moved, scaled and exported. Use **Separate** to turn loose pieces within a single body into individual

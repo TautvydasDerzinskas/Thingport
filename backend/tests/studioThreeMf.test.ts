@@ -115,6 +115,16 @@ describe("Studio's 3MF objects", () => {
     }
   });
 
+  it("brings touching bodies of one colour back as the bodies they were", async () => {
+    const base = box("Base", [100, 100], [140, 140], 2);
+    const knob = box("Knob", [115, 115], [125, 125], 4);
+    const { file, model } = await written([part(base, "#ff0000"), part(knob, "#ff0000")]);
+    expect(model.match(/<item /g)).toHaveLength(1);
+    const project = await loadStudioThreeMf(file, 10_000, 10);
+    if (typeof project === "string") throw new Error(project);
+    expect(project.plates[0].parts.map(({ name }) => name)).toEqual(["Base", "Knob"]);
+  });
+
   it("tells apart parts whose meshes have the same id in different part files", async () => {
     const mesh = (x: number) => `<?xml version="1.0" encoding="UTF-8"?>
 <model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter"><resources><object id="1" type="model"><mesh>

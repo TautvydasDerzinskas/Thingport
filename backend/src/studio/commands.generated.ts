@@ -3085,7 +3085,7 @@ export const STUDIO_COMMANDS = {
       "Brings in an STL, 3MF, STEP, OBJ or GLB from the library. Find the model with search_models and its files " +
       "with list_model_files. STL, STEP, OBJ and GLB come in as one mesh, centered on the bed. A 3MF brings each " +
       "printable object as its own body, retaining its name, layout and uniform color where given; an object made of " +
-      "parts in different colors, each part one color, brings each part as its own body in its color. The first plate " +
+      "several parts, each one color, brings each part as its own body in its color. The first plate " +
       "imports into plate_id or plate-1; additional populated plates are created. Use all_files on a new design " +
       "to put every importable file into its own profile, with 3MF plates loaded on demand. Each loose piece " +
       "within a body can be split with separate_parts. A closed mesh can be combined, rounded, drilled and " +

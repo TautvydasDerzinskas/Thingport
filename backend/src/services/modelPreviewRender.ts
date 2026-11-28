@@ -1085,8 +1085,9 @@ export async function loadStudioThreeMf(
       if (colors.size > 1) mixedColors = true;
       return { name, color: colors.size === 1 ? colors.values().next().value : undefined, triangles };
     };
-    // An object whose parts are each one colour, but not all the same, comes in as those parts, each its colour:
-    // how a multi-colour model is kept, Studio's own included. Faces painted another colour stay on their body.
+    // An object of several parts, each one colour, comes in as those parts, each its colour: how a multi-colour
+    // model is kept, and how Studio writes bodies that touch, which come back as the bodies they were (each within
+    // the body limit, as it was exported). Faces painted another colour stay on their body.
     const byPart = new Map<string | undefined, FastMesh[]>();
     for (const mesh of object.meshes) {
       const meshes = byPart.get(mesh.part?.key);
@@ -1094,9 +1095,7 @@ export async function loadStudioThreeMf(
       else byPart.set(mesh.part?.key, [mesh]);
     }
     const partColors = [...byPart.values()].map((meshes) => new Set(meshes.map(colorOf)));
-    const split =
-      partColors.every((colors) => colors.size === 1) &&
-      new Set(partColors.map((colors) => colors.values().next().value)).size > 1;
+    const split = partColors.length > 1 && partColors.every((colors) => colors.size === 1);
     const bodies = split
       ? [...byPart.values()].map((meshes) => body(meshes, meshes[0].part?.name ?? object.name))
       : [body(object.meshes, object.name)];
